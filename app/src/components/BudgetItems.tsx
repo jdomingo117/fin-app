@@ -1,0 +1,210 @@
+import { cloneElement,isValidElement,useEffect,useRef,useState,type ReactElement,type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
+import { useBudget } from '../contexts/BudgetContext'
+import { Button,DateInput,Select } from './Controls'
+import { useDialogFocus } from '../hooks/useDialogFocus'
+import { OperationStatusPanel } from './OperationStatus'
+import BudgetTaskPanel from './BudgetTaskPanel'
+import BudgetEveryday from './budget/BudgetEveryday'
+import BudgetCommitments from './budget/BudgetCommitments'
+import BudgetGoals from './budget/BudgetGoals'
+import BudgetBillFinder from './budget/BudgetBillFinder'
+import BudgetUnplanned,{hasUnplanned,readUnplannedOk,writeUnplannedOk} from './budget/BudgetUnplanned'
+import BudgetValue from './BudgetValue'
+import {budgetPresentation} from '../lib/budgetPresentation'
+import { fmtCents } from '../data'
+import { addDays,addMonths } from '../lib/budget'
+import { dateLedAmount,itemAllocation,type BudgetItem,type BudgetItemConfig,type BudgetSourcesPage } from '../lib/budgetItems'
+import { moneyEntry,parseBudgetMoney } from '../lib/budgetWorkspace'
+
+type Task={kind:'item';type:BudgetItemConfig['type'];item?:BudgetItem;proposal?:Partial<BudgetItemConfig>}|{kind:'match';lineId:string}|{kind:'move'}|{kind:'limits'}
+const typeLabel={bill:'Regular bill',reserve:'Set-aside fund',goal:'Savings goal',contribution:'Planned transfer'}
+const cadenceMap:Record<string,BudgetItemConfig['cadence']>={Weekly:'weekly',Biweekly:'fortnightly',Monthly:'monthly',Quarterly:'quarterly',Annual:'annual'}
+function Label({text,children,hint}:{text:string;children:ReactNode;hint?:string}){
+ // A wrapped select's option text must not become part of its label. Both
+ // native controls and shared control components receive the concise name.
+ const control=isValidElement(children)?cloneElement(children as ReactElement<{ariaLabel?:string;'aria-label'?:string}>,children.type===Select||children.type===DateInput?{ariaLabel:text}:{'aria-label':text}):children
+ return <div className="grid min-w-0 gap-2"><label className="grid min-w-0 gap-2"><span className="field-label">{text}</span>{control}</label>{hint&&<p className="detail-copy text-muted">{hint}</p>}</div>
+}
+function Amount({label,value,set,hint,optional=false}:{label:string;value:string;set:(v:string)=>void;hint?:string;optional?:boolean}){return <Label text={label} hint={hint}><input className="budget-input" aria-label={label} inputMode="decimal" required={!optional} value={value} onChange={e=>{set(e.target.value);e.target.setCustomValidity(optional&&!e.target.value?'':parseBudgetMoney(e.target.value)===null?'Enter zero or a positive amount with up to two decimal places.':'')}}/></Label>}
+
+export default function BudgetItems(){
+ const b=useBudget(),s=b.snapshot,d=s?.details
+ const presentation=budgetPresentation(s,b.readState,{pendingWrite:!!b.pending})
+ const [task,setTask]=useState<Task|null>(null)
+ // 'Keep it as a buffer', remembered per period on this device.
+ const [okPeriods,setOkPeriods]=useState<Record<string,boolean>>({})
+ if(!s?.plan||!s.period||!d)return null
+ const canWrite=b.canWrite&&(!d.lifecycle||d.lifecycle.state==='current')
+ const items=d.items.filter(i=>!i.config?.voided).sort((a,c)=>Number(!!c.config?.featured)-Number(!!a.config?.featured))
+ const renderItem=(item:BudgetItem)=>{
+  const model=presentation.items.find(row=>row.id===item.line_id)
+  if(!item.config)return <div data-budget-line={item.line_id} className="space-y-3"><p className="body-copy">{item.name} · {model?<BudgetValue value={model.planned}/>: 'Unavailable'} planned. {item.archived?'Archived · no future allocations. History is preserved.':'Add dates and purpose to finish setting it up.'}</p><Button disabled={!canWrite||item.archived} variant="ghost" onClick={()=>setTask({kind:'item',type:item.kind==='fixed'?'bill':item.kind==='contribution'?'contribution':'reserve',item})}>Set up {item.name}</Button></div>
+  const c=item.config!
+   return <article data-budget-line={item.line_id} key={item.line_id} className="glass p-5 space-y-3"><div><p className="micro text-muted">{c.featured?'Featured goal · ':''}{typeLabel[c.type]} · {c.state==='purchase-recorded'?'Purchase recorded':c.state}</p><h4 className="font-display text-xl font-bold">{item.name}</h4>{item.archived&&<p className="body-copy">Archived · future allocations are zero. History and any remaining balance stay visible; later activity can still need review.</p>}</div>
+    {c.type==='bill'?<><p className="body-copy">{fmtCents(c.amount_cents)} per payment · {c.cadence}</p><ul className="space-y-2 detail-copy">{item.occurrences.length?item.occurrences.map(o=><li key={o.date}>{o.date} · {presentation.actuals.net.availability==='known'?fmtCents(o.matched_cents):'Unavailable'} matched of {fmtCents(o.expected_cents)} · {presentation.actuals.net.availability==='known'?fmtCents(Math.max(0,o.expected_cents-o.matched_cents)):'Unavailable'} still expected</li>):<li>No payments due in this saved period.</li>}</ul></>:<>
+     <dl className="budget-totals"><dt>Planned this period</dt><dd>{model?<BudgetValue value={model.planned}/>: 'Unavailable'}</dd>{(item.reserve_cents!==null||c.type==='reserve')&&<><dt>Set aside in your budget</dt><dd>{model?<BudgetValue value={model.reserve}/>: 'Unavailable'}</dd></>}<dt>Transfers matched</dt><dd>{model?<BudgetValue value={model.bankConfirmed}/>: 'Unavailable'}</dd><dt>You’ve confirmed</dt><dd>{model?<BudgetValue value={model.userConfirmed}/>: 'Unavailable'}</dd></dl>
+     <p className="body-copy">{c.type==='contribution'?'A planned transfer is separate from recorded funding.':c.target_cents===null?'No target cost set.':`${c.estimated?'Estimated target':'Target'} ${fmtCents(c.target_cents)}${c.due_date?` · Money needed by ${c.due_date}`:''}.`}</p>
+     {item.net_purchases_cents!==0&&<p className="body-copy">Purchases after matched refunds: {model?<BudgetValue value={model.purchases}/>: 'Unavailable'}.</p>}
+    </>}
+    {item.changed_claims>0&&<p className="outcome-panel text-warn">{item.changed_claims} match(es) need review because the source changed. They no longer count as verified evidence.</p>}
+    <p className="detail-copy text-muted">Planned amounts are not bank transfers or proof of cash available. Matched funding does not add the same money to your reserve again.</p>
+    {!s.coverage_complete&&<p className="detail-copy text-warn">Known activity only. Missing history may change the reserve and progress shown here.</p>}
+    {c.planning_goal_id&&<a className="inline-flex min-h-11 items-center text-accent-ink underline" href="/income">View linked Planning goal in Income · no scenario was changed</a>}
+    <div className="flex flex-wrap gap-2"><Button variant="ghost" disabled={!canWrite||item.archived} onClick={()=>setTask({kind:'item',type:c.type,item})}>Adjust {item.name}</Button><Button variant="ghost" disabled={!canWrite} onClick={()=>setTask({kind:'match',lineId:item.line_id})}>Match activity</Button></div>
+    {!item.archived&&c.recurring_id&&(()=>{const r=d.recurring.find(r=>r.id===c.recurring_id);const cadenceMap:Record<string,BudgetItemConfig['cadence']>={Weekly:'weekly',Biweekly:'fortnightly',Monthly:'monthly',Quarterly:'quarterly',Annual:'annual'};const changed=!r||r.state!=='active'||(r.amount_cents!==null&&r.amount_cents!==c.amount_cents)||(r.cadence&&cadenceMap[r.cadence]!==c.cadence);return changed?<div className="outcome-panel space-y-3"><p className="text-warn">Update proposed. Saved rate: {fmtCents(c.amount_cents)}. {r?.state==='active'&&r.amount_cents!==null?`Managed recurring rate: ${fmtCents(r.amount_cents)}.`:'This managed source is stopped or unavailable.'} Your saved allocation is unchanged.</p><Button disabled={!canWrite} variant="ghost" onClick={()=>setTask({kind:'item',type:'bill',item,proposal:r?.state==='active'?{amount_cents:r.amount_cents??c.amount_cents,cadence:r.cadence?cadenceMap[r.cadence]??c.cadence:c.cadence}:{state:'paused',recurring_id:r?.id??null}})}>Review bill update</Button></div>:null})()}
+   </article>
+ }
+ const hasBills=items.some(i=>i.kind==='fixed'&&!i.archived)
+ const unplannedOk=okPeriods[s.period.id]??readUnplannedOk(s.period.id)
+ const setUnplannedOk=(ok:boolean)=>{writeUnplannedOk(s.period!.id,ok);setOkPeriods(m=>({...m,[s.period!.id]:ok}))}
+ // While the unplanned prompt shows, it carries the add-bill and save actions; don't repeat them.
+ const promptShown=hasUnplanned(presentation)&&!unplannedOk
+ // Opens the bill suggestions and brings them into view.
+ const findBills=d.recurring_evidence?()=>{const el=document.getElementById('budget-find-bills') as HTMLDetailsElement|null;if(el){el.open=true;el.scrollIntoView({block:'start'});el.querySelector('summary')?.focus()}}:undefined
+ return <section className="mt-6 space-y-4" aria-label="Bills and savings goals">
+  <BudgetUnplanned presentation={presentation} ok={unplannedOk} setOk={setUnplannedOk} hasBills={hasBills} canWrite={canWrite} onAddBill={()=>setTask({kind:'item',type:'bill'})} onSave={()=>setTask({kind:'item',type:'goal'})} onFindBills={findBills}/>
+  <div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="font-display text-2xl font-bold">Your budget in action</h3><p className="body-copy text-muted mt-1">Plan for the important things. Match real activity when it happens.</p></div>
+   {!promptShown&&<div className="flex flex-wrap gap-2"><Button variant="ghost" disabled={!canWrite} onClick={()=>setTask({kind:'item',type:'goal'})}>Save for something</Button><Button disabled={!canWrite} variant="ghost" onClick={()=>setTask({kind:'item',type:'bill'})}>Add a bill</Button></div>}</div>
+  {d.undo_operation_id&&<Button variant="ghost" disabled={!canWrite} onClick={async()=>{if(window.confirm('Undo the latest compatible budget change? No bank or ledger transaction will be changed.'))await b.run({action:'undo',operation_id:d.undo_operation_id})}}>Undo last budget change</Button>}
+  <div className="budget-overview-columns"><div className="budget-overview-primary">
+  <BudgetCommitments items={items} presentation={presentation} renderItem={renderItem} onAddBill={canWrite&&!promptShown?()=>setTask({kind:'item',type:'bill'}):undefined} onFindBills={promptShown?undefined:findBills}/>
+  <details className="budget-allowance-tools"><summary>Category limits and moving money</summary>
+  <BudgetEveryday presentation={presentation} canWrite={canWrite} rollover={!!d.rollover?.enabled} policyManaged={!!d.rollover_policy?.timeline.length} credits={fmtCents(d.unassigned_credit_cents)} excluded={fmtCents(d.excluded_cents)}
+   onMove={()=>setTask({kind:'move'})} onLimits={()=>setTask({kind:'limits'})} onActivity={()=>setTask({kind:'match',lineId:presentation.everyday.id??''})} onReserve={()=>setTask({kind:'item',type:'reserve'})} onTransfer={()=>setTask({kind:'item',type:'contribution'})}/>
+  </details>
+  {d.recurring_unavailable&&<p className="outcome-panel text-warn">Bill suggestions couldn’t be checked in time. Your saved plan is still available, and you can add bills yourself or refresh later.</p>}
+  {d.recurring_evidence&&<BudgetBillFinder evidence={d.recurring_evidence} items={items} recurring={d.recurring} accountName={id=>s.accounts.find(a=>a.id===id)?.name??'Selected account'} canWrite={canWrite}
+   onReview={(item,proposal)=>setTask({kind:'item',type:'bill',item,proposal})}/>}
+  </div><div className="budget-overview-secondary">
+  <BudgetGoals items={items} presentation={presentation} snapshot={s} canWrite={canWrite} onAdjust={item=>setTask({kind:'item',type:'goal',item})} onMatch={item=>setTask({kind:'match',lineId:item.line_id})} onAdd={()=>setTask({kind:'item',type:'goal'})}/>
+  </div></div>
+  {task&&<ItemTask key={task.kind==='item'?`${task.kind}:${task.item?.line_id??'new'}`:task.kind} task={task} close={()=>setTask(null)} committed={()=>setTask(null)}/>}
+ </section>
+}
+
+function ItemTask({task,close,committed}:{task:Task;close:()=>void;committed:(id:string)=>void}){
+ if(task.kind==='item'&&task.type==='goal')return <BudgetTaskPanel title={task.item?'Adjust your plan':'Save for something'} onClose={close}><ItemForm task={task} committed={committed}/></BudgetTaskPanel>
+ return <LegacyItemTask task={task} close={close} committed={committed}/>
+}
+function LegacyItemTask({task,close,committed}:{task:Task;close:()=>void;committed:(id:string)=>void}){
+ const b=useBudget(),[dirty,setDirty]=useState(false),ref=useDialogFocus({fallbackSelector:'.budget-workspace h2'})
+ function leave(){if(b.busy)return;if(!dirty||window.confirm('Leave these unsaved changes? Your saved budget will stay unchanged.'))close()}
+ useEffect(()=>{const key=(e:KeyboardEvent)=>{if(e.key==='Escape'){e.preventDefault();leave()}};document.addEventListener('keydown',key);const warn=(e:BeforeUnloadEvent)=>{if(dirty){e.preventDefault();e.returnValue=''}};window.addEventListener('beforeunload',warn);return()=>{document.removeEventListener('keydown',key);window.removeEventListener('beforeunload',warn)}},[dirty,b.busy])
+ const title=task.kind==='item'?(task.item?'Adjust your plan':task.type==='goal'?'Save for something':`Add ${typeLabel[task.type].toLowerCase()}`):task.kind==='match'?'Match recorded activity':task.kind==='move'?'Move an allowance':'Choose category limits'
+ return createPortal(<div className="budget-task-backdrop"><section ref={ref} role="dialog" aria-modal="true" aria-labelledby="budget-task-title" tabIndex={-1} className="budget-task" onChangeCapture={()=>setDirty(true)}>
+  <header className="budget-task-header"><h3 id="budget-task-title" className="font-display text-xl font-bold">{title}</h3><Button variant="ghost" disabled={b.busy} onClick={leave}>Close</Button></header>
+  <div className="budget-task-body">{b.error&&<p role="alert" className="outcome-panel text-neg">{b.error}</p>}{b.pending&&<p className="outcome-panel text-warn">The save result needs checking. Close this panel to use “Check saved result”; don’t submit another change.</p>}
+  {task.kind==='item'?<ItemForm task={task} committed={committed}/>:task.kind==='match'?<MatchForm lineId={task.lineId} committed={committed}/>:task.kind==='move'?<MoveForm committed={committed}/>:<LimitsForm committed={committed}/>}</div>
+ </section></div>,document.body)
+}
+function useSubmit(committed:(id:string)=>void){const b=useBudget();return async(input:Record<string,unknown>)=>{const s=b.snapshot!;const result=await b.run({...input,plan_id:s.plan!.id,period_id:s.period!.id,expected_plan:s.plan!.version});if(result)committed(result.operation_id)}}
+
+function ItemForm({task,committed}:{task:Extract<Task,{kind:'item'}>;committed:(id:string)=>void}){
+ const b=useBudget(),s=b.snapshot!,submit=useSubmit(committed),existing=task.item,c=task.proposal?{...existing?.config,...task.proposal}:existing?.config,form=useRef<HTMLFormElement>(null)
+ const [featured,setFeatured]=useState(c?.featured??false)
+ const [name,setName]=useState(c?.name??existing?.name??''),[target,setTarget]=useState(c?.target_cents===null?'':moneyEntry(c?.target_cents??0)),[unknown,setUnknown]=useState(c?.target_cents===null),[estimated,setEstimated]=useState(c?.estimated??true)
+ const [amount,setAmount]=useState(moneyEntry(c?.amount_cents??existing?.planned_cents??0)),[opening,setOpening]=useState('0.00'),[openingDate,setOpeningDate]=useState(existing?.opening_date??s.period!.start_date)
+ const [anchor,setAnchor]=useState(c?.anchor??s.period!.start_date),[cadence,setCadence]=useState<BudgetItemConfig['cadence']>(c?.cadence??(s.plan!.frequency==='monthly'?'monthly':'fortnightly')),[due,setDue]=useState(c?.due_date??'')
+ const [state,setState]=useState<BudgetItemConfigConfigState>(c?.state??'saving'),[recurring,setRecurring]=useState(c?.recurring_id??''),[planningGoal,setPlanningGoal]=useState(c?.planning_goal_id??''),[review,setReview]=useState(false),[gapAccepted,setGapAccepted]=useState(false),[error,setError]=useState('')
+ const [id]=useState(existing?.line_id??crypto.randomUUID())
+ useEffect(()=>{setReview(false);setGapAccepted(false)},[name,target,unknown,estimated,amount,opening,openingDate,anchor,cadence,due,state,recurring,planningGoal,s.source_revision,s.plan!.version])
+ const config:BudgetItemConfig={type:task.type,name,target_cents:task.type==='goal'||task.type==='reserve'?(unknown?null:parseBudgetMoney(target)):null,estimated,due_date:due||null,cadence,anchor,amount_cents:parseBudgetMoney(amount)??0,state:unknown&&task.type==='goal'?'draft':state,recurring_id:recurring||null,planning_goal_id:planningGoal||null,featured,source_account_id:c?.source_account_id??null,source_merchant_key:c?.source_merchant_key??null}
+ let currentDelta=0,futureDelta=0,previewError=''
+ try{const termsUnchanged=existing?.config&&['amount_cents','state','cadence','anchor'].every(key=>existing.config![key as keyof BudgetItemConfig]===config[key as keyof BudgetItemConfig])
+  const current=termsUnchanged||config.state==='paused'||config.state==='purchase-recorded'?existing?.planned_cents??0:itemAllocation(config,s.period!.start_date,s.period!.end_date)
+  currentDelta=current-(existing?.planned_cents??0)
+  const nextEnd=s.plan!.frequency==='monthly'?addMonths(s.period!.end_date,1):addDays(s.period!.end_date,14)
+  futureDelta=termsUnchanged?0:itemAllocation(config,s.period!.end_date,nextEnd)-(s.future_template!.allocations.find(a=>a.line_id===id)?.amount_cents??0)
+ }catch(e){previewError=(e as Error).message}
+ const currentRemaining=(s.unallocated_cents??0)-currentDelta,futureRemaining=s.future_template!.unallocated_cents-futureDelta,gap=currentRemaining<0||futureRemaining<0
+ return <form ref={form} className="space-y-4" onSubmit={async e=>{e.preventDefault();if(!review)return;await submit({action:'save_item',line_id:id,item:config,opening_cents:existing?0:parseBudgetMoney(opening),opening_date:openingDate,accept_gap:gapAccepted})}}>
+  <fieldset disabled={!b.canWrite} className="min-w-0 space-y-4"><p className="body-copy">{task.type==='goal'?'What would you like to make possible? Give it a name and plan a manageable regular amount.':'Add the amount and actual dates. You choose what belongs in the budget; nothing is added automatically.'}</p>
+   <Label text="Name"><input className="budget-input" required maxLength={60} value={name} onChange={e=>setName(e.target.value)}/></Label>
+   {task.type==='goal'&&<label className="flex min-h-11 items-start gap-3"><input type="checkbox" checked={featured} disabled={!featured&&s.details!.items.some(i=>i.line_id!==id&&i.config?.featured&&!i.config.voided)} onChange={e=>{setFeatured(e.target.checked);setReview(false)}}/><span>Show this as my featured goal. Choose one goal to show first; adjust the current featured goal to remove it before choosing another.</span></label>}
+   {(task.type==='goal'||task.type==='reserve')&&<><label className="flex min-h-11 items-center gap-3"><input type="checkbox" checked={unknown} onChange={e=>setUnknown(e.target.checked)}/>I don’t know the price yet</label>{!unknown&&<Amount label="Target cost (AUD)" value={target} set={setTarget}/>}<label className="flex min-h-11 items-center gap-3"><input type="checkbox" checked={estimated} onChange={e=>setEstimated(e.target.checked)}/>This cost is an estimate</label><Label text="Money needed by (optional)" hint="For a flight, choose when you need to book, not when you travel."><DateInput value={due} onChange={setDue}/></Label></>}
+   <Amount label={task.type==='bill'?'Amount per bill payment (AUD)':'Amount per planned contribution (AUD)'} value={amount} set={setAmount}/>
+   <Label text={task.type==='bill'?'Payment frequency':'Contribution frequency'}><Select value={cadence} onChange={v=>setCadence(v as BudgetItemConfig['cadence'])}>{(task.type==='bill'?['once','weekly','fortnightly','monthly','quarterly','annual']:['monthly','fortnightly']).map(v=><option key={v} value={v}>{v==='fortnightly'?'Every two weeks':v}</option>)}</Select></Label>
+   <Label text={task.type==='bill'?'A payment due date':'A contribution date'} hint="This anchors the schedule. Monthly dates stay on the same day where possible."><DateInput value={anchor} onChange={setAnchor}/></Label>
+   {due&&!unknown&&config.target_cents!==null&&<span data-budget-draft-change><Button variant="ghost" onClick={()=>{try{const suggestion=dateLedAmount(config.target_cents!,existing?Math.max(0,(existing.reserve_cents??0)-existing.planned_cents+existing.net_purchases_cents):parseBudgetMoney(opening)??0,config,s.period!.start_date);if(suggestion===null)setError('No contribution dates remain before that date. Choose a later date or plan a one-off addition.');else{setAmount(moneyEntry(suggestion));setError('')}}catch{setError('Choose valid contribution and money-needed dates.')}}}>Use date-based amount</Button></span>}
+   {s.details!.planning_goals.length>0&&<Label text="Link an existing Planning goal (optional)" hint="Context only. This does not create a Planning event or change its scenario."><Select value={planningGoal} onChange={setPlanningGoal}><option value="">No Planning link</option>{s.details!.planning_goals.map(g=><option key={g.id} value={g.id}>{g.name}</option>)}</Select></Label>}
+   {!existing&&(task.type==='goal'||task.type==='reserve')&&<><Amount label="Already set aside (AUD)" value={opening} set={setOpening} hint="Existing earmarked money, not new income. Do not also include it as existing cash to use."/><Label text="Existing money set-aside date"><DateInput value={openingDate} onChange={setOpeningDate} min={s.period!.start_date} max={addDays(s.period!.end_date,-1)}/></Label></>}
+   <Label text="Plan status"><Select value={state} onChange={v=>setState(v as BudgetItemConfigConfigState)}><option value="saving">Active</option><option value="paused">Paused · preserve current reserve</option><option value="draft">Draft · no new allocations</option>{c?.state==='purchase-recorded'&&<option value="purchase-recorded">Purchase recorded · no refill</option>}</Select></Label>
+   {task.type==='bill'&&<details><summary className="min-h-11 cursor-pointer py-3">Link a confirmed recurring item (optional)</summary><p className="detail-copy text-muted">This is context, not automatic detection. Confirm the dates and amount above. Changes never cancel the merchant’s bill.</p><Select ariaLabel="Recurring item" value={recurring} onChange={setRecurring}><option value="">No link · manual bill</option>{s.details!.recurring.filter(r=>r.state==='active').map(r=><option value={r.id} key={r.id}>{r.merchant_key}{r.amount_cents!==null?` · ${fmtCents(r.amount_cents)}`:''}</option>)}</Select></details>}
+   {previewError&&<p role="alert" className="text-neg">{previewError}</p>}{error&&<p role="alert" className="text-neg">{error}</p>}
+   {!review?<Button disabled={!!previewError} onClick={()=>{if(!form.current?.reportValidity())return;if(!name.trim()||!anchor||(!unknown&&(task.type==='goal'||task.type==='reserve')&&parseBudgetMoney(target)===null)){setError('Check the name, target and contribution date.');return}setError('');setReview(true)}}>Review impact</Button>:<div className="outcome-panel space-y-3"><h4 className="font-semibold">What will change</h4><p className="body-copy">This saved period and future plan. No bank money moves and no other allowance is reduced automatically.</p><p>This period still to plan: <strong>{fmtCents(currentRemaining)}</strong></p><p>Next full period still to plan: <strong>{fmtCents(futureRemaining)}</strong></p><p className="detail-copy text-muted">Opening savings are a dated earmark, separate from bank-observed or user-confirmed evidence. Pause preserves the current amount and stops future contributions.</p>{gap&&<label className="flex min-h-11 items-start gap-3"><input type="checkbox" checked={gapAccepted} onChange={e=>setGapAccepted(e.target.checked)}/><span>I understand this leaves a funding gap in the current or future plan.</span></label>}<Button type="submit" disabled={gap&&!gapAccepted}>Save {typeLabel[task.type].toLowerCase()}</Button></div>}
+  </fieldset>
+ </form>
+}
+type BudgetItemConfigConfigState=BudgetItemConfig['state']
+
+function MatchForm({lineId,committed}:{lineId:string;committed:(id:string)=>void}){
+ const b=useBudget(),s=b.snapshot!,submit=useSubmit(committed)
+ const [page,setPage]=useState<BudgetSourcesPage|null>(null),[loading,setLoading]=useState(true),[error,setError]=useState(''),[selected,setSelected]=useState(''),[line,setLine]=useState(lineId),[amount,setAmount]=useState('0.00'),[manual,setManual]=useState(false),[note,setNote]=useState(''),[manualDate,setManualDate]=useState(s.period!.start_date),[manualId]=useState(crypto.randomUUID()),[purpose,setPurpose]=useState('expense'),[related,setRelated]=useState(''),[occurrence,setOccurrence]=useState(''),[complete,setComplete]=useState(false),[review,setReview]=useState(false)
+ useEffect(()=>{let live=true;setLoading(true);b.sources().then(p=>{if(live){setPage(p);setError('')}}).catch(e=>{if(live)setError(e.message)}).finally(()=>{if(live)setLoading(false)});return()=>{live=false}},[s.source_revision,s.plan!.version])
+ useEffect(()=>{setReview(false)},[selected,line,amount,manual,note,manualDate,purpose,related,occurrence,complete,s.source_revision,s.plan!.version])
+ const item=s.details!.items.find(i=>i.line_id===line),source=page?.rows.find(r=>r.source_key===selected),funding=manual||source?.source_type==='bank-observed'||source?.source_type==='user-confirmed'
+ async function loadMore(){if(!page?.rows.length)return;setLoading(true);try{setPage(await b.sources(page.rows.at(-1)!));setSelected('');setError('')}catch(e){setError((e as Error).message)}finally{setLoading(false)}}
+ return <form className="space-y-4" onSubmit={async e=>{e.preventDefault();if(!review)return;if(manual)await submit({action:'confirm_funding',line_id:line,purpose:'funding',manual_id:manualId,capacity_cents:parseBudgetMoney(amount),amount_cents:parseBudgetMoney(amount),confirmed_date:manualDate,note});else await submit({action:'claim_source',line_id:purpose==='exclude'?null:line,purpose:funding?'funding':source?.source_type==='refund'?'refund':purpose,source_key:selected,amount_cents:parseBudgetMoney(amount),occurrence_date:occurrence||null,occurrence_revision_id:occurrence?item?.config?.schedule_id??null:null,related_claim_id:related||null,complete})}}>
+  <p className="body-copy">Match only the money that belongs to this bill or goal. The ledger stays unchanged, and funding evidence does not create another reserve credit.</p>
+  <fieldset disabled={!b.canWrite} className="space-y-4 min-w-0"><Label text="Budget allowance"><Select value={line} onChange={setLine}>{s.details!.items.filter(i=>!i.config?.voided).map(i=><option key={i.line_id} value={i.line_id}>{i.name}</option>)}</Select></Label>
+   <label className="flex min-h-11 items-center gap-3"><input type="checkbox" checked={manual} onChange={e=>setManual(e.target.checked)}/>I’m confirming a savings earmark, not matching a bank transfer</label>
+   {manual?<><Label text="What did you set aside?" hint="This is your confirmation, not verified bank activity. Do not reconfirm money you already matched."><input className="budget-input" maxLength={200} required value={note} onChange={e=>setNote(e.target.value)}/></Label><Label text="Confirmation date"><DateInput value={manualDate} onChange={setManualDate} max={addDays(s.period!.end_date,-1)}/></Label></>:<>
+    {loading&&<OperationStatusPanel state="working" title="Loading recorded activity" description="Reading a complete, paginated source list."/>}{error&&<p role="alert" className="text-neg">{error}</p>}
+    <Label text="Recorded activity"><Select value={selected} onChange={key=>{setSelected(key);const source=page?.rows.find(r=>r.source_key===key);if(source)setAmount(moneyEntry(Math.max(0,source.available_cents)))}}><option value="">Choose an entry</option>{page?.rows.map(r=><option key={r.source_key} value={r.source_key} disabled={r.available_cents<=0}>{r.booking_date} · {r.identity.merchant??r.identity.note??(r.source_type==='bank-observed'?'Linked bank transfer':'Activity')} · {fmtCents(r.available_cents)} available</option>)}</Select></Label>
+    {page&&<p className="detail-copy text-muted">{page.total} source entries in the saved period. Showing up to 50; totals are not truncated.</p>}{page?.has_more&&<Button variant="ghost" disabled={loading} onClick={()=>void loadMore()}>Next activity page</Button>}
+    {source?.source_type==='expense'&&<Label text="How should this count?"><Select value={purpose} onChange={setPurpose}><option value="expense">Bill or reserve spending</option><option value="purchase">Purchase for this goal</option><option value="exclude">Explicitly exclude from budget allowances</option></Select></Label>}
+    {source?.source_type==='refund'&&<Label text="Refund belongs to which earlier purchase?"><Select value={related} onChange={setRelated}><option value="">Choose the original matched expense</option>{s.details!.claims.filter(c=>c.line_id===line&&c.valid&&['expense','purchase'].includes(c.purpose)).map(c=><option key={c.id} value={c.id}>{c.source_date} · {fmtCents(c.amount_cents)}</option>)}</Select></Label>}
+    {item?.occurrences.length&&source?.source_type==='expense'&&purpose==='expense'?<Label text="Bill payment due date"><Select value={occurrence} onChange={setOccurrence}><option value="">Choose the payment</option>{item.occurrences.map(o=><option key={o.date} value={o.date}>{o.date} · {fmtCents(o.expected_cents)} expected</option>)}</Select></Label>:null}
+    {purpose==='purchase'&&item?.config?.type==='goal'&&<label className="flex min-h-11 items-start gap-3"><input type="checkbox" checked={complete} onChange={e=>setComplete(e.target.checked)}/>This completes the intended purchase. Stop future contributions; preserve the achievement and any remaining reserve.</label>}
+   </>}
+   <Amount label="Amount to match (AUD)" value={amount} set={setAmount}/>
+   {!review?<Button disabled={loading||(!manual&&!selected)} onClick={()=>setReview(true)}>Review match</Button>:<div className="outcome-panel space-y-3"><p className="body-copy">{manual?'Record your confirmation of a savings earmark.':funding?'Record funding evidence only, without adding a second allocation.':source?.source_type==='refund'?'Restore the matched reserve once, on the refund booking date.':'Assign this part of the expense once; it will not also be everyday spending.'} No ledger entry or bank balance changes.</p><Button type="submit">Save match</Button></div>}
+   <details><summary className="min-h-11 cursor-pointer py-3">Review existing matches</summary><ul className="space-y-3">{s.details!.claims.filter(c=>c.line_id===line).map(c=><li key={c.id}><p>{c.source_date} · {c.purpose} · {fmtCents(c.amount_cents)} · {c.valid?c.provenance:'Source changed — review needed'}</p><Button variant="ghost" onClick={()=>{if(window.confirm('Reverse this match? The source activity stays in the ledger.'))void submit({action:'reverse_claim',claim_id:c.id})}}>Reverse match</Button></li>)}</ul></details>
+  </fieldset>
+ </form>
+}
+function MoveForm({committed}:{committed:(id:string)=>void}){
+ const b=useBudget(),items=b.snapshot!.details!.items.filter(i=>!i.config?.voided),submit=useSubmit(committed)
+ const [from,setFrom]=useState(items[0]?.line_id??''),[to,setTo]=useState(items[1]?.line_id??''),[amount,setAmount]=useState('0.00'),[review,setReview]=useState(false),[release,setRelease]=useState(false)
+ const source=items.find(i=>i.line_id===from),destination=items.find(i=>i.line_id===to)
+ useEffect(()=>setReview(false),[from,to,amount,release,b.snapshot?.source_revision,b.snapshot?.plan?.version])
+ const invalid=from===to||(release&&(source?.kind!=='reserve'||!['reserve','everyday'].includes(destination?.kind??'')))
+ return <form className="space-y-4" onSubmit={e=>{e.preventDefault();if(review)void submit({action:release?'release_reserve':'move_allocation',from_line_id:from,to_line_id:to,amount_cents:parseBudgetMoney(amount)})}}>
+  <fieldset disabled={!b.canWrite} className="space-y-4">
+   <p className="body-copy">Both sides change together. Moving from a bill or goal reduces its protection; no bank money moves.</p>
+   <Label text="From"><Select value={from} onChange={setFrom}>{items.map(i=><option value={i.line_id} key={i.line_id}>{i.name}</option>)}</Select></Label>
+   <Label text="To"><Select value={to} onChange={setTo}>{items.map(i=><option value={i.line_id} key={i.line_id}>{i.name}</option>)}</Select></Label>
+   <label className="flex min-h-11 items-start gap-3"><input type="checkbox" checked={release} disabled={source?.kind!=='reserve'} onChange={e=>setRelease(e.target.checked)}/>Release existing reserve rights instead of moving unused new allocation</label>
+   <Amount label="Amount to move (AUD)" value={amount} set={setAmount}/>
+   <p className="detail-copy text-muted">{release?'The source reserve falls and the destination gains the same earmarked amount. New resources and allocations are unchanged. Any target gap may increase.':'Unused new allocation moves in this period only. Money already spent cannot be moved. Future periods stay unchanged.'}</p>
+   {review?<div className="outcome-panel"><p className="body-copy mb-3">{release?'Release':'Move'} {fmtCents(parseBudgetMoney(amount)??0)} from {source?.name} to {destination?.name}. The source has less protection; check its bills or target before continuing.</p><Button type="submit" disabled={invalid}>Save allowance move</Button></div>:<Button disabled={invalid} onClick={()=>setReview(true)}>Review move</Button>}
+  </fieldset>
+ </form>
+}
+function LimitsForm({committed}:{committed:(id:string)=>void}){
+ const b=useBudget(),s=b.snapshot!,submit=useSubmit(committed),[limits,setLimits]=useState(s.details!.limits),[category,setCategory]=useState(''),[amount,setAmount]=useState('0.00'),[review,setReview]=useState(false)
+ const [scope,setScope]=useState('')
+ const categories=s.details!.taxonomy
+ const scopes=s.details!.taxonomy_scopes??[],choice=scopes.find(x=>x.key===scope)
+ const allocated=limits.reduce((sum,l)=>sum+BigInt(l.amount_cents),0n),pool=s.details!.items.find(i=>i.kind==='everyday')!.planned_cents
+ const remaining=BigInt(pool)-allocated
+ const duplicate=limits.some(l=>l.category_id===category&&l.subcategory_id===(choice?.subcategory_id??null)&&l.custom_subcategory_id===(choice?.custom_subcategory_id??null))
+ function addLimit(){
+  const overlaps=limits.filter(l=>l.category_id===category&&(!choice||(!l.subcategory_id&&!l.custom_subcategory_id)))
+  if(overlaps.length&&!window.confirm('Replace the overlapping category limit? Its allocation and activity return to Other unless included in the new limit. The everyday total will not change.'))return
+  setLimits([...limits.filter(l=>!overlaps.includes(l)),{id:crypto.randomUUID(),category_id:category,subcategory_id:choice?.subcategory_id??null,custom_subcategory_id:choice?.custom_subcategory_id??null,amount_cents:parseBudgetMoney(amount)!}]);setReview(false)
+ }
+ return <form className="space-y-4" onSubmit={e=>{e.preventDefault();if(review)void submit({action:'set_limits',limits:limits.map(({id,category_id,subcategory_id,custom_subcategory_id,amount_cents})=>({id,category_id,subcategory_id,custom_subcategory_id,amount_cents}))})}}>
+  <fieldset disabled={!b.canWrite} className="space-y-4">
+   <p className="body-copy">Optional limits divide your everyday allowance; they do not add to it. Removing a limit moves its budget and known spending back into Other.</p>
+   <ul className="space-y-3">{limits.map(l=><li className="flex flex-wrap items-center justify-between gap-2" key={l.id}><span>{categories.find(c=>c.id===l.category_id)?.name??l.category_id} · {fmtCents(l.amount_cents)}</span><Button variant="ghost" onClick={()=>{setLimits(limits.filter(x=>x.id!==l.id));setReview(false)}}>Remove {categories.find(c=>c.id===l.category_id)?.name??l.category_id}</Button></li>)}</ul>
+   <Label text="Category"><Select value={category} onChange={v=>{setCategory(v);setScope('');setReview(false)}}><option value="">Choose a category</option>{categories.map(c=><option value={c.id} key={c.id}>{c.name}</option>)}</Select></Label>
+   {category&&<Label text="More specific limit (optional)"><Select value={scope} onChange={v=>{setScope(v);setReview(false)}}><option value="">Whole category</option>{scopes.filter(x=>x.category_id===category).map(x=><option key={x.key} value={x.key}>{x.name}{x.custom_subcategory_id?' · Custom':''}</option>)}</Select></Label>}
+   <Amount label="Category allowance (AUD)" value={amount} set={setAmount}/>
+   <Button variant="ghost" disabled={!category||parseBudgetMoney(amount)===null||duplicate||limits.length>=50} onClick={addLimit}>Add category limit</Button>
+   <p className="body-copy">Other everyday allowance: {remaining>=-BigInt(Number.MAX_SAFE_INTEGER)?fmtCents(Number(remaining)):'Total exceeds the supported range'} of {fmtCents(pool)}.</p>
+   {review?<div className="outcome-panel"><p className="body-copy mb-3">These limits apply to this saved period. The everyday total stays unchanged. Removed limits do not erase any spending.</p><Button type="submit" disabled={allocated>BigInt(pool)}>Save category limits</Button></div>:<Button disabled={allocated>BigInt(pool)} onClick={()=>setReview(true)}>Review limits</Button>}
+  </fieldset>
+ </form>
+}

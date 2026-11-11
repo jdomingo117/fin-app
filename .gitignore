@@ -1,0 +1,29 @@
+# Local database backups can contain authentication identities and financial data.
+backups/*.dump
+backups/*.sql
+backups/*.tar
+
+/backups/budget-m7/
+
+# OS, editor and tool caches
+.DS_Store
+.smart-env/
+node_modules/
+*.tsbuildinfo
+.temp/
+
+# Machine-specific Claude Code settings (contain local paths)
+.claude/settings.local.json
+
+# Real bank statements used by the local corpus tests. Private: never commit.
+# The tests skip when this folder is absent.
+/Sample datasets/
+
+# Local database backups (real data), wherever they sit in the repo.
+/backups/
+
+# Generated verification evidence written by app/scripts. The README.md
+# summaries next to them stay tracked; regenerate the rest by rerunning scripts.
+/docs/**/*.png
+/docs/**/*.json
+/docs/**/*.log

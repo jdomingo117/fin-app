@@ -64,6 +64,8 @@ hand to find the transfer-linker gap.
 
 ## Recent changes
 
+- 2026-11-13 — Budget plan editor and manual setup edit amounts in a table that shows what changed.
+
 - 2026-11-12 — Budget My plan table explains each figure in a formula bar, marks incomplete figures and shows an even-pace tick.
 
 - 2026-11-12 — Budget My plan is now a read-only table with group totals and a money split bar (migration 20261112020000).
@@ -82,6 +84,5 @@ hand to find the transfer-linker gap.
 
 - 2026-11-11 — Budget assistance keeps history-based amounts when circumstances changed, clearing only what the owner says changed.
 
-- 2026-11-11 — Budget assistance amounts are one pre-filled review screen with suggested pay dates and a single final confirmation.
 
 

@@ -737,3 +737,25 @@ button.budget-sheet-name:focus-visible { outline: 2px solid var(--color-accent-i
 .budget-sheet-key-pace { display: inline-block; width: 2px; height: 12px; border-radius: 1px; background: var(--color-ink); }
 .budget-sheet-key-flag { display: inline-block; width: 0; height: 0; border-top: 8px solid var(--color-warn); border-left: 8px solid transparent; }
 @media (prefers-reduced-motion: reduce) { button.budget-sheet-name { transition: none; } }
+
+/* Budget table stage 3: editing planned amounts in the table. Same fields and validation as before. */
+.budget-sheet--edit td { vertical-align: middle; }
+.budget-sheet-input { width: 100%; max-width: 160px; min-width: 0; margin-left: auto; display: block; text-align: right; font-variant-numeric: tabular-nums; }
+.budget-sheet-name-input { width: 100%; font-weight: 600; }
+.budget-sheet--edit th[scope="row"] { vertical-align: middle; }
+.budget-sheet-remove { margin-top: 6px; font-size: 13px; }
+.budget-sheet--edit tbody tr:not(.budget-sheet-group-row) { cursor: default; }
+.budget-sheet--edit tbody tr:not(.budget-sheet-group-row):hover > * { background: transparent; }
+.budget-sheet--edit tbody tr.budget-sheet-changed > *, .budget-sheet--edit tbody tr.budget-sheet-changed:hover > * { background: var(--accent-wash); }
+.budget-sheet-changed .budget-sheet-note { color: var(--color-accent-ink); font-weight: 600; }
+.budget-sheet-input:invalid { border-color: var(--color-neg); }
+@media (max-width: 599px) {
+  /* Stack each editable row on phones. Every input keeps its own accessible label. */
+  .budget-sheet--edit, .budget-sheet--edit tbody, .budget-sheet--edit tr, .budget-sheet--edit th, .budget-sheet--edit td { display: block; width: 100%; }
+  .budget-sheet--edit thead { display: none; }
+  .budget-sheet--edit tbody tr:not(.budget-sheet-group-row) { padding: 12px 12px 4px; border-bottom: 1px solid var(--hair-soft); }
+  .budget-sheet--edit tbody tr:not(.budget-sheet-group-row) > th, .budget-sheet--edit tbody tr:not(.budget-sheet-group-row) > td { padding: 0 0 10px; border: 0; text-align: left; white-space: normal; }
+  .budget-sheet--edit td[data-label]::before { content: attr(data-label); display: block; margin-bottom: 6px; font-size: 12px; font-weight: 700; color: var(--color-muted); }
+  .budget-sheet--edit td.budget-sheet-edit-empty { display: none; }
+  .budget-sheet-input { max-width: none; margin-left: 0; text-align: left; }
+}

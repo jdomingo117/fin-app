@@ -955,6 +955,9 @@ group total and summary row name is a toggle button whose plain working comes fr
 (the everyday pool states the hero's identity; category rows list parts without an equation) plus the
 values' qualification text. Known values with qualification reasons get a corner mark; current-period
 everyday rows with a spending bar get an even-pace tick from `remainingDays`. No new reads or arithmetic.
+Stage 3a ([[BUDGET_TABLE_STAGE_3A]]): `components/budget/BudgetEditTable.tsx` replaces the stacked allowance
+fields in `BudgetEditor` for both Adjust plan and manual setup. It keeps the same field labels and validation, shows
+"Saved"/"Changed from" against `snapshot.lines`, and Enter moves down a column. Review, scope, gap and save bodies are unchanged.
 
 `components/budget/BudgetHistory.tsx` presents existing lifecycle facts and immutable
 saved review payloads; it does not calculate history or construct commands.

@@ -23,6 +23,7 @@ import BudgetTaskPanel from '../components/BudgetTaskPanel'
 import BudgetPlan from '../components/budget/BudgetPlan'
 import BudgetHistoryCoverage from '../components/budget/BudgetHistoryCoverage'
 import {assistanceSteps,AssistanceStepIcon} from '../components/budget/BudgetAssistanceSteps'
+import BudgetEditTable from '../components/budget/BudgetEditTable'
 
 const purposeNames={everyday:'Everyday spending',fixed:'Regular bills',reserve:'Set money aside',contribution:'Planned transfer'}
 function Field({label,children,hint}:{label:string;children:ReactNode;hint?:string}) {
@@ -183,10 +184,11 @@ function BudgetEditor({setup,active,onAssistance}:{setup:Setup;active:boolean;on
       {active?<MoneyField label="Existing cash to use this period (AUD)" value={setup.opening_drawdown_cents} onChange={opening_drawdown_cents=>change({...setup,opening_drawdown_cents})} hint="An optional, one-off top-up. Do not include money already set aside in a reserve. This will not repeat in future periods."/>:<details className="budget-setup-option"><summary>Use existing cash (optional){setup.opening_drawdown_cents>0&&` · ${fmtCents(setup.opening_drawdown_cents)}`}</summary><MoneyField label="Existing cash to use this period (AUD)" value={setup.opening_drawdown_cents} onChange={opening_drawdown_cents=>change({...setup,opening_drawdown_cents})} hint="An optional, one-off top-up. Do not include money already set aside in a reserve. This will not repeat in future periods."/></details>}
     </div></div>
     <div className="glass p-5 space-y-4"><Heading className="font-semibold">{active?'Your allowances':'Give the money a job'}</Heading><p className="body-copy">Everyday spending is for flexible costs. Add a separate allowance if you want to plan for bills or put money aside. These amounts do not move money.</p>
-      {setup.lines.map(line=><div key={line.id} className="budget-line"><div className="grid gap-4 md:grid-cols-2">{active?<div><strong>{line.name}</strong><p className="detail-copy text-muted">{purposeNames[line.kind]}</p></div>:<Field label={`Allowance name · ${purposeNames[line.kind]}`}><input required maxLength={60} className="budget-input" value={line.name} onChange={e=>lineChange(line.id,{name:e.target.value})}/></Field>}
-      <MoneyField label={`Planned for ${line.name||'this allowance'} (AUD)`} value={line.allocation_cents} onChange={allocation_cents=>lineChange(line.id,{allocation_cents})}/>
-      {!active&&line.kind==='reserve'&&<MoneyField label={`Already set aside for ${line.name||'this reserve'} (AUD)`} value={line.opening_cents} onChange={opening_cents=>lineChange(line.id,{opening_cents})} hint="Existing money at the start date, not new income or verified savings progress."/>}</div>
-      {!active&&line.kind!=='everyday'&&<Button variant="ghost" onClick={()=>change({...setup,lines:setup.lines.filter(l=>l.id!==line.id)})}>Remove {line.name||'allowance'}</Button>}</div>)}
+      <BudgetEditTable setup={setup} active={active} saved={new Map((active?s.lines??[]:[]).map(l=>[l.id,l.allocation_cents]))}
+        goals={new Set((s.details?.items??[]).filter(i=>i.config?.type==='goal').map(i=>i.line_id))}
+        onLine={lineChange} onRemove={id=>change({...setup,lines:setup.lines.filter(l=>l.id!==id)})}/>
+      {!active&&setup.lines.some(l=>l.kind==='reserve')&&<p className="detail-copy text-muted">“Already set aside” is existing money at the start date, not new income or verified savings progress.</p>}
+      <p className="detail-copy text-muted">Press Enter to move to the next amount. Nothing is saved until you review and save.</p>
       {!active&&setup.lines.length<100&&<div className="flex flex-wrap gap-2">{(['fixed','reserve','contribution'] as const).map(kind=><Button key={kind} variant="ghost" onClick={()=>change({...setup,lines:[...setup.lines,{id:crypto.randomUUID(),kind,name:purposeNames[kind],allocation_cents:0,opening_cents:0}]})}>Add {purposeNames[kind].toLowerCase()}</Button>)}</div>}
       {!active&&<p className="detail-copy text-muted">Start with simple allowances here. After activation, add goal targets and dates—or finish setting up an allowance in Bills and things you’re saving for. No funding is confirmed automatically.</p>}
     </div>

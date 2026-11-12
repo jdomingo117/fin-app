@@ -62,6 +62,30 @@ This stage builds on the owner's decision: edited auto-build suggestions are rel
     on the detected-bill button `aria-label="Add Shop as a bill"` at 320px. That
     button comes from the 11 Nov detected-bills work, not this stage. Its visible
     text doesn't match its accessible name. The checks after it didn't run.
+- **Follow-up, 13 Nov:** `--assistance-ui-only` on a disposable candidate project
+  (`--candidate-alternate`, ports 57721/57800) now passes end to end: 273 checks, no
+  failures, disposable resources removed. Changes:
+  - Detected-bill button: its accessible name is now "Add as a bill: Shop", which starts
+    with the visible text, so `label-content-name-mismatch` is gone.
+  - Product fix: re-choosing the same "Have your income, bills or regular spending
+    changed recently?" answer used to clear the reviewed amounts without the inputs panel
+    re-sending them. Choosing "Enter my own amounts" then gave a blank editor, and the
+    new goal was lost. Only a real change of answer clears them now, so the existing
+    "manual conversion" check passes without being changed.
+  - The tests were brought up to date with the 11–12 Nov assistance changes, without
+    loosening any checks:
+    - the per-item "I checked the income" tick is gone, and the single "I’ve checked
+      these amounts" tick covers income;
+    - the assistance dialog lists accounts directly, without an "Accounts & timezone"
+      disclosure;
+    - take-home pay entered and confirmed in the review is applied: the owner's 750
+      replaces the draft's 700, and the test still asserts the exact value;
+    - the fortnightly eligibility copy is now "2 of 6 months ready … Suggestions need 3."
+  - New shared helper `selectAssistanceAccount` (`scripts/lib/budgetAssistanceUI.mjs`)
+    keeps trying to tick the account until it stays ticked. Spending-account pre-selection
+    loads in the background and could land in the middle of a Playwright click, unticking
+    the account again.
+  - Unit tests: 596 pass, 32 skipped; the type check is clean.
 
 ## Limits
 

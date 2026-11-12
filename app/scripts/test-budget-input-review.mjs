@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import {randomUUID} from 'node:crypto'
 import {expect} from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
-import {confirmBudgetAssistance} from './lib/budgetAssistanceUI.mjs'
+import {confirmBudgetAssistance,selectAssistanceAccount} from './lib/budgetAssistanceUI.mjs'
 
 /** Called only by the positively guarded fresh disposable Budget runner. */
 export async function runBudgetInputReviewChecks({newUser,sql,quote,check,edge,signedPage,snapshotSQL,assistanceFixture,sqlAsync}){
@@ -107,8 +107,8 @@ export async function runBudgetInputReviewChecks({newUser,sql,quote,check,edge,s
  await page.getByLabel('Already set aside for Protected trip (AUD)',{exact:true}).fill('100')
  async function history(){
   await page.getByRole('button',{name:'Check history for this draft',exact:true}).click()
-  await page.getByText(/^Accounts & timezone/).click()
-  await page.getByRole('checkbox',{name:/Input review fictional account/}).check()
+  // The assistance dialog lists accounts directly since 2026-11-11 (no Accounts & timezone disclosure).
+  await selectAssistanceAccount(page,/Input review fictional account/)
   await page.getByRole('button',{name:'Check my history',exact:true}).click()
   await expect(page.getByRole('heading',{name:'Your history is ready'})).toBeVisible()
  }
@@ -119,7 +119,7 @@ export async function runBudgetInputReviewChecks({newUser,sql,quote,check,edge,s
  await history()
  void 0
  await page.getByLabel(/Have your income/).selectOption('no')
- await page.getByRole('checkbox',{name:/I checked the income/}).check()
+ // One final "I’ve checked these amounts" tick replaced per-item income ticks on 2026-11-11; until it is ticked the draft can't be used.
  await expect(page.getByRole('button',{name:'Use this draft',exact:true})).toBeDisabled()
  await confirmBudgetAssistance(page,pay,{keepIncome:true})
  void 0
@@ -133,7 +133,6 @@ export async function runBudgetInputReviewChecks({newUser,sql,quote,check,edge,s
  await expect(page.getByRole('checkbox',{name:/I’ve checked these amounts/})).not.toBeChecked()
  void 0
  void 0
- await page.getByRole('checkbox',{name:/I checked the income/}).check()
  await confirmBudgetAssistance(page,pay,{keepIncome:true})
  for(const width of [390,1440])for(const dark of [false,true]){
   await page.setViewportSize({width,height:1050});await page.evaluate(value=>document.documentElement.classList.toggle('dark',value),dark)
@@ -143,7 +142,8 @@ export async function runBudgetInputReviewChecks({newUser,sql,quote,check,edge,s
   await page.screenshot({path:`/tmp/halcyon-r04-${width}-${dark?'dark':'light'}.png`,fullPage:true})
  }
  await page.getByRole('button',{name:'Use this draft',exact:true}).click()
- await expect(page.getByLabel('Expected income this period (AUD)',{exact:true})).toHaveValue('700.00')
+ // Since 2026-11-11 take-home pay is always applied once the final tick confirms it: the owner's 750 replaces the draft's 700.
+ await expect(page.getByLabel('Expected income this period (AUD)',{exact:true})).toHaveValue('750.00')
  await expect(page.getByLabel('Existing cash to use this period (AUD)',{exact:true})).toHaveValue('50.00')
  await expect(page.getByLabel('Planned for Everyday spending (AUD)',{exact:true})).toHaveValue('100.00')
  await expect(page.getByLabel('Planned for Protected rent (AUD)',{exact:true})).toHaveValue('200.00')
@@ -164,7 +164,7 @@ export async function runBudgetInputReviewChecks({newUser,sql,quote,check,edge,s
  await expect(page.getByRole('region',{name:'Individual setup input review',exact:true})).toContainText(pay)
  await page.getByRole('button',{name:'Check history for this draft',exact:true}).click()
  await page.getByRole('button',{name:'Check my history',exact:true}).click()
- void 0;await page.getByLabel(/Have your income/).selectOption('no');await page.getByRole('checkbox',{name:/I checked the income/}).check()
+ void 0;await page.getByLabel(/Have your income/).selectOption('no')
  await confirmBudgetAssistance(page,pay,{keepIncome:true})
  await page.getByRole('button',{name:'Use this draft',exact:true}).click()
  await saveDraft()

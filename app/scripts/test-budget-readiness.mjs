@@ -1,4 +1,4 @@
-import {confirmBudgetAssistance} from './lib/budgetAssistanceUI.mjs'
+import {confirmBudgetAssistance,selectAssistanceAccount} from './lib/budgetAssistanceUI.mjs'
 import assert from 'node:assert/strict'
 import AxeBuilder from '@axe-core/playwright'
 import {expect} from '@playwright/test'
@@ -44,12 +44,11 @@ export async function runBudgetReadinessChecks({newUser,sql,quote,check,edge,sig
   const page=await signedPage(u,390,false)
   await page.getByRole('button',{name:'Help me build a budget',exact:true}).click()
   await page.getByLabel('Start with the period containing').fill(dates.today)
-  await page.getByRole('checkbox',{name:/Readiness fictional account/}).check()
+  await selectAssistanceAccount(page,/Readiness fictional account/)
   await page.getByRole('button',{name:'Check my history',exact:true}).click()
   try{await expect(page.getByRole('heading',{name:'Your history is ready'})).toBeVisible({timeout:10000})}catch(e){console.log('R03 fictional result:',query());console.log('R03 fictional UI:',await page.locator('.budget-workspace').innerText());throw e}
   void 0
   await page.getByLabel(/Have your income/).selectOption('no')
-  await page.getByRole('checkbox',{name:/I checked the income/}).check()
   await confirmBudgetAssistance(page,dates.today)
   await page.getByRole('checkbox',{name:/Try moving some everyday money elsewhere/}).check()
   await page.getByLabel('Amount to move out of everyday spending').fill('69.01')

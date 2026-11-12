@@ -12,15 +12,21 @@ import type {AssistanceRequest,AssistanceResult} from '../lib/budgetAssistance'
 import { useBudgetNavigationGuard, type BudgetNavigationGuard } from '../hooks/useBudgetNavigationGuard'
 
 class BudgetApiError extends Error {
-  constructor(message:string,readonly definitive:boolean,readonly code?:string){super(message)}
+  constructor(message:string,readonly definitive:boolean,readonly code?:string,readonly retryAfter?:number){super(message)}
 }
+// A refresh that is rate limited waits this long at most before one more try.
+const READ_RETRY_LIMIT_SECONDS=65
 async function invoke<T>(name:string,body:unknown):Promise<T> {
   const {data,error}=await supabase.functions.invoke(name,{body:body as Record<string,unknown>})
   if(error) {
     const response=error.context instanceof Response?error.context:null
-    let detail:{message?:string;code?:string}|null=null
+    let detail:{message?:string;code?:string;retry_after?:unknown}|null=null
     try{detail=response?await response.clone().json():null}catch{}
-    const definitive=!!response && ([400,401,403,404,409,413,422,429].includes(response.status)||detail?.code==='disabled')
+    if(response?.status===429) {
+      const wait=Number(detail?.retry_after??response.headers.get('Retry-After'))
+      throw new BudgetApiError('Budget had too many requests in the last minute. Wait a minute, then refresh.',true,'rate_limited',Number.isFinite(wait)&&wait>0?wait:undefined)
+    }
+    const definitive=!!response && ([400,401,403,404,409,413,422].includes(response.status)||detail?.code==='disabled')
     throw new BudgetApiError(detail?.message??'We couldn’t confirm the result. Your edits are still here.',definitive,detail?.code)
   }
   if(!data||typeof data!=='object')throw new BudgetApiError('The Budget response was incomplete. Please check again.',false)
@@ -98,11 +104,23 @@ function BudgetSession({children,identity,tenantId,owner,guardResolver,requestNa
     if(!identity)return
     const generation=++sequence.current;setLoading(true);setReadState('loading')
     let checkingHistory=false
+    const load=()=>Promise.all([
+      invoke<Snapshot|PreparingWorkspace>('query-budget',{action:'workspace',...(selectedPeriod?{period_id:selectedPeriod}:{})}),
+      owner?invoke<Draft>('query-budget',{action:'draft'}):Promise.resolve(null),
+    ])
     try {
-      const [loaded,nextDraft]=await Promise.all([
-        invoke<Snapshot|PreparingWorkspace>('query-budget',{action:'workspace',...(selectedPeriod?{period_id:selectedPeriod}:{})}),
-        owner?invoke<Draft>('query-budget',{action:'draft'}):Promise.resolve(null),
-      ])
+      let first
+      try{first=await load()}
+      catch(e){
+        // A refresh straight after a saved change (or Undo) can reach the read
+        // limit. Wait for the window the server names and read once more, so the
+        // owner sees the saved figures instead of a stale "may be out of date" view.
+        if(!(e instanceof BudgetApiError&&e.code==='rate_limited'&&e.retryAfter&&e.retryAfter<=READ_RETRY_LIMIT_SECONDS))throw e
+        await new Promise(r=>setTimeout(r,e.retryAfter!*1000+250))
+        if(!mounted.current||generation!==sequence.current)return
+        first=await load()
+      }
+      const [loaded,nextDraft]=first
       let next=loaded
       for(let batch=0;isPreparing(next)&&batch<4;batch++){
         if(!mounted.current||generation!==sequence.current)return

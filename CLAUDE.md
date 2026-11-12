@@ -66,6 +66,8 @@ hand to find the transfer-linker gap.
 
 - 2026-11-13 — Budget auto-build review lists every draft line with where its amount came from; edits relabel only that row.
 
+- 2026-11-13 — Rate-limited Budget refreshes wait out the server's retry_after and read again, so Undo no longer leaves stale "may be out of date" figures.
+
 - 2026-11-13 — Budget plan editor and manual setup edit amounts in a table that shows what changed.
 
 - 2026-11-12 — Budget My plan table explains each figure in a formula bar, marks incomplete figures and shows an even-pace tick.
@@ -81,9 +83,3 @@ hand to find the transfer-linker gap.
 - 2026-11-12 — Budget overview turns unplanned pay into a visible next step (bills, a goal, or keep as a buffer).
 
 - 2026-11-12 — Budget overview names accounts whose imports or sync are behind instead of showing a confident $0 spent; the shell footer shows real bank-sync status.
-
-- 2026-11-11 — Rewrote Budget assistance copy for beginners, with calculation detail moved into one "How we worked this out" disclosure.
-
-
-
-

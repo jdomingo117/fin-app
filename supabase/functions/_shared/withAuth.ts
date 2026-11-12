@@ -160,7 +160,9 @@ export function withAuth<TSchema extends z.ZodTypeAny>(
       const fnName = new URL(req.url).pathname.split('/').filter(Boolean).pop() ?? 'fn'
       const limited = await rateLimit(`fn:${fnName}:${user.id}`, rule)
       if (!limited.allowed) {
-        return json({ error: 'Too many requests' }, 429, {
+        // retry_after repeats the header in the body: a browser cannot read
+        // Retry-After cross-origin because it is not CORS-exposed.
+        return json({ error: 'Too many requests', code: 'rate_limited', retry_after: limited.retryAfter }, 429, {
           ...cors,
           'Retry-After': String(limited.retryAfter),
         })

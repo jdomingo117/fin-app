@@ -28,12 +28,14 @@ function MoneyCell({label,value,onChange,column}:{label:string;value:number;onCh
  * The plan's allowances as an editable table. It edits the same Setup lines the form did, with the same
  * field labels and validation; review, scope, gap acceptance and saving stay with the editor.
  */
-export default function BudgetEditTable({setup,active,saved,goals,onLine,onRemove}:{
+export default function BudgetEditTable({setup,active,saved,goals,sources=new Map(),onLine,onRemove}:{
   setup:Setup;active:boolean;
   /** Saved allocation per line for an active plan, shown so changes are visible. */
   saved:Map<string,number>;
   /** Lines that are savings goals in the saved plan. */
   goals:Set<string>;
+  /** For an assisted draft: where each amount came from ("From your history", "Your number"…). */
+  sources?:Map<string,string>;
   onLine:(id:string,patch:Partial<Line>)=>void;onRemove:(id:string)=>void;
 }){
   const showOpening=!active&&setup.lines.some(l=>l.kind==='reserve')
@@ -50,12 +52,32 @@ export default function BudgetEditTable({setup,active,saved,goals,onLine,onRemov
               <th scope="row">
                 {active?<span className="budget-sheet-name">{line.name}</span>
                   :<input required maxLength={60} className="budget-input budget-sheet-name-input" aria-label={`Allowance name · ${purposeNames[line.kind]}`} value={line.name} onChange={e=>onLine(line.id,{name:e.target.value})}/>}
-                <span className="budget-sheet-note">{changed?`Changed from ${fmtCents(was)}`:active&&was!==undefined?`Saved ${fmtCents(was)}`:purposeNames[line.kind]}</span>
+                <span className={`budget-sheet-note${sources.get(line.id)==='Your number'?' budget-sheet-source--own':''}`} data-line-source={sources.get(line.id)}>{changed?`Changed from ${fmtCents(was)}`:active&&was!==undefined?`Saved ${fmtCents(was)}`:sources.has(line.id)?`${purposeNames[line.kind]} · ${sources.get(line.id)}`:purposeNames[line.kind]}</span>
                 {!active&&line.kind!=='everyday'&&<button type="button" className="budget-text-action budget-sheet-remove" onClick={()=>onRemove(line.id)}>Remove {line.name||'allowance'}</button>}
               </th>
               <td data-label="Planned"><MoneyCell column="planned" label={`Planned for ${line.name||'this allowance'} (AUD)`} value={line.allocation_cents} onChange={allocation_cents=>onLine(line.id,{allocation_cents})}/></td>
               {showOpening&&<td data-label="Already set aside" className={line.kind==='reserve'?undefined:'budget-sheet-edit-empty'}>{line.kind==='reserve'?<MoneyCell column="opening" label={`Already set aside for ${line.name||'this reserve'} (AUD)`} value={line.opening_cents} onChange={opening_cents=>onLine(line.id,{opening_cents})}/>:<span className="budget-sheet-none">—<span className="sr-only">Not applicable</span></span>}</td>}
             </tr>})}
+        </tbody>})}
+    </table>
+  </div>
+}
+
+/** Read-only draft table for the assisted review step: every line, its planned amount and where it came from. */
+export function BudgetDraftTable({setup,sources,goalLine}:{setup:Setup;sources:Map<string,string>;goalLine?:string}){
+  const keyOf=(l:Line)=>l.kind==='reserve'&&l.id===goalLine?'goal':l.kind
+  return <div className="budget-sheet-wrap">
+    <table className="budget-sheet budget-sheet--draft">
+      <caption className="sr-only">Every line in this draft, its planned amount and where the amount came from. Nothing is saved yet.</caption>
+      <thead><tr><th scope="col" className="budget-sheet-col-name">Item</th><th scope="col">Planned</th><th scope="col">Where it came from</th></tr></thead>
+      {groups.map(g=>{const rows=setup.lines.filter(l=>keyOf(l)===g.key);if(!rows.length)return null
+        return <tbody key={g.key} className="budget-sheet-group" data-sheet-group={g.key}>
+          <tr className="budget-sheet-group-row"><th scope="colgroup" colSpan={3}>{g.title}</th></tr>
+          {rows.map(line=><tr key={line.id} data-draft-line={line.id}>
+            <th scope="row"><span className="budget-sheet-name">{line.name}</span></th>
+            <td>{fmtCents(line.allocation_cents)}</td>
+            <td className={sources.get(line.id)==='Your number'?'budget-sheet-source--own':undefined}>{sources.get(line.id)??'—'}</td>
+          </tr>)}
         </tbody>})}
     </table>
   </div>

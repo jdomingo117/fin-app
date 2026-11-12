@@ -26,3 +26,15 @@ describe('editable plan table',()=>{
     expect(html).toContain('aria-label="Already set aside for Rego (AUD)"');expect(html).not.toContain('Remove Everyday')
   })
 })
+
+import { BudgetDraftTable } from './BudgetEditTable'
+describe('assisted draft sources',()=>{
+  it('shows each row’s source in setup and in the review table',()=>{
+    const sources=new Map([['e','From your history'],['r','Detected bill'],['g','Your number'],['c','Kept as it was']])
+    const edit=renderToStaticMarkup(<BudgetEditTable setup={setup} active={false} saved={new Map()} goals={new Set()} sources={sources} onLine={()=>{}} onRemove={()=>{}}/>)
+    expect(edit).toContain('Everyday spending · From your history');expect(edit).toContain('data-line-source="Your number"')
+    const draft=renderToStaticMarkup(<BudgetDraftTable setup={setup} sources={sources} goalLine="g"/>)
+    expect(draft).toContain('Where it came from');expect(draft.match(/data-draft-line=/g)).toHaveLength(4)
+    expect([...draft.matchAll(/data-sheet-group="(\w+)"/g)].map(m=>m[1])).toEqual(['fixed','everyday','reserve','goal'])
+  })
+})

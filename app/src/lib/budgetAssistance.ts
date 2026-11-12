@@ -77,13 +77,51 @@ export function applyAssistance(base:Setup,result:AssistanceResult,whatIf?:WhatI
 }
 
 /** Keep the edited money/goal/future allocation, but stop claiming stale history as its authority. */
-export function convertAssistanceToManual(setup:Setup):Setup{
+const PRESERVED='user-estimate-preserved-from-assisted-draft'
+function changedPart(key:string,setup:Setup,previous:Setup){
+  const everyday=(x:Setup)=>x.lines.find(l=>l.kind==='everyday')?.allocation_cents
+  const goal=(x:Setup)=>{const id=setup.assistance?.goal_intent?.line_id;const l=x.lines.find(line=>line.id===id);return l?`${l.name}|${l.allocation_cents}|${l.opening_cents}`:''}
+  if(key==='income')return setup.income_cents!==previous.income_cents
+  if(key==='everyday')return everyday(setup)!==everyday(previous)
+  if(key==='goal')return goal(setup)!==goal(previous)
+  // Costs are tracked row by row through reviewed_inputs; other keys keep their value.
+  return false
+}
+
+/** Where each line's planned amount came from, for an assisted draft. Empty for a plain manual setup. */
+export function assistedLineSources(setup:Setup,currentSource?:string):Map<string,string>{
+  const a=setup.assistance,out=new Map<string,string>()
+  if(!a)return out
+  const history=(label:string)=>currentSource!==undefined&&a.source_revision!==currentSource?`${label} · older history`:label
+  for(const line of setup.lines){
+    if(line.kind==='everyday'){
+      const p=a.provenance.everyday
+      if(p==='median-signed-canonical-net-expense')out.set(line.id,history('From your history'))
+      else if(p==='preserved-user-allowance')out.set(line.id,'Kept as it was')
+      else if(p)out.set(line.id,'Your number')
+      continue
+    }
+    const cost=a.reviewed_inputs?.costs.find(c=>c.line_id===line.id&&c.selected)
+    if(cost)out.set(line.id,cost.confirmed?history(cost.recurring_id?'Detected bill':'Checked by you'):'Your number')
+    else if(a.goal_intent?.line_id===line.id)out.set(line.id,a.provenance.goal===PRESERVED?'Your number':'Your goal')
+    else out.set(line.id,'Kept as it was')
+  }
+  return out
+}
+
+/**
+ * Turns an assisted draft into the owner's own estimates. With `previous` (the draft just before an
+ * edit), only the parts that changed are relabelled, so untouched rows keep their history label;
+ * without it, every part is relabelled as before. The draft-level `manual` flag is set either way,
+ * so the server's staleness and review rules are unchanged.
+ */
+export function convertAssistanceToManual(setup:Setup,previous?:Setup):Setup{
   if(!setup.assistance)return setup
   const {goal_intent,...assistance}=setup.assistance
   const goalLine=goal_intent?setup.lines.find(line=>line.id===goal_intent.line_id&&line.kind==='reserve'):null
   const reviewed=assistance.reviewed_inputs
   const inputs=reviewed?{...reviewed,income:{...reviewed.income,amount_cents:setup.income_cents,confirmed:reviewed.income.confirmed&&reviewed.income.amount_cents===setup.income_cents&&payDatesStillMatch(setup,reviewed.income.pay_dates)},costs:reviewed.costs.map(cost=>{const line=setup.lines.find(l=>l.id===cost.line_id);return {...cost,confirmed:cost.confirmed&&!!line&&line.name===cost.name&&line.opening_cents===cost.opening_cents&&line.allocation_cents===mergeCostAmount(cost,setup)}})}:undefined
-  return {...setup,assistance:{...assistance,...(inputs?{reviewed_inputs:inputs}:{}),manual:true,provenance:Object.fromEntries(Object.keys(assistance.provenance).map(key=>[key,'user-estimate-preserved-from-assisted-draft'])),
+  return {...setup,assistance:{...assistance,...(inputs?{reviewed_inputs:inputs}:{}),manual:true,provenance:Object.fromEntries(Object.entries(assistance.provenance).map(([key,value])=>[key,!previous||changedPart(key,setup,previous)?PRESERVED:value])),
     ...(goalLine&&goal_intent?{goal_intent:{...goal_intent,name:goalLine.name}}:{})}}
 }
 

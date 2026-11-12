@@ -13,7 +13,7 @@ import './budget.css'
 import BudgetItems from '../components/BudgetItems'
 import BudgetLifecycle from '../components/BudgetLifecycle'
 import BudgetAssistance from '../components/BudgetAssistance'
-import {BUDGET_ASSIST_METHOD,convertAssistanceToManual} from '../lib/budgetAssistance'
+import {BUDGET_ASSIST_METHOD,assistedLineSources,convertAssistanceToManual} from '../lib/budgetAssistance'
 import {budgetPresentation} from '../lib/budgetPresentation'
 import BudgetValue from '../components/BudgetValue'
 import BudgetPageHeader, {budgetDate,type BudgetView} from '../components/budget/BudgetPageHeader'
@@ -146,7 +146,7 @@ function BudgetEditor({setup,active,onAssistance}:{setup:Setup;active:boolean;on
   const [localError,setLocalError]=useState('')
   useEffect(()=>{if(active){const heading=form.current?.querySelector<HTMLElement>('h3');if(heading){heading.tabIndex=-1;heading.focus()}}},[active])
   useEffect(()=>{setReview(false);setAccepted(false)},[s,b.draft?.draft_version])
-  function change(next:Setup){b.setEditing(next.assistance?convertAssistanceToManual(next):next);setAccepted(false);setReview(false)}
+  function change(next:Setup){b.setEditing(next.assistance?convertAssistanceToManual(next,setup):next);setAccepted(false);setReview(false)}
   function lineChange(id:string,patch:Partial<Setup['lines'][number]>) {change({...setup,lines:setup.lines.map(l=>l.id===id?{...l,...patch}:l)})}
   let period:ReturnType<typeof setupPeriod>|null=null,gap=false
   try{period=setupPeriod(setup);const sums=setupSummary(setup,s.details?.controls?.archives.map(a=>a.line_id));gap=sums.current.fundingGap>0||((!active||scope==='period-and-future')&&sums.future.fundingGap>0)}catch{}
@@ -186,6 +186,7 @@ function BudgetEditor({setup,active,onAssistance}:{setup:Setup;active:boolean;on
     <div className="glass p-5 space-y-4"><Heading className="font-semibold">{active?'Your allowances':'Give the money a job'}</Heading><p className="body-copy">Everyday spending is for flexible costs. Add a separate allowance if you want to plan for bills or put money aside. These amounts do not move money.</p>
       <BudgetEditTable setup={setup} active={active} saved={new Map((active?s.lines??[]:[]).map(l=>[l.id,l.allocation_cents]))}
         goals={new Set((s.details?.items??[]).filter(i=>i.config?.type==='goal').map(i=>i.line_id))}
+        sources={assistedLineSources(setup,s.source_revision)}
         onLine={lineChange} onRemove={id=>change({...setup,lines:setup.lines.filter(l=>l.id!==id)})}/>
       {!active&&setup.lines.some(l=>l.kind==='reserve')&&<p className="detail-copy text-muted">“Already set aside” is existing money at the start date, not new income or verified savings progress.</p>}
       <p className="detail-copy text-muted">Press Enter to move to the next amount. Nothing is saved until you review and save.</p>

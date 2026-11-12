@@ -64,6 +64,8 @@ hand to find the transfer-linker gap.
 
 ## Recent changes
 
+- 2026-11-13 — Budget auto-build review lists every draft line with where its amount came from; edits relabel only that row.
+
 - 2026-11-13 — Budget plan editor and manual setup edit amounts in a table that shows what changed.
 
 - 2026-11-12 — Budget My plan table explains each figure in a formula bar, marks incomplete figures and shows an even-pace tick.
@@ -82,7 +84,6 @@ hand to find the transfer-linker gap.
 
 - 2026-11-11 — Rewrote Budget assistance copy for beginners, with calculation detail moved into one "How we worked this out" disclosure.
 
-- 2026-11-11 — Budget assistance keeps history-based amounts when circumstances changed, clearing only what the owner says changed.
 
 
 

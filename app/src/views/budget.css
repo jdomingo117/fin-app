@@ -759,3 +759,4 @@ button.budget-sheet-name:focus-visible { outline: 2px solid var(--color-accent-i
   .budget-sheet--edit td.budget-sheet-edit-empty { display: none; }
   .budget-sheet-input { max-width: none; margin-left: 0; text-align: left; }
 }
+.budget-sheet-source--own { color: var(--color-accent-ink); }

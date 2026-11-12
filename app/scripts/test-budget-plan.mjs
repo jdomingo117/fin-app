@@ -5,7 +5,7 @@ import {expect} from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 
 export async function budgetPlanChecks({repo,newUser,sql,quote,check,signedPage,snapshotSQL}){
- const out=resolve(repo,'docs/budget-ui/bui-08a/captures');mkdirSync(out,{recursive:true})
+ const out=resolve(repo,'docs/budget-ui/budget-table-stage-1/captures');mkdirSync(out,{recursive:true})
  const u=await newUser(),ids=Array.from({length:5},()=>randomUUID())
  const names=['Everyday','Regular bills','Upcoming costs with a long name to check wrapping on a phone','Longer-term savings','Trip goal']
  const amounts=[180000,250000,40000,100000,10000],future=[200000,240000,120000,60000,20000]
@@ -26,6 +26,25 @@ export async function budgetPlanChecks({repo,newUser,sql,quote,check,signedPage,
  await expect(amount('plan-income')).toHaveText('$6,000.00');await expect(amount('plan-cash-once')).toHaveText('$100.00');await expect(amount('plan-unallocated')).toHaveText('$300.00')
  for(const id of ids)await expect(plan.locator(`[data-plan-line="${id}"]`)).toHaveCount(1)
  check('My plan shows every saved allocation once with separate income, one-off cash and canonical unallocated amount',true)
+ await expect(amount('plan-allocated')).toHaveText('$5,800.00')
+ check('the table groups lines by purpose in a fixed order',await plan.locator('[data-sheet-group]').evaluateAll(els=>els.map(e=>e.dataset.sheetGroup)),['fixed','everyday','reserve','contribution'])
+ const reserves=plan.locator('[data-sheet-group="reserve"]')
+ await expect(reserves.locator('.budget-sheet-total')).toContainText('Total set aside');await expect(reserves.locator('.budget-sheet-total td').first()).toHaveText('$500.00')
+ await expect(plan.locator('[data-sheet-group="fixed"] .budget-sheet-total')).toHaveCount(0)
+ await expect(plan.getByRole('img',{name:'$6,000.00 income + $100.00 existing cash, minus $5,800.00 planned, leaves $300.00 still to plan.',exact:true})).toBeVisible()
+ const s0=snapshotSQL(u),facts=JSON.parse(sql(`SELECT public.budget_workspace_details(${quote(u.tenant)},${quote(u.id)},${quote(s0.plan.id)},${quote(s0.period.id)},${s0.source_revision},${s0.plan.version});`))
+ const byGroup=new Map();for(const it of facts.items){if(it.config?.voided)continue;const k=it.config?.type==='goal'?'goal':it.kind;byGroup.set(k,(byGroup.get(k)??0)+Number(it.planned_cents))}
+ check('server group totals equal their rows and the allocated total equals the saved allocations',[Object.fromEntries(facts.sheet.groups.map(g=>[g.key,Number(g.planned_cents)])),Number(facts.sheet.allocated_cents)],[Object.fromEntries(byGroup),580000])
+ await page.setViewportSize({width:390,height:1100})
+ const columns=plan.getByRole('group',{name:'Column to show',exact:true});await expect(columns).toBeVisible()
+ await expect(plan.locator('thead th',{hasText:'Left'})).toBeVisible();await expect(plan.locator('thead th',{hasText:'Spent'})).toBeHidden()
+ await columns.getByRole('button',{name:'Spent',exact:true}).click()
+ await expect(plan.locator('thead th',{hasText:'Spent'})).toBeVisible();await expect(plan.locator('thead th',{hasText:'Left'})).toBeHidden()
+ await expect(plan.locator('thead th',{hasText:'Planned'})).toBeHidden()
+ await columns.getByRole('button',{name:'Planned',exact:true}).click();await expect(plan.locator('thead th',{hasText:'Planned'})).toBeVisible()
+ await columns.getByRole('button',{name:'Left',exact:true}).click()
+ await page.setViewportSize({width:1440,height:1100});await expect(columns).toBeHidden()
+ check('the phone column switch shows one comparison column at a time and hides on wide screens',true)
  await plan.getByText('See saved future allowances',{exact:true}).click()
  await expect(amount('plan-future-income')).toHaveText('$7,000.00');await expect(amount('plan-future-unallocated')).toHaveText('$600.00')
  await expect(amount(`plan-line-${ids[0]}`)).toHaveText('$1,800.00');await expect(amount(`plan-future-line-${ids[0]}`)).toHaveText('$2,000.00')
@@ -37,12 +56,14 @@ export async function budgetPlanChecks({repo,newUser,sql,quote,check,signedPage,
   for(const open of [false,true]){
    await plan.locator('details').evaluate((el,value)=>{el.open=value},open)
    check(`${width} ${dark?'dark':'light'} ${open?'future':'current'} plan fits`,await plan.evaluate(el=>el.scrollWidth<=el.clientWidth+1))
+   check(`${width} ${dark?'dark':'light'} ${open?'future':'current'} table is not clipped`,await plan.locator('.budget-sheet-wrap').evaluate(el=>{const names=[...el.querySelectorAll('th[scope="row"] .budget-sheet-name')].map(n=>Math.round(n.getBoundingClientRect().width));const ok=el.scrollWidth<=el.clientWidth+1&&names.every(w=>w>=48);if(!ok)return {scroll:el.scrollWidth,client:el.clientWidth,names,cells:[...el.querySelectorAll('tr')].slice(0,6).map(tr=>[...tr.children].filter(c=>getComputedStyle(c).display!=='none').map(c=>Math.round(c.getBoundingClientRect().width)))};return true}))
    const scan=await new AxeBuilder({page}).include('.budget-plan').withTags(['wcag2a','wcag2aa','wcag21a','wcag21aa']).analyze()
    check(`${width} ${dark?'dark':'light'} ${open?'future':'current'} plan accessibility`,scan.violations.map(v=>({id:v.id,nodes:v.nodes.map(n=>n.target)})),[])
    await (open?plan.locator('details'):plan).evaluate(el=>el.scrollIntoView({block:'start'}));await page.screenshot({path:resolve(out,`${width}-${dark?'dark':'light'}-${open?'future':'current'}.png`),fullPage:true})
   }
  }
  await plan.getByRole('button',{name:'View allowance activity',exact:true}).click();await expect(page.getByRole('region',{name:'Bills and savings goals',exact:true})).toBeVisible()
+ await page.locator('.budget-allowance-tools > summary').click()
  const allowance=page.locator('.budget-everyday-row').first();await allowance.locator('summary').click()
  await header.getByRole('button',{name:'My plan',exact:true}).click();await expect(page.getByRole('region',{name:'Bills and savings goals',exact:true})).toBeHidden()
  await plan.getByRole('button',{name:'View allowance activity',exact:true}).click();await expect(allowance).toHaveAttribute('open','')

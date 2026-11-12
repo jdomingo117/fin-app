@@ -39,7 +39,7 @@ export async function runBudgetWorkspaceChecks({repo,api,browserPort=57300,viteC
   }
   const user=await newUser(),phoneUser=await newUser()
   const snapshotSQL=u=>JSON.parse(sql(`SELECT public.budget_query(${quote(u.tenant)},${quote(u.id)},'{"action":"snapshot"}');`))
-  if(process.argv.includes('--coverage-check')||process.argv.includes('--release-candidate')&&!forecastFixture&&!attentionOnly&&!process.argv.includes('--setup-only')&&!process.argv.includes('--candidate-only')){
+  if(process.argv.includes('--coverage-check')||process.argv.includes('--release-candidate')&&!forecastFixture&&!attentionOnly&&!process.argv.includes('--setup-only')&&!process.argv.includes('--candidate-only')&&!process.argv.includes('--plan-only')){
    const {budgetCoverageChecks}=await import('./test-budget-coverage.mjs')
    await budgetCoverageChecks({newUser,sql,quote,check,edge,signedPage})
    check('R09 history coverage journeys have no browser runtime errors',errors,[])

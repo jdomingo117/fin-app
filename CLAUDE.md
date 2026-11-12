@@ -64,6 +64,8 @@ hand to find the transfer-linker gap.
 
 ## Recent changes
 
+- 2026-11-12 — Budget My plan is now a read-only table with group totals and a money split bar (migration 20261112020000).
+
 - 2026-11-12 — Moved out of the vault into its own repo: planning docs to docs/budget and docs/plans, private sample statements and generated evidence git-ignored.
 
 - 2026-11-12 — Merged Budget's two bill finders onto shared rules and wording; bill evidence now checks bill-like merchants first (migrations 20261112000000/010000).
@@ -82,4 +84,3 @@ hand to find the transfer-linker gap.
 
 - 2026-11-11 — Budget assistance offers detected regular payments as bills (saved as pinned recurring series) and caps confirmations at the last import.
 
-- 2026-11-11 — Budget assistance pre-selects spending accounts and flags unused ones via a new account-activity read (migration 20261111010000).

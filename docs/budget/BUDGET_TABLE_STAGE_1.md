@@ -71,7 +71,13 @@ Each run's exact fixture cleanup passed. No personal stack, and not the retained
 
 ## Not done
 
-- The migration has **not** been applied to the personal local stack. That needs the
-  owner's go-ahead, a recorded backup and the preflight in [[SYSTEM_INTEGRITY]].
+- Personal local stack: the migration was applied at the owner's request on
+  12 Nov 2026, using forward-only `migration up --local` with no other migration
+  pending. The backup is `backups/halcyon-pre-budget-sheet-totals-20261112.dump`
+  (pg_dump custom format, 12:24Z; it lists 107 table-data entries across the auth and
+  public schemas). Counts before and after were identical: 1 auth user, 1 tenant,
+  9 accounts, 8,777 transactions, the same signed transaction total, 1 budget plan and
+  6 allocations. `anon` and `authenticated` can't execute the new function, and its
+  `allocated_cents` equals the saved allocations.
 - The full Budget lifecycle regression was not rerun. Only the My plan scope ran.
 - Stages 2–4 (formula bar, editing in the table, months view) are not started.

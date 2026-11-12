@@ -42,12 +42,16 @@ This part of stage 3 covers "Adjust plan" and building your own budget. Step 3 o
   - reverting clears the highlight, with no writes until save;
   - then the existing exact `revise` body, recovery and funding-gap checks.
 - Disposable candidate project, `--setup-only`: the fit and accessibility captures
-  pass at every width after the phone stacking change, and 241 checks pass before an
-  existing failure. The guarded Undo step in `test-budget-task-panel.mjs:192`
-  expects the Flight ticket goal card to show $25.00 after Undo, but it still shows
-  the previously loaded $30.00. **The same failure, after the same 241 checks,
-  happens on commit `36f2823` (before stage 3)**, so it isn't caused by this change.
-  It is recorded here for follow-up.
+  pass at every width after the phone stacking change. The run used to stop after 241
+  checks at the guarded Undo step in `test-budget-task-panel.mjs` (also on `36f2823`,
+  before stage 3, so not caused by this change). **Cause:** the Undo itself saved, but
+  by that point the run had used up `query-budget`'s 30 reads a minute. The refresh
+  after Undo got a 429, so the Overview kept the $30.00 figures marked "may be out of
+  date" and wrongly said "We couldn't confirm the result". **Fix (app):** a 429 body
+  now carries `retry_after` (browsers can't read `Retry-After` cross-origin), the
+  Budget client reports it as a rate limit rather than an unconfirmed save, and a
+  rate-limited refresh waits that long (at most 65 s) and reads once more. The test
+  allows for that wait and checks that the misleading message is gone.
 - In the owner's app, the editor showed the table with real lines (Everyday spending,
   the Snowboard goal), and a temporary unsaved amount showed "Changed from $3,113.15".
   The change was discarded by reloading. No `manage-budget` request was sent, and the

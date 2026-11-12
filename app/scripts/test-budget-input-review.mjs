@@ -95,6 +95,7 @@ export async function runBudgetInputReviewChecks({newUser,sql,quote,check,edge,s
  const page=await signedPage(v,390,false)
  await page.getByRole('button',{name:'Enter my own amounts',exact:true}).click()
  await page.getByLabel('Expected income this period (AUD)',{exact:true}).fill('700')
+ await page.getByText(/^Use existing cash/).click()
  await page.getByLabel('Existing cash to use this period (AUD)',{exact:true}).fill('50')
  await page.getByLabel('Planned for Everyday spending (AUD)',{exact:true}).fill('300')
  await page.getByRole('button',{name:'Add regular bills',exact:true}).click()
@@ -106,6 +107,7 @@ export async function runBudgetInputReviewChecks({newUser,sql,quote,check,edge,s
  await page.getByLabel('Already set aside for Protected trip (AUD)',{exact:true}).fill('100')
  async function history(){
   await page.getByRole('button',{name:'Check history for this draft',exact:true}).click()
+  await page.getByText(/^Accounts & timezone/).click()
   await page.getByRole('checkbox',{name:/Input review fictional account/}).check()
   await page.getByRole('button',{name:'Check my history',exact:true}).click()
   await expect(page.getByRole('heading',{name:'Your history is ready'})).toBeVisible()

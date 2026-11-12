@@ -94,6 +94,34 @@ describe('budget table rows',()=>{
   })
 })
 
+describe('row explanations',()=>{
+  it('states the everyday identity with the server figures, adding carry only when it exists',()=>{
+    const s=fixture(),row=s.details!.items[0];row.opening_carry_cents=-10000;row.reallocated_cents=5000;row.remaining_cents=24000
+    const e=budgetSheet(budgetPresentation(s),fmtCents).find(g=>g.key==='everyday')!.rows[0]
+    expect(e.explain[0]).toBe('Left $240.00 = planned $1,800.00 + carried over -$100.00 + moved in $50.00 − spent $1,510.00.')
+    expect(e.pace).toBe(true)
+    const plain=budgetSheet(budgetPresentation(fixture()),fmtCents).find(g=>g.key==='everyday')!.rows[0]
+    expect(plain.explain[0]).toBe('Left $290.00 = planned $1,800.00 − spent $1,510.00.')
+  })
+  it('lists category parts without claiming an equation',()=>{
+    const s=fixture();s.details!.limits=[{id:'limit',category_id:'groceries',subcategory_id:null,custom_subcategory_id:null,amount_cents:70000,used_cents:76000,remaining_cents:-6000,opening_carry_cents:0}]
+    const child=budgetSheet(budgetPresentation(s),fmtCents).find(g=>g.key==='everyday')!.rows[1]
+    expect(child.explain[0]).toBe('Planned $700.00 · spent $760.00 · left -$60.00, including any moves between categories.')
+  })
+  it('explains bills, goals and transfers in their own terms',()=>{
+    const groups=budgetSheet(budgetPresentation(fixture()),fmtCents)
+    expect(groups.find(g=>g.key==='fixed')!.rows[0].explain[0]).toBe('Planned $2,000.00 · matched payments so far $2,000.00 · left $0.00.')
+    expect(groups.find(g=>g.key==='goal')!.rows[0].explain[0]).toBe('Saved so far $2,100.00 of $5,000.00 · planned this budget $300.00.')
+    expect(groups.find(g=>g.key==='contribution')!.rows[0].explain[0]).toBe('Planned $100.00 · matched to bank transfers $100.00.')
+    expect(groups.find(g=>g.key==='fixed')!.rows[0].pace).toBe(false)
+  })
+  it('says why a figure is qualified',()=>{
+    const s=fixture();s.coverage_complete=false
+    const e=budgetSheet(budgetPresentation(s),fmtCents).find(g=>g.key==='everyday')!.rows[0]
+    expect(e.explain.at(-1)).toBe('About these figures: Known activity only.')
+  })
+})
+
 describe('money split bar',()=>{
   it('shares expected money between groups and the unplanned remainder',()=>{
     const split=budgetSplit(budgetPresentation(fixture()))!

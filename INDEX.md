@@ -950,6 +950,11 @@ only; group totals and `allocated_cents` come from `details.sheet`, built by `bu
 `budget_workspace_details_uncached`; unknown members make a group field null, never zero).
 Phones below 600px show one switchable comparison column (remembered in localStorage).
 Existing hooks `data-plan-line`, `plan-line-*`, `plan-income`, `plan-cash-once` and `plan-unallocated` are kept.
+Stage 2 ([[BUDGET_TABLE_STAGE_2]]) adds a formula bar (`#budget-sheet-fx`, polite live region): each row,
+group total and summary row name is a toggle button whose plain working comes from `SheetRow.explain`
+(the everyday pool states the hero's identity; category rows list parts without an equation) plus the
+values' qualification text. Known values with qualification reasons get a corner mark; current-period
+everyday rows with a spending bar get an even-pace tick from `remainingDays`. No new reads or arithmetic.
 
 `components/budget/BudgetHistory.tsx` presents existing lifecycle facts and immutable
 saved review payloads; it does not calculate history or construct commands.

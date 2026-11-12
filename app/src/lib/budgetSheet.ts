@@ -1,5 +1,5 @@
 import type { BudgetPresentation } from './budgetPresentation'
-import type { BudgetValue } from './budgetPresentation'
+import { budgetValueQualification, type BudgetValue } from './budgetPresentation'
 
 /** Server-calculated group totals for the My plan table (migration 20261112020000). */
 export type BudgetSheetGroupKey = 'fixed'|'everyday'|'reserve'|'goal'|'contribution'
@@ -16,6 +16,10 @@ export type SheetRow = {
   planned:BudgetValue;spent:BudgetValue|null;third:BudgetValue;
   /** Display-only meter: value and maximum in cents, or null when not meaningful. */
   meter:{value:number;max:number}|null;
+  /** True for everyday rows, whose spending can be compared with an even pace. */
+  pace:boolean;
+  /** Plain sentences explaining how this row's figures fit together. */
+  explain:string[];
 }
 export type SheetGroup = {
   key:BudgetSheetGroupKey;title:string;spentLabel:string;thirdLabel:string;rows:SheetRow[];
@@ -46,6 +50,21 @@ function meter(value:BudgetValue|null,max:BudgetValue|null){
 }
 
 type Item=BudgetPresentation['items'][number]
+
+/** Plain-language working for a row. Uses only server figures; it states relationships, never computes money. */
+function working(fmt:(cents:number)=>string,lines:(string|null|false)[],values:(BudgetValue|null|undefined)[]):string[]{
+  const why=[...new Set(values.filter((v):v is BudgetValue=>!!v).map(budgetValueQualification).filter(Boolean).flatMap(q=>q.split('; ')))]
+  return [...lines.filter((l):l is string=>!!l),...(why.length?[`About these figures: ${why.join('; ')}.`]:[])]
+}
+const m=(fmt:(cents:number)=>string,v:BudgetValue|null|undefined)=>known(v)?fmt(v.cents):'unavailable'
+const nonZero=(v:BudgetValue)=>v.availability!=='known'||v.cents!==0
+/** The pool's identity matches the hero's "How it works"; category rows list their parts without claiming an equation. */
+function everydayWorking(fmt:(cents:number)=>string,row:{planned:BudgetValue;spent:BudgetValue;remaining:BudgetValue;carry:BudgetValue;rightsMoved?:BudgetValue},exact=true){
+  const adds=[nonZero(row.carry)?` + carried over ${m(fmt,row.carry)}`:'',row.rightsMoved&&nonZero(row.rightsMoved)?` + moved in ${m(fmt,row.rightsMoved)}`:''].join('')
+  return working(fmt,[exact?`Left ${m(fmt,row.remaining)} = planned ${m(fmt,row.planned)}${adds} − spent ${m(fmt,row.spent)}.`
+    :`Planned ${m(fmt,row.planned)}${nonZero(row.carry)?` · carried over ${m(fmt,row.carry)}`:''} · spent ${m(fmt,row.spent)} · left ${m(fmt,row.remaining)}, including any moves between categories.`,
+    'Refunds you match lower spending. Bills and set-asides are counted separately.'],[row.planned,row.spent,row.remaining,row.carry,row.rightsMoved])
+}
 
 function itemNote(item:Item,p:BudgetPresentation,openingNote:string|null):string|null{
   const c=item.config,parts:string[]=[]
@@ -78,20 +97,23 @@ export function budgetSheet(p:BudgetPresentation,fmt:(cents:number)=>string):She
       const e=p.everyday,over=known(e.remaining)&&e.remaining.cents<0
       rowsByGroup.get('everyday')!.push({id:line.id,lineId:line.id,name:line.name,child:false,over,
         note:[line.archived?'Archived · history preserved':null,p.categoryMode==='limits'?'Shared total for the categories below':null,over&&known(e.remaining)?`Over by ${fmt(-e.remaining.cents)}`:null].filter(Boolean).join(' · ')||null,
-        planned:e.planned,spent:e.spent,third:e.remaining,meter:meter(e.spent,e.planned)})
+        planned:e.planned,spent:e.spent,third:e.remaining,meter:meter(e.spent,e.planned),pace:true,
+        explain:[...everydayWorking(fmt,e),...(p.categoryMode==='limits'?['The categories below share this one allowance; nothing is counted twice.']:[])]})
       if(p.categoryMode==='limits'){
         for(const c of [...p.categories,{...p.other,id:'other',name:'Other everyday spending'}]){
           const childOver=known(c.remaining)&&c.remaining.cents<0
           rowsByGroup.get('everyday')!.push({id:`category:${c.id}`,lineId:null,name:c.name,child:true,over:childOver,
             note:childOver&&known(c.remaining)?`Over by ${fmt(-c.remaining.cents)}`:null,
-            planned:c.planned,spent:c.spent,third:c.remaining,meter:meter(c.spent,c.planned)})
+            planned:c.planned,spent:c.spent,third:c.remaining,meter:meter(c.spent,c.planned),pace:true,
+            explain:everydayWorking(fmt,c,false)})
         }
       }
       continue
     }
     if(!item){
       rowsByGroup.get(key)!.push({id:line.id,lineId:line.id,name:line.name,child:false,over:false,note:opening,
-        planned:line.planned,spent:key==='contribution'?null:missing(basis),third:missing(basis),meter:null})
+        planned:line.planned,spent:key==='contribution'?null:missing(basis),third:missing(basis),meter:null,pace:false,
+        explain:working(fmt,[`Planned ${m(fmt,line.planned)}. Its activity figures need a fresh Budget read.`],[line.planned])})
       continue
     }
     const third=key==='fixed'?item.remaining:key==='contribution'?item.bankConfirmed:item.reserve
@@ -99,7 +121,14 @@ export function budgetSheet(p:BudgetPresentation,fmt:(cents:number)=>string):She
     const note=[itemNote(item,p,opening),over&&known(item.remaining)?`Over by ${fmt(-item.remaining.cents)}`:null].filter(Boolean).join(' · ')||null
     rowsByGroup.get(key)!.push({id:line.id,lineId:line.id,name:line.name,child:false,over,note,
       planned:line.planned,spent:key==='fixed'?item.spent:key==='contribution'?null:item.purchases,third,
-      meter:key==='fixed'?meter(item.spent,line.planned):key==='goal'?meter(item.reserve,item.target):null})
+      meter:key==='fixed'?meter(item.spent,line.planned):key==='goal'?meter(item.reserve,item.target):null,pace:false,
+      explain:key==='fixed'?working(fmt,[`Planned ${m(fmt,line.planned)} · matched payments so far ${m(fmt,item.spent)} · left ${m(fmt,item.remaining)}.`,
+          'A payment that isn’t matched yet doesn’t mean it’s unpaid.'],[line.planned,item.spent,item.remaining])
+        :key==='contribution'?working(fmt,[`Planned ${m(fmt,line.planned)} · matched to bank transfers ${m(fmt,item.bankConfirmed)}.`,
+          'Matched transfers are evidence of funding. They aren’t counted as spending.'],[line.planned,item.bankConfirmed])
+        :working(fmt,[`${key==='goal'?'Saved':'Set aside'} so far ${m(fmt,item.reserve)}${key==='goal'&&item.config?.target_cents!=null?` of ${m(fmt,item.target)}`:''} · planned this budget ${m(fmt,line.planned)}.`,
+          'The amount so far includes any reserve from setup and what earlier budgets planned, less matched spending.',
+          'Setting money aside is a plan. It doesn’t move money in your bank.'],[line.planned,item.reserve,item.purchases])})
   }
   return GROUPS.flatMap(g=>{
     const rows=rowsByGroup.get(g.key)!

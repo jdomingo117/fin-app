@@ -711,3 +711,29 @@ dialog.budget-panel:not([open]) { display: none; }
   .budget-sheet-columns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); justify-self: stretch; }
   .budget-sheet-columns button { padding: 0 6px; font-size: 13px; white-space: nowrap; }
 }
+
+/* Budget table stage 2: formula bar, incomplete-figure marks and the even-pace tick. */
+.budget-sheet-fx { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: 12px; min-height: 52px; padding: 12px 16px; border: 1px solid var(--hair); border-radius: 12px; background: var(--input-bg); font-size: 14px; line-height: 1.5; color: var(--color-ink2); }
+.budget-sheet-fx-label { padding: 2px 7px; border-radius: 6px; background: var(--accent-wash); color: var(--color-accent-ink); font-size: 12px; font-weight: 700; font-style: italic; letter-spacing: .02em; }
+.budget-sheet-fx strong { display: block; margin-bottom: 2px; font-weight: 700; color: var(--color-ink); }
+.budget-sheet-fx p + p { margin-top: 2px; }
+.budget-sheet-fx p:first-of-type { font-variant-numeric: tabular-nums; color: var(--color-ink); }
+.budget-sheet-fx .budget-sheet-fx-hint { color: var(--color-muted); }
+button.budget-sheet-name { padding: 0; border: 0; background: none; font: inherit; font-size: 15px; font-weight: 600; text-align: left; color: var(--color-ink); cursor: pointer; text-decoration: underline; text-decoration-color: transparent; text-underline-offset: 3px; transition: text-decoration-color .15s var(--ease-halcyon); }
+button.budget-sheet-name:hover, button.budget-sheet-name[aria-pressed="true"] { text-decoration-color: var(--color-accent); }
+button.budget-sheet-name:focus-visible { outline: 2px solid var(--color-accent-ink); outline-offset: 3px; border-radius: 3px; }
+.budget-sheet-total button.budget-sheet-name, .budget-sheet-summary button.budget-sheet-name { font-size: inherit; font-weight: inherit; color: inherit; }
+.budget-sheet-child button.budget-sheet-name { font-weight: 400; }
+.budget-sheet tbody tr:not(.budget-sheet-group-row) { cursor: pointer; }
+.budget-sheet tr.budget-sheet-selected > * { background: var(--accent-wash); }
+.budget-sheet tr.budget-sheet-selected > th[scope="row"] { box-shadow: inset 2px 0 0 var(--color-accent); }
+.budget-sheet td { position: relative; }
+.budget-sheet-flag { position: absolute; top: 0; right: 0; width: 0; height: 0; border-top: 8px solid var(--color-warn); border-left: 8px solid transparent; }
+.budget-sheet-meter-wrap { position: relative; display: block; width: min(100%, 220px); margin-top: 9px; }
+.budget-sheet-meter-wrap .budget-sheet-meter { width: 100%; margin-top: 0; }
+.budget-sheet-pace { position: absolute; top: -4px; bottom: -4px; width: 2px; margin-left: -1px; border-radius: 1px; background: var(--color-ink); }
+.budget-sheet-key { display: flex; flex-wrap: wrap; gap: 6px 20px; font-size: 13px; color: var(--color-muted); }
+.budget-sheet-key li { display: inline-flex; align-items: center; gap: 8px; }
+.budget-sheet-key-pace { display: inline-block; width: 2px; height: 12px; border-radius: 1px; background: var(--color-ink); }
+.budget-sheet-key-flag { display: inline-block; width: 0; height: 0; border-top: 8px solid var(--color-warn); border-left: 8px solid transparent; }
+@media (prefers-reduced-motion: reduce) { button.budget-sheet-name { transition: none; } }

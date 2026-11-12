@@ -64,6 +64,8 @@ hand to find the transfer-linker gap.
 
 ## Recent changes
 
+- 2026-11-12 — Budget My plan table explains each figure in a formula bar, marks incomplete figures and shows an even-pace tick.
+
 - 2026-11-12 — Budget My plan is now a read-only table with group totals and a money split bar (migration 20261112020000).
 
 - 2026-11-12 — Moved out of the vault into its own repo: planning docs to docs/budget and docs/plans, private sample statements and generated evidence git-ignored.
@@ -82,5 +84,4 @@ hand to find the transfer-linker gap.
 
 - 2026-11-11 — Budget assistance amounts are one pre-filled review screen with suggested pay dates and a single final confirmation.
 
-- 2026-11-11 — Budget assistance offers detected regular payments as bills (saved as pinned recurring series) and caps confirmations at the last import.
 

@@ -39,7 +39,7 @@ export async function runBudgetWorkspaceChecks({repo,api,browserPort=57300,viteC
   }
   const user=await newUser(),phoneUser=await newUser()
   const snapshotSQL=u=>JSON.parse(sql(`SELECT public.budget_query(${quote(u.tenant)},${quote(u.id)},'{"action":"snapshot"}');`))
-  if(process.argv.includes('--coverage-check')||process.argv.includes('--release-candidate')&&!forecastFixture&&!process.argv.includes('--candidate-only')){
+  if(process.argv.includes('--coverage-check')||process.argv.includes('--release-candidate')&&!forecastFixture&&!attentionOnly&&!process.argv.includes('--setup-only')&&!process.argv.includes('--candidate-only')&&!process.argv.includes('--plan-only')&&!process.argv.includes('--assistance-ui-only')&&!process.argv.includes('--lookback-only')){
    const {budgetCoverageChecks}=await import('./test-budget-coverage.mjs')
    await budgetCoverageChecks({newUser,sql,quote,check,edge,signedPage})
    check('R09 history coverage journeys have no browser runtime errors',errors,[])
@@ -117,6 +117,12 @@ export async function runBudgetWorkspaceChecks({repo,api,browserPort=57300,viteC
    const {runBudgetEligibilityChecks}=await import('./test-budget-eligibility.mjs')
    await runBudgetEligibilityChecks({newUser,sql,quote,check,edge,signedPage})
    check('eligibility journeys have no browser runtime errors',errors,[])
+   return
+  }
+  if(attentionOnly){
+   const {budgetAttentionInteractions}=await import('./test-budget-attention-interactions.mjs')
+   await budgetAttentionInteractions({repo,newUser,sql,quote,check,edge,signedPage,snapshotSQL,settled,matrix:process.argv.includes('--checks-only')})
+   check('focused attention journeys have no browser runtime errors',errors,[])
    return
   }
   if(process.argv.includes('--setup-only')){
@@ -282,12 +288,6 @@ export async function runBudgetWorkspaceChecks({repo,api,browserPort=57300,viteC
    await budgetTemporalInteractions({fixtures:temporalFixtures,check,signedPage,settled})
   }
   if(temporalOnly){check('combined temporal journeys have no browser runtime errors',errors,[]);return}
-  if(attentionOnly){
-   const {budgetAttentionInteractions}=await import('./test-budget-attention-interactions.mjs')
-   await budgetAttentionInteractions({repo,newUser,sql,quote,check,edge,signedPage,snapshotSQL,settled,matrix:process.argv.includes('--checks-only')})
-   check('focused attention journeys have no browser runtime errors',errors,[])
-   return
-  }
   const aud=sql(`INSERT INTO public.accounts(user_id,tenant_id,name,type,balance,currency) VALUES(${quote(user.id)},${quote(user.tenant)},'Budget UI daily account','Liquid',0,'AUD') RETURNING id;`).split('\n')[0]
   sql(`INSERT INTO public.accounts(user_id,tenant_id,name,type,balance,currency) VALUES(${quote(user.id)},${quote(user.tenant)},'Budget UI overseas','Liquid',0,'USD');`)
   const workspace=await edge(user,'query-budget',{action:'workspace'})
@@ -295,6 +295,7 @@ export async function runBudgetWorkspaceChecks({repo,api,browserPort=57300,viteC
   check('workspace exposes no balances or raw transactions',workspace.body.accounts.every(a=>Object.keys(a).sort().join(',')==='currency,id,name'))
   const page=await signedPage(user)
   await page.getByRole('button',{name:'Enter my own amounts'}).click()
+  await page.getByText(/^Accounts & timezone/).click()
   await expect(page.getByRole('checkbox',{name:/overseas/})).toBeDisabled()
   await page.getByRole('checkbox',{name:/daily account/}).check()
   await page.getByLabel('Expected income this period (AUD)',{exact:true}).fill('2000')

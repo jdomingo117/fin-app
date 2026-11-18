@@ -69,13 +69,19 @@ export function budgetPresentation(snapshot:Snapshot|null, readState:BudgetReadS
   }}
   function item(row:BudgetItem){return {
     id:row.line_id,name:row.name,kind:row.kind,config:row.config,archived:!!row.archived,
-    planned:value(row.planned_cents,'plan',detailReason),remaining:value(row.remaining_cents,'budget-balance',balanceBlock),
+    planned:value(row.planned_cents,'plan',detailReason),spent:value(row.used_cents,'recorded',detailReason??observedBlock),remaining:value(row.remaining_cents,'budget-balance',balanceBlock),
     reserve:value(row.reserve_cents,'budget-balance',balanceBlock),purchases:value(row.net_purchases_cents,'recorded',detailReason??observedBlock),
     bankConfirmed:value(row.bank_confirmed_cents,'bank-evidence',balanceBlock??(phase==='future'?'future-period':undefined)),
     userConfirmed:value(row.user_confirmed_cents,'user-evidence',balanceBlock??(phase==='future'?'future-period':undefined)),
     target:value(row.config?.target_cents,'plan',detailReason),occurrences:row.occurrences
   }}
   const mappedItems=items.filter(row=>!row.config?.voided).map(item)
+  const sheetFacts=compatible?d!.sheet:undefined
+  const sheet={available:!!sheetFacts,allocated:value(sheetFacts?.allocated_cents,'plan',detailReason),
+    groups:(sheetFacts?.groups??[]).map(g=>({key:g.key,count:g.count,planned:value(g.planned_cents,'plan',detailReason),
+      spent:value(g.used_cents,'recorded',detailReason??observedBlock),remaining:value(g.remaining_cents,'budget-balance',balanceBlock),
+      reserve:value(g.reserve_cents,'budget-balance',balanceBlock),purchases:value(g.purchases_cents,'recorded',detailReason??observedBlock),
+      bankConfirmed:value(g.bank_confirmed_cents,'bank-evidence',balanceBlock??(phase==='future'?'future-period':undefined))}))}
   const state:'empty'|'unsupported'|'saved'=!active?'empty':!supported?'unsupported':'saved'
   const detailsState:'missing'|'available'|'incompatible'=!d?'missing':compatible?'available':'incompatible'
   const categoryMode:'unavailable'|'limits'|'pool'=!compatible?'unavailable':d!.limits.length?'limits':'pool'
@@ -115,7 +121,8 @@ export function budgetPresentation(snapshot:Snapshot|null, readState:BudgetReadS
     items:mappedItems,goals:mappedItems.filter(row=>row.config?.type==='goal'),
     commitments:mappedItems.filter(row=>row.kind!=='everyday'&&row.config?.type!=='goal'),
     history:lifecycle?{original:lifecycle.facts.original_plan,latest:lifecycle.facts.latest_plan,recorded:lifecycle.review?.payload??null,changedSinceReview:lifecycle.changed_since_review}:null,
-    checks:compatible?d?.attention??null:null
+    checks:compatible?d?.attention??null:null,
+    sheet
   }
 }
 export type BudgetPresentation=ReturnType<typeof budgetPresentation>

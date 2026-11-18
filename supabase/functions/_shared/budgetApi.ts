@@ -59,6 +59,7 @@ export const BudgetQuery = z.discriminatedUnion('action',[
   z.object({action:z.literal('account_activity')}).strict(),
   z.object({action:z.literal('assisted_setup'),timezone:z.string().min(1).max(100).optional(),frequency:z.enum(['monthly','fortnightly']),start_date:DateOnly,anchor:DateOnly.optional(),account_ids:z.array(z.string().uuid()).max(100)}).strict(),
   z.object({action:z.literal('prepare_history'),plan_id:z.string().uuid(),period_id:z.string().uuid(),expected_source:Version,expected_plan:Version}).strict(),
+  z.object({action:z.literal('months'),plan_id:z.string().uuid(),period_id:z.string().uuid(),expected_source:Version,expected_plan:Version}).strict(),
   z.object({action:z.literal('preview_control'),...Control,plan_id:z.string().uuid(),period_id:z.string().uuid(),expected_source:Version,expected_plan:Version,expected_method:z.string().min(1).max(64)}).strict(),
   z.object({action:z.literal('preview_rollover'),...Rollover,plan_id:z.string().uuid(),period_id:z.string().uuid(),expected_source:Version,expected_plan:Version,expected_method:z.string().min(1).max(64)}).strict(),
   z.object({action:z.literal('preview_account_scope'),...AccountScope,plan_id:z.string().uuid(),period_id:z.string().uuid(),expected_source:Version,expected_plan:Version,expected_method:z.string().min(1).max(64)}).strict(),

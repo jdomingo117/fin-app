@@ -1,3 +1,4 @@
+import {selectAssistanceAccount} from './lib/budgetAssistanceUI.mjs'
 import assert from 'node:assert/strict'
 import {randomUUID} from 'node:crypto'
 import {expect} from '@playwright/test'
@@ -125,7 +126,7 @@ export async function runBudgetEstimatorChecks({newUser,sql,quote,check,edge,sig
   sql(`INSERT INTO public.account_activity_coverage(tenant_id,account_id,original_account_id,start_date,end_date,provenance,evidence,source_revision,confirmed_by) VALUES(${quote(browserUser.tenant)},${quote(ba)},${quote(ba)},${quote(months[0])},${quote(start)},'verified_statement','{"fixture":"r05-browser"}',0,${quote(browserUser.id)});`)
   for(let i=0;i<6;i++)sql(`INSERT INTO public.transactions(user_id,tenant_id,account_id,date,original_description,merchant,merchant_key,category,amount,kind,kind_source,pending,transfer_candidate) VALUES(${quote(browserUser.id)},${quote(browserUser.tenant)},${quote(ba)},${quote(months[i])},'Credit-heavy fixture','Shop','credit-shop','Shopping',${[300,200,100,1,0,-20][i]},${quote(i<4?'refund':'expense')},'user',false,false),(${quote(browserUser.id)},${quote(browserUser.tenant)},${quote(ba)},${quote(months[i])},'Earned income','Employer','browser-pay','Income',50000,'income','user',false,false);`)
   const page=await signedPage(browserUser,390,false)
-  await page.getByRole('button',{name:'Help me build a budget',exact:true}).click();await page.getByRole('checkbox',{name:/Signed history fictional account/}).check();await page.getByRole('button',{name:'Check my history',exact:true}).click()
+  await page.getByRole('button',{name:'Help me build a budget',exact:true}).click();await selectAssistanceAccount(page,/Signed history fictional account/);await page.getByRole('button',{name:'Check my history',exact:true}).click()
   await expect(page.getByText('your refunds were bigger than your everyday spending',{exact:false})).toBeVisible()
   await expect(page.getByText('-$0.51',{exact:true})).toBeVisible()
   void 0;await page.getByLabel(/Have your income/).selectOption('no')

@@ -25,6 +25,15 @@ Deno.serve(withBudgetTelemetry('query-budget',withAuth({redactErrorDetails:true,
     }
     return data
   }
+  if(ctx.body.action==='months'){
+    // Read-only month-by-month facts for Look back; the same per-period reads the workspace shows.
+    const {data,error}=await ctx.admin().rpc('budget_months',{p_tenant:ctx.tenantId,p_actor:ctx.user.id,p_plan:ctx.body.plan_id,p_period:ctx.body.period_id,p_source:ctx.body.expected_source,p_version:ctx.body.expected_plan})
+    if(error){
+      if(['57014','55P03'].includes(error.code))throw new SafeHttpError(503,{code:'months_unavailable',message:'The month-by-month view took too long to read. Try again shortly.',retryable:true})
+      budgetFailure(error)
+    }
+    return data
+  }
   if(ctx.body.action==='prepare_history'){
     const {data,error}=await ctx.admin().rpc('budget_prepare_history',{p_tenant:ctx.tenantId,p_actor:ctx.user.id,p_plan:ctx.body.plan_id,p_period:ctx.body.period_id,p_source:ctx.body.expected_source,p_version:ctx.body.expected_plan})
     if(error){

@@ -189,7 +189,12 @@ export async function budgetTaskPanelChecks({repo,newUser,sql,quote,check,signed
   page.once('dialog',dialog=>dialog.accept())
   await page.getByRole('button',{name:'Undo last budget change',exact:true}).click()
   await openGoalDetails(page,goal.id)
-  await expect(page.locator('article').filter({has:page.getByRole('heading',{name:'Flight ticket',exact:true})})).toContainText('$25.00')
+  // By this point the run has used most of query-budget's 30-reads-a-minute
+  // allowance, so the refresh after Undo can be rate limited. The workspace then
+  // waits out the server's retry_after and reads again; allow for that window.
+  await expect(page.locator('article').filter({has:page.getByRole('heading',{name:'Flight ticket',exact:true})})).toContainText('$25.00',{timeout:75000})
+  await expect(page.locator('article').filter({has:page.getByRole('heading',{name:'Flight ticket',exact:true})})).not.toContainText('may be out of date')
+  check('Undo refresh never reports a committed Undo as unconfirmed',await page.getByText('We couldn’t confirm the result',{exact:false}).count(),0)
   check('guarded Undo restores prior goal amount without changing everyday allocation',[snapshotSQL(u).lines.find(l=>l.id===goal.id).allocation_cents,snapshotSQL(u).lines.find(l=>l.id===everyday).allocation_cents],[2500,200000])
   await page.getByRole('button',{name:'Refresh saved data',exact:true}).click()
   await expect(page.getByRole('button',{name:'Previous saved budget',exact:true})).toBeEnabled()

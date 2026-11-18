@@ -1,17 +1,18 @@
 import BudgetAssistanceInputs,{type RecentChanges} from './BudgetAssistanceInputs'
-import {confirmReview,manualReviewSetup,reserveCostFunding,reviewProblem,reviewSignature,reviewedResult,type AssistanceReview} from '../lib/budgetAssistanceReview'
+import {confirmReview,manualReviewSetup,mergeReviewedAssistance,reserveCostFunding,reviewProblem,reviewSignature,reviewedResult,type AssistanceReview} from '../lib/budgetAssistanceReview'
 import {useEffect,useRef,useState} from 'react'
 import {Button,DateInput,Select} from './Controls'
 import {useBudget} from '../contexts/BudgetContext'
 import {fmtCents} from '../data'
 import {addDays,today} from '../lib/budget'
-import {BUDGET_ASSIST_METHOD,applyAssistance,assistanceReasons,assistanceEligible,calendarMonthCount,assistanceCapacity,goalOutcomeReason,goalWhatIfOutcome,previewWhatIf,type AssistanceResult,type WhatIf} from '../lib/budgetAssistance'
+import {BUDGET_ASSIST_METHOD,applyAssistance,assistedLineSources,assistanceReasons,assistanceEligible,calendarMonthCount,assistanceCapacity,goalOutcomeReason,goalWhatIfOutcome,previewWhatIf,type AssistanceResult,type WhatIf} from '../lib/budgetAssistance'
 import {blankSetup,moneyEntry,parseBudgetMoney,type Setup} from '../lib/budgetWorkspace'
 import BudgetHistoryCoverage from './budget/BudgetHistoryCoverage'
 import BudgetStartCalendar from './budget/BudgetStartCalendar'
 import {assistanceSteps,AssistanceStepIcon} from './budget/BudgetAssistanceSteps'
 import BudgetCoverageReadiness from './budget/BudgetCoverageReadiness'
 import BudgetDetectedBills from './budget/BudgetDetectedBills'
+import {BudgetDraftTable} from './budget/BudgetEditTable'
 import {activityLabel,suggestedAccountIds,type AccountActivity} from '../lib/budgetAccountActivity'
 
 const dayFmt=new Intl.DateTimeFormat('en-AU',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'})
@@ -86,6 +87,11 @@ export default function BudgetAssistance({baseSetup,onUse,onManual,onClose}:{bas
     catch(e){setError(e instanceof Error?e.message:'These suggestions could not be used.')}
   }
   const manual=()=>{if(!start){setError('Choose a valid date for the budget period.');return}try{onManual({...manualReviewSetup(base,result??reviewBasis,inputs,tryChange?change:undefined),frequency,start_date:start,anchor,account_ids:accounts})}catch(e){setError((e as Error).message)}}
+  // Every line of the reviewed draft with its source, before any optional change. Display only.
+  let draftSheet:{setup:Setup;sources:Map<string,string>}|null=null
+  if(result&&!inputProblem&&draft)try{const merged=mergeReviewedAssistance(base,result,draft)
+    draftSheet={setup:merged,sources:assistedLineSources({...merged,assistance:{method:result.method,fingerprint:result.fingerprint,source_revision:result.source_revision,manual:false,periods:result.periods.map(p=>({start_date:p.start_date,end_date:p.end_date})),
+      provenance:{everyday:draft.everyday_cents!==undefined?'user-chosen-everyday-allowance':draft.apply_everyday?'median-signed-canonical-net-expense':'preserved-user-allowance'},reviewed_inputs:draft,...(base.assistance?.goal_intent?{goal_intent:base.assistance.goal_intent}:{})}})}}catch{draftSheet=null}
   let fundingGap:number|null=null,capacity:number|null=null
   if(result)try{capacity=assistanceCapacity(effective!);fundingGap=Math.max(0,-capacity)}catch{}
   const invalidTarget=destination==='goal'&&!!goalTarget.trim()&&(!parsedTarget||parsedTarget<=0)
@@ -161,7 +167,7 @@ export default function BudgetAssistance({baseSetup,onUse,onManual,onClose}:{bas
       {eligible&&<><p className="body-copy">In a typical {result.frequency==='monthly'?'month':'two weeks'} you take home <strong>{fmtCents(result.suggestions.income_cents)}</strong>{observedMedian!==null&&<> and spend about <strong>{fmtCents(observedMedian)}</strong> on everyday things</>}{result.suggestions.bills_cents>0&&<>, plus <strong>{fmtCents(result.suggestions.bills_cents)}</strong> in bills you’ve confirmed</>}.</p>
         <BudgetDetectedBills result={result} accountName={accountName} activity={activity} today={today({now:()=>new Date()},base.timezone)} onAdded={keys=>{setAddedBills(prev=>[...prev,...keys]);setRecheck(true)}}/>
         {result.variable&&<p className="outcome-panel text-warn">Your everyday spending changes a lot from {result.frequency==='monthly'?'month to month':'fortnight to fortnight'}{result.observations?.everyday&&result.observations.everyday.min_cents!==null&&result.observations.everyday.max_cents!==null&&<> ({fmtCents(result.observations.everyday.min_cents)} to {fmtCents(result.observations.everyday.max_cents)})</>}. Take a closer look at the everyday amount in the next step.</p>}
-        <label className="grid gap-2"><span className="field-label">Have your income, bills or regular spending changed recently?</span><Select value={recent} onChange={v=>{setRecent(v);setInputs(undefined);setReviewed(false)}}><option value="">Choose an answer</option><option value="no">No, things are about the same</option><option value="yes">Yes, something changed</option><option value="unsure">Not sure</option></Select></label>
+        <label className="grid gap-2"><span className="field-label">Have your income, bills or regular spending changed recently?</span><Select value={recent} onChange={v=>{if(v===recent)return;setRecent(v);setInputs(undefined);setReviewed(false)}}><option value="">Choose an answer</option><option value="no">No, things are about the same</option><option value="yes">Yes, something changed</option><option value="unsure">Not sure</option></Select></label>
         {recent&&recent!=='no'&&<fieldset className="outcome-panel space-y-2">
           <legend className="body-copy">{recent==='yes'?'What changed? We’ll leave those amounts for you to fill in and use your history for the rest.':'Tick anything that might have changed. We’ll leave those for you to fill in and use your history for the rest.'}</legend>
           {([['pay','My take-home pay'],['bills','A regular bill, like rent or insurance'],['spending','My everyday spending']] as const).map(([k,label])=><label key={k} className="flex min-h-11 items-center gap-3"><input type="checkbox" checked={changed[k]} onChange={e=>{setChanged(c=>({...c,[k]:e.target.checked}));setInputs(undefined);setReviewed(false)}}/><span>{label}</span></label>)}
@@ -192,6 +198,7 @@ export default function BudgetAssistance({baseSetup,onUse,onManual,onClose}:{bas
               {capacity!==null&&<div><dt>{capacity+(tryChange&&preview?preview.unallocated_cents:0)<0?'Over your pay by':'Left to plan'}</dt><dd>{fmtCents(Math.abs(capacity+(tryChange&&preview?preview.unallocated_cents:0)))}</dd></div>}
             </dl>
             <p className="detail-copy">Savings goals you already have are kept as they are.{tryChange&&preview&&destination==='goal'&&<> {goalName.trim()||'Your new goal'} gets {fmtCents(preview.goal_cents)} each budget.</>}</p>
+            {draftSheet&&<><BudgetDraftTable setup={draftSheet.setup} sources={draftSheet.sources} goalLine={base.assistance?.goal_intent?.line_id}/>{tryChange&&<p className="detail-copy">Your optional change isn’t shown in this table. It’s applied when you use the draft.</p>}</>}
           </>}
           {!!fundingGap&&<p role="status" className="outcome-panel text-warn">This plan has a funding gap: it uses {fmtCents(fundingGap)} more than your take-home pay. Lower an amount or check your pay. You can still use the draft and fix it in the editor.</p>}
           {inputProblem&&<p className="detail-copy text-warn">{inputProblem}</p>}

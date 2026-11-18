@@ -65,6 +65,8 @@ export async function budgetAssistancePresentationChecks({repo,newUser,sql,quote
  check('calendar supports typed dates, keyboard selection, month browsing and exact period previews',true)
  const all=panel.getByRole('checkbox',{name:'Select all',exact:true})
  await expect(panel.getByRole('checkbox',{name:/Foreign currency account/})).toHaveCount(0)
+ // Spending accounts are pre-selected since 2026-11-11; start from none so one tick is a partial selection.
+ await expect(all).toBeVisible();while(await all.isChecked()||await all.evaluate(el=>el.indeterminate))await all.click()
  await panel.getByRole('checkbox',{name:/Second AUD account/}).check()
  await expect.poll(()=>all.evaluate(el=>el.indeterminate)).toBe(true)
  await all.click()
@@ -86,7 +88,7 @@ export async function budgetAssistancePresentationChecks({repo,newUser,sql,quote
  await confirmBudgetAssistance(page,dates.start)
  await panel.getByRole('checkbox',{name:/Try moving some everyday money elsewhere/}).check()
  await panel.getByLabel('Amount to move out of everyday spending',{exact:true}).fill('10')
- await expect(panel).toContainText('Everyday changes from $200.00 to $190.00')
+ await expect(panel).toContainText('Everyday spending goes from $200.00 to $190.00')
  await panel.getByLabel('Use it for').selectOption('goal')
  await panel.getByLabel('Goal name',{exact:true}).fill('A little breathing room')
  await panel.getByLabel('Estimated target (optional)',{exact:true}).fill('100')
@@ -95,6 +97,10 @@ export async function budgetAssistancePresentationChecks({repo,newUser,sql,quote
  await expect(panel.getByText('If you keep this contribution',{exact:true})).toBeVisible()
  await expect(panel.getByRole('button',{name:'Use this draft',exact:true})).toBeEnabled()
  check('one change retains reviewed dates, capacity, reserve and conditional outcome guards',true)
+ const draftTable=panel.locator('.budget-sheet--draft')
+ await expect(draftTable).toBeVisible();await expect(draftTable.locator('thead')).toContainText('Where it came from')
+ check('the review step lists every draft line with a source',[await draftTable.locator('[data-draft-line]').count()>0,(await draftTable.locator('tbody td:last-child').allTextContents()).every(t=>['From your history','Detected bill','Checked by you','Your number','Kept as it was','Your goal'].some(l=>t.startsWith(l)))],[true,true])
+ await expect(panel.getByText('Your optional change isn’t shown in this table. It’s applied when you use the draft.',{exact:true})).toBeVisible()
  for(const [n,name]of [[1,'1 · Check history'],[2,'2 · Check amounts'],[3,'3 · Review draft']]){
   await panel.getByRole('button',{name,exact:true}).click();await expect(panel.locator(`[data-assistance-part="${n}"] > summary`)).toBeFocused()
   await expect(milestones.getByRole('button',{name,exact:true})).toHaveAttribute('aria-current','step')

@@ -1,3 +1,4 @@
+import {selectAssistanceAccount} from './lib/budgetAssistanceUI.mjs'
 import assert from 'node:assert/strict'
 import {expect} from '@playwright/test'
 
@@ -55,12 +56,13 @@ export async function runBudgetEligibilityChecks({newUser,sql,quote,check,edge,s
   await page.getByLabel('Budget rhythm').selectOption('fortnightly')
   await page.getByLabel('Start with the period containing',{exact:true}).fill('2026-08-07')
   await page.getByLabel('Two-week cycle start date').fill('2026-05-15')
-  await page.getByRole('checkbox',{name:/Eligibility fictional account/}).check()
+  await selectAssistanceAccount(page,/Eligibility fictional account/)
   await page.getByRole('button',{name:'Check my history',exact:true}).click()
   await expect(page.getByRole('heading',{name:/^(History needs more information|Confirm your account history)$/})).toBeVisible()
   await expect(page.getByRole('button',{name:'Use this draft',exact:true})).toHaveCount(0)
   await expect(page.getByRole('checkbox',{name:/Try moving some everyday money elsewhere/})).toHaveCount(0)
-  await expect(page.getByText(/At least 3 complete comparable calendar months/)).toBeVisible()
+  // Coverage readiness (2026-11-11 wording) states the month gate that blocks this fortnightly draft.
+  await expect(page.getByText(/2 of 6 months ready .*Suggestions need 3\./)).toBeVisible()
   await expect(page.getByRole('button',{name:'Enter my own amounts',exact:true})).toBeEnabled()
   check('limited fortnightly UI explains both gates and keeps the manual route without draft/outcome actions',true)
  }

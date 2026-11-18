@@ -20,10 +20,19 @@ export default function BudgetAttention(){
  const active=a.items.filter(i=>i.state==='active'),shown=all?a.items:active.slice(0,1),money=a.items.filter(i=>i.state!=='active'&&i.gap_cents!==null&&!['projected_overspend','fixed_projected_overspend','pending_overage'].includes(i.kind))
  function focusBack(){requestAnimationFrame(()=>{const buttons=root.current?.querySelectorAll<HTMLButtonElement>('button[data-issue]');const target=Array.from(buttons??[]).find(el=>el.dataset.issue===lastKey.current);(target??root.current?.querySelector<HTMLElement>('h3'))?.focus()})}
  function open(i:AttentionIssue){if(selected&&!window.confirm('Leave the unsaved review choice? Your saved budget and earlier review preferences will stay unchanged.'))return;lastKey.current=i.key;setSelected(i.key);setToken(attentionToken(i,s.source_revision,s.plan!.version,a!.version));setAccepted(false);setChoice('acknowledged');setDate(defaultAttentionDate(a!.as_of,s.period!.end_date))}
+ const quickDate=defaultAttentionDate(a.as_of,s.period.end_date)
+ const canSnooze=validAttentionDate(quickDate,a.as_of,s.period.end_date)
+ async function snooze(i:AttentionIssue){
+  if(!editable||!canSnooze||selected)return
+  const result=await b.run({action:'set_attention',plan_id:s.plan!.id,period_id:s.period!.id,expected_plan:s.plan!.version,expected_attention:a!.version,issue_key:i.key,issue_hash:i.issue_hash,state:'snoozed',until:quickDate})
+  if(result)requestAnimationFrame(()=>root.current?.querySelector<HTMLElement>('h3')?.focus())
+ }
  function close(){setSelected(null);setAccepted(false);focusBack()}
  function inspect(i:AttentionIssue){
   const category=i.key.startsWith('category:')?document.querySelector<HTMLElement>(`[data-budget-category="${CSS.escape(i.key.slice(9))}"]`):null
-  const el=category??document.querySelector<HTMLElement>(i.line_id?`[data-budget-line="${i.line_id}"]`:'[aria-label="Bills and savings goals"]')
+  const line=i.line_id?document.querySelector<HTMLElement>(`[data-budget-line="${CSS.escape(i.line_id)}"]`):null
+  const el=category??line??document.querySelector<HTMLElement>(i.kind==='overspend'||i.kind==='projected_overspend'?'.budget-hero-main':'.budget-allowance-tools')
+  if(el instanceof HTMLDetailsElement)el.open=true
   if(el){const detail=category?.querySelector('details');if(detail)detail.open=true;for(let parent=el.parentElement;parent;parent=parent.parentElement)if(parent instanceof HTMLDetailsElement)parent.open=true;el.tabIndex=-1;el.focus();el.scrollIntoView({block:'start',behavior:'auto'})}
  }
 
@@ -35,16 +44,20 @@ export default function BudgetAttention(){
   {money.length>0&&<div className="space-y-2"><h4 className="font-semibold">These gaps still remain</h4><p className="detail-copy">Reviewed or snoozed does not mean resolved. Parent and category amounts can overlap—do not add these together.</p><ul className="space-y-2 body-copy">{money.map(i=><li key={i.key} className="flex flex-wrap justify-between gap-2"><span>{i.label} · {i.state==='snoozed'?`show again ${i.until}`:'reviewed'}</span><strong className="tabular-nums">{fmtCents(-i.gap_cents!)}</strong></li>)}</ul></div>}
   <ul className="budget-check-list">{shown.map(i=><li key={i.key} className="budget-check-row" aria-label={`Budget check: ${i.label}`}>
    <div className="flex flex-wrap justify-between gap-2"><h4 className="font-semibold">{i.label}</h4><span className="detail-copy">{i.state==='active'?'Needs a look':i.state==='snoozed'?`Snoozed until ${i.until}`:'Reviewed'}{i.due_date?` · ${i.kind==='bill_unmatched'?'Payment date':'Target date'} ${i.due_date}`:''}</span></div>
-   <details className="budget-check-explanation"><summary>Why this needs a look</summary><p className="body-copy">{attentionMessage(i)}</p></details>
+   <p className="body-copy">{i.kind==='projected_overspend'?'Recorded spending and your recent spending history suggest this could go over plan by the end of the period.':attentionMessage(i)}</p>
    {i.gap_cents!==null&&(i.kind==='pending_overage'?<p className="body-copy">Pending charges could put you <strong className="tabular-nums">{fmtCents(i.gap_cents)}</strong> over your allowance.</p>:<p className="body-copy">{i.kind==='bill_unmatched'?'Still to match':['projected_overspend','fixed_projected_overspend'].includes(i.kind)?'Projected overage':'Plan shortfall'}: <strong className="tabular-nums">{fmtCents(-i.gap_cents)}</strong></p>)}
    {i.reopened&&<p className="detail-copy text-warn">{i.reopen_reason==='expired'?'Time to check again.':i.reopen_reason==='gap_worsened'?'This shortfall has grown enough to need another look.':i.reopen_reason==='due_date_changed'?'The date changed, so this needs another look.':'The relevant evidence changed, so this needs another look.'}</p>}
    <div className="budget-priority-actions">
-    {i.kind==='pending_overage'?<a href="/ledger" className="inline-flex min-h-11 items-center">Review pending charges</a>:i.line_id||i.kind==='overspend'?<Button variant="ghost" onClick={()=>inspect(i)}>Inspect allowance</Button>:['changed_matches','unassigned_credits','uncategorized'].includes(i.kind)?<a href="/ledger" className="inline-flex min-h-11 items-center text-accent-ink underline">Review in Ledger</a>:i.kind==='check_data'?<a href="/accounts" className="inline-flex min-h-11 items-center text-accent-ink underline">Check accounts and imports</a>:<Button variant="ghost" disabled={!editable||!s.details?.lifecycle?.is_latest} onClick={()=>{if(!selected||window.confirm('Leave this unsaved review choice and adjust the plan? No review preference has been saved.'))b.setEditing(fromSnapshot(s))}}>Adjust plan</Button>}
-    <details className="budget-review-options"><summary>Reminder options</summary><p className="detail-copy">Reviewing changes reminders, not money or allowances.</p>
+    {i.kind==='pending_overage'?<a href="/ledger" className="inline-flex min-h-11 items-center">Review pending charges</a>:i.line_id||i.kind==='overspend'||i.kind==='projected_overspend'?<Button onClick={()=>inspect(i)}>{(i.kind==='overspend'||i.kind==='projected_overspend')&&!i.key.startsWith('category:')?'Review everyday spending':`Review ${i.label}`}</Button>:['changed_matches','unassigned_credits','uncategorized'].includes(i.kind)?<a href="/ledger" className="inline-flex min-h-11 items-center text-accent-ink underline">Review in Ledger</a>:i.kind==='check_data'?<a href="/accounts" className="inline-flex min-h-11 items-center text-accent-ink underline">Check accounts and imports</a>:<Button disabled={!editable||!s.details?.lifecycle?.is_latest} onClick={()=>{if(!selected||window.confirm('Leave this unsaved review choice and adjust the plan? No review preference has been saved.'))b.setEditing(fromSnapshot(s))}}>Adjust plan</Button>}
+    <div className="budget-reminder-controls">
+    {a.editable&&i.state==='active'&&canSnooze&&<button type="button" className="budget-text-action" disabled={!editable||!!selected} onClick={()=>void snooze(i)}>Remind me on {new Intl.DateTimeFormat('en-AU',{day:'numeric',month:'short',timeZone:'UTC'}).format(new Date(quickDate+'T00:00:00Z'))}</button>}
+    <details className="budget-review-options"><summary>Reminder options</summary>
     {i.kind==='pending_overage'&&<Button variant="ghost" onClick={()=>inspect(i)}>Inspect allowance</Button>}
     {i.state!=='active'&&<Button variant="ghost" disabled={!editable} onClick={()=>{if(window.confirm('Show this check again now? Your budget amounts stay unchanged.'))void b.run({action:'set_attention',plan_id:s.plan!.id,period_id:s.period!.id,expected_plan:s.plan!.version,expected_attention:a.version,issue_key:i.key,issue_hash:i.issue_hash,state:'active',until:null})}}>Show this again now</Button>}
     <button type="button" data-issue={i.key} disabled={!editable} className="min-h-11 rounded-lg border border-[var(--hair)] px-4 py-3 disabled:opacity-50" onClick={()=>open(i)}>Review this check</button>
     </details>
+    {a.editable&&<p className="detail-copy text-muted">Reminders don’t change your plan or resolve this check.</p>}
+    </div>
    </div>
   </li>)}</ul>
   {(all||a.total>shown.length)&&<Button variant="ghost" onClick={()=>setAll(!all)}>{all?'Show priority check':`See all ${a.total} budget checks`}</Button>}
@@ -63,6 +76,6 @@ export default function BudgetAttention(){
    {stale&&issue&&<Button variant="ghost" disabled={!editable} onClick={()=>{setToken(currentToken);setAccepted(false)}}>Review latest check</Button>}
    <Button variant="ghost" disabled={b.busy||!!b.pending} onClick={()=>{if(window.confirm('Leave this unsaved review choice? Budget amounts and saved reminder preferences will stay unchanged.'))close()}}>Leave review choice</Button>
   </form>}
-  {a.undo_operation_id&&<Button variant="ghost" disabled={!editable||!!selected} onClick={()=>{if(window.confirm('Undo the latest review preference? The earlier reminder choice will be restored; budget amounts stay unchanged.'))void b.run({action:'undo',operation_id:a.undo_operation_id})}}>Undo last review preference</Button>}
+  {a.undo_operation_id&&<Button variant="ghost" disabled={!editable||!!selected} onClick={()=>{void b.run({action:'undo',operation_id:a.undo_operation_id})}}>Undo last review preference</Button>}
  </section>
 }

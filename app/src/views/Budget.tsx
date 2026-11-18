@@ -13,16 +13,17 @@ import './budget.css'
 import BudgetItems from '../components/BudgetItems'
 import BudgetLifecycle from '../components/BudgetLifecycle'
 import BudgetAssistance from '../components/BudgetAssistance'
-import {BUDGET_ASSIST_METHOD,convertAssistanceToManual} from '../lib/budgetAssistance'
+import {BUDGET_ASSIST_METHOD,assistedLineSources,convertAssistanceToManual} from '../lib/budgetAssistance'
 import {budgetPresentation} from '../lib/budgetPresentation'
 import BudgetValue from '../components/BudgetValue'
-import BudgetPageHeader, {type BudgetView} from '../components/budget/BudgetPageHeader'
+import BudgetPageHeader, {budgetDate,type BudgetView} from '../components/budget/BudgetPageHeader'
 import BudgetHero from '../components/budget/BudgetHero'
 import BudgetSettings from '../components/budget/BudgetSettings'
 import BudgetTaskPanel from '../components/BudgetTaskPanel'
 import BudgetPlan from '../components/budget/BudgetPlan'
 import BudgetHistoryCoverage from '../components/budget/BudgetHistoryCoverage'
 import {assistanceSteps,AssistanceStepIcon} from '../components/budget/BudgetAssistanceSteps'
+import BudgetEditTable from '../components/budget/BudgetEditTable'
 
 const purposeNames={everyday:'Everyday spending',fixed:'Regular bills',reserve:'Set money aside',contribution:'Planned transfer'}
 function Field({label,children,hint}:{label:string;children:ReactNode;hint?:string}) {
@@ -57,10 +58,10 @@ export default function Budget() {
   const [coverageOpen,setCoverageOpen]=useState(false)
   const [setupOpen,setSetupOpen]=useState(true)
   useEffect(()=>{if(!editing)setSetupOpen(true)},[editing])
-  const root=useRef<HTMLDivElement>(null),wasBusy=useRef(false)
+  const root=useRef<HTMLDivElement>(null),wasBusy=useRef(false),priorDraftVersion=useRef(draft?.draft_version)
   const savedSetup=readSavedSetup(draft?.draft)
   useEffect(()=>{void budget.refresh()},[budget.refresh])
-  useEffect(()=>{if(wasBusy.current&&!busy){const heading=root.current?.querySelector('h2');if(heading){heading.tabIndex=-1;heading.focus()}}wasBusy.current=busy},[busy])
+  useEffect(()=>{if(wasBusy.current&&!busy){const next=draft?.draft_version!==priorDraftVersion.current?root.current?.querySelector<HTMLElement>('.budget-review-saved-draft:not(:disabled)'):null;const heading=root.current?.querySelector('h2');if(next)next.focus();else if(heading){heading.tabIndex=-1;heading.focus()}}if(!busy)priorDraftVersion.current=draft?.draft_version;wasBusy.current=busy},[busy,draft?.draft_version])
   const [now]=useState(()=>new Date())
   const outdated=s?.details?.lifecycle?s.details.lifecycle.state!=='current':s?.plan&&s.period?today({now:()=>now},s.plan.timezone)>=s.period.end_date:false
   function editPlan(){if(s&&window.dispatchEvent(new Event('budget-before-period-navigation',{cancelable:true})))setEditing(fromSnapshot(s))}
@@ -89,7 +90,7 @@ export default function Budget() {
     {pending&&<div className="outcome-panel mt-4"><h3 className="font-semibold">Let’s check that save first</h3><p className="body-copy my-2">The connection ended before we could confirm the result. Your original request is kept in this tab, including after a reload. We’ll check the saved result, then retry that same request only if needed.</p><Button disabled={busy} onClick={()=>void budget.recover()}>Check saved result</Button></div>}
     {s&&!s.write_enabled&&<p className="outcome-panel mt-4">Budget changes are currently paused. Saved information and result checks are still available.</p>}
     {role&&role!=='owner'&&<p className="outcome-panel mt-4">You can view this budget. Only its owner can change the plan or view setup drafts.</p>}
-    {assisting&&s&&!s.plan?<><section className="budget-setup-resume"><h3 className="font-semibold">Your history review is in progress</h3><p className="body-copy">Your account scope, inputs and optional change stay here in this session. Nothing is saved until you save a draft.</p><Button disabled={loading||busy} className="budget-assistance-resume" onClick={()=>setAssistanceOpen(true)}>Continue history review</Button></section><BudgetTaskPanel title="Help me build a budget" returnFocus={()=>root.current?.querySelector<HTMLElement>('.budget-assistance-resume')??null} open={assistanceOpen} retainOnClose onClose={()=>setAssistanceOpen(false)} description="You can close this at any time. Your choices are kept until you leave Budget."><Button variant="ghost" disabled={loading||busy} onClick={()=>void budget.refresh()}>Refresh setup data</Button><BudgetAssistance baseSetup={assistanceBase??undefined} onUse={setup=>{setAssisting(false);setEditing(setup);setSetupOpen(true)}} onManual={setup=>{setAssisting(false);setEditing(setup);setSetupOpen(true)}} onClose={()=>{setAssisting(false);setSetupOpen(true)}}/></BudgetTaskPanel></>:editing&&s?(s.plan?<BudgetEditor key={s.plan.id} setup={editing} active/>:<><section className="budget-setup-resume"><h3 className="font-semibold">Your setup is in progress</h3><p className="body-copy">Your choices stay here while you move around the app. Save a draft to keep them after a reload.</p><Button disabled={loading||busy} onClick={()=>setSetupOpen(true)}>Continue setup</Button><Button variant="ghost" disabled={busy||!!pending} onClick={()=>{if(window.confirm('Discard this unsaved setup? Your last saved draft stays unchanged.'))setEditing(null)}}>Discard unsaved setup</Button></section><BudgetTaskPanel title="Build your budget" open={setupOpen} retainOnClose onClose={()=>setSetupOpen(false)} description="Close to keep your choices in this session. Save a draft to keep them after a reload; saving does not start a budget."><Button variant="ghost" disabled={loading||busy} onClick={()=>void budget.refresh()}>Refresh setup data</Button>{loading&&<p role="status">Refreshing setup data. Your choices stay here.</p>}<BudgetEditor key="setup" setup={editing} active={false} onAssistance={()=>assist(editing)}/></BudgetTaskPanel></>):s?.plan?<>
+    {assisting&&s&&!s.plan?<><section className="budget-setup-resume"><h3 className="font-semibold">Your history review is in progress</h3><p className="body-copy">Your account scope, inputs and optional change stay here in this session. Nothing is saved until you save a draft.</p><Button disabled={loading||busy} className="budget-assistance-resume" onClick={()=>setAssistanceOpen(true)}>Continue history review</Button></section><BudgetTaskPanel title="Help me build a budget" returnFocus={()=>root.current?.querySelector<HTMLElement>('.budget-assistance-resume')??null} open={assistanceOpen} retainOnClose onClose={()=>setAssistanceOpen(false)} description="You can close this at any time. Your choices are kept until you leave Budget."><Button variant="ghost" disabled={loading||busy} onClick={()=>void budget.refresh()}>Refresh setup data</Button><BudgetAssistance baseSetup={assistanceBase??undefined} onUse={setup=>{setAssisting(false);setEditing(setup);setSetupOpen(true)}} onManual={setup=>{setAssisting(false);setEditing(setup);setSetupOpen(true)}} onClose={()=>{setAssisting(false);setSetupOpen(true)}}/></BudgetTaskPanel></>:editing&&s?(s.plan?<BudgetEditor key={s.plan.id} setup={editing} active/>:<><section className="budget-setup-resume"><h3 className="font-semibold">Your setup is in progress</h3><p className="body-copy">Your choices stay here while you move around the app. Save a draft to keep them after a reload.</p><Button disabled={loading||busy} onClick={()=>setSetupOpen(true)}>Continue setup</Button><Button variant="ghost" disabled={busy||!!pending} onClick={()=>{if(window.confirm('Discard this unsaved setup? Your last saved draft stays unchanged.'))setEditing(null)}}>Discard unsaved setup</Button></section><BudgetTaskPanel title="Build your budget" returnFocus={()=>root.current?.querySelector<HTMLElement>('.budget-review-saved-draft:not(:disabled)')??null} open={setupOpen} retainOnClose onClose={()=>setSetupOpen(false)} description="Close to keep your choices in this session. Save a draft to keep them after a reload; saving does not start a budget."><Button variant="ghost" disabled={loading||busy} onClick={()=>void budget.refresh()}>Refresh setup data</Button>{loading&&<p role="status">Refreshing setup data. Your choices stay here.</p>}<BudgetEditor key="setup" setup={editing} active={false} onAssistance={()=>assist(editing)}/></BudgetTaskPanel></>):s?.plan?<>
       {s.details?.controls?.paused&&<p className="budget-state-strip">Budget paused · real bills and recorded activity can still change. <button type="button" className="budget-text-action" onClick={()=>setSettingsOpen(true)}>Review budget settings</button></p>}
       <div hidden={view!=='overview'}><BudgetHero presentation={presentation} canEdit={canWrite&&!outdated} onEdit={editPlan} onFigures={()=>focusSection('budget-figures')} onGuide={()=>focusSection('budget-guide')} onUnplanned={()=>focusSection('budget-unplanned')}/><details className="budget-guidance"><summary>Recorded figures and budget guide</summary><Grid>
         <Tile title="What’s recorded so far"><div id="budget-figures" role="region" aria-label="Recorded Budget figures" tabIndex={-1}><p className="micro text-muted">{presentation.phase==='future'?'Future plan · recorded figures unavailable':presentation.coverage==='complete'?'Complete selected-account history':'Partial or no account history'}</p>
@@ -103,7 +104,7 @@ export default function Budget() {
       {s.details?.lifecycle?.state!=='current'&&<p className="outcome-panel mt-4">Saved history is read-only here. Review and carry controls remain available; correct recorded activity in Ledger. Changing past plans and account settings is not available in this preview.</p>}
       <div hidden={view!=='overview'}><BudgetItems/></div>
       <div id="budget-controls" tabIndex={-1}><BudgetLifecycle active={view==='history'} onOpen={()=>setView('history')}/></div>
-    </>:s&&!loading?<><section className="budget-entry" aria-labelledby="budget-entry-title">
+    </>:s&&!loading?<><SavedDraftReview/><section className="budget-entry" aria-labelledby="budget-entry-title">
       <div className="budget-entry-main">
         <div>
           <h3 id="budget-entry-title">A plan that starts with you</h3>
@@ -124,7 +125,7 @@ export default function Budget() {
       {role==='owner'&&s.accounts.some(a=>a.currency==='AUD')&&<button type="button" className="budget-text-action budget-entry-coverage" disabled={busy||!!pending} onClick={()=>setCoverageOpen(true)}>Review account history coverage <span className="budget-entry-arrow" aria-hidden="true">↗</span></button>}
       {!!draft?.draft&&!savedSetup&&<p className="detail-copy mt-3 text-warn">A partial or older setup is saved safely, but this preview cannot open its format yet. It has not been replaced or activated. You can start a new setup explicitly.</p>}
       {draft?.stale&&<p className="detail-copy mt-3 text-warn">Your account information changed since this draft was saved. Review it before starting your budget.</p>}
-    </section><SavedDraftReview/></>:null}
+    </section></>:null}
   </div></Screen>
 }
 function AccountScope() {
@@ -133,13 +134,19 @@ function AccountScope() {
   return scope.length?<ul className="space-y-2 body-copy">{scope.map(m=><li key={`${m.original_account_id}:${m.role}:${m.start_date}`}>{s.accounts.find(a=>a.id===m.account_id)?.name??'Account no longer available'} · {m.role==='activity'?'Activity included':'Savings destination only'} · from {m.start_date}{m.end_date?` until ${addDays(m.end_date,-1)}`:''}</li>)}</ul>:<p className="body-copy">No accounts selected. Your plan works without linked activity.</p>
 }
 
+function SetupProgress({current}:{current:0|1}) {
+  return <ol role="list" className="budget-setup-progress" aria-label="Budget setup progress">
+    {['Set up','Review saved draft','Start budget'].map((label,index)=><li key={label} aria-current={index===current?'step':undefined}><span>{index+1}.</span> {label}</li>)}
+  </ol>
+}
+
 function BudgetEditor({setup,active,onAssistance}:{setup:Setup;active:boolean;onAssistance?:()=>void}) {
   const b=useBudget(),s=b.snapshot!,form=useRef<HTMLFormElement>(null)
   const [review,setReview]=useState(false),[accepted,setAccepted]=useState(false),[scope,setScope]=useState<'period'|'period-and-future'>('period')
   const [localError,setLocalError]=useState('')
   useEffect(()=>{if(active){const heading=form.current?.querySelector<HTMLElement>('h3');if(heading){heading.tabIndex=-1;heading.focus()}}},[active])
   useEffect(()=>{setReview(false);setAccepted(false)},[s,b.draft?.draft_version])
-  function change(next:Setup){b.setEditing(next.assistance?convertAssistanceToManual(next):next);setAccepted(false);setReview(false)}
+  function change(next:Setup){b.setEditing(next.assistance?convertAssistanceToManual(next,setup):next);setAccepted(false);setReview(false)}
   function lineChange(id:string,patch:Partial<Setup['lines'][number]>) {change({...setup,lines:setup.lines.map(l=>l.id===id?{...l,...patch}:l)})}
   let period:ReturnType<typeof setupPeriod>|null=null,gap=false
   try{period=setupPeriod(setup);const sums=setupSummary(setup,s.details?.controls?.archives.map(a=>a.line_id));gap=sums.current.fundingGap>0||((!active||scope==='period-and-future')&&sums.future.fundingGap>0)}catch{}
@@ -156,31 +163,33 @@ function BudgetEditor({setup,active,onAssistance}:{setup:Setup;active:boolean;on
     else await b.run({action:'save_draft',expected_draft:b.draft?.draft_version??'0',payload:setup})
   }
   const Heading=active?'h3':'h4'
-  function section(id:string){const target=form.current?.querySelector<HTMLElement>(`[data-setup-section="${id}"]`);if(target){target.tabIndex=-1;target.focus();target.scrollIntoView({block:'start'})}}
-  // Activation is a separate explicit action on a saved, reviewed draft; never auto-activate after save.
-  return <form ref={form} onSubmit={e=>e.preventDefault()} className={`${active?'mt-5':'budget-setup'} space-y-4`} aria-label={active?'Adjust allocation plan':'Manual budget setup'} aria-busy={b.busy}>
-    {!active&&<nav aria-label="Setup sections" className="budget-setup-sections">{[['rhythm','1 · Rhythm & accounts'],['money','2 · Money to plan with'],['allowances','3 · Give it a job']].map(([id,label])=><Button key={id} variant="ghost" onClick={()=>section(id)}>{label}</Button>)}</nav>}
+  // Review validates the draft; activation remains a separate saved-draft action.
+  return <form ref={form} onSubmit={e=>e.preventDefault()} onInvalidCapture={e=>{for(let node=(e.target as HTMLElement).parentElement;node&&node!==form.current;node=node.parentElement)if(node instanceof HTMLDetailsElement)node.open=true}} className={`${active?'mt-5':'budget-setup'} space-y-4`} aria-label={active?'Adjust allocation plan':'Manual budget setup'} aria-busy={b.busy}>
+    {!active&&<SetupProgress current={0}/>}
     <fieldset disabled={!b.canWrite} className="space-y-4 min-w-0">
     {staleAssistance&&<div className="outcome-panel text-warn space-y-2"><p>The history behind these suggestions changed. Your edited amounts and goal are still here, but the old evidence cannot authorize a new draft.</p><Button variant="ghost" onClick={()=>change(convertAssistanceToManual(setup))}>Keep as manual estimates</Button></div>}
-    <div className="glass p-5"><Heading className="font-display text-xl font-bold">{active?'Adjust your plan':'Let’s build your budget'}</Heading><p className="body-copy mt-2">{active?'Change the amounts, then review exactly which periods they apply to.':'Choose your rhythm, estimate what’s coming in, then give that money a job. You stay in control.'}</p></div>
-    {!active&&<div className="glass p-5 space-y-4"><Heading data-setup-section="rhythm" className="font-semibold">1. Choose your rhythm and accounts</Heading><div className="grid gap-4 md:grid-cols-2">
+    {active&&<div className="glass p-5"><Heading className="font-display text-xl font-bold">Adjust your plan</Heading><p className="body-copy mt-2">Change the amounts, then review exactly which periods they apply to.</p></div>}
+    {!active&&<div className="glass p-5 space-y-4"><Heading className="font-semibold">Budget dates</Heading><div className="grid gap-4 md:grid-cols-2">
       <Field label="Budget rhythm"><Select ariaLabel="Budget rhythm" value={setup.frequency} onChange={frequency=>change({...setup,frequency:frequency as Setup['frequency']})}><option value="monthly">Monthly · calendar months</option><option value="fortnightly">Every two weeks · 14 days</option></Select></Field>
       <Field label="Start with the period containing" hint="Monthly budgets include the whole calendar month, including earlier recorded activity."><DateInput ariaLabel="Start with the period containing" value={setup.start_date} onChange={start_date=>change({...setup,start_date})}/></Field>
       {setup.frequency==='fortnightly'&&<Field label="A two-week cycle start date" hint="Choose a date such as payday. It anchors the repeating 14-day periods."><DateInput ariaLabel="A two-week cycle start date" value={setup.anchor??''} onChange={anchor=>change({...setup,anchor})}/></Field>}
+    </div><details className="budget-setup-option"><summary>Accounts & timezone · {setup.account_ids.length} selected</summary><div className="space-y-4">
       <Field label="Budget timezone" hint="Dates and period boundaries follow this timezone."><input aria-label="Budget timezone" className="budget-input" required value={setup.timezone} onChange={e=>change({...setup,timezone:e.target.value})}/></Field>
-    </div><p className="body-copy">Currency: AUD. This initial version does not combine currencies.</p>
+    <p className="body-copy">Currency: AUD. This initial version does not combine currencies.</p>
     <fieldset><legend className="field-label mb-2">Include account activity (optional)</legend><p className="detail-copy text-muted mb-2">Choose the accounts that pay for this budget. Savings-only accounts can stay out. Selecting an account does not prove its history is complete.</p>
       {s.accounts.length?s.accounts.map(a=><label key={a.id} className="flex min-h-11 items-center gap-3 py-2"><input type="checkbox" disabled={a.currency!=='AUD'} checked={setup.account_ids.includes(a.id)} onChange={e=>change({...setup,account_ids:e.target.checked?[...setup.account_ids,a.id]:setup.account_ids.filter(id=>id!==a.id)})}/><span>{a.name} · {a.currency}{a.currency!=='AUD'?' · Not supported yet':''}</span></label>):<p>No accounts yet? You can still make a manual plan.</p>}
-    </fieldset>{unavailable&&<p role="alert" className="text-warn">A draft account is unavailable. Start a new draft or restore the account before activating.</p>}</div>}
-    <div className="glass p-5 space-y-4"><Heading data-setup-section="money" className="font-semibold">{active?'Amounts to plan with':'2. What will you plan with?'}</Heading><div className="grid gap-4 md:grid-cols-2">
+    </fieldset></div></details>{unavailable&&<p role="alert" className="text-warn">A draft account is unavailable. Start a new draft or restore the account before activating.</p>}</div>}
+    <div className="glass p-5 space-y-4"><Heading className="font-semibold">{active?'Amounts to plan with':'Money to plan with'}</Heading><div className="grid gap-4 md:grid-cols-2">
       <MoneyField label="Expected income this period (AUD)" value={setup.income_cents} onChange={income_cents=>change({...setup,income_cents})} hint="Your estimate, not income already received. Zero is okay."/>
-      <MoneyField label="Existing cash to use this period (AUD)" value={setup.opening_drawdown_cents} onChange={opening_drawdown_cents=>change({...setup,opening_drawdown_cents})} hint="An optional, one-off top-up. Do not include money already set aside in a reserve. This will not repeat in future periods."/>
+      {active?<MoneyField label="Existing cash to use this period (AUD)" value={setup.opening_drawdown_cents} onChange={opening_drawdown_cents=>change({...setup,opening_drawdown_cents})} hint="An optional, one-off top-up. Do not include money already set aside in a reserve. This will not repeat in future periods."/>:<details className="budget-setup-option"><summary>Use existing cash (optional){setup.opening_drawdown_cents>0&&` · ${fmtCents(setup.opening_drawdown_cents)}`}</summary><MoneyField label="Existing cash to use this period (AUD)" value={setup.opening_drawdown_cents} onChange={opening_drawdown_cents=>change({...setup,opening_drawdown_cents})} hint="An optional, one-off top-up. Do not include money already set aside in a reserve. This will not repeat in future periods."/></details>}
     </div></div>
-    <div className="glass p-5 space-y-4"><Heading data-setup-section="allowances" className="font-semibold">{active?'Your allowances':'3. Give the money a job'}</Heading><p className="body-copy">Everyday spending is for flexible costs. Add a separate allowance if you want to plan for bills or put money aside. These amounts do not move money.</p>
-      {setup.lines.map(line=><div key={line.id} className="budget-line"><div className="grid gap-4 md:grid-cols-2">{active?<div><strong>{line.name}</strong><p className="detail-copy text-muted">{purposeNames[line.kind]}</p></div>:<Field label={`Allowance name · ${purposeNames[line.kind]}`}><input required maxLength={60} className="budget-input" value={line.name} onChange={e=>lineChange(line.id,{name:e.target.value})}/></Field>}
-      <MoneyField label={`Planned for ${line.name||'this allowance'} (AUD)`} value={line.allocation_cents} onChange={allocation_cents=>lineChange(line.id,{allocation_cents})}/>
-      {!active&&line.kind==='reserve'&&<MoneyField label={`Already set aside for ${line.name||'this reserve'} (AUD)`} value={line.opening_cents} onChange={opening_cents=>lineChange(line.id,{opening_cents})} hint="Existing money at the start date, not new income or verified savings progress."/>}</div>
-      {!active&&line.kind!=='everyday'&&<Button variant="ghost" onClick={()=>change({...setup,lines:setup.lines.filter(l=>l.id!==line.id)})}>Remove {line.name||'allowance'}</Button>}</div>)}
+    <div className="glass p-5 space-y-4"><Heading className="font-semibold">{active?'Your allowances':'Give the money a job'}</Heading><p className="body-copy">Everyday spending is for flexible costs. Add a separate allowance if you want to plan for bills or put money aside. These amounts do not move money.</p>
+      <BudgetEditTable setup={setup} active={active} saved={new Map((active?s.lines??[]:[]).map(l=>[l.id,l.allocation_cents]))}
+        goals={new Set((s.details?.items??[]).filter(i=>i.config?.type==='goal').map(i=>i.line_id))}
+        sources={assistedLineSources(setup,s.source_revision)}
+        onLine={lineChange} onRemove={id=>change({...setup,lines:setup.lines.filter(l=>l.id!==id)})}/>
+      {!active&&setup.lines.some(l=>l.kind==='reserve')&&<p className="detail-copy text-muted">“Already set aside” is existing money at the start date, not new income or verified savings progress.</p>}
+      <p className="detail-copy text-muted">Press Enter to move to the next amount. Nothing is saved until you review and save.</p>
       {!active&&setup.lines.length<100&&<div className="flex flex-wrap gap-2">{(['fixed','reserve','contribution'] as const).map(kind=><Button key={kind} variant="ghost" onClick={()=>change({...setup,lines:[...setup.lines,{id:crypto.randomUUID(),kind,name:purposeNames[kind],allocation_cents:0,opening_cents:0}]})}>Add {purposeNames[kind].toLowerCase()}</Button>)}</div>}
       {!active&&<p className="detail-copy text-muted">Start with simple allowances here. After activation, add goal targets and dates—or finish setting up an allowance in Bills and things you’re saving for. No funding is confirmed automatically.</p>}
     </div>
@@ -191,7 +200,7 @@ function BudgetEditor({setup,active,onAssistance}:{setup:Setup;active:boolean;on
     {!review?<Button disabled={disabled} onClick={preview}>Review my plan</Button>:<div className="glass p-5 space-y-4"><Heading className="font-semibold">Check before saving</Heading>
       <p className="body-copy">{period?`${period.start} – ${addDays(period.end,-1)} · ${period.timezone}`:'Choose valid dates and timezone.'} · {setup.account_ids.length} activity accounts · {active?(scope==='period'?'This period only':'This period and future periods'):'This period and future plan'}</p>
       {gap&&<label className="flex items-start gap-3 py-3"><input type="checkbox" className="mt-1" checked={accepted} onChange={e=>setAccepted(e.target.checked)}/><span>I understand I have planned more than the expected resources shown above. I’ll need to adjust the plan or find extra money. This is not an affordability check.</span></label>}
-      <p className="body-copy">{active?'Saving changes your allocation plan, not your bank accounts.':'Save this draft first. Then use “Review saved draft” to check it and start the budget. Saving a draft does not activate anything.'}</p>
+      <p className="body-copy">{active?'Saving changes your allocation plan, not your bank accounts.':'Next you’ll review the saved draft and choose whether to start your budget.'}</p>
       <Button disabled={disabled||(gap&&!accepted)} onClick={()=>void save()}>{active?'Save plan changes':'Save setup draft'}</Button>
     </div>}
     </fieldset>
@@ -210,10 +219,10 @@ export function SavedDraftReview() {
   try{validateSetup(setup);const sums=setupSummary(setup);gap=sums.current.fundingGap>0||sums.future.fundingGap>0}catch{valid=false}
   const legacy=!!setup.assistance&&!setup.assistance.manual&&(!setup.assistance.reviewed_inputs||setup.assistance.method!==BUDGET_ASSIST_METHOD)
   const stale=b.draft?.stale||b.draft?.source_revision!==b.snapshot?.source_revision
-  return <div className="glass mt-4 p-5 space-y-3"><h3 className="font-semibold">Your saved setup draft</h3><p className="body-copy">Nothing is active yet. Review the saved amounts before starting.</p><Button variant="ghost" disabled={!valid||!b.canWrite} onClick={()=>setReview(!review)}>Review saved draft</Button>
-    {review&&<BudgetTaskPanel title="Review saved setup draft" onClose={()=>{setReview(false);setAccepted(false)}} description="This is your saved draft. Review it before explicitly starting the budget; no bank money moves."><Balance setup={setup} both/><BudgetSetupInputSummary setup={setup}/><p className="body-copy">{setupPeriod(setup).start} – {addDays(setupPeriod(setup).end,-1)} · {setup.timezone} · {setup.frequency==='monthly'?'Monthly':'Every two weeks'} · {setup.account_ids.length} activity accounts</p>
+  return <section className="budget-saved-draft space-y-3" aria-label="Saved setup draft"><SetupProgress current={1}/><h3 className="font-display text-xl font-semibold">Your draft is saved</h3><p className="body-copy">Your budget isn’t active yet. Review the saved amounts to start it.</p><Button className="budget-review-saved-draft" disabled={!valid||!b.canWrite} onClick={()=>setReview(!review)}>Review saved draft</Button>
+    {review&&<BudgetTaskPanel title="Review saved setup draft" onClose={()=>{setReview(false);setAccepted(false)}} description="Check your dates and amounts before starting."><div className="space-y-4"><SetupProgress current={1}/><Balance setup={setup} both/><BudgetSetupInputSummary setup={setup}/><p className="body-copy">{budgetDate(setupPeriod(setup).start)} – {budgetDate(addDays(setupPeriod(setup).end,-1))} · {setup.timezone} · {setup.frequency==='monthly'?'Monthly':'Every two weeks'} · {setup.account_ids.length} activity accounts</p>
       <ul>{setup.lines.map(l=><li key={l.id} className="flex justify-between gap-3 py-2"><span>{l.name}</span><span>{fmtCents(l.allocation_cents)}</span></li>)}</ul>
       {stale||legacy?<div className="space-y-2"><p className="text-warn">Your source information changed, the suggestion method changed, or individual input review is missing. Recheck the suggestions, or explicitly keep these edited amounts as manual estimates before saving again.</p>{setup.assistance&&!setup.assistance.manual&&<Button variant="ghost" onClick={()=>b.setEditing(convertAssistanceToManual(setup))}>Keep as manual estimates</Button>}</div>:<>{gap&&<label className="flex min-h-11 items-start gap-3 py-3"><input type="checkbox" checked={accepted} onChange={e=>setAccepted(e.target.checked)}/><span>I understand the current and future funding gaps shown above.</span></label>}<Button disabled={!b.canWrite||(gap&&!accepted)} onClick={()=>void b.run({action:'activate',expected_draft:b.draft!.draft_version,accept_gap:accepted})}>Start this budget</Button><p className="detail-copy text-muted">This activates your saved plan. It does not move money.</p></>}
-    </BudgetTaskPanel>}
-  </div>
+    </div></BudgetTaskPanel>}
+  </section>
 }

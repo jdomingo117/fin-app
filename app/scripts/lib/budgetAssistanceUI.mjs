@@ -12,3 +12,10 @@ export async function confirmBudgetAssistance(page,payDate,{keepIncome=false}={}
  await page.getByRole('checkbox',{name:/I’ve checked these amounts/}).check()
  await expect(page.getByRole('button',{name:'Use this draft',exact:true})).toBeEnabled()
 }
+
+/** Ticks an account in the assistance picker. Spending-account pre-selection (2026-11-11) arrives
+ * asynchronously and can land between Playwright's state read and its click, so retry until ticked. */
+export async function selectAssistanceAccount(page,name){
+ const box=page.getByRole('checkbox',{name})
+ await expect(async()=>{await box.check({timeout:2000});await expect(box).toBeChecked({timeout:500})}).toPass({timeout:10000})
+}

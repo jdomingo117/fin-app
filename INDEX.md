@@ -935,11 +935,37 @@ and recovery-only completion options for settings; goal completion keeps its ori
 default. Button-only rollover draft actions expose semantic dirty markers. See
 [[BUDGET_BUI_07A_SETTINGS_HOST]] for host verification; [[BUDGET_BUI_07B_FREQUENCY_ACCOUNTS]] records completed grouped forms. [[BUDGET_BUI_07C_ROLLOVER_LIFECYCLE]] records completed rollover/lifecycle presentation and visible native preparation counts. [[BUDGET_BUI_08A_MY_PLAN]] records completed saved allocation composition and edit entry. [[BUDGET_BUI_08B_LOOK_BACK]] records completed historical presentation and preserved review/next-period choices. [[BUDGET_BUI_09A_MANUAL_SETUP]] records completed retained setup and separate draft activation. R02 eligibility is corrected in [[BUDGET_R02_ELIGIBILITY]]. R03 is corrected in [[BUDGET_R03_READINESS]]. R04 is complete in [[BUDGET_R04_INPUT_REVIEW]]. R05 is complete in [[BUDGET_R05_SIGNED_ESTIMATOR]]. BUI-09b is complete in [[BUDGET_BUI_09B_ASSISTANCE]]. BUI-10 is complete in [[BUDGET_BUI_10_CANDIDATE_VERIFICATION]]. BUI-11 is complete with owner presentation acceptance in [[BUDGET_BUI_11_OWNER_HANDBACK]]. R01 engineering is complete in [[BUDGET_R01_SPENDING_FORECAST]]; next is affected human verification.
 
-`components/budget/BudgetPlan.tsx` renders qualified saved allocation values from
-`budgetPresentation.ts`; it does not total money or build requests. `Budget.tsx`
+`components/budget/BudgetPlan.tsx` hosts My plan; it does not total money or build requests. `Budget.tsx`
 keeps the existing editor and focuses it on entry. Its My plan activity route keeps
 `BudgetItems` mounted but hidden until Overview is selected. Missing future values
 remain unavailable. See [[BUDGET_BUI_08A_MY_PLAN]] for current/future and recovery proof.
+Since budget table stage 1 ([[BUDGET_TABLE_STAGE_1_PLAN]]), My plan's body is `components/budget/BudgetSheet.tsx`:
+a read-only `<table>` grouped as bills, everyday (category limits as child rows), set aside, goals and
+planned transfers, with Planned/Spent/Left (set-asides "Set aside so far", goals "Saved so far",
+transfers "Confirmed"), a per-group total only when a group has 2+ saved lines, a bottom summary
+(expected income, one-off cash, total planned, still to plan / funding gap) and a money split bar.
+`lib/budgetSheet.ts` arranges presentation values into rows and computes split-bar display ratios
+only; group totals and `allocated_cents` come from `details.sheet`, built by `budget_sheet_facts`
+(migration `20261112020000_budget_sheet_totals.sql`, appended by a renamed-and-wrapped
+`budget_workspace_details_uncached`; unknown members make a group field null, never zero).
+Phones below 600px show one switchable comparison column (remembered in localStorage).
+Existing hooks `data-plan-line`, `plan-line-*`, `plan-income`, `plan-cash-once` and `plan-unallocated` are kept.
+Stage 2 ([[BUDGET_TABLE_STAGE_2]]) adds a formula bar (`#budget-sheet-fx`, polite live region): each row,
+group total and summary row name is a toggle button whose plain working comes from `SheetRow.explain`
+(the everyday pool states the hero's identity; category rows list parts without an equation) plus the
+values' qualification text. Known values with qualification reasons get a corner mark; current-period
+everyday rows with a spending bar get an even-pace tick from `remainingDays`. No new reads or arithmetic.
+Stage 3a ([[BUDGET_TABLE_STAGE_3A]]): `components/budget/BudgetEditTable.tsx` replaces the stacked allowance
+fields in `BudgetEditor` for both Adjust plan and manual setup. It keeps the same field labels and validation, shows
+"Saved"/"Changed from" against `snapshot.lines`, and Enter moves down a column. Review, scope, gap and save bodies are unchanged.
+Stage 3b ([[BUDGET_TABLE_STAGE_3B]]): `assistedLineSources` (lib/budgetAssistance.ts) labels each assisted draft line
+(From your history / Detected bill / Checked by you / Your number / Kept as it was / Your goal, plus "· older history" when
+`source_revision` moved on). `convertAssistanceToManual(setup, previous)` relabels only the changed provenance part; `manual`
+is still set, so server staleness/review rules are unchanged. Assistance step 3 shows `BudgetDraftTable`; the setup editor table shows sources.
+Stage 4 ([[BUDGET_TABLE_STAGE_4]]): migration `20261118000000_budget_months.sql` adds service-only `budget_months`
+(selected period + up to 11 earlier; per-line planned/used/remaining/reserve via `budget_details_m4` and history checkpoints),
+exposed as the `months` action on `query-budget`. Look back renders `components/budget/BudgetMonths.tsx` from
+`lib/budgetMonths.ts`; it reads once per opening (or on "Update month by month") to stay within the 30/min read limit.
 
 `components/budget/BudgetHistory.tsx` presents existing lifecycle facts and immutable
 saved review payloads; it does not calculate history or construct commands.

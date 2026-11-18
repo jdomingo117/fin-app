@@ -64,6 +64,18 @@ hand to find the transfer-linker gap.
 
 ## Recent changes
 
+- 2026-11-18 — Budget Look back shows up to 12 budgets month by month (migration 20261118000000, query-budget `months`).
+
+- 2026-11-13 — Budget auto-build review lists every draft line with where its amount came from; edits relabel only that row.
+
+- 2026-11-13 — Rate-limited Budget refreshes wait out the server's retry_after and read again, so Undo no longer leaves stale "may be out of date" figures.
+
+- 2026-11-13 — Budget plan editor and manual setup edit amounts in a table that shows what changed.
+
+- 2026-11-12 — Budget My plan table explains each figure in a formula bar, marks incomplete figures and shows an even-pace tick.
+
+- 2026-11-12 — Budget My plan is now a read-only table with group totals and a money split bar (migration 20261112020000).
+
 - 2026-11-12 — Moved out of the vault into its own repo: planning docs to docs/budget and docs/plans, private sample statements and generated evidence git-ignored.
 
 - 2026-11-12 — Merged Budget's two bill finders onto shared rules and wording; bill evidence now checks bill-like merchants first (migrations 20261112000000/010000).
@@ -71,15 +83,3 @@ hand to find the transfer-linker gap.
 - 2026-11-12 — Simplified the Budget overview: one plain line per goal, plain estimate/check wording, duplicate everyday breakdown removed.
 
 - 2026-11-12 — Budget overview turns unplanned pay into a visible next step (bills, a goal, or keep as a buffer).
-
-- 2026-11-12 — Budget overview names accounts whose imports or sync are behind instead of showing a confident $0 spent; the shell footer shows real bank-sync status.
-
-- 2026-11-11 — Rewrote Budget assistance copy for beginners, with calculation detail moved into one "How we worked this out" disclosure.
-
-- 2026-11-11 — Budget assistance keeps history-based amounts when circumstances changed, clearing only what the owner says changed.
-
-- 2026-11-11 — Budget assistance amounts are one pre-filled review screen with suggested pay dates and a single final confirmation.
-
-- 2026-11-11 — Budget assistance offers detected regular payments as bills (saved as pinned recurring series) and caps confirmations at the last import.
-
-- 2026-11-11 — Budget assistance pre-selects spending accounts and flags unused ones via a new account-activity read (migration 20261111010000).

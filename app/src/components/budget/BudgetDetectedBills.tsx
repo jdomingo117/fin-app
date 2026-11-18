@@ -50,7 +50,7 @@ export default function BudgetDetectedBills({result,accountName,activity,today,o
         </div>
         <span className="budget-detected-bill-amount">{bill.fixed?'':'about '}{fmtCents(s.expected)}</span>
         {bill.addable
-          ?<Button variant="ghost" disabled={saving||!b.canWrite} onClick={()=>void add([bill])} ariaLabel={`Add ${s.label} as a bill`}>Add as a bill</Button>
+          ?<Button variant="ghost" disabled={saving||!b.canWrite} onClick={()=>void add([bill])} ariaLabel={`Add as a bill: ${s.label}`}>Add as a bill</Button>
           :<span className="detail-copy text-muted">Add it on the Recurring page</span>}
       </li>})}
     </ul>

@@ -1,5 +1,5 @@
 import {describe,it,expect} from 'vitest'
-import {applyAssistance,assistanceReasons,convertAssistanceToManual,type AssistanceResult} from './budgetAssistance'
+import {applyAssistance,assistanceReasons,assistedLineSources,convertAssistanceToManual,type AssistanceResult} from './budgetAssistance'
 import {reviewProblem,reviewedResult,manualReviewSetup,type AssistanceReview} from './budgetAssistanceReview'
 import {blankSetup} from './budgetWorkspace'
 const result:AssistanceResult={method:'budget-assist-v2',source_revision:'3',frequency:'monthly',start_date:'2026-10-26',anchor:'2026-10-01',account_ids:[],account_count:1,invalid_accounts:[],missing_coverage:[],periods:[{start_date:'2026-09-01',end_date:'2026-10-01',label:'September',expense_cents:10000,income_cents:50000}],period_count:3,integrity_ok:true,eligible:true,variable:false,fingerprint:'a'.repeat(64),suggestions:{income_cents:50000,everyday_cents:20000,bills_cents:10000},recurring:[],target:{start_date:'2026-10-01',end_date:'2026-11-01',as_of:'2026-10-26',timezone:'Australia/Sydney',coverage_complete:true,integrity_ok:true,settled_everyday_cents:0}}
@@ -52,6 +52,20 @@ describe('R04 explicit inputs and preservation',()=>{
   expect(edited.assistance?.reviewed_inputs?.income).toMatchObject({amount_cents:65000,confirmed:false,pay_dates:['2026-10-15']})
   expect(edited.assistance?.reviewed_inputs?.costs[0].confirmed).toBe(false)
   expect(edited.lines.slice(1,3)).toEqual(first.lines.slice(1,3))
+ })
+ it('labels each line by its source and relabels only the row the owner edits',()=>{
+  const first=applyAssistance(base(),result,undefined,review()),[everyday,rent,goal,insurance]=first.lines.map(l=>l.id)
+  const before=assistedLineSources(first,'3')
+  expect([before.get(everyday),before.get(rent),before.get(goal),before.get(insurance)]).toEqual(['From your history','Kept as it was','Kept as it was','Checked by you'])
+  const edited=convertAssistanceToManual({...first,lines:first.lines.map(l=>l.id===insurance?{...l,allocation_cents:1}:l)},first)
+  const after=assistedLineSources(edited,'3')
+  expect([after.get(everyday),after.get(insurance)]).toEqual(['From your history','Your number'])
+  expect(edited.assistance?.manual).toBe(true)
+  expect(edited.assistance?.provenance.everyday).toBe(first.assistance?.provenance.everyday)
+  const everydayEdited=convertAssistanceToManual({...first,lines:first.lines.map(l=>l.id===everyday?{...l,allocation_cents:1}:l)},first)
+  expect(assistedLineSources(everydayEdited,'3').get(everyday)).toBe('Your number')
+  expect(assistedLineSources(first,'4').get(everyday)).toBe('From your history · older history')
+  expect(new Set(Object.values(convertAssistanceToManual({...first,opening_drawdown_cents:1}).assistance!.provenance))).toEqual(new Set(['user-estimate-preserved-from-assisted-draft']))
  })
  it('withholds outcomes for a scheduled future bill gap without altering the protected current plan',()=>{
   const r=review();r.costs[0]={...r.costs[0],cadence:'annual',anchor:'2027-01-01',amount_cents:60000}

@@ -18,7 +18,7 @@ export async function budgetLookbackChecks(args){
    check(`${state} choices survive changing Budget views`,true)
   }
   if(state==='changed-comparison'){
-   const row=region.getByRole('table').getByRole('row').filter({has:page.getByRole('rowheader',{name:'Everyday',exact:true})})
+   const row=region.locator('table.data-table').getByRole('row').filter({has:page.getByRole('rowheader',{name:'Everyday',exact:true})})
    await expect(row.getByRole('cell').nth(2)).toHaveText('$100.00')
    await expect(region.getByRole('region',{name:'Recorded review snapshot',exact:true})).toContainText('net spending $125.00')
    check('changed comparison retains the actual saved review allowance and recorded spending',true)
@@ -50,6 +50,14 @@ export async function budgetLookbackChecks(args){
  await header.getByRole('button',{name:'Look back',exact:true}).click();await expect(region).toContainText('In progress')
  await expect(region.getByRole('button',{name:'Review and choose what carries',exact:true})).toHaveCount(0)
  await captureHistory(page,region,'current')
+ const months=region.locator('.budget-months')
+ await expect(months.getByRole('heading',{name:'Month by month',exact:true})).toBeVisible()
+ await expect(months.locator('[data-months-line]')).toHaveCount(1);await expect(months.locator('thead th')).toHaveCount(2)
+ await expect(months.locator('thead th[aria-current="date"]')).toHaveCount(1);await expect(months).toContainText('This fills in as you complete more budgets.')
+ const s0=snapshotSQL(u),facts=JSON.parse(sql(`SELECT public.budget_months(${quote(u.tenant)},${quote(u.id)},${quote(s0.plan.id)},${quote(s0.period.id)},${s0.source_revision},${s0.plan.version});`))
+ check('month by month reads each saved line for the selected budget without writing',[facts.periods.length,facts.periods[0].lines.map(l=>l.line_id),writes.length],[1,[line],0])
+ assert.throws(()=>sql(`SET ROLE authenticated; SELECT public.budget_months(${quote(u.tenant)},${quote(u.id)},${quote(s0.plan.id)},${quote(s0.period.id)},${s0.source_revision},${s0.plan.version});`),/permission denied/)
+ check('browser roles cannot call the months read directly',true)
  for(const name of ['Overview','My plan','Look back'])await header.getByRole('button',{name,exact:true}).click()
  check('Look back tab changes never save or mark a current budget reviewed',writes.length,0)
  assert.throws(()=>command({action:'open_next_period',income_cents:100000,accept_gap:false,lines:[{line_id:line,amount_cents:50000}]}),/budget_invalid_unfinished_period/)

@@ -962,6 +962,10 @@ Stage 3b ([[BUDGET_TABLE_STAGE_3B]]): `assistedLineSources` (lib/budgetAssistanc
 (From your history / Detected bill / Checked by you / Your number / Kept as it was / Your goal, plus "· older history" when
 `source_revision` moved on). `convertAssistanceToManual(setup, previous)` relabels only the changed provenance part; `manual`
 is still set, so server staleness/review rules are unchanged. Assistance step 3 shows `BudgetDraftTable`; the setup editor table shows sources.
+Stage 4 ([[BUDGET_TABLE_STAGE_4]]): migration `20261118000000_budget_months.sql` adds service-only `budget_months`
+(selected period + up to 11 earlier; per-line planned/used/remaining/reserve via `budget_details_m4` and history checkpoints),
+exposed as the `months` action on `query-budget`. Look back renders `components/budget/BudgetMonths.tsx` from
+`lib/budgetMonths.ts`; it reads once per opening (or on "Update month by month") to stay within the 30/min read limit.
 
 `components/budget/BudgetHistory.tsx` presents existing lifecycle facts and immutable
 saved review payloads; it does not calculate history or construct commands.

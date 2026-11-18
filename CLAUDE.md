@@ -64,6 +64,8 @@ hand to find the transfer-linker gap.
 
 ## Recent changes
 
+- 2026-11-18 — Budget Look back shows up to 12 budgets month by month (migration 20261118000000, query-budget `months`).
+
 - 2026-11-13 — Budget auto-build review lists every draft line with where its amount came from; edits relabel only that row.
 
 - 2026-11-13 — Rate-limited Budget refreshes wait out the server's retry_after and read again, so Undo no longer leaves stale "may be out of date" figures.
@@ -81,5 +83,3 @@ hand to find the transfer-linker gap.
 - 2026-11-12 — Simplified the Budget overview: one plain line per goal, plain estimate/check wording, duplicate everyday breakdown removed.
 
 - 2026-11-12 — Budget overview turns unplanned pay into a visible next step (bills, a goal, or keep as a buffer).
-
-- 2026-11-12 — Budget overview names accounts whose imports or sync are behind instead of showing a confident $0 spent; the shell footer shows real bank-sync status.

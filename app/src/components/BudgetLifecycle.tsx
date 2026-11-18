@@ -1,3 +1,4 @@
+import BudgetMonths from './budget/BudgetMonths'
 import {useEffect,useRef,useState} from 'react'
 import {useBudget} from '../contexts/BudgetContext'
 import {Button} from './Controls'
@@ -31,6 +32,7 @@ export default function BudgetLifecycle({active=true,onOpen}:{active?:boolean;on
   <p className="body-copy">{l.state==='past'?'Completed budget · recorded activity can still change.':l.state==='future'?'Future plan · provisional, not completed actuals.':'In progress · this budget cannot be marked reviewed before its end date.'}</p>
   <p className="body-copy">{s.details?.rollover?.enabled?'Everyday amount carried across categories':'Everyday amount carried over from last budget'}: <strong>{facts.opening_carry_cents===null?'Unavailable':fmtCents(facts.opening_carry_cents)}</strong>. {l.provisional_carry?'This may change, because last budget’s history isn’t complete or reviewed yet.':'Based on what you chose when you reviewed last budget.'} It’s room in your plan, not extra money in your bank.</p>
   {s.unallocated_cents!=null&&s.unallocated_cents<0&&<p className="outcome-panel text-warn">Saved plan funding gap: {fmtCents(s.unallocated_cents)}. Review allocations in My plan; this is separate from the everyday remainder.</p>}
+  <BudgetMonths active={active}/>
   {l.state==='past'&&<>
    {l.review&&<p className={`outcome-panel ${l.changed_since_review?'text-warn':''}`}>{l.review.state==='reopened'?'Review reopened. Your earlier record is preserved. ':''}{l.changed_since_review?'Changed since review — source evidence or results changed. Review again before relying on these figures.':l.review.state==='reviewed'?'Reviewed. Your recorded snapshot is preserved.':''}</p>}
    <BudgetHistory snapshot={s} stale={b.readState!=='ready'||!!b.pending}/>

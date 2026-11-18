@@ -59,3 +59,18 @@ related:
   - `--lookback-only` skips the R09 coverage pre-checks, which hit the 429 rate limit.
   - Two contrast fixes: the "of" line uses `--color-ink2`, and over-plan figures use ink
     text on a red tint with a visible "over" word.
+
+## Personal stack
+
+- **Migration:** applied at the owner's request on 18 Nov 2026, using forward-only
+  `migration up --local` with only `20261118000000` pending.
+  - Backup: `backups/halcyon-pre-budget-months-20261118.dump` (pg_dump custom format,
+    12:28Z; it lists 107 table-data entries).
+  - Counts were identical before and after: 1 auth user, 1 tenant, 9 accounts, 8,777
+    transactions, the same signed total, 1 plan, 6 allocations and 1 period.
+  - `anon` and `authenticated` can't execute `budget_months`.
+- **Owner's app:** Look back showed Everyday spending as $0.00 of $3,113.15 and Snowboard
+  as $400.00 of $900.00, and the months request returned 200.
+- **Design change:** cell shading started as a partial background block, which looked
+  detached from the right-aligned figures. It is now a 3px progress line along the bottom
+  of the cell.

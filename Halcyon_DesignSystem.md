@@ -382,7 +382,7 @@ next-batch warnings. Closing returns focus to the toolbar trigger; “Review sel
 selection controls. All controls use theme tokens, visible focus and 44px targets; narrower screens
 stack search controls and retain account/date/category context within transaction rows.
 
-### 8.5 Account / stream row (`AccountRow.tsx`)
+### 8.5 Account / stream row (design reference)
 Accent bar (3px) + name (600) + type (micro) + balance (tabular; `neg` if negative).
 
 ### 8.6 Allocation donut + legend (`AllocationDonut.tsx`, `charts/Donut.tsx`)
@@ -392,7 +392,7 @@ The fixed 165px visual and legend sit side-by-side on wide cards. At 420px or le
 component's own available width, a container query stacks the centred visual above a full-width
 legend, so the legend retains readable labels and values even when the surrounding page is wide.
 
-### 8.7 Objective ring (`ObjectiveRing.tsx`)
+### 8.7 Objective ring (design reference)
 SVG progress ring (rounded cap, animated dashoffset over ~1.2s) with a tabular percentage
 centred; value + label beneath.
 
@@ -944,8 +944,8 @@ app/
     data.ts             typed mock dataset + formatters (fmt)
     index.css           ★ tokens: @theme (light) + :root vars + .dark + .glass/.micro/.scene-wash
     components/
-      Shell  Boot  Tile  Stat  CapacityMeter  Ledger  AccountRow
-      AllocationDonut  ObjectiveRing  HeroCard  MilestoneToast  ThemeToggle
+      Shell  Boot  Tile  Stat  CapacityMeter  Ledger
+      AllocationDonut  HeroCard  MilestoneToast  ThemeToggle
       Controls (Button/Chip/Select/DateInput/MultiSelect/DateRangePicker/Switch)
       SegmentedTabs  Screen (Screen/ViewHeader/Grid)  motion.ts
       HeroMetric  AnalyzerFilters  TransactionsPanel  ExpenseScopeBar

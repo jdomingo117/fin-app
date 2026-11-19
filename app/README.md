@@ -96,8 +96,8 @@ src/
   data.ts             typed mock dataset + formatters
   index.css           Tailwind v4 @theme tokens + .glass / .micro + base
   components/
-    Shell  Boot  Tile  Stat  CapacityMeter  Ledger  AccountRow
-    AllocationDonut  ObjectiveRing  HeroCard  MilestoneToast  ThemeToggle
+    Shell  Boot  Tile  Stat  CapacityMeter  Ledger
+    AllocationDonut  HeroCard  MilestoneToast  ThemeToggle
     Controls (Button/Chip/Select/DateInput/MultiSelect/DateRangePicker/Switch)
     SegmentedTabs  Screen (Screen/ViewHeader/Grid)  motion.ts
     AnalyzerFilters  HeroMetric  TransactionsPanel

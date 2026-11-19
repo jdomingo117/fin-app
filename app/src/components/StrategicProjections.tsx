@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Assumption, ForecastReadout, Legend, PlanningWarning } from './projections/ForecastReadout'
 import { CalculationBreakdown } from './projections/CalculationBreakdown'
 import { dateLabel, type QuestionMode } from './projections/presentation'
+import { resolveProjectionGoal } from './projections/goalSelection'
 import Tile from './Tile'
 import HeroMetric from './HeroMetric'
 import ProjectionChart from './ProjectionChart'
@@ -81,7 +82,7 @@ function cashHistory(accounts: Account[], transactions: Txn[], current: number):
 
 export default function StrategicProjections() {
   const { accounts, transactions, netWorthHistory, planningGoals, planningScenarios, planningEvents, recurrenceHints, recurrenceOverrides, refreshData } = useData()
-  const [metric, setMetric] = useState<ProjectionMetric>('cash')
+  const [temporaryMeasure, setTemporaryMeasure] = useState<ProjectionMetric>('cash')
   const [mode, setMode] = useState<QuestionMode>('byDate')
   const [goalName, setGoalName] = useState('Cash reserve')
   const [targetInput, setTargetInput] = useState('100000')
@@ -93,7 +94,7 @@ export default function StrategicProjections() {
   const [scenarioStartDate, setScenarioStartDate] = useState(() => futureDate(3).slice(0, 7))
   const [showScenario, setShowScenario] = useState(true)
   const [showCalculation, setShowCalculation] = useState(false)
-  const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null)
+  const [selectedGoalId, setSelectedGoalId] = useState<string | null | undefined>(undefined)
   const [editingGoal, setEditingGoal] = useState<PlanningGoal | null | undefined>(undefined)
   const [undoEventId, setUndoEventId] = useState<string | null>(null)
   const [scenarioUndoEventId, setScenarioUndoEventId] = useState<string | null>(null)
@@ -107,10 +108,7 @@ export default function StrategicProjections() {
   const [eventStart, setEventStart] = useState(() => futureDate(1))
   const [eventEnd, setEventEnd] = useState('')
 
-  const selectedGoal = useMemo(
-    () => planningGoals.find((goal) => goal.id === selectedGoalId) ?? null,
-    [planningGoals, selectedGoalId],
-  )
+  const { goal: selectedGoal, metric } = resolveProjectionGoal(planningGoals, selectedGoalId, temporaryMeasure)
   const scopedAccounts = useMemo(
     () => selectedGoal ? accounts.filter((account) => selectedGoal.accountIds.includes(account.id)) : accounts,
     [accounts, selectedGoal],
@@ -249,14 +247,8 @@ export default function StrategicProjections() {
   }, [metric, accounts, scopedAccounts, scopedTransactions, currentValue, netWorthHistory, selectedGoal])
 
   useEffect(() => {
-    if (selectedGoalId && !selectedGoal) setSelectedGoalId(null)
-    if (!selectedGoal && planningGoals.length && !selectedGoalId) {
-      setSelectedGoalId(planningGoals.find((goal) => goal.status === 'active')?.id ?? planningGoals[0].id)
-    }
-  }, [planningGoals, selectedGoal, selectedGoalId])
-  useEffect(() => {
     if (selectedGoal) {
-      setGoalName(selectedGoal.name); setMetric(selectedGoal.metric === 'net_worth' ? 'netWorth' : 'cash')
+      setGoalName(selectedGoal.name)
       setTargetInput(centsToInput(selectedGoal.targetCents)); setTargetDate(selectedGoal.targetDate ?? futureDate(24))
     } else setGoalName(metric === 'cash' ? 'Cash reserve' : 'Net worth milestone')
   }, [selectedGoal])
@@ -328,7 +320,10 @@ export default function StrategicProjections() {
         <div className="flex flex-wrap items-center justify-between gap-3 p-4">
           <div><p className="text-[11px] font-bold uppercase tracking-[0.08em] text-muted">Saved planning goals</p><p className="mt-1 text-[13px] text-muted">Goals scope the calculation; they never alter account or ledger data.</p></div>
           <div className="flex flex-wrap items-center gap-2">
-            {planningGoals.length > 0 && <select aria-label="Selected planning goal" value={selectedGoalId ?? ''} onChange={(event) => setSelectedGoalId(event.target.value || null)} className="min-h-10 rounded-lg border border-[var(--hair)] bg-[var(--input-bg)] px-3 text-[13px] font-semibold text-ink"><option value="">Temporary calculator</option>{planningGoals.map((goal) => <option key={goal.id} value={goal.id}>{goal.name}{goal.status === 'active' ? '' : ` · ${goal.status}`}</option>)}</select>}
+            {planningGoals.length > 0 && <select aria-label="Selected planning goal" value={selectedGoal?.id ?? ''} onChange={(event) => {
+              if (!event.target.value) setTemporaryMeasure(metric)
+              setSelectedGoalId(event.target.value || null)
+            }} className="min-h-10 rounded-lg border border-[var(--hair)] bg-[var(--input-bg)] px-3 text-[13px] font-semibold text-ink"><option value="">Temporary calculator</option>{planningGoals.map((goal) => <option key={goal.id} value={goal.id}>{goal.name}{goal.status === 'active' ? '' : ` · ${goal.status}`}</option>)}</select>}
             {selectedGoal && <button type="button" onClick={() => setEditingGoal(selectedGoal)} className="min-h-10 rounded-lg border border-[var(--hair)] px-3 text-[13px] font-semibold text-ink">Edit goal</button>}
             <button type="button" onClick={() => setEditingGoal(null)} className="min-h-10 rounded-lg bg-ink px-3 text-[13px] font-semibold text-surface">{planningGoals.length ? 'New goal' : 'Create your first goal'}</button>
           </div>
@@ -360,7 +355,7 @@ export default function StrategicProjections() {
             <SegmentedTabs
               tabs={[{ id: 'cash', label: 'Cash holdings' }, { id: 'netWorth', label: 'Net worth' }]}
               active={metric}
-              onChange={(value) => { setSelectedGoalId(null); setMetric(value as ProjectionMetric) }}
+              onChange={(value) => { setSelectedGoalId(null); setTemporaryMeasure(value as ProjectionMetric) }}
               layoutId="projection-metric"
             />
           </div>

@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import { useState, type ReactNode } from 'react'
-import { NAV, useView, type View } from '../router'
+import { NAV, useView } from '../router'
 import { useScramble } from '../hooks/useScramble'
 import { supabase } from '../lib/supabaseClient'
 import { useData } from '../contexts/DataContext'

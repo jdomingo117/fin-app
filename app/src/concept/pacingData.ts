@@ -8,7 +8,6 @@
    ~138, auto-invest 1000…). Shapes here are what the real thing would compute
    from `CATEGORY_TAXONOMY`-tagged txns once the ledger is dense enough. */
 
-import { CATEGORY_TAXONOMY } from '../data'
 
 export interface Sub {
   name: string

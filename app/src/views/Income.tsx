@@ -29,7 +29,7 @@ export default function Income() {
   const [view, setView] = useState('analyzer')
   const { preset, from, to, applyPreset, changeFrom, changeTo } = usePeriodRange()
   
-  const { accounts: dbAccounts, reportingTransactions: transactions } = useData()
+  const { accounts: dbAccounts } = useData()
 
   const INFLOW_ACCOUNTS = useMemo(() => {
     if (!dbAccounts || dbAccounts.length === 0) return []

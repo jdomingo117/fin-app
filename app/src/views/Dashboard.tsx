@@ -2,7 +2,6 @@ import { useState } from 'react'
 import HeroCard from '../components/HeroCard'
 import { Screen, ViewHeader, Grid } from '../components/Screen'
 import Tile from '../components/Tile'
-import Stat from '../components/Stat'
 import AllocationDonut from '../components/AllocationDonut'
 import Ledger from '../components/Ledger'
 import TransactionCategoryDrawer from '../components/TransactionCategoryDrawer'
@@ -65,7 +64,7 @@ function getAccountIcon(type: string, name: string) {
 }
 
 export default function Dashboard() {
-  const { profile, accounts, reportingTransactions: transactions, netWorthHistory, refreshData } = useData()
+  const { accounts, reportingTransactions: transactions, netWorthHistory, refreshData } = useData()
   const { go, toast } = useView()
   const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null)
   const selectedTransaction = selectedTransactionId

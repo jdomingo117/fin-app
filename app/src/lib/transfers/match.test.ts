@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { matchTransfers, pairHistoryKey, pairKey } from './match'
-import { AUTO_THRESHOLD, MAX_BUCKET, PAIR_CADENCE_BONUS, SUGGESTED_THRESHOLD } from './constants'
+import { MAX_BUCKET, PAIR_CADENCE_BONUS, SUGGESTED_THRESHOLD } from './constants'
 import type { AccountIdentifier, TransferLeg } from './types'
 
 let seq = 0

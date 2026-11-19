@@ -52,7 +52,7 @@ function meter(value:BudgetValue|null,max:BudgetValue|null){
 type Item=BudgetPresentation['items'][number]
 
 /** Plain-language working for a row. Uses only server figures; it states relationships, never computes money. */
-function working(fmt:(cents:number)=>string,lines:(string|null|false)[],values:(BudgetValue|null|undefined)[]):string[]{
+function working(lines:(string|null|false)[],values:(BudgetValue|null|undefined)[]):string[]{
   const why=[...new Set(values.filter((v):v is BudgetValue=>!!v).map(budgetValueQualification).filter(Boolean).flatMap(q=>q.split('; ')))]
   return [...lines.filter((l):l is string=>!!l),...(why.length?[`About these figures: ${why.join('; ')}.`]:[])]
 }
@@ -61,7 +61,7 @@ const nonZero=(v:BudgetValue)=>v.availability!=='known'||v.cents!==0
 /** The pool's identity matches the hero's "How it works"; category rows list their parts without claiming an equation. */
 function everydayWorking(fmt:(cents:number)=>string,row:{planned:BudgetValue;spent:BudgetValue;remaining:BudgetValue;carry:BudgetValue;rightsMoved?:BudgetValue},exact=true){
   const adds=[nonZero(row.carry)?` + carried over ${m(fmt,row.carry)}`:'',row.rightsMoved&&nonZero(row.rightsMoved)?` + moved in ${m(fmt,row.rightsMoved)}`:''].join('')
-  return working(fmt,[exact?`Left ${m(fmt,row.remaining)} = planned ${m(fmt,row.planned)}${adds} − spent ${m(fmt,row.spent)}.`
+  return working([exact?`Left ${m(fmt,row.remaining)} = planned ${m(fmt,row.planned)}${adds} − spent ${m(fmt,row.spent)}.`
     :`Planned ${m(fmt,row.planned)}${nonZero(row.carry)?` · carried over ${m(fmt,row.carry)}`:''} · spent ${m(fmt,row.spent)} · left ${m(fmt,row.remaining)}, including any moves between categories.`,
     'Refunds you match lower spending. Bills and set-asides are counted separately.'],[row.planned,row.spent,row.remaining,row.carry,row.rightsMoved])
 }
@@ -113,7 +113,7 @@ export function budgetSheet(p:BudgetPresentation,fmt:(cents:number)=>string):She
     if(!item){
       rowsByGroup.get(key)!.push({id:line.id,lineId:line.id,name:line.name,child:false,over:false,note:opening,
         planned:line.planned,spent:key==='contribution'?null:missing(basis),third:missing(basis),meter:null,pace:false,
-        explain:working(fmt,[`Planned ${m(fmt,line.planned)}. Its activity figures need a fresh Budget read.`],[line.planned])})
+        explain:working([`Planned ${m(fmt,line.planned)}. Its activity figures need a fresh Budget read.`],[line.planned])})
       continue
     }
     const third=key==='fixed'?item.remaining:key==='contribution'?item.bankConfirmed:item.reserve
@@ -122,11 +122,11 @@ export function budgetSheet(p:BudgetPresentation,fmt:(cents:number)=>string):She
     rowsByGroup.get(key)!.push({id:line.id,lineId:line.id,name:line.name,child:false,over,note,
       planned:line.planned,spent:key==='fixed'?item.spent:key==='contribution'?null:item.purchases,third,
       meter:key==='fixed'?meter(item.spent,line.planned):key==='goal'?meter(item.reserve,item.target):null,pace:false,
-      explain:key==='fixed'?working(fmt,[`Planned ${m(fmt,line.planned)} · matched payments so far ${m(fmt,item.spent)} · left ${m(fmt,item.remaining)}.`,
+      explain:key==='fixed'?working([`Planned ${m(fmt,line.planned)} · matched payments so far ${m(fmt,item.spent)} · left ${m(fmt,item.remaining)}.`,
           'A payment that isn’t matched yet doesn’t mean it’s unpaid.'],[line.planned,item.spent,item.remaining])
-        :key==='contribution'?working(fmt,[`Planned ${m(fmt,line.planned)} · matched to bank transfers ${m(fmt,item.bankConfirmed)}.`,
+        :key==='contribution'?working([`Planned ${m(fmt,line.planned)} · matched to bank transfers ${m(fmt,item.bankConfirmed)}.`,
           'Matched transfers are evidence of funding. They aren’t counted as spending.'],[line.planned,item.bankConfirmed])
-        :working(fmt,[`${key==='goal'?'Saved':'Set aside'} so far ${m(fmt,item.reserve)}${key==='goal'&&item.config?.target_cents!=null?` of ${m(fmt,item.target)}`:''} · planned this budget ${m(fmt,line.planned)}.`,
+        :working([`${key==='goal'?'Saved':'Set aside'} so far ${m(fmt,item.reserve)}${key==='goal'&&item.config?.target_cents!=null?` of ${m(fmt,item.target)}`:''} · planned this budget ${m(fmt,line.planned)}.`,
           'The amount so far includes any reserve from setup and what earlier budgets planned, less matched spending.',
           'Setting money aside is a plan. It doesn’t move money in your bank.'],[line.planned,item.reserve,item.purchases])})
   }

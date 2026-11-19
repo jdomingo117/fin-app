@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ALL_CATEGORIES, FULL_TAXONOMY, fmtCents, type CustomSubcategory, type TransactionAllocation, type Txn } from '../data'
+import { ALL_CATEGORIES, FULL_TAXONOMY, fmtCents, type CustomSubcategory, type Txn } from '../data'
 import { KIND_LABELS, TRANSACTION_KINDS, type TransactionKind } from '../lib/classification'
 import { supabase } from '../lib/supabaseClient'
 import { Button, Select } from './Controls'

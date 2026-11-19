@@ -41,7 +41,7 @@ const TABS = [
 export default function Expenses() {
   const [view, setView] = useState('analytics')
   const { preset, from, to, applyPreset, changeFrom, changeTo } = usePeriodRange()
-  const { accounts: dbAccounts, reportingTransactions: transactions } = useData()
+  const { accounts: dbAccounts } = useData()
   const location = useLocation()
   const dashboardFocus = location.state as { source?: string; category?: string; from?: string; to?: string } | null
 

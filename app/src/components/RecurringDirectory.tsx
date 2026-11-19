@@ -4,7 +4,7 @@ import Tile from './Tile'
 import { useScrollIdle } from '../hooks/useScrollIdle'
 import { dayLabel, TODAY } from '../lib/period'
 import { upcomingCharges, type RecurringSection, type Series, type RecurringCandidate } from '../lib/recurring'
-import { fmt, glowColor } from '../data'
+import { fmt } from '../data'
 import RecurringSeriesDialog from './RecurringSeriesDialog'
 import { supabase } from '../lib/supabaseClient'
 
@@ -300,7 +300,6 @@ function CandidateRow({ c }: { c: RecurringCandidate }) {
 export default function RecurringDirectory({
   sections,
   candidates,
-  monthlyCommitment,
   boundsLabel,
   focusedSeriesId,
   onFocusSeries,

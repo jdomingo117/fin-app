@@ -28,5 +28,5 @@ export default defineConfig({
   },
   // Playwright owns real-browser cases under e2e/; keep Vitest's fast unit
   // runner from trying to execute Playwright's fixture declarations.
-  test: { exclude: ['e2e/**', '**/node_modules/**', '**/.git/**'] },
+  test: { exclude: ['e2e/**', 'src/lib/csv/e2e.test.ts', 'src/lib/csv/gate2Quality.e2e.test.ts', '**/node_modules/**', '**/.git/**'] },
 })

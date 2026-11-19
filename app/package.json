@@ -8,6 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:csv:live": "node scripts/run-golden-pass.mjs --csv --release-candidate --live-provider",
     "test:watch": "vitest",
     "test:budget:durable": "node scripts/test-budget-durable.mjs",
     "test:budget:release": "node scripts/test-budget-durable.mjs --release-candidate --secondary-ports --items --lifecycle --workspace",

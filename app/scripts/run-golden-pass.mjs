@@ -10,7 +10,7 @@ import { assertSafeTestTarget } from './lib/assertSafeTestTarget.mjs'
 const appDir = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const repoDir = resolve(appDir, '..')
 const npmCache = process.env.NPM_CONFIG_CACHE ?? resolve(tmpdir(), 'fin-app-npm-cache')
-const suite = process.argv.includes('--gate2') ? 'gate2' : process.argv.includes('--review') ? 'review' : process.argv.includes('--categorize-pending') ? 'pending' : 'golden'
+const suite = process.argv.includes('--csv') ? 'csv' : process.argv.includes('--gate2') ? 'gate2' : process.argv.includes('--review') ? 'review' : process.argv.includes('--categorize-pending') ? 'pending' : 'golden'
 const projectId = `halcyon-${suite}-isolated-${Date.now()}`
 const workDir = mkdtempSync(resolve(tmpdir(), 'halcyon-golden-'))
 const isolatedSupabase = resolve(workDir, 'supabase')
@@ -85,7 +85,7 @@ function status() {
  * `fin-app` project or another test run.
  */
 function removeResidualProjectContainers() {
-  if (!/^halcyon-(golden|gate2|review|pending)-isolated-\d+$/.test(projectId)) {
+  if (!/^halcyon-(golden|csv|gate2|review|pending)-isolated-\d+$/.test(projectId)) {
     throw new Error(`Refusing to remove containers for unexpected project ID: ${projectId}`)
   }
   const listed = spawnSync('docker', [
@@ -177,8 +177,10 @@ try {
   functions.stderr.on('data', (chunk) => { if (!candidate) process.stderr.write(`[functions] ${chunk}`) })
   await waitForFunctions(apiUrl)
 
-  if (suite === 'gate2') {
-    run('npx', ['vitest', 'run', 'src/lib/csv/gate2Quality.e2e.test.ts'], {
+  if (suite === 'csv') {
+    run('npx', ['vitest', 'run', '--config', 'vitest.csv-live.config.ts', 'src/lib/csv/e2e.test.ts'], { cwd: appDir, env })
+  } else if (suite === 'gate2') {
+    run('npx', ['vitest', 'run', '--config', 'vitest.csv-live.config.ts', 'src/lib/csv/gate2Quality.e2e.test.ts'], {
       cwd: appDir,
       env: {
         ...env,

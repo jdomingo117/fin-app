@@ -1,16 +1,4 @@
-/**
- * End-to-end ingestion tests against the LIVE local stack.
- *
- * Drives the real pipeline (the same modules the UI imports) through the real
- * Edge Functions, for every file in `Sample datasets/`. This is what proves
- * the whole thing works together, as opposed to each unit working alone.
- *
- * Skipped automatically when the stack is not running, so `npm test` stays
- * usable offline. To run it:
- *   npx supabase start
- *   npx supabase functions serve --no-verify-jwt --env-file supabase/.env.local
- *   SUPABASE_ANON_KEY=... npm test
- */
+/** Live ingestion on the disposable project created by npm run test:csv:live. */
 import { describe, it, expect, beforeAll } from 'vitest'
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
@@ -19,7 +7,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { stageRows, applyAssignments, toTransactionPayload, type ColumnMapping } from './pipeline'
 import { EXPENSE_CATEGORIES, INCOME_CATEGORY, TRANSFER_CATEGORY, UNCATEGORIZED } from '../../data'
 
-const URL_ = process.env.SUPABASE_URL ?? 'http://127.0.0.1:54321'
+const URL_ = process.env.SUPABASE_URL ?? ''
 const ANON = process.env.SUPABASE_ANON_KEY ?? ''
 const SAMPLES = join(__dirname, '..', '..', '..', '..', 'Sample datasets')
 // The sample statements are private and stay out of git; these tests skip without them.
@@ -27,16 +15,6 @@ const HAS_SAMPLES = existsSync(SAMPLES)
 const FILES = HAS_SAMPLES ? readdirSync(SAMPLES).filter((f) => f.toLowerCase().endsWith('.csv')) : []
 
 const ALLOWED = [...EXPENSE_CATEGORIES, INCOME_CATEGORY, TRANSFER_CATEGORY, UNCATEGORIZED]
-
-let live = false
-
-async function stackUp() {
-  if (!ANON) return false
-  try {
-    const r = await fetch(`${URL_}/functions/v1/analyze-csv`, { method: 'OPTIONS' })
-    return r.status < 500
-  } catch { return false }
-}
 
 interface Ctx { client: SupabaseClient; token: string; userId: string; tenantId: string; accountId: string }
 
@@ -58,7 +36,7 @@ const invoke = (fn: string, token: string, body: unknown) =>
     method: 'POST',
     headers: {
       'Content-Type': 'application/json', apikey: ANON,
-      Authorization: `Bearer ${token}`, Origin: 'http://localhost:5300',
+      Authorization: `Bearer ${token}`, Origin: 'http://localhost:55300',
     },
     body: JSON.stringify(body),
   }).then(async (r) => ({ status: r.status, json: await r.json().catch(() => null) }))
@@ -101,16 +79,19 @@ async function importFile(ctx: Ctx, file: string, balanceCents: number) {
   return { mapping, staged, finalRows, result: ins.json, catStats, payloadSize: payload.length }
 }
 
-beforeAll(async () => { live = await stackUp() })
+beforeAll(() => {
+  if (URL_ !== 'http://127.0.0.1:55421'
+    || !/^halcyon-csv-isolated-\d+$/.test(process.env.HALCYON_TEST_TARGET_ID ?? '')
+    || process.env.HALCYON_ALLOW_DESTRUCTIVE_TEST_FIXTURES !== 'isolated-only'
+    || !ANON) {
+    throw new Error('Live CSV tests require the verified disposable project from npm run test:csv:live.')
+  }
+  if (!FILES.length) throw new Error('Live CSV tests require the private sample statements.')
+})
 
-describe.skipIf(!process.env.SUPABASE_ANON_KEY || !HAS_SAMPLES)('end-to-end ingestion (live stack)', () => {
-  it('the stack is reachable', async () => {
-    expect(live, 'start the stack and `functions serve` to run these').toBe(true)
-  })
-
+describe('end-to-end ingestion (live stack)', () => {
   for (const file of FILES) {
     it(`imports ${file} correctly`, async () => {
-      if (!live) return
       const ctx = await newUser('imp')
       const { staged, finalRows, result } = await importFile(ctx, file, -50_000)
 
@@ -138,7 +119,6 @@ describe.skipIf(!process.env.SUPABASE_ANON_KEY || !HAS_SAMPLES)('end-to-end inge
   }
 
   it('re-importing the same file changes nothing', async () => {
-    if (!live) return
     const ctx = await newUser('redup')
     const file = 'St George CC.csv'
 
@@ -167,7 +147,6 @@ describe.skipIf(!process.env.SUPABASE_ANON_KEY || !HAS_SAMPLES)('end-to-end inge
   }, 180_000)
 
   it('reconciles consecutive and partially-overlapping imports against the complete ledger', async () => {
-    if (!live) return
     const ctx = await newUser('atomic')
     const batch = () => crypto.randomUUID()
     const txn = (date: string, description: string, amount: number, uploadBatchId: string) => ({
@@ -229,7 +208,6 @@ describe.skipIf(!process.env.SUPABASE_ANON_KEY || !HAS_SAMPLES)('end-to-end inge
   }, 60_000)
 
   it('rolls back inserted rows if reconciliation cannot complete', async () => {
-    if (!live) return
     const ctx = await newUser('atomic-rollback')
     const failed = await invoke('upsert-transactions', ctx.token, {
       transactions: [{
@@ -256,7 +234,6 @@ describe.skipIf(!process.env.SUPABASE_ANON_KEY || !HAS_SAMPLES)('end-to-end inge
   }, 60_000)
 
   it('a second, different file reuses the cache for merchants it has seen', async () => {
-    if (!live) return
     const ctx = await newUser('cache')
     const a = await importFile(ctx, 'St George CC.csv', -50_000)
     const b = await importFile(ctx, 'St George Trans.csv', -50_000)
@@ -271,7 +248,6 @@ describe.skipIf(!process.env.SUPABASE_ANON_KEY || !HAS_SAMPLES)('end-to-end inge
   }, 180_000)
 
   it('quarantines a corrupted date instead of importing it as today', async () => {
-    if (!live) return
     const ctx = await newUser('baddate')
     const rows = [
       { Date: '31/31/2026', Description: 'Corrupt Row', Debit: '10.00', Credit: '', Category: '', SubCategory: '' },

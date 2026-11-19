@@ -7,6 +7,8 @@ import { basename, dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { assertSafeTestTarget } from './lib/assertSafeTestTarget.mjs'
 
+import { goldenSupabaseCli } from './lib/goldenSupabaseCli.mjs'
+
 const appDir = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const repoDir = resolve(appDir, '..')
 const npmCache = process.env.NPM_CONFIG_CACHE ?? resolve(tmpdir(), 'fin-app-npm-cache')
@@ -19,8 +21,7 @@ let stackStarted = false
 const candidate = process.argv.includes('--release-candidate')
 // A candidate run is provider-disabled unless the operator explicitly selects an authorized live run.
 const providerDisabled = candidate && !process.argv.includes('--live-provider')
-const cli = process.env.SUPABASE_CLI
-const cliRun = (args, options = {}) => cli ? run(cli, args, options) : run('npx', ['supabase', ...args], options)
+const cliRun = (args, options = {}) => run(...goldenSupabaseCli(args), options)
 
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, {
@@ -169,10 +170,10 @@ try {
   assertSafeTestTarget(env)
   console.log(`Golden provider mode: ${providerDisabled ? 'disabled; no provider credential copied; AI refresh remains untested' : 'live provider'}`)
 
-  functions = spawn(cli ?? 'npx', [
-    ...(cli ? [] : ['supabase']), 'functions', 'serve', '--workdir', workDir,
+  functions = spawn(...goldenSupabaseCli([
+    'functions', 'serve', '--workdir', workDir,
     '--env-file', resolve(isolatedSupabase, '.env.local'), '--no-verify-jwt',
-  ], { cwd: repoDir, env: { ...process.env, ...env }, stdio: ['ignore', 'pipe', 'pipe'] })
+  ]), { cwd: repoDir, env: { ...process.env, ...env }, stdio: ['ignore', 'pipe', 'pipe'] })
   functions.stdout.on('data', (chunk) => { if (!candidate) process.stdout.write(`[functions] ${chunk}`) })
   functions.stderr.on('data', (chunk) => { if (!candidate) process.stderr.write(`[functions] ${chunk}`) })
   await waitForFunctions(apiUrl)

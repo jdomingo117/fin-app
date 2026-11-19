@@ -21,6 +21,7 @@
       generate one per response. connect-src is deliberately narrow — it is
       what stops a stolen token being POSTed to an attacker's server.
     -->
+    <!-- Enforce frame-ancestors 'none' via an HTTP response header at the hosting layer. -->
     <meta
       http-equiv="Content-Security-Policy"
       content="
@@ -30,7 +31,6 @@
         font-src 'self' https://fonts.gstatic.com;
         img-src 'self' data: blob:;
         connect-src 'self' http://127.0.0.1:54321 http://localhost:54321 ws://localhost:5300 https://*.supabase.co wss://*.supabase.co;
-        frame-ancestors 'none';
         base-uri 'self';
         form-action 'self';
         object-src 'none'

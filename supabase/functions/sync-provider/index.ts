@@ -15,6 +15,8 @@ import {
   UpAuthError, UpApiError, type UpTransaction,
 } from '../_shared/upClient.ts'
 
+import { lookupUserMerchantRules } from './merchantRules.ts'
+
 const ANCHOR_DESCRIPTION = 'Opening Balance Offset (Reconciliation)'
 
 const SyncSchema = z.object({
@@ -160,16 +162,7 @@ Deno.serve(
         const missing = rows.filter((r) => !have.has(r.external_id))
         if (missing.length === 0) return
         const merchantKeys = [...new Set(missing.map((row) => row.merchant_key))]
-        const userRules = new Map<string, { category: string; subcategory: string | null }>()
-        for (let i = 0; i < merchantKeys.length; i += 100) {
-          const { data: rules, error: rulesError } = await ctx.db
-            .from('merchant_rules')
-            .select('merchant_key, category, subcategory')
-            .eq('source', 'user')
-            .in('merchant_key', merchantKeys.slice(i, i + 100))
-          if (rulesError) throw rulesError
-          for (const rule of rules ?? []) userRules.set(rule.merchant_key, rule)
-        }
+        const userRules = await lookupUserMerchantRules(ctx.db, merchantKeys)
         const payload = missing.map((r) => {
           const rule = userRules.get(r.merchant_key)
           return rule
@@ -280,16 +273,7 @@ Deno.serve(
             // in the synchronous ingestion path so a correction survives the
             // very next sync; AI remains asynchronous in categorize-pending.
             const merchantKeys = [...new Set(rows.map((row) => row.merchant_key))]
-            const userRules = new Map<string, { category: string; subcategory: string | null }>()
-            for (let i = 0; i < merchantKeys.length; i += 100) {
-              const { data: rules, error: rulesError } = await ctx.db
-                .from('merchant_rules')
-                .select('merchant_key, category, subcategory')
-                .eq('source', 'user')
-                .in('merchant_key', merchantKeys.slice(i, i + 100))
-              if (rulesError) throw rulesError
-              for (const rule of rules ?? []) userRules.set(rule.merchant_key, rule)
-            }
+            const userRules = await lookupUserMerchantRules(ctx.db, merchantKeys)
 
             const payload = rows.map((r) => {
               const existing = existingByExternalId.get(r.external_id)

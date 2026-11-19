@@ -2,7 +2,7 @@
 
 Vite 6 + React 18 (**no StrictMode** — double-invokes effects, breaks the imperative canvas scene)
 + TypeScript + Tailwind v4 (CSS-first `@theme`) + Framer Motion 11 + anime.js 3. Run: see
-`app/README.md`. Root orientation: [../CLAUDE.md](../CLAUDE.md).
+`app/README.md`. Root orientation: [../AGENTS.md](../AGENTS.md).
 
 ## Design system
 
@@ -62,8 +62,8 @@ duplicate matches, no same-account pairing, etc.), not pinned score values — a
 change shouldn't need touching them.
 
 `npm run test:browser` is the Playwright boundary for rendered Ledger workflows. Install Chromium
-once with `npm run test:browser:install`; keep the local Supabase stack available. The wrapper reads
-local test credentials from `supabase status`, while Playwright starts/reuses Vite. Browser fixtures
+once with `npm run test:browser:install`. The wrapper requires explicit credentials for a
+verified disposable Supabase target. Playwright starts or reuses Vite. Browser fixtures
 may use `service_role` only to create and destroy isolated test state; the behavior being verified
 must authenticate and mutate through the real UI/Edge Functions. Keep these cases serial because the
 500-row boundary fixture is intentionally shared, and restore data through UI undo before the next
@@ -71,8 +71,8 @@ case. `npm run test:browser:typecheck` covers the separate e2e TypeScript config
 excludes `e2e/` so Playwright fixture declarations never enter the unit runner.
 
 `app/scripts/*.mjs` are integration harnesses against a live local stack (not run by `npm test`).
-Need the stack up, `SUPABASE_ANON_KEY` set, and
-`npx supabase functions serve --no-verify-jwt --env-file supabase/.env.local` in a separate shell.
+Follow [the integrity runbook](../SYSTEM_INTEGRITY.md) before running live suites.
+For live CSV ingestion, `npm run test:csv:live` owns its project and teardown.
 One file per concern: RLS isolation, edge-function auth middleware, the auth token broker, CSV
 column-mapping quality, ingestion dedupe, categorisation, transfer linking. If you add a new
 Edge Function or a new cross-cutting invariant, add or extend a script here rather than only

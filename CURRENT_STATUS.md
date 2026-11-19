@@ -9,7 +9,7 @@ tags:
 type: handoff
 status: current
 project: Halcyon
-updated: 2026-11-09
+updated: 2026-11-19
 related:
   - "[[README]]"
   - "[[INDEX]]"
@@ -19,7 +19,18 @@ related:
 
 # Halcyon — Current status
 
-## Resume here
+## Resume here — 19 November 2026
+
+Budget Look back now shows up to 12 budgets month by month. The owner’s local project
+received the forward migration on 18 November. The [Stage 4 record](docs/budget/BUDGET_TABLE_STAGE_4.md)
+contains the backup, parity checks and signed-in result. Observed screen-reader testing
+and hosted qualification remain open.
+
+The current engineering task is Wave 1 repository cleanup. Use the
+[offline verification commands](AGENTS.md#verification-from-app) on the cleanup branch.
+Later audit waves require separate approval.
+
+## Historical decisions and verification
 
 **Budget V1 is live in the local main app for the configured owner — 10 November 2026.** Open [Budget](http://127.0.0.1:5300/budget) with the existing main-app account. The owner reported that the independent beginner checks passed. The protected backup, 48 forward migrations, data parity and signed-in smoke check are recorded in [[BUDGET_M7_RELEASE_DECISION]]. Observed screen-reader testing and hosted qualification remain open.
 

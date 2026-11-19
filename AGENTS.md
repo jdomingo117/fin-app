@@ -12,8 +12,8 @@ before touching that area; don't guess from this file alone.
 
 | Need | Read |
 |---|---|
-| Frontend conventions, testing, animation rules | [app/AGENTS.md](app/AGENTS.md) — auto-loads when working in `app/` |
-| Backend conventions, RLS/migration patterns, the "Laws" | [supabase/AGENTS.md](supabase/AGENTS.md) — auto-loads when working in `supabase/` |
+| Frontend conventions, testing, animation rules | [app/CLAUDE.md](app/CLAUDE.md) |
+| Backend conventions, RLS/migration patterns, the "Laws" | [supabase/CLAUDE.md](supabase/CLAUDE.md) |
 | Current resume point, operational data state, next-work options | [CURRENT_STATUS.md](CURRENT_STATUS.md) — **read this first** when resuming work |
 | File-by-file system map, current known bugs | [INDEX.md](INDEX.md) — read before changing an unfamiliar architectural area |
 | Full history, rationale, dated diary of past fixes | [CONTEXT.md](CONTEXT.md) — historical background, not the live backlog |
@@ -21,6 +21,24 @@ before touching that area; don't guess from this file alone.
 | Full product vision + security model | [System requirements - SRD.md](System%20requirements%20-%20SRD.md) |
 | What's in scope now vs. deferred | [MVP_SCOPE.md](MVP_SCOPE.md) |
 | Database safety, backups, validation and recovery | [SYSTEM_INTEGRITY.md](SYSTEM_INTEGRITY.md) — **mandatory before any migration, live integration test, Supabase reset, fixture cleanup or recovery work** |
+
+## Verification from `app/`
+
+| Check | Command |
+|---|---|
+| Frontend types | `npx tsc --noEmit -p tsconfig.json` |
+| Unused declarations | `npx tsc --noEmit --noUnusedLocals --noUnusedParameters` |
+| Browser test types | `npm run test:browser:typecheck` |
+| Budget foundation types | `npx tsc --noEmit -p tsconfig.budget-foundation.json` |
+| Budget workspace types | `npx tsc --noEmit -p tsconfig.budget-workspace.json` |
+| Budget concept types | `npx tsc --noEmit -p tsconfig.budget-concept.json` |
+| Production build | `npm run build` |
+| Offline unit and contract tests | `npm test` |
+
+The app has no configured lint script. Live CSV ingestion has a separate entry point,
+`npm run test:csv:live`. It provisions a disposable project and uses private sample
+statements and live categorization. Read [SYSTEM_INTEGRITY.md](SYSTEM_INTEGRITY.md)
+before running any live suite.
 
 ## Rules that apply everywhere
 
@@ -36,13 +54,13 @@ before touching that area; don't guess from this file alone.
   this per-view; if a view needs "spend" as a positive number, negate at display time only.
 - **RLS is never optional.** Every table needs a policy keyed on tenant membership
   (`is_tenant_member`/`has_tenant_role`), not `auth.uid() = user_id` — this app is multi-tenant
-  even though each user currently owns exactly one personal tenant. See `supabase/AGENTS.md`.
+  even though each user currently owns exactly one personal tenant. See `supabase/CLAUDE.md`.
 - **Application-data mutations never go directly from the browser to PostgREST or an RPC.** They
   must use a Zod-validated Edge Function (`_shared/withAuth.ts`); direct reads remain RLS-scoped.
   The sole client-side mutation exception is `supabase.auth.*` for GoTrue identity/session lifecycle
   (sign-in, password/email changes, OAuth/OTP exchange, and sign-out), not Halcyon application data.
 - **Aggregates in SQL, matching in O(N).** Don't `.reduce()` over thousands of fetched rows for a
-  total; don't nest loops when matching/deduping — see `supabase/AGENTS.md` Laws 2–3.
+  total; don't nest loops when matching/deduping — see `supabase/CLAUDE.md` Laws 2–3.
 
 ## Keeping docs current — read this before ending a task
 
@@ -64,6 +82,10 @@ hand to find the transfer-linker gap.
 
 ## Recent changes
 
+- 2026-11-19 — Default unit tests run offline; live CSV ingestion uses a verified disposable project.
+
+- 2026-11-18 — Budget Look back shows up to 12 budgets month by month (migration 20261118000000, query-budget `months`).
+
 - 2026-11-13 — Budget auto-build review lists every draft line with where its amount came from; edits relabel only that row.
 
 - 2026-11-13 — Rate-limited Budget refreshes wait out the server's retry_after and read again, so Undo no longer leaves stale "may be out of date" figures.
@@ -79,7 +101,3 @@ hand to find the transfer-linker gap.
 - 2026-11-12 — Merged Budget's two bill finders onto shared rules and wording; bill evidence now checks bill-like merchants first (migrations 20261112000000/010000).
 
 - 2026-11-12 — Simplified the Budget overview: one plain line per goal, plain estimate/check wording, duplicate everyday breakdown removed.
-
-- 2026-11-12 — Budget overview turns unplanned pay into a visible next step (bills, a goal, or keep as a buffer).
-
-- 2026-11-12 — Budget overview names accounts whose imports or sync are behind instead of showing a confident $0 spent; the shell footer shows real bank-sync status.

@@ -2,8 +2,8 @@
 
 Supabase (Postgres + Auth + RLS + Deno Edge Functions). No Next.js, no other server layer —
 Edge Functions are the only place a mutation is validated. Root orientation:
-[../CLAUDE.md](../CLAUDE.md). Local stack: `npx supabase start` (from repo root), then
-`npx supabase functions serve --no-verify-jwt --env-file supabase/.env.local` in a separate shell.
+[../AGENTS.md](../AGENTS.md). Local stack: `npx supabase@2 start` (from repo root), then
+`npx supabase@2 functions serve --no-verify-jwt --env-file supabase/.env.local` in a separate shell.
 `analyze-csv`/`categorize-merchants`/`transferMatch`'s categorisation path need `GEMINI_API_KEY` in
 `supabase/.env.local` or they fail loudly rather than silently degrading.
 

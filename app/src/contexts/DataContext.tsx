@@ -233,7 +233,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
           balanceAsOf: a.balance_as_of,
           institution,
           identifier,
-          connectionId: connection?.id,
+          accountConnectionId: connection?.id,
+          providerConnectionId: connection?.connection_id,
           cutoverDate: connection?.cutover_date,
           lastSyncedAt: connection?.balance_as_of ?? undefined,
         }

@@ -2,7 +2,7 @@ import {addDays,daysBetween} from './budget'
 import type {AccountActivity} from './budgetAccountActivity'
 
 export type BehindAccount={account_id:string;name:string;source:'import'|'sync';last_date:string}
-type AccountInfo={id:string;name:string;connectionId?:string;lastSyncedAt?:string}
+type AccountInfo={id:string;name:string;accountConnectionId?:string;lastSyncedAt?:string}
 
 /** A bank-synced account is behind when it hasn't synced for this many days. */
 const SYNC_GRACE_DAYS=3
@@ -23,7 +23,7 @@ export function behindAccounts({scope,accounts,activity,today}:{scope:string[];a
   const out:BehindAccount[]=[]
   for(const id of scope){
     const acct=byId.get(id);if(!acct)continue
-    if(acct.connectionId){
+    if(acct.accountConnectionId){
       const synced=acct.lastSyncedAt?.slice(0,10)
       if(!synced||synced<addDays(today,-SYNC_GRACE_DAYS))out.push({account_id:id,name:acct.name,source:'sync',last_date:synced??''})
       continue

@@ -3,7 +3,7 @@ import {behindAccounts,nameList} from './budgetFreshness'
 
 const act=(account_id:string,last:string|null,recent:number)=>({account_id,type:'Credit Card',last_activity_date:last,recent_activity_count:recent,window_start:'2026-05-01'})
 const accounts=[{id:'amex',name:'AMEX'},{id:'mqs',name:'Macquarie Savings'},{id:'quiet',name:'Quiet card'},{id:'fresh',name:'Fresh card'},
-  {id:'up',name:'Up Spending',connectionId:'c',lastSyncedAt:'2026-11-12T01:00:00Z'},{id:'upold',name:'Up Old',connectionId:'c',lastSyncedAt:'2026-11-01T01:00:00Z'}]
+  {id:'up',name:'Up Spending',accountConnectionId:'c',lastSyncedAt:'2026-11-12T01:00:00Z'},{id:'upold',name:'Up Old',accountConnectionId:'c',lastSyncedAt:'2026-11-01T01:00:00Z'}]
 const activity=[act('amex','2026-09-29',200),act('mqs','2026-09-30',42),act('quiet','2026-08-01',2),act('fresh','2026-11-10',150),act('up','2026-05-03',1)]
 const today='2026-11-12'
 

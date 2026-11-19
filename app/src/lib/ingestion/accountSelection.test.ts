@@ -14,7 +14,7 @@ const manual: Account = {
 }
 const connected: Account = {
   id: 'connected', name: 'Up Saver', type: 'Savings', balance: 0, glow: 'cyan',
-  balanceSource: 'bank_provider', connectionId: 'connection', institution: 'Up Bank',
+  balanceSource: 'bank_provider', accountConnectionId: 'connection', institution: 'Up Bank',
 }
 
 describe('ingestion target-account selection', () => {

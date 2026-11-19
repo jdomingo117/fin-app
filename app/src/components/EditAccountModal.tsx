@@ -22,7 +22,7 @@ interface Identifier {
 
 interface ConnectionInfo {
   accountConnectionId: string
-  connectionId: string
+  providerConnectionId: string
   provider: string
   providerStatus: 'active' | 'revoked' | 'error' | 'disabled'
   lastError: string | null
@@ -111,7 +111,7 @@ export default function EditAccountModal({ account, isOpen, onClose }: Props) {
 
       setConnection({
         accountConnectionId: ac.id,
-        connectionId: ac.connection_id,
+        providerConnectionId: ac.connection_id,
         provider: ac.provider,
         providerStatus: pc?.status ?? 'active',
         lastError: pc?.last_error ?? null,
@@ -133,7 +133,7 @@ export default function EditAccountModal({ account, isOpen, onClose }: Props) {
       // eslint-disable-next-line no-constant-condition
       while (true) {
         const { data, error: fnErr } = await supabase.functions.invoke('sync-provider', {
-          body: { connection_id: connection.connectionId, trigger: 'manual' },
+          body: { connection_id: connection.providerConnectionId, trigger: 'manual' },
         })
         if (fnErr) throw fnErr
         if (data?.error) { setSyncMessage(data.message || 'Sync failed.'); break }
@@ -208,7 +208,7 @@ export default function EditAccountModal({ account, isOpen, onClose }: Props) {
     setDisconnectBusy(true)
     try {
       const { error: fnErr } = await supabase.functions.invoke('disconnect-provider', {
-        body: { connection_id: connection.connectionId, keep_transactions: keepTransactions },
+        body: { connection_id: connection.providerConnectionId, keep_transactions: keepTransactions },
       })
       if (fnErr) throw fnErr
       setConfirmingDisconnect(false)

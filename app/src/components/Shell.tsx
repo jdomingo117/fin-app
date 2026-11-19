@@ -87,7 +87,7 @@ export default function Shell({ children }: { children: ReactNode }) {
   const { view, go, toast } = useView()
   const { profile, transactions, accounts } = useData()
   // Real sync status only: the latest bank-provider sync. Imported accounts have no sync to report.
-  const lastSync = accounts.map((a) => (a.connectionId ? a.lastSyncedAt : undefined)).filter((d): d is string => !!d).sort().at(-1)
+  const lastSync = accounts.map((a) => (a.accountConnectionId ? a.lastSyncedAt : undefined)).filter((d): d is string => !!d).sort().at(-1)
   const syncAgo = lastSync ? timeAgo(lastSync) : null
 
   const pendingTransferReview = transactions.filter(

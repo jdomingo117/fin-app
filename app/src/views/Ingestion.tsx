@@ -105,7 +105,7 @@ export default function Ingestion() {
                 accountId={account.id}
                 accountName={account.name}
                 accountType={account.type}
-                isConnected={Boolean(account.connectionId || account.balanceSource === 'bank_provider')}
+                isConnected={Boolean(account.accountConnectionId || account.balanceSource === 'bank_provider')}
                 cutoverDate={account.cutoverDate}
                 onImportStateChange={setImportActive}
                 onReviewTransfers={() => go('transfers')}

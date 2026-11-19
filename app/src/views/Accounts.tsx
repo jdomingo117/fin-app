@@ -208,7 +208,7 @@ export default function Accounts() {
           <div className="text-[11px] text-muted sm:ml-2.5 uppercase tracking-[0.04em]">
             Ingestion:{' '}
             <strong className="text-ink2">
-              {selectedAccount.connectionId ? 'UP BANK (LIVE)' : `CSV_${selectedAccount.name.split(' ')[0].toUpperCase()}`}
+              {selectedAccount.accountConnectionId ? 'UP BANK (LIVE)' : `CSV_${selectedAccount.name.split(' ')[0].toUpperCase()}`}
             </strong>
           </div>
         </div>

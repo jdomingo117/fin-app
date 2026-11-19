@@ -96,7 +96,7 @@ export default function ConnectBankModal({ isOpen, onClose }: Props) {
   // An account already mapped to a provider elsewhere can't be picked again
   // as an "existing account" target — each Halcyon account owns at most one
   // connection (account_connections.account_id is unique).
-  const unconnected = accounts.filter((a) => !a.connectionId)
+  const unconnected = accounts.filter((a) => !a.accountConnectionId)
 
   const patchConfig = (upId: string, patch: Partial<PerAccountConfig>) =>
     setConfigs((prev) => ({ ...prev, [upId]: { ...prev[upId], ...patch } }))

@@ -4,14 +4,7 @@ import { supabase } from '../lib/supabaseClient'
 import { providerSyncNoticeDetail } from '../lib/providerSyncStatus'
 import { BackgroundOperationNotice } from './OperationStatus'
 
-type RunningSync = {
-  account_id: string
-  connection_id: string
-  pages_fetched: number
-  rows_seen: number
-  rows_inserted: number
-  rows_updated: number
-}
+import { loadRunningSyncs, type RunningSync } from '../lib/loadRunningSyncs'
 
 /**
  * A durable notice for provider work which may have been started by this or
@@ -23,26 +16,7 @@ export default function ProviderSyncNotice() {
   const [runs, setRuns] = useState<RunningSync[]>([])
 
   const load = useCallback(async () => {
-    const connectedAccountIds = accounts.filter((account) => account.connectionId).map((account) => account.id)
-    if (!connectedAccountIds.length) { setRuns([]); return }
-
-    const { data: connections, error: connectionError } = await supabase
-      .from('account_connections')
-      .select('account_id, connection_id')
-      .in('account_id', connectedAccountIds)
-    if (connectionError || !connections?.length) { setRuns([]); return }
-
-    const accountIdByConnectionId = new Map(connections.map((connection) => [connection.connection_id, connection.account_id]))
-    const { data } = await supabase
-      .from('sync_runs')
-      .select('connection_id, pages_fetched, rows_seen, rows_inserted, rows_updated')
-      .in('connection_id', connections.map((connection) => connection.connection_id))
-      .eq('status', 'running')
-      .order('started_at', { ascending: false })
-    setRuns((data ?? []).flatMap((run) => {
-      const accountId = accountIdByConnectionId.get(run.connection_id)
-      return accountId ? [{ ...run, account_id: accountId } as RunningSync] : []
-    }))
+    setRuns(await loadRunningSyncs(supabase, accounts))
   }, [accounts])
 
   useEffect(() => {

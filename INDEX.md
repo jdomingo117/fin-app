@@ -749,6 +749,8 @@ Pure, UI-free, unit-tested — mirrored server-side by `supabase/functions/_shar
 - `constants.ts` - Weights, thresholds (`AUTO_THRESHOLD`, `SUGGESTED_THRESHOLD`), `MATCHER_VERSION` (bumping this invalidates stale `auto`/`suggested` links on next rescan without touching user decisions).
 
 ### `app/src/components/OskoLinker.tsx`
+
+The controller owns decisions, selection and undo. Its `transfers/` siblings contain the suggested and unmatched group panels, link cards, row renderers and shared row types.
 The transfer review panel (SRD "Same-Day Osko Linker"), mounted only in `views/TransferReview.tsx`. Its
 queue-load and rescan surfaces name the bounded fetch and promise that no transfer decision changes while
 the queue is replaced. Three

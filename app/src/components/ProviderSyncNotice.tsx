@@ -32,5 +32,5 @@ export default function ProviderSyncNotice() {
     new Map(accounts.map((account) => [account.id, account.name])),
   )
 
-  return <div className="fixed bottom-[58px] right-4 z-40 w-[min(24rem,calc(100vw-2rem))] sm:right-8"><BackgroundOperationNotice title="Provider sync in progress" detail={detail} /></div>
+  return <div className="pointer-events-none fixed bottom-[58px] right-4 z-40 w-[min(24rem,calc(100vw-2rem))] sm:right-8"><BackgroundOperationNotice title="Provider sync in progress" detail={detail} /></div>
 }

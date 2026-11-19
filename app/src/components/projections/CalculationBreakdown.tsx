@@ -1,5 +1,5 @@
 import type { ProjectionMetric } from '../../lib/projections'
-import { fmt } from '../../data'
+import { fmt, fmtCents } from '../../data'
 import { dateLabel } from './presentation'
 
 export function CalculationBreakdown({
@@ -8,6 +8,7 @@ export function CalculationBreakdown({
   projectedValue,
   monthlyFlow,
   months,
+  plannedMovement,
   investmentGrowth,
   investmentBalance,
   investmentContribution,
@@ -26,6 +27,7 @@ export function CalculationBreakdown({
   projectedValue: number
   monthlyFlow: number
   months: number
+  plannedMovement: number
   investmentGrowth: number
   investmentBalance: number
   investmentContribution: number
@@ -40,6 +42,8 @@ export function CalculationBreakdown({
   scenarioActiveMonths: number
 }) {
   const movement = monthlyFlow * months
+  const money = [currentValue, monthlyFlow, investmentGrowth, plannedMovement, projectedValue].some(cents => cents % 100 !== 0) ? fmtCents : fmt
+  const eventTerm = plannedMovement === 0 ? '' : ` ${plannedMovement > 0 ? '+' : '−'} ${money(Math.abs(plannedMovement))}`
   const historyRange = historyFrom && historyTo
     ? `${dateLabel(historyFrom)} – ${dateLabel(historyTo)}`
     : 'No complete history yet'
@@ -48,26 +52,27 @@ export function CalculationBreakdown({
     <div id="projection-calculation" className="mt-5 border-t border-[var(--hair)] pt-5">
       <div className="grid gap-5 lg:grid-cols-[1.1fr_1fr]">
         <div className="rounded-xl border border-[var(--hair)] bg-[var(--input-bg)] p-5">
-          <div className="micro text-muted">How we reached {fmt(projectedValue)}</div>
+          <div className="micro text-muted">How we reached {money(projectedValue)}</div>
           <p className="mt-3 text-[15px] leading-7 text-ink2">
-            Starting {metric === 'cash' ? 'cash' : 'net worth'} of <strong className="text-ink">{fmt(currentValue)}</strong>,
-            {' '}plus an observed movement of <strong className={monthlyFlow >= 0 ? 'text-pos' : 'text-neg'}>{fmt(monthlyFlow)} per month</strong>,
+            Starting {metric === 'cash' ? 'cash' : 'net worth'} of <strong className="text-ink">{money(currentValue)}</strong>,
+            {' '}plus an observed movement of <strong className={monthlyFlow >= 0 ? 'text-pos' : 'text-neg'}>{money(monthlyFlow)} per month</strong>,
             {' '}projected across <strong className="text-ink">{months} months</strong>
-            {metric === 'netWorth' && <> with <strong className="text-ink">{fmt(investmentGrowth)}</strong> estimated investment growth</>}.
+            {metric === 'netWorth' && <> with <strong className="text-ink">{money(investmentGrowth)}</strong> estimated investment growth</>}.
           </p>
           <div className="mt-5 overflow-x-auto rounded-lg border border-[var(--hair)] bg-[var(--glass-fill)] px-4 py-4 font-mono text-[15px] font-bold leading-6 tabular-nums text-ink">
             {metric === 'cash' ? (
-              <>{fmt(currentValue)} + ({fmt(monthlyFlow)} × {months}) = <span className="text-accent-ink">{fmt(projectedValue)}</span></>
+              <>{money(currentValue)} + ({money(monthlyFlow)} × {months}){eventTerm} = <span className="text-accent-ink">{money(projectedValue)}</span></>
             ) : (
-              <>{fmt(currentValue)} + {fmt(movement)} + {fmt(investmentGrowth)} = <span className="text-accent-ink">{fmt(projectedValue)}</span></>
+              <>{money(currentValue)} + {money(movement)}{eventTerm} + {money(investmentGrowth)} = <span className="text-accent-ink">{money(projectedValue)}</span></>
             )}
           </div>
           <div className="mt-4 grid grid-cols-[1fr_auto] gap-x-5 gap-y-3 text-[14px] leading-6">
-            <BreakdownRow label={`Starting ${metric === 'cash' ? 'cash' : 'net worth'}`} value={fmt(currentValue)} />
-            <BreakdownRow label="Future net movement" value={fmt(movement)} tone={movement >= 0 ? 'pos' : 'neg'} />
-            {metric === 'netWorth' && <BreakdownRow label="Estimated investment growth" value={fmt(investmentGrowth)} tone={investmentGrowth >= 0 ? 'pos' : 'neg'} />}
+            <BreakdownRow label={`Starting ${metric === 'cash' ? 'cash' : 'net worth'}`} value={money(currentValue)} />
+            <BreakdownRow label="Future net movement" value={money(movement)} tone={movement >= 0 ? 'pos' : 'neg'} />
+            {plannedMovement !== 0 && <BreakdownRow label="Planned events" value={`${plannedMovement > 0 ? '+' : '−'}${money(Math.abs(plannedMovement))}`} tone={plannedMovement > 0 ? 'pos' : 'neg'} />}
+            {metric === 'netWorth' && <BreakdownRow label="Estimated investment growth" value={money(investmentGrowth)} tone={investmentGrowth >= 0 ? 'pos' : 'neg'} />}
             <div className="col-span-2 border-t border-[var(--hair)]" />
-            <BreakdownRow label="Projected value" value={fmt(projectedValue)} strong />
+            <BreakdownRow label="Projected value" value={money(projectedValue)} strong />
           </div>
           {scenarioAdjustment !== null && scenarioAdjustment !== 0 && (
             <div className="mt-5 overflow-hidden rounded-lg border border-[var(--hair)] bg-[var(--input-bg)] text-[14px]">
@@ -105,9 +110,9 @@ export function CalculationBreakdown({
             </summary>
             <div className="border-t border-[var(--hair-soft)] px-4 py-4 text-[14px] leading-6 text-muted">
               {metric === 'cash' ? (
-                <><code className="text-ink">Cₙ = C₀ + n(r + a)</code><p className="mt-2">C₀ is current eligible cash, r is observed monthly movement, a is a scenario adjustment, and n is the number of months. The baseline sets a to zero.</p></>
+                <><code className="text-ink">Cₙ = Cₙ₋₁ + r + a + p</code><p className="mt-2">C₀ is current eligible cash, r is observed monthly movement, a is a what-if adjustment, and p is planned movement for month n. The baseline sets a to zero.</p></>
               ) : (
-                <><code className="text-ink">Nₙ = Nₙ₋₁ + r + a + Iₙ₋₁i</code><p className="mt-2">N is net worth, r is observed monthly movement, a is a scenario adjustment, I is the invested balance, and i is the monthly return derived from the annual assumption. Observed investment contributions increase I but are not counted again as new net worth.</p></>
+                <><code className="text-ink">Nₙ = Nₙ₋₁ + r + a + p + Iₙ₋₁i</code><p className="mt-2">N is net worth, r is observed monthly movement, a is a what-if adjustment, p is planned movement for the month, I is the invested balance, and i is the monthly return derived from the annual assumption. Observed investment contributions increase I but are not counted again as new net worth.</p></>
               )}
             </div>
           </details>

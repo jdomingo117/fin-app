@@ -209,10 +209,16 @@ export default function StrategicProjections() {
   const required = mode === 'byDate' ? requiredMonthlyAdjustment(inputs, target) : 0
   const scenarioTarget = firstTargetPoint(scenario, target)
   const calculationMonths = Math.max(chartProjection.length - 1, 0)
-  const projectedNetMovement = baseline.monthlyFlow * calculationMonths
-  const projectedInvestmentGrowth = metric === 'netWorth'
-    ? projectedValue - currentValue - projectedNetMovement
-    : 0
+  const { plannedMovement, investmentGrowth } = useMemo(
+    () => buildProjectionBreakdown(inputs).slice(0, calculationMonths).reduce(
+      (totals, month) => ({
+        plannedMovement: totals.plannedMovement + month.plannedMovement,
+        investmentGrowth: totals.investmentGrowth + month.investmentGrowth,
+      }),
+      { plannedMovement: 0, investmentGrowth: 0 },
+    ),
+    [inputs, calculationMonths],
+  )
   const scenarioValueAtEndpoint = scenario[Math.min(calculationMonths, scenario.length - 1)]?.value ?? projectedValue
   const scenarioDeltaAtEndpoint = scenarioValueAtEndpoint - projectedValue
   const scenarioGap = scenarioValueAtEndpoint - target
@@ -386,7 +392,8 @@ export default function StrategicProjections() {
               projectedValue={projectedValue}
               monthlyFlow={baseline.monthlyFlow}
               months={calculationMonths}
-              investmentGrowth={projectedInvestmentGrowth}
+              plannedMovement={plannedMovement}
+              investmentGrowth={investmentGrowth}
               investmentBalance={investmentBalance}
               investmentContribution={baseline.monthlyInvestmentContribution}
               annualReturn={Number(annualReturn) || 0}

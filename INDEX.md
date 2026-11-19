@@ -596,6 +596,7 @@ implemented but the remaining M6 verification gates are still open.
 - `playwright.config.ts` / `e2e/ledger-bulk.spec.ts` - Real Chromium regression harness for the Ledger repair sequence. The runner uses one serial, schema-complete 512-row tenant fixture (507 cap rows plus mixed category, mixed attribute and protected reconciliation cases), authenticates through the real UI, exercises mutations through the app/Edge Functions, retains traces/screenshots only on failure, and deletes its tenant/auth user after success or partial fixture construction failure. Coverage includes mixed leave-unchanged semantics, explicit impact/change gating, cross-page selection and global clearing, exact 500-row apply/undo with seven disabled overflow rows, safe kind/attribute impact/apply/undo/protection, and focus wrapping/restoration across every Ledger dialog.
 - `src/`
   - `components/` - React UI Components.
+    - `components/projections/` contains forecast readouts, assumptions and the calculation breakdown. The parent controller owns scenario and projection state.
     - `StrategicProjections.tsx` / `PlanningGoalDialog.tsx` / `PlanningTimeline.tsx` - Deterministic
       cash/net-worth calculator, durable goal/scenario workspace, accessible forecast reconciliation
       and completed-month plan review. Goals are explicit account-scoped planning inputs; they

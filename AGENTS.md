@@ -82,6 +82,8 @@ hand to find the transfer-linker gap.
 
 ## Recent changes
 
+- 2026-11-20 — Strategic projection readouts and calculation breakdown now live in components/projections/.
+
 - 2026-11-20 — Transfer review panels and cards now live beside the OskoLinker controller in components/transfers/.
 
 - 2026-11-19 — Default unit tests run offline; live CSV ingestion uses a verified disposable project.
@@ -99,5 +101,3 @@ hand to find the transfer-linker gap.
 - 2026-11-12 — Budget My plan is now a read-only table with group totals and a money split bar (migration 20261112020000).
 
 - 2026-11-12 — Moved out of the vault into its own repo: planning docs to docs/budget and docs/plans, private sample statements and generated evidence git-ignored.
-
-- 2026-11-12 — Merged Budget's two bill finders onto shared rules and wording; bill evidence now checks bill-like merchants first (migrations 20261112000000/010000).

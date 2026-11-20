@@ -24,6 +24,8 @@ const SyncSchema = z.object({
   trigger: z.enum(['manual', 'stale']).optional().default('manual'),
 })
 
+class ClassificationReadError extends Error {}
+
 const REPLAY_DAYS = 7
 const MAX_PENDING_REFRESH = 50
 const BUDGET_MS = 45_000
@@ -262,11 +264,12 @@ Deno.serve(
             // category correction rather than let the provider's guess
             // silently overwrite it.
             const externalIds = rows.map((r) => r.external_id)
-            const { data: existingRows } = await ctx.db
+            const { data: existingRows, error: existingErr } = await ctx.db
               .from('transactions')
               .select('external_id, category, subcategory, category_source, category_confidence, needs_review')
               .eq('account_id', acctConn.account_id)
               .in('external_id', externalIds)
+            if (existingErr) throw new ClassificationReadError(existingErr.message)
             const existingByExternalId = new Map((existingRows ?? []).map((r) => [r.external_id, r]))
 
             // A durable user rule outranks the provider's category. Resolve it
@@ -473,10 +476,13 @@ Deno.serve(
 
       const errorCode = err instanceof UpApiError ? `up_${err.status}` : err instanceof TokenDecryptError ? 'credential_unreadable' : 'unknown'
       const detail = redactProviderTokens(String(err instanceof Error ? err.message : err)).slice(0, 500)
-      await admin
-        .from('provider_connections')
-        .update({ status: 'error', last_error: errorCode, last_error_at: new Date().toISOString() })
-        .eq('id', connection_id)
+      // A preservation lookup can be retried from the page checkpoint.
+      if (!(err instanceof ClassificationReadError)) {
+        await admin
+          .from('provider_connections')
+          .update({ status: 'error', last_error: errorCode, last_error_at: new Date().toISOString() })
+          .eq('id', connection_id)
+      }
       const { error: failRunErr } = await admin
         .from('sync_runs')
         .update({ status: 'failed', finished_at: new Date().toISOString(), error_code: errorCode, error_detail: detail, ...totals })

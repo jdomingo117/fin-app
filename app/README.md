@@ -47,6 +47,8 @@ npm run build       # → dist/  (static; deploy to any host)
 npm run preview     # serve the production build locally
 ```
 
+For `npm test`, use Node 22.22.2+, 24.15+, or 26+ for the jsdom provider tests.
+
 Fonts load from Google Fonts (Archivo + Hanken Grotesk) via `index.html`; no other external
 assets. The app starts in **light mode** on first visit; the theme choice is **persisted in `localStorage`** (under the `halcyon-theme` key) and restored on return (toggled from Settings → Dark mode or the floating ThemeToggle button). (Also wired into the preview tooling as the `halcyon-app` launch config.)
 

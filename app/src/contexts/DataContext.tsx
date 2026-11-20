@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useRef, useState, ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, ReactNode } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import type { Account, Txn, Achievement, CustomSubcategory, TransactionAllocation } from '../data'
 import type { RecurrenceHint, RecurringSeriesOverride } from '../lib/recurring'
@@ -76,7 +76,11 @@ export const useData = () => useContext(DataContext)
 
 export function DataProvider({ children }: { children: ReactNode }) {
   const { session, isAdmin } = useAuth()
-  const [loadState, setLoadState] = useState<DataCtx['loadState']>('loading')
+  const userId = session?.user.id ?? null
+  const [identity, setIdentity] = useState({ userId })
+  const activeIdentity = useRef<typeof identity | null>(identity)
+  const sequence = useRef(0)
+  const [loadState, setLoadState] = useState<DataCtx['loadState']>(userId ? 'loading' : 'ready')
   const [loadError, setLoadError] = useState<string | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [refreshError, setRefreshError] = useState<string | null>(null)
@@ -100,29 +104,45 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const staleInvestmentSyncTriggered = useRef(new Set<string>())
   const hasLoaded = useRef(false)
 
-  const refreshData = async () => {
-    if (!session?.user) {
-      // Signed out — drop the previous user's rows so they can't flash behind
-      // the next sign-in on a shared browser.
-      setProfile(defaultProfile)
-      setAccounts([])
-      setTransactions([])
-      setReportingTransactions([])
-      setCustomSubcategories([])
-      setAchievements([])
-      setBudgets([])
-      setRecurrenceHints(new Map())
-      setRecurrenceOverrides([])
-      setNetWorthHistory([])
-      setPlanningGoals([])
-      setPlanningScenarios([]); setPlanningEvents([])
-      setLoadError(null)
-      setRefreshError(null)
-      setIsRefreshing(false)
-      setLoadState('ready')
+  // React retries this render before rendering descendants, so consumers
+  // never see the previous user's data with the new session.
+  if (identity.userId !== userId) {
+    setIdentity({ userId })
+    setProfile(defaultProfile)
+    setAccounts([])
+    setTransactions([])
+    setReportingTransactions([])
+    setCustomSubcategories([])
+    setAchievements([])
+    setBudgets([])
+    setRecurrenceHints(new Map())
+    setRecurrenceOverrides([])
+    setNetWorthHistory([])
+    setPlanningGoals([])
+    setPlanningScenarios([])
+    setPlanningEvents([])
+    setLoadError(null)
+    setRefreshError(null)
+    setIsRefreshing(false)
+    setLoadState(userId ? 'loading' : 'ready')
+  }
+
+  useLayoutEffect(() => {
+    activeIdentity.current = identity
+    return () => {
+      activeIdentity.current = null
+      sequence.current++
       hasLoaded.current = false
-      return
+      staleSyncTriggered.current.clear()
+      staleInvestmentSyncTriggered.current.clear()
     }
+  }, [identity])
+
+  const refreshData = useCallback(async function refreshData() {
+    const { userId } = identity
+    if (!userId || activeIdentity.current !== identity) return
+    const generation = ++sequence.current
+    const isCurrent = () => activeIdentity.current === identity && generation === sequence.current
     const background = hasLoaded.current
     if (background) {
       setIsRefreshing(true)
@@ -142,11 +162,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
       // RequireAuth already gates every route that mounts this provider, and
       // an invalid token now fails the queries themselves.
       const [profileRes, accountsRes, txnsRes, achievementsRes, userAchievementsRes, budgetsRes, accountConnectionsRes, accountIdentifiersRes, recurrenceHintsRes, recurrenceOverridesRes, netWorthHistoryRes, allocationsRes, customSubcategoriesRes, taxonomyCategoriesRes, planningGoalsRes, planningGoalAccountsRes, planningScenariosRes, planningEventsRes] = await Promise.all([
-        supabase.from('profiles').select('*').eq('id', session.user.id).maybeSingle(),
+        supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
         supabase.from('accounts').select('*'),
         supabase.from('transactions_analytic').select('*').order('date', { ascending: false }),
         supabase.from('achievements').select('*'),
-        supabase.from('user_achievements').select('*').eq('user_id', session.user.id),
+        supabase.from('user_achievements').select('*').eq('user_id', userId),
         supabase.from('budgets').select('*'),
         supabase.from('account_connections').select('id, account_id, connection_id, provider, cutover_date, balance_as_of, provider_connections(status)'),
         supabase.from('account_identifiers').select('account_id, kind, value, source, confidence'),
@@ -161,6 +181,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         supabase.from('planning_scenarios').select('id,goal_id,name,is_baseline,annual_return_bps,include_recurring,status'),
         supabase.from('planning_events').select('id,scenario_id,name,amount_cents,cadence,start_date,end_date').order('start_date'),
       ])
+      if (!isCurrent()) return
 
       const requiredError = [profileRes, accountsRes, txnsRes].find((result) => result.error)?.error
       if (requiredError) throw requiredError
@@ -251,7 +272,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
         staleInvestmentSyncTriggered.current.add(account.id)
         void supabase.functions.invoke('sync-investment-prices', {
           body: { account_id: account.id, trigger: 'stale' },
-        }).then(({ error }) => { if (!error) void refreshData() }).catch(() => {})
+        }).then(({ error }) => {
+          if (!error && isCurrent()) void refreshData()
+        }).catch(() => {})
       }
       const accountNameById = new Map(mappedAccounts.map((account) => [account.id, account.name]))
 
@@ -380,6 +403,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       setRefreshError(null)
       hasLoaded.current = true
     } catch (error) {
+      if (!isCurrent()) return
       console.error('Error fetching data:', error)
       const message = 'We couldn\'t load your financial data. Check your connection and try again.'
       if (background) setRefreshError(message)
@@ -388,17 +412,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
         setLoadState('error')
       }
     } finally {
-      if (background) setIsRefreshing(false)
+      if (background && isCurrent()) setIsRefreshing(false)
     }
-  }
+  }, [identity])
 
   // Keyed on the user id rather than the session object: a token refresh
   // produces a new session every 15 minutes with the same user, and refetching
   // the whole dataset on each one would be pure churn.
   useEffect(() => {
-    hasLoaded.current = false
     void refreshData()
-  }, [session?.user?.id])
+  }, [refreshData])
 
   return (
     <DataContext.Provider value={{ loadState, loadError, isRefreshing, refreshError, profile, isAdmin, accounts, transactions, reportingTransactions, customSubcategories, achievements, budgets, recurrenceHints, recurrenceOverrides, netWorthHistory, planningGoals, planningScenarios, planningEvents, refreshData }}>

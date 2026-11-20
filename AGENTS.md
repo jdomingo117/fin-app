@@ -82,6 +82,8 @@ hand to find the transfer-linker gap.
 
 ## Recent changes
 
+- 2026-11-20 — DataProvider clears session data on identity changes and drops superseded refresh and sync results.
+
 - 2026-11-20 — Provider sync preserves manual edits on read failure and reconciles provider anchors atomically across the full ledger.
 
 - 2026-11-20 — Strategic projection readouts and calculation breakdown now live in components/projections/.
@@ -99,5 +101,3 @@ hand to find the transfer-linker gap.
 - 2026-11-13 — Budget plan editor and manual setup edit amounts in a table that shows what changed.
 
 - 2026-11-12 — Budget My plan table explains each figure in a formula bar, marks incomplete figures and shows an even-pace tick.
-
-- 2026-11-12 — Budget My plan is now a read-only table with group totals and a money split bar (migration 20261112020000).

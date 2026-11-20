@@ -1,7 +1,8 @@
 import { expect, it } from 'vitest'
-import type { Txn } from '../data'
+import type { Account, Txn } from '../data'
 import { expandTransactionAllocations } from './allocations'
 import { buildCashFlowSeries } from './cashFlowSeries'
+import { deriveProjectionBaseline } from './projections'
 import { isGrossExpense } from './classification'
 
 // The RPC parity ledger. Account a is AUD and b is USD. Neither report converts FX.
@@ -35,4 +36,28 @@ it('characterizes the approved signed parent movement and reporting grain', () =
   expect(report(null).outflow).toEqual([650, 0])
   expect(report(['a'], parents).outflow).toEqual([650, 0])
   expect(lines.filter(t => !t.isTransfer && isGrossExpense(t)).reduce((s, t) => s - t.amount, 0)).toBe(1150)
+})
+
+it('pins the Sydney month boundary, held balances and deterministic same-date order', () => {
+  const instant = new Date('2026-10-31T13:00:00Z')
+  const local = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Australia/Sydney', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(instant)
+  expect(local).toBe('2026-11-01')
+  const october = parents.filter(t => t.date < local)
+  expect(october.reduce((s, t) => s + t.amount, 0)).toBe(19410)
+  expect(october.filter(t => !t.pending).reduce((s, t) => s + t.amount, 0)).toBe(19710)
+  const ordered = [...parents].sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id))
+  expect(ordered.slice(0, 3).map(t => t.id)).toEqual(['future', 'usd', 'shop'])
+})
+
+it('uses signed parent movements and stored cents for a mixed-currency projection', () => {
+  const accounts: (Account & { currency: string })[] = [
+    { id: 'a', name: 'AUD cash', currency: 'AUD', balance: 200, type: 'Liquid', glow: 'cyan' },
+    { id: 'b', name: 'USD savings', currency: 'USD', balance: 300, type: 'Savings', glow: 'cyan' },
+  ]
+  const now = new Date(2026, 10, 1)
+  const cash = deriveProjectionBaseline('cash', accounts, parents, now)
+  expect(cash).toMatchObject({ monthsUsed: 1, fromMonth: '2026-10', monthlyFlow: 19710 })
+  expect(deriveProjectionBaseline('netWorth', accounts, parents, now).monthlyFlow).toBe(19910)
 })

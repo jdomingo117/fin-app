@@ -82,6 +82,8 @@ hand to find the transfer-linker gap.
 
 ## Recent changes
 
+- 2026-11-20 — Wave 3C.1 adds tenant-scoped portfolio, cash-flow, movement history and split-safe ledger SQL read contracts.
+
 - 2026-11-20 — DataProvider clears session data on identity changes and drops superseded refresh and sync results.
 
 - 2026-11-20 — Provider sync preserves manual edits on read failure and reconciles provider anchors atomically across the full ledger.
@@ -99,5 +101,3 @@ hand to find the transfer-linker gap.
 - 2026-11-13 — Rate-limited Budget refreshes wait out the server's retry_after and read again, so Undo no longer leaves stale "may be out of date" figures.
 
 - 2026-11-13 — Budget plan editor and manual setup edit amounts in a table that shows what changed.
-
-- 2026-11-12 — Budget My plan table explains each figure in a formula bar, marks incomplete figures and shows an even-pace tick.

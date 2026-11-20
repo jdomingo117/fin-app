@@ -17,7 +17,7 @@ vi.mock('../../../supabase/functions/_shared/upClient.ts', () => ({
   fetchTransactionPage: vi.fn(), buildTransactionsUrl: () => 'page',
   listUpAccounts: vi.fn(async () => []), UpAuthError: class extends Error {}, UpApiError: class extends Error {},
 }))
-import { fetchTransactionPage } from '../../../supabase/functions/_shared/upClient.ts'
+import { fetchTransactionPage, listUpAccounts } from '../../../supabase/functions/_shared/upClient.ts'
 
 let sync
 beforeAll(async () => {
@@ -34,7 +34,7 @@ function fixture() {
     cutover_date: '2024-03-01', backfill_done: false, backfill_cursor: 'resume', synced_through: null }
   const connection = { id: 'connection', provider: 'up', status: 'active' }
   const ledger = new Map([[identity('edited'), { external_id: 'edited', ...manual }]])
-  const state = { mapping, ledger, failRead: false, writes: 0, run: {} }
+  const state = { mapping, ledger, failRead: false, writes: 0, run: {}, anchorCalls: [] }
   fetchTransactionPage.mockResolvedValue({ next: null, transactions: ['edited', 'new'].map(id => ({
     id, description: 'Store', createdAt: '2024-03-02T12:00:00Z', status: 'SETTLED', amount: { valueInBaseUnits: -40 },
   })) })
@@ -58,6 +58,12 @@ function fixture() {
       case 'merchant_rules': return reply([{ merchant_key: 'store', category: 'Other', subcategory: null }])
       case 'budget_provider_coverage_base':
       case 'budget_provider_coverage_extend': return reply({})
+      case 'accounts': return reply({})
+      case 'reconcile_provider_anchor':
+        expect(new Headers(init.headers).get('apikey')).toBe('service-fixture')
+        state.anchorCalls.push(body)
+        if (state.anchorError) return Response.json({ message: 'anchor failed' }, { status: 400 })
+        return reply(null)
       case 'transactions':
         if (init.method === 'POST') {
           expect(url.searchParams.get('on_conflict')).toBe('account_id,dedupe_hash,occurrence')
@@ -77,8 +83,9 @@ function fixture() {
     }
   }
   const db = createClient('https://unused.invalid', 'fixture', { global: { fetch: request } })
+  const admin = createClient('https://unused.invalid', 'service-fixture', { global: { fetch: request } })
   state.sync = () => sync({ body: { connection_id: connection.id, trigger: 'manual' },
-    db, admin: () => db, tenantId: 'tenant', user: { id: 'user' }, audit: vi.fn() })
+    db, admin: () => admin, tenantId: 'tenant', user: { id: 'user' }, audit: vi.fn() })
   return state
 }
 
@@ -105,4 +112,21 @@ it('fails the page before writing or checkpointing and retries from the stored c
   expect(await f.sync()).toMatchObject({ done: true, progress: { rows_inserted: 0, rows_updated: 2 } })
   expect(f.ledger.size).toBe(2)
   expect(f.ledger.get(identity('edited'))).toMatchObject(manual)
+})
+
+it('retries a failed anchor before completing the backfill and skips it on incremental sync', async () => {
+  const f = fixture()
+  const balance = [{ id: 'up-account', balance: { valueInBaseUnits: -120 } }]
+  listUpAccounts.mockResolvedValueOnce(balance).mockResolvedValueOnce(balance).mockResolvedValueOnce(balance)
+  f.anchorError = true
+  expect(await f.sync()).toHaveProperty('error')
+  expect(f.run).toMatchObject({ status: 'failed', error_detail: 'anchor failed' })
+  expect(f.mapping).toMatchObject({ backfill_done: false, backfill_cursor: 'resume' })
+  f.anchorError = false
+  expect(await f.sync()).toMatchObject({ done: true })
+  expect(f.mapping).toMatchObject({ backfill_done: true, backfill_cursor: null })
+  expect(await f.sync()).toMatchObject({ done: true })
+  const args = { p_tenant: 'tenant', p_user: 'user', p_account: 'account',
+    p_account_connection: 'mapping', p_balance_cents: -120 }
+  expect(f.anchorCalls).toEqual([args, args])
 })

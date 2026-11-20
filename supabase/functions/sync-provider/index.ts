@@ -1,5 +1,4 @@
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts'
-import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
 import { withAuth } from '../_shared/withAuth.ts'
 import { LIMITS } from '../_shared/rateLimit.ts'
 import { decryptToken, redactProviderTokens, TokenDecryptError } from '../_shared/crypto.ts'
@@ -17,14 +16,12 @@ import {
 
 import { lookupUserMerchantRules } from './merchantRules.ts'
 
-const ANCHOR_DESCRIPTION = 'Opening Balance Offset (Reconciliation)'
-
 const SyncSchema = z.object({
   connection_id: z.string().uuid(),
   trigger: z.enum(['manual', 'stale']).optional().default('manual'),
 })
 
-class ClassificationReadError extends Error {}
+class RetryableSyncError extends Error {}
 
 const REPLAY_DAYS = 7
 const MAX_PENDING_REFRESH = 50
@@ -220,8 +217,7 @@ Deno.serve(
         const passStartedAt = new Date().toISOString()
         let passSince: string | null = null
         let url: string | null
-        let isBackfillPass = !acctConn.backfill_done
-        if (isBackfillPass) {
+        if (!backfillDoneAtStart) {
           if (!acctConn.backfill_cursor) {
             // A fresh backfill is also a full history walk for Budget coverage.
             const { error: walkErr } = await admin
@@ -269,7 +265,7 @@ Deno.serve(
               .select('external_id, category, subcategory, category_source, category_confidence, needs_review')
               .eq('account_id', acctConn.account_id)
               .in('external_id', externalIds)
-            if (existingErr) throw new ClassificationReadError(existingErr.message)
+            if (existingErr) throw new RetryableSyncError(existingErr.message)
             const existingByExternalId = new Map((existingRows ?? []).map((r) => [r.external_id, r]))
 
             // A durable user rule outranks the provider's category. Resolve it
@@ -314,24 +310,14 @@ Deno.serve(
             if (!latestPostedAt || posted > latestPostedAt) latestPostedAt = posted
           }
 
-          if (isBackfillPass) {
-            // Persisted after THIS page commits, never before — a killed
-            // invocation resumes from the last page that actually landed.
-            const stillMore = page.next !== null
-            await admin
-              .from('account_connections')
-              .update({
-                backfill_cursor: page.next,
-                backfill_done: !stillMore,
-                // Up returns newest-first, so the watermark only advances
-                // once the WHOLE backfill completes — advancing it mid-walk
-                // would make an interrupted backfill look caught up while
-                // its tail (the oldest transactions) is still missing.
-                synced_through: stillMore ? acctConn.synced_through : latestPostedAt,
-                last_synced_at: new Date().toISOString(),
-              })
-              .eq('id', acctConn.id)
-            if (!stillMore) isBackfillPass = false
+          if (!backfillDoneAtStart) {
+            // The last page stays replayable until its anchor has committed.
+            if (page.next !== null) {
+              const { error } = await admin.from('account_connections')
+                .update({ backfill_cursor: page.next, last_synced_at: new Date().toISOString() })
+                .eq('id', acctConn.id)
+              if (error) throw new RetryableSyncError(error.message)
+            }
           } else {
             await admin
               .from('account_connections')
@@ -342,21 +328,14 @@ Deno.serve(
           url = page.next
         }
 
-        // Budget history coverage. Best-effort: a coverage problem never fails
-        // the sync that already landed. Only a pass that reached its last page
-        // counts as evidence.
-        if (url === null) {
+        // Record incremental coverage before the optional pending refresh, even near the deadline.
+        if (url === null && passSince) {
           try {
-            if (!backfillDoneAtStart) {
-              const { error } = await admin.rpc('budget_provider_coverage_base', { p_tenant: ctx.tenantId, p_account_connection: acctConn.id })
-              if (error) throw error
-            } else if (passSince) {
-              const { data: extended, error } = await admin.rpc('budget_provider_coverage_extend', {
-                p_tenant: ctx.tenantId, p_account_connection: acctConn.id, p_since: passSince, p_pass_started: passStartedAt,
-              })
-              if (error) throw error
-              if (extended?.reason === 'no_base' || extended?.reason === 'gap') verifyQueue.push(acctConn)
-            }
+            const { data: extended, error } = await admin.rpc('budget_provider_coverage_extend', {
+              p_tenant: ctx.tenantId, p_account_connection: acctConn.id, p_since: passSince, p_pass_started: passStartedAt,
+            })
+            if (error) throw error
+            if (extended?.reason === 'no_base' || extended?.reason === 'gap') verifyQueue.push(acctConn)
           } catch (err) {
             console.error('budget coverage update failed', String(err))
           }
@@ -404,18 +383,27 @@ Deno.serve(
         // ── Balance refresh + one-time reconciliation ────────────────────
         const freshBalance = balanceByProviderAccountId.get(acctConn.provider_account_id)
         if (freshBalance !== undefined) {
-          // The backfill that covers [cutover_date, now] just finished for
-          // the first time this call — reconcile now, using a balance
-          // fetched fresh THIS call and a ledger sum that already includes
-          // every row that backfill just committed. See map-provider-accounts'
-          // docblock for why this can't happen any earlier: doing it before
-          // backfill runs double-counts everything between cutover and "now"
-          // once cutover isn't pinned to today.
-          if (!backfillDoneAtStart && !isBackfillPass) {
-            await reconcileAnchor(admin, ctx.user.id, ctx.tenantId, connection.provider, acctConn, freshBalance)
+          if (!backfillDoneAtStart && url === null) {
+            const { error } = await admin.rpc('reconcile_provider_anchor', {
+              p_tenant: ctx.tenantId, p_user: ctx.user.id, p_account: acctConn.account_id,
+              p_account_connection: acctConn.id, p_balance_cents: freshBalance,
+            })
+            if (error) throw new RetryableSyncError(error.message)
           }
           await admin.from('accounts').update({ balance: freshBalance }).eq('id', acctConn.account_id)
           await admin.from('account_connections').update({ balance_as_of: new Date().toISOString() }).eq('id', acctConn.id)
+        }
+        if (!backfillDoneAtStart && url === null) {
+          const { error } = await admin.from('account_connections')
+            .update({ backfill_cursor: null, backfill_done: true, synced_through: latestPostedAt, last_synced_at: new Date().toISOString() })
+            .eq('id', acctConn.id)
+          if (error) throw new RetryableSyncError(error.message)
+          try {
+            const { error } = await admin.rpc('budget_provider_coverage_base', { p_tenant: ctx.tenantId, p_account_connection: acctConn.id })
+            if (error) throw error
+          } catch (err) {
+            console.error('budget coverage update failed', String(err))
+          }
         }
       }
 
@@ -476,8 +464,8 @@ Deno.serve(
 
       const errorCode = err instanceof UpApiError ? `up_${err.status}` : err instanceof TokenDecryptError ? 'credential_unreadable' : 'unknown'
       const detail = redactProviderTokens(String(err instanceof Error ? err.message : err)).slice(0, 500)
-      // A preservation lookup can be retried from the page checkpoint.
-      if (!(err instanceof ClassificationReadError)) {
+      // Replay a transient page or reconciliation failure from the last checkpoint.
+      if (!(err instanceof RetryableSyncError)) {
         await admin
           .from('provider_connections')
           .update({ status: 'error', last_error: errorCode, last_error_at: new Date().toISOString() })
@@ -493,68 +481,6 @@ Deno.serve(
     }
   }),
 )
-
-/**
- * Runs exactly once per account_connection, the moment its backfill first
- * finishes covering [cutover_date, now]. Replaces any existing anchor (an
- * extend-provider-history re-run leaves a stale one behind) with
- * `fresh_balance - sum(everything currently in the ledger)` — by this point
- * that sum already includes the CSV/manual history before cutover AND every
- * row the backfill that just finished committed, so the formula is correct
- * regardless of how far back cutover was set. See map-provider-accounts'
- * docblock for the bug this replaced (computing the anchor before backfill
- * ran, which only worked when cutover ≈ today).
- */
-async function reconcileAnchor(
-  admin: SupabaseClient,
-  userId: string,
-  tenantId: string,
-  provider: string,
-  acctConn: AccountConnRow,
-  freshBalanceCents: number,
-): Promise<void> {
-  const anchorExternalId = `up-anchor:${acctConn.id}`
-
-  await admin
-    .from('transactions')
-    .delete()
-    .eq('account_id', acctConn.account_id)
-    .eq('provider', provider)
-    .eq('external_id', anchorExternalId)
-
-  const { data: existingTxns } = await admin
-    .from('transactions')
-    .select('amount')
-    .eq('account_id', acctConn.account_id)
-  const existingSum = (existingTxns ?? []).reduce((sum, t) => sum + t.amount, 0)
-  const offsetCents = freshBalanceCents - existingSum
-  if (offsetCents === 0) return
-
-  const anchorDate = new Date(`${acctConn.cutover_date}T00:00:00Z`)
-  anchorDate.setUTCDate(anchorDate.getUTCDate() - 1)
-  const anchorHash = await providerDedupeHashHex(provider, anchorExternalId)
-
-  await admin.from('transactions').upsert(
-    {
-      user_id: userId,
-      tenant_id: tenantId,
-      account_id: acctConn.account_id,
-      date: anchorDate.toISOString().slice(0, 10),
-      original_description: ANCHOR_DESCRIPTION,
-      merchant: 'Opening Balance',
-      category: 'Transfer',
-      subcategory: 'Reconciliation',
-      amount: offsetCents,
-      category_source: 'seed',
-      needs_review: false,
-      provider,
-      external_id: anchorExternalId,
-      dedupe_hash: toByteaLiteral(anchorHash),
-      occurrence: 0,
-    },
-    { onConflict: 'account_id,dedupe_hash,occurrence', ignoreDuplicates: true },
-  )
-}
 
 /**
  * Maps one Up transaction to a transactions row, or null if it falls before

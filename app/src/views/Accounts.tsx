@@ -1,3 +1,6 @@
+import {accountFlow,movements} from '../lib/reports'
+import {useReport} from '../hooks/useReport'
+import ReportStatus from '../components/ReportStatus'
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Screen, ViewHeader } from '../components/Screen'
@@ -16,7 +19,7 @@ import InvestmentAccountActivity from '../components/InvestmentAccountActivity'
 import EditAccountModal from '../components/EditAccountModal'
 import ConnectBankModal from '../components/ConnectBankModal'
 import TransactionCategoryDrawer from '../components/TransactionCategoryDrawer'
-import { earnedIncomeCents, expenseEffectCents, isEarnedIncome, isGrossExpense } from '../lib/classification'
+import { isEarnedIncome, isGrossExpense } from '../lib/classification'
 import { useView } from '../router'
 
 /* Resolves a "Quick Timeframe Selector" label to a concrete ISO date range.
@@ -66,6 +69,11 @@ export default function Accounts() {
   const [timeframe, setTimeframe] = useState('All Time')
   const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null)
 
+  const range = timeframeRange(timeframe)
+  const today = iso(new Date())
+  const enabled = !!selectedAccount && selectedAccount.type !== 'Invest'
+  const flow = useReport([selectedAccount?.id,range,today],tenant=>accountFlow(tenant,selectedAccount.id,range,today),enabled)
+  const history = useReport([selectedAccount?.id,today],tenant=>movements(tenant,today,selectedAccount.id),enabled)
   if (!selectedAccount) {
     return (
       <Screen>
@@ -104,38 +112,17 @@ export default function Accounts() {
   // narrowing it to e.g. "This Week" would leave 11 empty buckets, same
   // reasoning that keeps the Income/Expenses monthly charts fixed-span while
   // their presets narrow the transactions list, see lib/period.ts).
-  const range = timeframeRange(timeframe)
   const periodTxns = range ? txns.filter(t => t.date >= range.from && t.date <= range.to) : txns
 
-  // Dynamic details
-  const income = periodTxns.filter(t => !t.isTransfer).reduce((sum, t) => sum + earnedIncomeCents(t), 0)
-  const expenses = periodTxns.filter(t => !t.isTransfer).reduce((sum, t) => sum + expenseEffectCents(t), 0)
+  const income = flow.data?.periods.current.earned_cents ?? 0
+  const expenses = flow.data?.periods.current.expense_cents ?? 0
   const netCashFlow = income - expenses
-
-  // Trend (calculated dynamically from transactions)
-  const trend: number[] = []
-  let runningBal = selectedAccount.balance
-  const now = new Date()
-  for (let i = 0; i < 12; i++) {
-    trend.unshift(runningBal)
-    
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
-    const monthStartIso = d.toISOString().split('T')[0]
-    const nextMonth = new Date(now.getFullYear(), now.getMonth() - i + 1, 1)
-    const nextMonthIso = nextMonth.toISOString().split('T')[0]
-    
-    const txnsInMonth = txns.filter(t => t.date >= monthStartIso && t.date < nextMonthIso)
-    const monthDelta = txnsInMonth.reduce((sum, t) => sum + t.amount, 0)
-    
-    runningBal -= monthDelta
+  const trend = history.data?.months.map(m=>m.account_balance_cents) ?? []
+  const catMap:Record<string,number> = Object.create(null)
+  for (const facet of flow.data?.categories ?? []) {
+    if (facet.period === 'current' && facet.gross_cents) catMap[facet.category] = (catMap[facet.category] ?? 0)+facet.gross_cents
   }
 
-  // Expense Categories (calculate dynamic distribution)
-  const catMap: Record<string, number> = {}
-  periodTxns.filter(t => !t.isTransfer && isGrossExpense(t)).forEach(t => {
-    catMap[t.cat || 'Uncategorized'] = (catMap[t.cat || 'Uncategorized'] || 0) + Math.abs(t.amount)
-  })
-  
   const categoryColors: Glow[] = ['blue', 'green', 'amber', 'red', 'cyan']
   const categories = Object.entries(catMap)
     .sort((a, b) => b[1] - a[1])
@@ -252,6 +239,7 @@ export default function Accounts() {
           <InvestmentAccountActivity accountId={selectedAccount.id} />
         ) : <>
         
+        <ReportStatus report={flow} label="Account summary" />
         {/* ROW 1: Four KPI Hero Cards (Standard Design System Stats) */}
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3.5">
           <Tile>
@@ -266,7 +254,7 @@ export default function Accounts() {
           <Tile>
             <Stat
               label="Income (Period)"
-              value={"+" + fmtCents(income)}
+              value={flow.data ? "+" + fmtCents(income) : "—"}
               delta="Sum of deposits in range"
               dir="up"
               small
@@ -276,7 +264,7 @@ export default function Accounts() {
           <Tile>
             <Stat
               label="Expenses (Period)"
-              value={"-" + fmtCents(expenses)}
+              value={flow.data ? fmtCents(-expenses) : "—"}
               delta="Sum of charges in range"
               dir="down"
               small
@@ -286,7 +274,7 @@ export default function Accounts() {
           <Tile>
             <Stat
               label="Net Cash Flow"
-              value={(netCashFlow >= 0 ? "+" : "-") + fmtCents(Math.abs(netCashFlow))}
+              value={flow.data ? (netCashFlow >= 0 ? "+" : "") + fmtCents(netCashFlow) : "—"}
               delta="Income minus expenses"
               dir={netCashFlow >= 0 ? "up" : "down"}
               small
@@ -327,7 +315,9 @@ export default function Accounts() {
               className="h-full pb-3.5"
             >
               <div className="mt-2">
-                {chartType === 'line' ? (
+                <ReportStatus report={history} label="Balance history" />
+                <ol aria-label="Monthly closing balances" className="sr-only">{history.data?.months.map(m=><li key={m.month}>{m.month.slice(0,7)} · {fmtCents(m.account_balance_cents)}</li>)}</ol>
+                {history.data && (chartType === 'line' ? (
                   <Area
                     key={selectedAccount.name + 'line'} // Force re-render on account swap for visual reveal animations
                     series={[{ data: trend, color: glowColor[selectedAccount.glow as Glow] }]}
@@ -341,7 +331,7 @@ export default function Accounts() {
                     labels={MONTHS}
                     height={240}
                   />
-                )}
+                ))}
               </div>
             </Tile>
           </div>
@@ -349,11 +339,11 @@ export default function Accounts() {
           {/* Right Plot: Expense Category Distribution */}
           <div className="w-full xl:flex-1 flex flex-col">
             <Tile title="Expense Category Distribution" className="h-full pb-3.5">
-              <AllocationDonut
+              {flow.data && <AllocationDonut
                 key={selectedAccount.name} // Force re-render on account swap
                 data={categories}
                 totalLabel="Total Expenses"
-              />
+              />}
             </Tile>
           </div>
         </div>

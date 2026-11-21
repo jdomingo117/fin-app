@@ -70,3 +70,19 @@ export async function latestLines(tenant:string, limit:number, deposits?:{accoun
     transferState:row.transfer_state,needsReview:row.needs_review,
   }))
 }
+
+// All Time includes future-dated rows. Resolve both edges on the server so
+// the provider's bounded activity list cannot truncate the report window.
+export async function accountFlow(tenant:string,account:string,range:{from:string;to:string}|null,today:string) {
+  if (!range) {
+    const edge = async (ascending:boolean) => {
+      const {data,error} = await supabase.from('transactions').select('date').eq('tenant_id',tenant)
+        .eq('account_id',account).order('date',{ascending}).limit(1)
+      if (error) throw error
+      return data[0]?.date ?? today
+    }
+    const [from,to] = await Promise.all([edge(true),edge(false)])
+    range = {from,to}
+  }
+  return cashFlow(tenant,{p_account_ids:[account],p_grain:'parent',p_bucket:'month',p_from:range.from,p_to:range.to})
+}

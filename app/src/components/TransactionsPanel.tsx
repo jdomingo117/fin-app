@@ -1,39 +1,28 @@
 import {expenseAmountRange} from '../lib/expenseAmountRange'
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import Tile from './Tile'
 import Ledger from './Ledger'
 import FiltersPopover from './FiltersPopover'
 import { SearchInput, RemovableChip } from './Controls'
 import { useDebouncedValue } from '../hooks/useDebouncedValue'
-import { matchesSelection } from '../lib/expenseSelection'
-import { CATEGORY_TAXONOMY, EXPENSE_CATEGORIES, type Txn } from '../data'
+import { expensePage, type LineCursor, type Facet } from '../lib/reports'
+import { hydrateParents } from '../lib/ledgerPage'
+import { useReport } from '../hooks/useReport'
+import { useKeysetPage } from '../hooks/useKeysetPage'
+import ReportStatus from './ReportStatus'
+import { CATEGORY_TAXONOMY, EXPENSE_CATEGORIES } from '../data'
 import TransactionCategoryDrawer from './TransactionCategoryDrawer'
 import { useData } from '../contexts/DataContext'
 import { useView } from '../router'
 
-const INITIAL_VISIBLE_ROWS = 15
-const LOAD_MORE_ROWS = 25
-
-/** Full-width transactions panel with list-level filters — free-text search
- *  (merchant), cascading category / sub-category multi-selects, and an amount
- *  min–max bound.
- *
- *  `categories`/`subcats` are **controlled**: they're the view's shared focus, so
- *  clicking a category in the flow or category-changes card lands here. Search and the
- *  amount bound stay local — no other tile speaks them.
- *
- *  `rows` arrives scoped by the view's period + account filters but is otherwise
- *  **unfiltered** — this panel is the filterer, not a passive sink. Pre-filtering
- *  it upstream would collapse every unselected `categoryOptions` count to 0 and
- *  reduce the `n of m` readout to `12 of 12`. */
 export default function TransactionsPanel({
-  rows,
+  accounts, from, to, facets,
   categories,
   subcats,
   onCategories,
   onSubcats,
 }: {
-  rows: Txn[]
+  accounts: string[]; from: string; to: string; facets: Facet[]
   categories: string[]
   subcats: string[]
   /** the caller prunes unreachable sub-cats (see `pruneSubcats`) */
@@ -43,7 +32,6 @@ export default function TransactionsPanel({
   const [query, setQuery] = useState('')
   const [amountMin, setAmountMin] = useState('')
   const [amountMax, setAmountMax] = useState('')
-  const [visibleRows, setVisibleRows] = useState(INITIAL_VISIBLE_ROWS)
   const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null)
   const debouncedQuery = useDebouncedValue(query, 180)
   const { refreshData } = useData()
@@ -52,58 +40,43 @@ export default function TransactionsPanel({
   // Category options (stable set) with per-category counts over the scoped rows.
   const categoryOptions = useMemo(() => {
     const counts = new Map<string, number>()
-    rows.forEach((t) => counts.set(t.cat, (counts.get(t.cat) ?? 0) + 1))
+    facets.forEach(f => counts.set(f.category, (counts.get(f.category) ?? 0) + f.expense_count))
     return EXPENSE_CATEGORIES.map((c) => ({ value: c, label: c, hint: String(counts.get(c) ?? 0) }))
-  }, [rows])
+  }, [facets])
 
   // Sub-category options cascade from the selected categories (all when none).
   const subcatOptions = useMemo(() => {
     const activeCats = categories.length ? categories : EXPENSE_CATEGORIES
     const seen = new Set<string>()
-    const out: { value: string; label: string }[] = []
+    const out: { value: string; label: string; hint: string }[] = []
+    const counts = new Map<string, number>()
     const valuesByCategory = new Map<string, Set<string>>()
-    rows.forEach((row) => {
-      if (!row.subcat) return
-      const values = valuesByCategory.get(row.cat) ?? new Set<string>()
-      values.add(row.subcat); valuesByCategory.set(row.cat, values)
+    facets.forEach((row) => {
+      if (!row.subcategory || !activeCats.includes(row.category)) return
+      counts.set(row.subcategory,(counts.get(row.subcategory) ?? 0) + row.expense_count)
+      const values = valuesByCategory.get(row.category) ?? new Set<string>()
+      values.add(row.subcategory); valuesByCategory.set(row.category, values)
     })
     activeCats.forEach((c) => [...(CATEGORY_TAXONOMY[c] ?? []), ...(valuesByCategory.get(c) ?? [])].forEach((s) => {
       if (!seen.has(s)) {
         seen.add(s)
-        out.push({ value: s, label: s })
+        out.push({ value: s, label: s, hint: String(counts.get(s) ?? 0) })
       }
     }))
     return out
-  }, [categories, rows])
+  }, [categories, facets])
 
-  const filtered = useMemo(() => {
-    const q = debouncedQuery.trim().toLowerCase()
-    const {lo,hi} = expenseAmountRange(amountMin,amountMax)
-    return rows.filter((t) => {
-      if (q && !t.merchant.toLowerCase().includes(q)) return false
-      if (!matchesSelection(t, { categories, subcats })) return false
-      const abs = Math.abs(t.amount)
-      if (lo != null && abs < lo) return false
-      if (hi != null && abs > hi) return false
-      return true
-    })
-  }, [rows, debouncedQuery, categories, subcats, amountMin, amountMax])
-
-  // A changed filter starts a fresh, scannable ledger rather than preserving a
-  // prior “show all” choice that could drop a large list into the page.
-  useEffect(() => {
-    setVisibleRows(INITIAL_VISIBLE_ROWS)
-  }, [rows, debouncedQuery, categories, subcats, amountMin, amountMax])
-
+  const filter = { accounts, from, to, categories, subcats, query: debouncedQuery, ...expenseAmountRange(amountMin,amountMax) }
+  const page = useKeysetPage(filter, (tenant, cursor: LineCursor | null) => expensePage(tenant, filter, cursor), accounts.length > 0)
+  const editor = useReport(['expense editor',selectedTransactionId], tenant => hydrateParents(tenant,[selectedTransactionId!]), !!selectedTransactionId)
   const amountActive = Boolean(amountMin || amountMax)
   const activeCount = categories.length + subcats.length + (amountActive ? 1 : 0)
   const anyChip = categories.length > 0 || subcats.length > 0 || amountActive
   const anyActive = anyChip || query.length > 0
   const amountLabel = amountMin && amountMax ? `$${amountMin}–$${amountMax}` : amountMin ? `≥ $${amountMin}` : amountMax ? `≤ $${amountMax}` : ''
-  const shownRows = filtered.slice(0, visibleRows)
-  const hasMoreRows = shownRows.length < filtered.length
-  const selectedTransaction = selectedTransactionId ? rows.find((row) => row.id === selectedTransactionId) ?? null : null
-
+  const shownRows = page.data?.rows ?? []
+  const matching = page.data?.matching ?? 0
+  const selectedTransaction = editor.data?.[0] ?? null
   const clearAmount = () => {
     setAmountMin('')
     setAmountMax('')
@@ -128,7 +101,7 @@ export default function TransactionsPanel({
         <div className="flex items-baseline gap-2.5">
           <h3 className="font-display text-[16px] font-bold text-ink">Transactions</h3>
           <span className="text-[13px] uppercase tracking-[0.06em] tabular-nums text-muted">
-            Showing {shownRows.length} of {filtered.length}
+            Showing {shownRows.length} of {matching}
           </span>
         </div>
         <div className="flex items-center gap-2.5">
@@ -182,44 +155,21 @@ export default function TransactionsPanel({
         </div>
       )}
 
-      {/* list · empty states */}
-      {filtered.length > 0 ? (
+      {accounts.length > 0 && <ReportStatus report={page} label="Expense transactions" />}
+      {selectedTransactionId && <ReportStatus report={editor} label="Transaction" />}
+      {matching > 0 ? (
         <>
-          <Ledger rows={shownRows} onEdit={(transaction) => setSelectedTransactionId(transaction.id)} />
+          <Ledger rows={shownRows} onEdit={(transaction) => setSelectedTransactionId(transaction.parentTransactionId ?? transaction.id)} />
           <footer className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--hair-soft)] pt-3">
-            <span className="text-[13px] tabular-nums text-muted">Showing {shownRows.length} of {filtered.length} transactions</span>
+            <span className="text-[13px] tabular-nums text-muted">Showing {shownRows.length} of {matching} transactions</span>
             <div className="flex flex-wrap items-center gap-2">
-              {hasMoreRows && (
-                <button
-                  type="button"
-                  onClick={() => setVisibleRows((count) => Math.min(filtered.length, count + LOAD_MORE_ROWS))}
-                  className="rounded-[8px] border border-[var(--hair)] px-3 py-1.5 text-[13px] font-semibold text-ink2 transition hover:border-accent hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-                >
-                  Show {Math.min(LOAD_MORE_ROWS, filtered.length - shownRows.length)} more
-                </button>
-              )}
-              {hasMoreRows && (
-                <button
-                  type="button"
-                  onClick={() => setVisibleRows(filtered.length)}
-                  className="rounded-[8px] px-3 py-1.5 text-[13px] font-semibold text-accent-ink transition hover:bg-[var(--accent-wash)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-                >
-                  Show all
-                </button>
-              )}
-              {!hasMoreRows && filtered.length > INITIAL_VISIBLE_ROWS && (
-                <button
-                  type="button"
-                  onClick={() => setVisibleRows(INITIAL_VISIBLE_ROWS)}
-                  className="rounded-[8px] px-3 py-1.5 text-[13px] font-semibold text-accent-ink transition hover:bg-[var(--accent-wash)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-                >
-                  Show fewer
-                </button>
-              )}
+              <button type="button" disabled={page.page === 1} onClick={page.previous}>Previous</button>
+              <span>Page {page.page}</span>
+              <button type="button" disabled={!page.data?.next} onClick={() => page.data?.next && page.next(page.data.next)}>Next</button>
             </div>
           </footer>
         </>
-      ) : rows.length === 0 ? (
+      ) : facets.length === 0 ? (
         <div className="grid place-items-center py-12 text-center text-[12.5px] text-muted">
           No transactions in the selected period.
         </div>

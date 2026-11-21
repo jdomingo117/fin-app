@@ -15,7 +15,6 @@ import RecurringHub from '../components/RecurringHub'
 import { usePeriodRange } from '../hooks/usePeriodRange'
 import { inclusiveDayCount } from '../lib/period'
 import { expenseMetricValues } from '../lib/expenseMetrics'
-import { isGrossExpense } from '../lib/classification'
 import { shortMerchant } from '../lib/recurring'
 import {
   EMPTY_SELECTION,
@@ -191,7 +190,6 @@ function ExpenseAnalytics({
     window.requestAnimationFrame(() => changesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
   }
 
-  const {reportingTransactions:transactions} = useData()
   const activeFrom = timeFocus?.from ?? from
   const activeTo = timeFocus?.to ?? to
   const len = inclusiveDayCount(from,to)
@@ -199,9 +197,6 @@ function ExpenseAnalytics({
   const params:FlowParams = {p_from:from,p_to:to,p_account_ids:accounts,p_bucket:bucket,
     p_categories:sel.categories,p_subcategories:sel.subcats,p_focus_from:activeFrom,p_focus_to:activeTo}
   const report = useReport(params,tenant=>cashFlow(tenant,params),accounts.length>0 && activeFrom>=from && activeTo<=to)
-  // The transaction drill-down still uses the provider until Wave 3C.3.
-  const drillRows = useMemo(()=>transactions.filter(t=>isGrossExpense(t) && !t.isTransfer &&
-    accounts.includes(t.account_id) && t.date>=activeFrom && t.date<=activeTo),[transactions,accounts,activeFrom,activeTo])
   const current = report.data?.categories.filter(f=>f.period==='current' && f.gross_cents>0) ?? []
   const prior = report.data?.categories.filter(f=>f.period==='prior' && f.gross_cents>0) ?? []
   const totals = new Map<string,number>()
@@ -252,10 +247,10 @@ function ExpenseAnalytics({
     )
   }
 
-  if (!report.data) return <ReportStatus report={report} label="Expense report" />
   return (
     <Grid>
       <ReportStatus report={report} label="Expense report" />
+      {report.data && <>
       <ExpenseScopeBar
         selection={sel}
         label={focusLabel}
@@ -355,11 +350,9 @@ function ExpenseAnalytics({
           onExpandedChange={setChangesExpanded}
         />
       </div>
-      {/* Row 4 — transactions. `rows` stays UNFILTERED: this panel is the filterer,
-          it just sources its category state from the shared focus now. Pre-filtering
-          would zero out the popover's per-category counts. */}
+      </>}
       <TransactionsPanel
-        rows={drillRows}
+        accounts={accounts} from={activeFrom} to={activeTo} facets={current}
         categories={sel.categories}
         subcats={sel.subcats}
         onCategories={setCategories}

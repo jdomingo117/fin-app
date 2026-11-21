@@ -1,3 +1,5 @@
+import { useReport } from '../hooks/useReport'
+import { useData } from '../contexts/DataContext'
 import { useEffect, useMemo, useState } from 'react'
 import { ALL_CATEGORIES, FULL_TAXONOMY, fmtCents, type CustomSubcategory, type Txn } from '../data'
 import { KIND_LABELS, TRANSACTION_KINDS, type TransactionKind } from '../lib/classification'
@@ -24,13 +26,15 @@ export default function TransactionSplitEditor({ transaction, customSubcategorie
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [lastEdit, setLastEdit] = useState<string | null>(null)
-  const [latestUndoable, setLatestUndoable] = useState<string | null>(null)
+  const { reportRevision } = useData()
+  const history = useReport(['split history',transaction.id,reportRevision],async tenant => {
+    const { data,error } = await supabase.from('transaction_allocation_edits').select('id,undone_at')
+      .eq('tenant_id',tenant).eq('transaction_id',transaction.id).order('created_at',{ascending:false}).limit(1)
+    if (error) throw error
+    return data[0] && !data[0].undone_at ? data[0].id as string : null
+  }, open)
+  const latestUndoable = history.data
   useEffect(() => { setDrafts(defaultDrafts(transaction)); setLastEdit(null) }, [transaction.id, transaction.allocations])
-  useEffect(() => {
-    if (!open) return
-    void supabase.from('transaction_allocation_edits').select('id,undone_at').eq('transaction_id', transaction.id).order('created_at', { ascending: false }).limit(1)
-      .then(({ data }) => setLatestUndoable(data?.[0] && !data[0].undone_at ? data[0].id : null))
-  }, [open, transaction.id, transaction.allocations])
   const parsed = drafts.map((draft) => cents(draft.amount))
   const total = parsed.every((amount) => amount != null) ? parsed.reduce((sum, amount) => sum + (amount ?? 0), 0) : null
   const remainder = total == null ? null : transaction.amount - total
@@ -52,7 +56,7 @@ export default function TransactionSplitEditor({ transaction, customSubcategorie
     const { error: invokeError } = await supabase.functions.invoke('manage-transaction-split', { body: { action: 'undo', edit_id: editId } })
     setSaving(false)
     if (invokeError) { setError(invokeError.message || 'Could not undo split.'); return }
-    setLastEdit(null); setLatestUndoable(null); await onChanged()
+    setLastEdit(null);  await onChanged()
   }
   const protectedRow = transaction.pending || (transaction.kind === 'adjustment' && transaction.kindSource === 'system')
   const summary = useMemo(() => transaction.allocations?.map((a) => `${fmtCents(a.amount)} ${a.category}${a.subcategory ? ` · ${a.subcategory}` : ''}`).join(' · '), [transaction.allocations])

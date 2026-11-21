@@ -6,6 +6,8 @@ import { supabase } from '../lib/supabaseClient'
 import { Button, Select, Switch } from './Controls'
 import { InlineActivity } from './OperationStatus'
 import { KIND_LABELS, TRANSACTION_KINDS, type SpendingNature, type TransactionKind } from '../lib/classification'
+import { useReport } from '../hooks/useReport'
+import ReportStatus from './ReportStatus'
 import { useData } from '../contexts/DataContext'
 import TransactionSplitEditor from './TransactionSplitEditor'
 import { useDialogFocus } from '../hooks/useDialogFocus'
@@ -63,13 +65,12 @@ export default function TransactionCategoryDrawer({
   onClose: () => void
   onChanged: () => Promise<void>
 }) {
-  const { customSubcategories } = useData()
+  const { customSubcategories, reportRevision } = useData()
   const [category, setCategory] = useState('')
   const [subcategory, setSubcategory] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [lastEditId, setLastEditId] = useState<string | null>(null)
-  const [history, setHistory] = useState<CategoryEditHistory[]>([])
   const [scope, setScope] = useState<'transaction' | 'merchant_rule'>('transaction')
   const [preview, setPreview] = useState<RulePreview | null>(null)
   const [previewing, setPreviewing] = useState(false)
@@ -79,27 +80,27 @@ export default function TransactionCategoryDrawer({
   const [spendingNature, setSpendingNature] = useState<SpendingNature>(null)
   const [isReimbursable, setIsReimbursable] = useState(false)
   const [isTaxRelated, setIsTaxRelated] = useState(false)
-  const [classificationHistory, setClassificationHistory] = useState<ClassificationEditHistory[]>([])
   const [lastClassificationEditId, setLastClassificationEditId] = useState<string | null>(null)
   const [classificationSaving, setClassificationSaving] = useState(false)
   const [addingSubcategory, setAddingSubcategory] = useState(false)
   const [customName, setCustomName] = useState('')
   const dialogRef = useDialogFocus({ active: Boolean(transaction) })
 
-  const loadHistory = async (transactionId: string) => {
-    const { data } = await supabase
-      .from('transaction_category_edits')
-      .select('id, before_category, before_subcategory, after_category, after_subcategory, created_at, undone_at, scope')
-      .eq('transaction_id', transactionId)
-      .order('created_at', { ascending: false })
-      .limit(20)
-    setHistory(data ?? [])
-    const { data: classificationData } = await supabase
-      .from('transaction_classification_edits')
-      .select('id,before_kind,after_kind,before_attributes,after_attributes,created_at,undone_at')
-      .eq('transaction_id', transactionId).order('created_at', { ascending: false }).limit(20)
-    setClassificationHistory((classificationData ?? []) as ClassificationEditHistory[])
-  }
+  const audit = useReport(['edit history',transaction?.id,reportRevision], async tenant => {
+    const id = transaction!.id
+    const [categories, classifications] = await Promise.all([
+      supabase.from('transaction_category_edits')
+        .select('id,before_category,before_subcategory,after_category,after_subcategory,created_at,undone_at,scope')
+        .eq('tenant_id',tenant).eq('transaction_id',id).order('created_at',{ascending:false}).limit(20),
+      supabase.from('transaction_classification_edits')
+        .select('id,before_kind,after_kind,before_attributes,after_attributes,created_at,undone_at')
+        .eq('tenant_id',tenant).eq('transaction_id',id).order('created_at',{ascending:false}).limit(20),
+    ])
+    if (categories.error || classifications.error) throw categories.error ?? classifications.error
+    return { categories:categories.data as CategoryEditHistory[], classifications:classifications.data as ClassificationEditHistory[] }
+  },!!transaction)
+  const history = audit.data?.categories ?? []
+  const classificationHistory = audit.data?.classifications ?? []
 
   useEffect(() => {
     if (!transaction) return
@@ -116,7 +117,6 @@ export default function TransactionCategoryDrawer({
     setIsReimbursable(transaction.isReimbursable ?? false)
     setIsTaxRelated(transaction.isTaxRelated ?? false)
     setLastClassificationEditId(null)
-    void loadHistory(transaction.id)
   }, [transaction?.id, transaction?.cat, transaction?.subcat, transaction?.kind, transaction?.isRecurring, transaction?.isSubscription, transaction?.spendingNature, transaction?.isReimbursable, transaction?.isTaxRelated])
 
   useEffect(() => {
@@ -164,7 +164,7 @@ export default function TransactionCategoryDrawer({
     setClassificationSaving(false)
     if (mutationError) { setError(mutationError.message || 'Could not save classification.'); return }
     setLastClassificationEditId(data.edit_id)
-    await Promise.all([loadHistory(transaction.id), onChanged()])
+    await onChanged()
   }
 
   const undoClassification = async () => {
@@ -180,7 +180,7 @@ export default function TransactionCategoryDrawer({
     setKind(data.kind); setIsRecurring(data.is_recurring); setIsSubscription(data.is_subscription)
     setSpendingNature(data.spending_nature); setIsReimbursable(data.is_reimbursable); setIsTaxRelated(data.is_tax_related)
     setLastClassificationEditId(null)
-    await Promise.all([loadHistory(transaction.id), onChanged()])
+    await onChanged()
   }
 
   useEffect(() => {
@@ -237,7 +237,6 @@ export default function TransactionCategoryDrawer({
     const result = data as MutationResult
     setLastEditId(scope === 'transaction' ? result.edit_id : null)
     await onChanged()
-    await loadHistory(transaction.id)
     setSaving(false)
   }
 
@@ -268,7 +267,6 @@ export default function TransactionCategoryDrawer({
     setSubcategory(result.subcategory ?? '')
     setLastEditId(null)
     await onChanged()
-    await loadHistory(transaction.id)
     setSaving(false)
   }
 
@@ -438,6 +436,7 @@ export default function TransactionCategoryDrawer({
 
             <section className="mt-7 border-t border-[var(--hair)] pt-5">
               <h3 className="font-display text-[14px] font-bold text-ink">Category history</h3>
+              <ReportStatus report={audit} label="Transaction history" />
               {history.length === 0 ? (
                 <p className="mt-2 text-[12.5px] text-muted">No manual category changes yet.</p>
               ) : (

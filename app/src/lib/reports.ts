@@ -52,7 +52,7 @@ export async function monthlyWorth(tenant:string) {
   return data.reverse().map(row => ({month:row.month as string,value:safeInteger(row.value_cents)}))
 }
 export async function latestLines(tenant:string, limit:number, deposits?:{accounts:string[];from:string;to:string;source?:string}) {
-  let query = supabase.from('reporting_transaction_lines').select('*').eq('tenant_id',tenant)
+  let query = lineQuery(tenant)
   if (deposits) {
     if (!deposits.accounts.length) return []
     query = query.in('account_id',deposits.accounts).gte('date',deposits.from).lte('date',deposits.to)
@@ -62,13 +62,20 @@ export async function latestLines(tenant:string, limit:number, deposits?:{accoun
   }
   const {data,error} = await query.order('date',{ascending:false}).order('parent_id',{ascending:false}).order('position').limit(limit)
   if (error) throw error
-  return data.map((row):Txn => ({
+  return data.map(mapLine)
+}
+type Line = NonNullable<Awaited<ReturnType<typeof lineQuery>>['data']>[number]
+function lineQuery(tenant: string) {
+  return supabase.from('reporting_transaction_lines').select('*').eq('tenant_id',tenant)
+}
+function mapLine(row: Line): Txn {
+  return {
     id:row.allocation_id ? 'allocation:'+row.allocation_id : row.parent_id, parentTransactionId:row.allocation_id ? row.parent_id : undefined,
     isAllocation:!!row.allocation_id, allocationNote:row.allocation_note, amount:safeInteger(row.amount), account_id:row.account_id,
     date:row.date,merchant:row.merchant,merchantKey:row.merchant_key,originalDescription:row.original_description,kind:row.kind,
     kindSource:row.kind_source,cat:row.category,subcat:row.subcategory,pending:row.pending,isTransfer:row.is_transfer,
     transferState:row.transfer_state,needsReview:row.needs_review,
-  }))
+  }
 }
 
 // All Time includes future-dated rows. Resolve both edges on the server so
@@ -85,4 +92,39 @@ export async function accountFlow(tenant:string,account:string,range:{from:strin
     range = {from,to}
   }
   return cashFlow(tenant,{p_account_ids:[account],p_grain:'parent',p_bucket:'month',p_from:range.from,p_to:range.to})
+}
+
+export interface LineCursor { date: string; parent_id: string; position: number }
+export interface ExpenseFilter {
+  accounts: string[]; from: string; to: string; categories: string[]; subcats: string[]
+  query: string; lo: number | null; hi: number | null
+}
+export async function expensePage(tenant: string, filter: ExpenseFilter, cursor: LineCursor | null) {
+  const filtered = () => {
+    let q = supabase.from('reporting_transaction_lines').select('*', { count: 'exact' }).eq('tenant_id',tenant)
+      .in('account_id',filter.accounts).gte('date',filter.from).lte('date',filter.to)
+      .eq('pending',false).eq('is_transfer',false).lt('amount',0)
+      .or('kind.eq.expense,and(kind.eq.transfer,kind_source.eq.derived,transfer_state.eq.rejected)')
+    if (filter.categories.length) q = q.in('category',filter.categories)
+    if (filter.subcats.length) q = q.in('subcategory',filter.subcats)
+    if (filter.lo !== null) q = q.lte('amount',-filter.lo)
+    if (filter.hi !== null) q = q.gte('amount',-filter.hi)
+    if (filter.query.trim()) q = q.ilike('merchant','%' + filter.query.trim().replace(/[\\%_]/g,'\\$&') + '%')
+    return q
+  }
+  let query = filtered()
+  if (cursor) {
+    const { date, parent_id, position } = cursor
+    query = query.or(`date.lt.${date},and(date.eq.${date},parent_id.lt.${parent_id}),and(date.eq.${date},parent_id.eq.${parent_id},position.gt.${position})`)
+  }
+  const [page, total] = await Promise.all([
+    query.order('date',{ascending:false}).order('parent_id',{ascending:false}).order('position').limit(16),
+    cursor ? filtered().limit(0) : null,
+  ])
+  if (page.error) throw page.error
+  if (total?.error) throw total.error
+  const rows = page.data.slice(0,15)
+  const last = rows.at(-1)
+  return { rows: rows.map(mapLine), matching: (total ?? page).count ?? 0,
+    next: page.data.length > 15 && last ? { date:last.date,parent_id:last.parent_id,position:last.position } : null }
 }

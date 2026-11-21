@@ -19,7 +19,8 @@ import InvestmentAccountActivity from '../components/InvestmentAccountActivity'
 import EditAccountModal from '../components/EditAccountModal'
 import ConnectBankModal from '../components/ConnectBankModal'
 import TransactionCategoryDrawer from '../components/TransactionCategoryDrawer'
-import { isEarnedIncome, isGrossExpense } from '../lib/classification'
+import { ledgerPage, activityCategories, hydrateParents, type LedgerCursor } from '../lib/ledgerPage'
+import { useKeysetPage } from '../hooks/useKeysetPage'
 import { useView } from '../router'
 
 /* Resolves a "Quick Timeframe Selector" label to a concrete ISO date range.
@@ -50,7 +51,7 @@ function timeframeRange(tf: string): { from: string; to: string } | null {
 }
 
 export default function Accounts() {
-  const { accounts, transactions, refreshData } = useData()
+  const { accounts, refreshData } = useData()
   const { toast } = useView()
   // Default to the first account (the router prevents this view from loading if accounts is empty)
   const [selectedAccountId, setSelectedAccountId] = useState(accounts[0]?.id)
@@ -62,7 +63,6 @@ export default function Accounts() {
   const [isConnectingBank, setIsConnectingBank] = useState(false)
   
   // Filter States
-  const [page, setPage] = useState(0)
   const [filterCat, setFilterCat] = useState<string | 'All'>('All')
   const [searchQuery, setSearchQuery] = useState('')
   const [filterFlow, setFilterFlow] = useState<'All' | 'Income' | 'Expense'>('All')
@@ -74,6 +74,13 @@ export default function Accounts() {
   const enabled = !!selectedAccount && selectedAccount.type !== 'Invest'
   const flow = useReport([selectedAccount?.id,range,today],tenant=>accountFlow(tenant,selectedAccount.id,range,today),enabled)
   const history = useReport([selectedAccount?.id,today],tenant=>movements(tenant,today,selectedAccount.id),enabled)
+  const params = { p_account_ids: [selectedAccount?.id], p_from: range?.from, p_to: range?.to,
+    p_category: filterCat === 'All' ? null : filterCat, p_account_search: searchQuery || null,
+    p_account_flow: filterFlow === 'All' ? null : filterFlow.toLowerCase(), p_limit: 8 }
+  const activity = useKeysetPage(params, (tenant, cursor: LedgerCursor | null) => ledgerPage(tenant, params, cursor), enabled)
+  const options = useReport(['account categories', selectedAccount?.id], tenant => activityCategories(tenant, selectedAccount.id), enabled)
+  const editor = useReport(['account editor',selectedAccount?.id,selectedTransactionId], tenant =>
+    hydrateParents(tenant,[selectedTransactionId!]), enabled && !!selectedTransactionId)
   if (!selectedAccount) {
     return (
       <Screen>
@@ -91,28 +98,12 @@ export default function Accounts() {
     )
   }
 
-  // Real transactions for this account. `t.account` is the account's NAME
-  // (see DataContext's mapping); the id lives on `t.account_id`. Comparing
-  // account to selectedAccount.id compared a name against a UUID and could
-  // never match, so this used to silently produce an empty list — flat
-  // trend line, $0 period stats, empty category donut, empty ledger.
-  const txns = transactions.filter(t => t.account_id === selectedAccount.id)
-  const selectedTransaction = selectedTransactionId
-    ? txns.find((transaction) => transaction.id === selectedTransactionId) ?? null
-    : null
+  const selectedTransaction = editor.data?.[0] ?? null
 
   const refreshAfterTransactionEdit = async () => {
     await refreshData()
     toast({ title: 'Transaction updated', sub: 'Account analytics have been refreshed.' })
   }
-
-  // The Quick Timeframe Selectors scope everything on this page EXCEPT the
-  // Vault Balance (a point-in-time authoritative figure, not a period sum)
-  // and the Chronological Net Balance Trend (a fixed 12-month rolling view —
-  // narrowing it to e.g. "This Week" would leave 11 empty buckets, same
-  // reasoning that keeps the Income/Expenses monthly charts fixed-span while
-  // their presets narrow the transactions list, see lib/period.ts).
-  const periodTxns = range ? txns.filter(t => t.date >= range.from && t.date <= range.to) : txns
 
   const income = flow.data?.periods.current.earned_cents ?? 0
   const expenses = flow.data?.periods.current.expense_cents ?? 0
@@ -133,34 +124,12 @@ export default function Accounts() {
       glow: categoryColors[i % categoryColors.length]
     }))
 
-  // Sourced from the full account history, not periodTxns — so switching
-  // timeframe never makes the current category selection vanish from the list.
-  const allCategories = ['All', ...Array.from(new Set(txns.map(t => t.cat))).sort()]
-
-  const filteredTxns = periodTxns.filter(t => {
-    // 1. Category Filter
-    if (filterCat !== 'All' && t.cat !== filterCat) return false
-    
-    // 2. Flow Filter
-    if (filterFlow === 'Income' && (!isEarnedIncome(t) || t.isTransfer)) return false
-    if (filterFlow === 'Expense' && (!isGrossExpense(t) || t.isTransfer)) return false
-    
-    // 3. Search Filter
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase()
-      if (!t.merchant.toLowerCase().includes(q) && !(t.cat || '').toLowerCase().includes(q)) return false
-    }
-    
-    return true
-  })
-
+  const allCategories = ['All', ...(options.data ?? [])]
   const itemsPerPage = 8
-  const pageCount = Math.max(1, Math.ceil(filteredTxns.length / itemsPerPage))
-  
-  // ensure page is valid when filters change
-  const validPage = Math.min(page, pageCount - 1)
-  const paginatedTxns = filteredTxns.slice(validPage * itemsPerPage, (validPage + 1) * itemsPerPage)
-
+  const matching = activity.data?.matching_count ?? 0
+  const pageCount = Math.max(1, Math.ceil(matching / itemsPerPage))
+  const validPage = activity.page - 1
+  const paginatedTxns = activity.data?.rows ?? []
   return (
     <Screen>
       {/* ViewHeader remains consistent with the rest of the application */}
@@ -364,7 +333,7 @@ export default function Accounts() {
                   {['All Time', 'This Week', 'This Month', 'Last Month', 'Last 3 Months', 'This Year YTD', 'Financial YTD'].map(tf => (
                     <button
                       key={tf}
-                      onClick={() => { setTimeframe(tf); setPage(0) }}
+                      onClick={() => { setTimeframe(tf) }}
                       className={`px-3 py-1.5 rounded-lg text-[11px] font-bold tracking-[0.04em] transition-colors duration-200 cursor-pointer whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-accent/50 ${
                         timeframe === tf 
                           ? 'bg-ink text-surface shadow-sm' 
@@ -390,7 +359,7 @@ export default function Accounts() {
                       type="text"
                       placeholder="Filter by keyword..."
                       value={searchQuery}
-                      onChange={(e) => { setSearchQuery(e.target.value); setPage(0) }}
+                      onChange={(e) => { setSearchQuery(e.target.value) }}
                       className="w-full bg-transparent border border-[var(--hair)] rounded-lg pl-9 pr-3 py-2 text-[12px] font-medium placeholder:text-muted/60 focus:outline-none focus:border-accent transition duration-200"
                     />
                   </div>
@@ -402,7 +371,7 @@ export default function Accounts() {
                   <div className="relative">
                     <select
                       value={filterFlow}
-                      onChange={(e) => { setFilterFlow(e.target.value as any); setPage(0) }}
+                      onChange={(e) => { setFilterFlow(e.target.value as any) }}
                       className="w-full appearance-none bg-transparent border border-[var(--hair)] rounded-lg pl-3 pr-8 py-2 text-[12px] font-medium focus:outline-none focus:border-accent transition duration-200 cursor-pointer"
                     >
                       <option value="All">All Flows</option>
@@ -421,7 +390,7 @@ export default function Accounts() {
                   <div className="relative">
                     <select
                       value={filterCat}
-                      onChange={(e) => { setFilterCat(e.target.value); setPage(0) }}
+                      onChange={(e) => { setFilterCat(e.target.value) }}
                       className="w-full appearance-none bg-transparent border border-[var(--hair)] rounded-lg pl-3 pr-8 py-2 text-[12px] font-medium focus:outline-none focus:border-accent transition duration-200 cursor-pointer"
                     >
                       {allCategories.map(cat => (
@@ -436,7 +405,9 @@ export default function Accounts() {
               </div>
             </div>
 
-            {/* Ledger Table */}
+            <ReportStatus report={activity} label="Account activity" />
+            <ReportStatus report={options} label="Category options" />
+            {selectedTransactionId && <ReportStatus report={editor} label="Transaction" />}
             <div className="min-h-[300px]">
               {paginatedTxns.length > 0 ? (
                 <Ledger rows={paginatedTxns} onEdit={(transaction) => setSelectedTransactionId(transaction.id)} />
@@ -449,11 +420,11 @@ export default function Accounts() {
             {pageCount > 1 && (
               <div className="mt-4 pt-3 border-t border-[var(--hair-soft)] flex items-center justify-between">
                 <div className="text-[11.5px] font-semibold text-muted uppercase tracking-[0.04em]">
-                  Showing {validPage * itemsPerPage + 1} - {Math.min((validPage + 1) * itemsPerPage, filteredTxns.length)} of {filteredTxns.length}
+                  Showing {validPage * itemsPerPage + 1} - {Math.min((validPage + 1) * itemsPerPage, matching)} of {matching}
                 </div>
                 <div className="flex items-center gap-1.5">
                   <button
-                    onClick={() => setPage(p => Math.max(0, p - 1))}
+                    onClick={activity.previous}
                     disabled={validPage === 0}
                     className="w-8 h-8 flex items-center justify-center rounded-md border border-[var(--hair)] text-muted hover:text-ink hover:bg-[var(--hair-soft)] disabled:opacity-30 disabled:pointer-events-none transition-colors duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-accent/50"
                     aria-label="Previous page"
@@ -466,7 +437,7 @@ export default function Accounts() {
                     {validPage + 1} / {pageCount}
                   </div>
                   <button
-                    onClick={() => setPage(p => Math.min(pageCount - 1, p + 1))}
+                    onClick={() => activity.data?.before && activity.next(activity.data.before)}
                     disabled={validPage === pageCount - 1}
                     className="w-8 h-8 flex items-center justify-center rounded-md border border-[var(--hair)] text-muted hover:text-ink hover:bg-[var(--hair-soft)] disabled:opacity-30 disabled:pointer-events-none transition-colors duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-accent/50"
                     aria-label="Next page"

@@ -1,3 +1,4 @@
+import {expenseAmountRange} from '../lib/expenseAmountRange'
 import { useEffect, useMemo, useState } from 'react'
 import Tile from './Tile'
 import Ledger from './Ledger'
@@ -77,11 +78,7 @@ export default function TransactionsPanel({
 
   const filtered = useMemo(() => {
     const q = debouncedQuery.trim().toLowerCase()
-    const min = amountMin ? parseFloat(amountMin) : null
-    const max = amountMax ? parseFloat(amountMax) : null
-    // tolerate min > max by treating the pair as a range
-    const lo = min != null && max != null ? Math.min(min, max) : min
-    const hi = min != null && max != null ? Math.max(min, max) : max
+    const {lo,hi} = expenseAmountRange(amountMin,amountMax)
     return rows.filter((t) => {
       if (q && !t.merchant.toLowerCase().includes(q)) return false
       if (!matchesSelection(t, { categories, subcats })) return false

@@ -56,7 +56,7 @@ export const subInScope = (cat: string, sub: string, s: CatSelection) => {
 /** Drop sub-categories no longer reachable from `categories`. Only prunes when a
  *  category constraint exists — with no categories selected, every sub-category
  *  in the taxonomy is still reachable (the popover's all-cats mode). */
-export const pruneSubcats = (categories: string[], subcats: string[], rows: Txn[] = []) => {
+export const pruneSubcats = (categories: string[], subcats: string[], rows: Pick<Txn, "cat" | "subcat">[] = []) => {
   if (!categories.length) return subcats
   const allowed = new Set(categories.flatMap((c) => CATEGORY_TAXONOMY[c] ?? []))
   rows.forEach((row) => { if (categories.includes(row.cat) && row.subcat) allowed.add(row.subcat) })

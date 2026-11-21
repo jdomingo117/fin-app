@@ -1,11 +1,12 @@
+import type {Facet} from '../lib/reports'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ReactFlow, Background, Controls, Handle, Position } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import Tile from './Tile'
 import { catInScope, isActive, subInScope, type CatSelection } from '../lib/expenseSelection'
 import { catColor } from '../lib/categoryColor'
-import { fmt, type Txn } from '../data'
-import { isGrossExpense } from '../lib/classification'
+import { fmt } from '../data'
+
 
 /* √-scaled, capped edge width — keeps "thicker = bigger" but bounds the dominant
    flow so it doesn't crowd the node cards, and keeps small flows visible. */
@@ -80,7 +81,7 @@ export default function ExpenseFlowCard({
   onToggleSubcat,
   height,
 }: {
-  outflows: Txn[]
+  outflows: Facet[]
   selection: CatSelection
   onToggleCategory: (cat: string) => void
   onToggleSubcat: (cat: string, sub: string) => void
@@ -95,11 +96,10 @@ export default function ExpenseFlowCard({
   const { cats, total } = useMemo(() => {
     const catMap = new Map<string, Map<string, number>>()
     outflows.forEach((t) => {
-      if (!isGrossExpense(t) || t.isTransfer) return
-      const subs = catMap.get(t.cat) ?? new Map<string, number>()
-      const sk = t.subcat ?? 'Other'
-      subs.set(sk, (subs.get(sk) ?? 0) + Math.abs(t.amount))
-      catMap.set(t.cat, subs)
+      const subs = catMap.get(t.category) ?? new Map<string, number>()
+      const sk = t.subcategory ?? 'Other'
+      subs.set(sk, (subs.get(sk) ?? 0) + t.gross_cents)
+      catMap.set(t.category, subs)
     })
     const cats = [...catMap.entries()]
       .map(([name, subs]) => ({

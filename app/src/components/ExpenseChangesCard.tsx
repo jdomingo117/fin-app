@@ -1,6 +1,7 @@
+import type {Facet} from '../lib/reports'
 import { useMemo, useState } from 'react'
 import Tile from './Tile'
-import { fmt, type Txn } from '../data'
+import { fmt } from '../data'
 import { catInScope, isActive, type CatSelection } from '../lib/expenseSelection'
 
 type ChangeRow = {
@@ -10,10 +11,10 @@ type ChangeRow = {
   delta: number
 }
 
-const totalByCategory = (transactions: Txn[]) => {
+const totalByCategory = (transactions: Facet[]) => {
   const totals = new Map<string, number>()
   transactions.forEach((transaction) => {
-    totals.set(transaction.cat, (totals.get(transaction.cat) ?? 0) + Math.abs(transaction.amount))
+    totals.set(transaction.category, (totals.get(transaction.category) ?? 0) + transaction.gross_cents)
   })
   return totals
 }
@@ -33,8 +34,8 @@ export default function ExpenseChangesCard({
   onExpandedChange,
   onViewDetail,
 }: {
-  outflows: Txn[]
-  previousOutflows: Txn[]
+  outflows: Facet[]
+  previousOutflows: Facet[]
   selection: CatSelection
   onToggleCategory: (category: string) => void
   /** `summary` is the companion card for the trend chart; `detail` retains the

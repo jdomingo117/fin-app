@@ -1,3 +1,4 @@
+import {mapParent} from '../lib/reportParent'
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, ReactNode } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import type { Account, Txn, Achievement, CustomSubcategory, TransactionAllocation } from '../data'
@@ -276,36 +277,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       const accountNameById = new Map(mappedAccounts.map((account) => [account.id, account.name]))
 
       // Map DB transactions to UI Txn
-      const mappedTxns: Txn[] = fetchedTxns.map(t => ({
-        id: t.id,
-        date: t.date,
-        merchant: t.merchant || t.original_description,
-        merchantKey: t.merchant_key,
-        originalDescription: t.original_description,
-        cat: t.category,
-        categoryId: t.category_id,
-        subcat: t.subcategory,
-        subcategoryId: t.subcategory_id,
-        kind: t.kind,
-        kindSource: t.kind_source,
-        isRecurring: t.is_recurring,
-        recurringSource: t.recurring_source,
-        isSubscription: t.is_subscription,
-        subscriptionSource: t.subscription_source,
-        spendingNature: t.spending_nature,
-        isReimbursable: t.is_reimbursable,
-        isTaxRelated: t.is_tax_related,
-        categorySource: t.category_source,
-        categoryConfidence: t.category_confidence,
-        needsReview: t.needs_review,
-        amount: t.amount,
-        account: accountNameById.get(t.account_id) || 'Unknown',
-        account_id: t.account_id,
-        upload_batch_id: t.upload_batch_id,
-        isTransfer: t.is_transfer,
-        transferState: t.transfer_state,
-        pending: t.pending,
-      }))
+      const mappedTxns = fetchedTxns.map(t=>mapParent(t,accountNameById.get(t.account_id) ?? 'Unknown'))
 
       const allocationsByTransaction = new Map<string, TransactionAllocation[]>()
       for (const row of allocationsRes.data ?? []) {

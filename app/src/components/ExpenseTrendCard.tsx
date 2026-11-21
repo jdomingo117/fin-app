@@ -3,13 +3,10 @@ import Tile from './Tile'
 import Area from './charts/Area'
 import Bar from './charts/Bar'
 import SegmentedTabs from './SegmentedTabs'
-import type { Txn } from '../data'
+import {addDays,iso} from '../lib/period'
 
-const DAY = 86400000
 const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 const parse = (s: string) => new Date(`${s}T00:00:00`)
-const isoDay = (d: Date) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 const fmtDay = (d: Date) => `${MON[d.getMonth()]} ${d.getDate()}`
 
 const TABS = [
@@ -22,7 +19,7 @@ const TABS = [
  *  `Per period` is the non-cumulative spend per bin (bars). Both derive from the
  *  same account/date-scoped `outflows` as the hero cards, so they reconcile. */
 export default function ExpenseTrendCard({
-  outflows,
+  buckets, bucket,
   from,
   to,
   scopeLabel,
@@ -30,7 +27,8 @@ export default function ExpenseTrendCard({
   onTimeFocus,
   height = 420,
 }: {
-  outflows: Txn[]
+  buckets: {bucket:string;gross_cents:number}[]
+  bucket: "day" | "week" | "month"
   from: string
   to: string
   /** the view's active category focus, if any — `outflows` arrives already
@@ -45,81 +43,21 @@ export default function ExpenseTrendCard({
   const [tab, setTab] = useState('cumulative')
 
   const { bins, cumulative, gran } = useMemo(() => {
-    const totals = new Map<string, number>()
-    outflows.forEach((t) => {
-      totals.set(t.date, (totals.get(t.date) ?? 0) + Math.abs(t.amount))
+    const gran = {day:'daily',week:'weekly',month:'monthly'}[bucket]
+    const ranges = buckets.map((point,i)=>{
+      const start = point.bucket < from ? from : point.bucket
+      const end = i+1<buckets.length ? iso(addDays(parse(buckets[i+1].bucket),-1)) : to
+      const date = parse(start)
+      const label = bucket==='month' ? MON[date.getMonth()]+' '+date.getFullYear()
+        : bucket==='week' ? fmtDay(date)+' – '+fmtDay(parse(end)) : fmtDay(date)
+      return {from:start,to:end,label}
     })
-
-    const fromD = parse(from)
-    const toD = parse(to)
-    const lenDays = Math.max(1, Math.round((toD.getTime() - fromD.getTime()) / DAY) + 1)
-
-    // every calendar day in the period (zero-filled)
-    const days = Array.from({ length: lenDays }, (_, i) => {
-      const d = new Date(fromD.getTime() + i * DAY)
-      return { date: d, value: totals.get(isoDay(d)) ?? 0 }
-    })
-
-    // adaptive bucket size for both charts
-    const gran: 'daily' | 'weekly' | 'monthly' = lenDays <= 45 ? 'daily' : lenDays <= 130 ? 'weekly' : 'monthly'
-    let bins: { data: number[]; labels: string[]; ranges: { from: string; to: string; label: string }[] }
-    if (gran === 'daily') {
-      bins = {
-        data: days.map((x) => x.value),
-        labels: days.map((x) => fmtDay(x.date)),
-        ranges: days.map((x) => ({
-          from: isoDay(x.date),
-          to: isoDay(x.date),
-          label: fmtDay(x.date),
-        })),
-      }
-    } else if (gran === 'weekly') {
-      const b: { start: Date; end: Date; value: number }[] = []
-      days.forEach((day, i) => {
-        if (i % 7 === 0) {
-          const endIdx = Math.min(days.length - 1, i + 6)
-          b.push({ start: day.date, end: days[endIdx].date, value: 0 })
-        }
-        b[b.length - 1].value += day.value
-      })
-      bins = {
-        data: b.map((x) => x.value),
-        labels: b.map((x) => fmtDay(x.start)),
-        ranges: b.map((x) => ({
-          from: isoDay(x.start),
-          to: isoDay(x.end),
-          label: `${fmtDay(x.start)} – ${fmtDay(x.end)}`,
-        })),
-      }
-    } else {
-      const byMonth = new Map<string, { start: Date; end: Date; value: number }>()
-      days.forEach((day) => {
-        const key = `${day.date.getFullYear()}-${day.date.getMonth()}`
-        if (!byMonth.has(key)) {
-          byMonth.set(key, { start: day.date, end: day.date, value: 0 })
-        } else {
-          byMonth.get(key)!.end = day.date
-        }
-        byMonth.get(key)!.value += day.value
-      })
-      const arr = [...byMonth.values()].sort((a, b) => a.start.getTime() - b.start.getTime())
-      bins = {
-        data: arr.map((x) => x.value),
-        labels: arr.map((x) => MON[x.start.getMonth()]),
-        ranges: arr.map((x) => ({
-          from: isoDay(x.start),
-          to: isoDay(x.end),
-          label: `${MON[x.start.getMonth()]} ${x.start.getFullYear()}`,
-        })),
-      }
-    }
-
-    // running total for the cumulative view
+    const bins = {ranges,data:buckets.map(b=>b.gross_cents),labels:ranges.map(r=>bucket==='month' ? MON[parse(r.from).getMonth()] : fmtDay(parse(r.from)))}
     let acc = 0
     const cumulative = bins.data.map((v) => (acc += v))
 
     return { bins, cumulative, gran }
-  }, [outflows, from, to])
+  }, [buckets, bucket, from, to])
 
   const selectedIndex = useMemo(() => {
     if (!timeFocus) return null

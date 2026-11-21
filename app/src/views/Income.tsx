@@ -1,3 +1,4 @@
+import {reportParent} from '../lib/reportParent'
 import { useMemo, useState, useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Screen, ViewHeader } from '../components/Screen'
@@ -10,9 +11,11 @@ import HeroMetric from '../components/HeroMetric'
 import AnalyzerFilters from '../components/AnalyzerFilters'
 import { usePeriodRange } from '../hooks/usePeriodRange'
 import { useResponsiveChartSize } from '../hooks/useResponsiveChartSize'
-import { dayLabel } from '../lib/period'
-import { buildCashFlowSeries } from '../lib/cashFlowSeries'
-import { isEarnedIncome } from '../lib/classification'
+import { dayLabel, monthLabel } from '../lib/period'
+import { cashFlowGranularity } from '../lib/cashFlowSeries'
+import {cashFlow, latestLines} from '../lib/reports'
+import {useReport} from '../hooks/useReport'
+import ReportStatus from '../components/ReportStatus'
 import { fmt, type Txn } from '../data'
 import { useData } from '../contexts/DataContext'
 import StrategicProjections from '../components/StrategicProjections'
@@ -103,69 +106,54 @@ export default function Income() {
   )
 }
 
-const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0)
+
 
 function IncomeAnalyzer({ from, to, accounts, dbAccountsLength }: { from: string; to: string; accounts: string[]; dbAccountsLength: number }) {
-  const { reportingTransactions: transactions, refreshData } = useData()
+  const { accounts: accountList, refreshData } = useData()
   const { go, toast } = useView()
   const [selectedSource, setSelectedSource] = useState<string | null>(null)
   const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null)
-  const m = useMemo(() => {
-    const share = accounts.length > 0 ? accounts.length / (dbAccountsLength || 1) : 0
-    const flow = buildCashFlowSeries({ from, to, accountIds: accounts, transactions })
-    const inc = flow.inflow
-    const exp = flow.outflow
-    
-    const net = inc.map((v, i) => v - exp[i])
-    const n = inc.length || 1
-    const totalInflow = sum(inc)
-    const totalOutflow = sum(exp)
-    const prorated = totalInflow / n
-    const coverage = totalOutflow ? totalInflow / totalOutflow : 0
-    const surplus = totalInflow - totalOutflow
-    const peakVal = Math.max(...inc)
-    const peakPeriod = peakVal > 0 ? flow.labels[inc.indexOf(peakVal)] : '—'
-
-    // running totals for the pacing chart
-    const cum = (xs: number[]) => {
-      let a = 0
-      return xs.map((v) => (a += v))
-    }
-    const cumInflow = cum(inc)
-    const cumNet = cum(net)
-    const periodRates = inc.map((v, i) => (v > 0 ? (v - exp[i]) / v : 0))
-    const savingsRate = totalInflow > 0 ? surplus / totalInflow : 0
-
-    // Inflow composition and its drill-down use the exact same scoped settled
-    // transactions, so every donut value has a traceable transaction list.
-    const sourceTransactions = share > 0
-      ? transactions.filter((t) => isEarnedIncome(t) && !t.isTransfer && t.account_id && accounts.includes(t.account_id) && t.date >= from && t.date <= to)
-      : []
-    const sourceMap: Record<string, number> = {}
-    sourceTransactions.forEach(t => {
-      sourceMap[t.cat || 'Other'] = (sourceMap[t.cat || 'Other'] || 0) + t.amount
-    })
-    
-    const colors = ['cyan', 'green', 'blue', 'purple', 'amber']
-    const sourceSlices = Object.entries(sourceMap)
-      .sort((a, b) => b[1] - a[1])
-      .map(([label, value], i) => ({
-        label,
-        value,
-        glow: colors[i % colors.length] as any
-      }))
-
-    // inflow transactions within the selected range, most recent first
-    const deposits = [...sourceTransactions]
-      .sort((a, b) => b.date.localeCompare(a.date))
-      .slice(0, 6)
-
-    return {
-      share, inc, totalInflow, totalOutflow, prorated, coverage, surplus, n, peakVal, peakPeriod,
-      cumInflow, cumNet, periodRates, savingsRate, sourceSlices, sourceTransactions, deposits, flow,
-    }
-  }, [from, to, accounts, transactions, dbAccountsLength])
-
+  const parent = useReport(selectedTransactionId,tenant=>reportParent(tenant,selectedTransactionId!,accountList),!!selectedTransactionId)
+  const granularity = cashFlowGranularity(from,to)
+  const params = {p_from:from,p_to:to,p_account_ids:accounts,p_bucket:granularity}
+  const report = useReport(params, tenant => cashFlow(tenant,params))
+  const scope = {from,to,accounts}
+  const deposits = useReport(scope,tenant=>latestLines(tenant,6,scope))
+  const sources = new Map<string,{value:number; count:number; largest:number; latest:string}>()
+  for (const facet of report.data?.categories ?? []) {
+    if (facet.period !== 'current' || !facet.deposit_count) continue
+    const label = facet.category || 'Other'
+    const source = sources.get(label) ?? {value:0,count:0,largest:0,latest:''}
+    source.value += facet.earned_cents
+    source.count += facet.deposit_count
+    source.largest = Math.max(source.largest,facet.largest_deposit_cents)
+    if (facet.latest_deposit && facet.latest_deposit > source.latest) source.latest = facet.latest_deposit
+    sources.set(label,source)
+  }
+  const colors = ['cyan','green','blue','red','amber'] as const
+  const sourceSlices = [...sources].sort((a,b)=>b[1].value-a[1].value)
+    .map(([label,source],i)=>({label,value:source.value,glow:colors[i%colors.length]}))
+  const activeSource = selectedSource && sources.has(selectedSource) ? selectedSource : sourceSlices[0]?.label
+  const examples = useReport([scope,activeSource],tenant=>latestLines(tenant,3,{...scope,source:activeSource}),!!activeSource)
+  if (!report.data) return <ReportStatus report={report} label="Income report" />
+  const {earned_cents:totalInflow, expense_cents:totalOutflow} = report.data.periods.current
+  const inc = report.data.buckets.map(b=>b.earned_cents)
+  const exp = report.data.buckets.map(b=>b.expense_cents)
+  const net = inc.map((v,i)=>v-exp[i])
+  const labels = report.data.buckets.map(b=>granularity === 'month' ? monthLabel(b.bucket) : dayLabel(b.bucket))
+  const n = inc.length || 1
+  const peakVal = Math.max(0,...inc)
+  const surplus = totalInflow-totalOutflow
+  const cumulative = (values:number[]) => {
+    let total = 0
+    return values.map(v=>(total+=v))
+  }
+  const m = {
+    totalInflow,totalOutflow,n,prorated:totalInflow/n,peakVal,peakPeriod:peakVal ? labels[inc.indexOf(peakVal)] : '—',
+    coverage:totalOutflow ? totalInflow/totalOutflow : 0,surplus,savingsRate:totalInflow ? surplus/totalInflow : 0,
+    periodRates:inc.map((v,i)=>v ? net[i]/v : 0),cumInflow:cumulative(inc),cumNet:cumulative(net),
+    flow:{granularity,labels},sourceSlices,deposits:deposits.data ?? [],
+  }
   const acctLabel =
     accounts.length === dbAccountsLength
       ? 'All accounts'
@@ -177,17 +165,7 @@ function IncomeAnalyzer({ from, to, accounts, dbAccountsLength }: { from: string
   const covPositive = m.coverage >= 1
   const periodUnit = m.flow.granularity === 'day' ? 'day' : m.flow.granularity === 'week' ? 'week' : 'month'
   const periodCadenceLabel = m.flow.granularity === 'day' ? 'daily' : m.flow.granularity === 'week' ? 'weekly' : 'monthly'
-  const activeSource = selectedSource && m.sourceSlices.some((slice) => slice.label === selectedSource)
-    ? selectedSource
-    : m.sourceSlices[0]?.label ?? null
-  const sourceTransactions = activeSource
-    ? m.sourceTransactions.filter((transaction) => (transaction.cat || 'Other') === activeSource)
-    : []
-  const latestSourceTransactions = [...sourceTransactions].sort((a, b) => b.date.localeCompare(a.date))
-  const largestSourceTransaction = [...sourceTransactions].sort((a, b) => b.amount - a.amount)[0] ?? null
-  const selectedTransaction = selectedTransactionId
-    ? transactions.find((transaction) => transaction.id === selectedTransactionId) ?? null
-    : null
+
 
   const refreshAfterTransactionEdit = async () => {
     await refreshData()
@@ -201,6 +179,7 @@ function IncomeAnalyzer({ from, to, accounts, dbAccountsLength }: { from: string
       animate="show"
       className="mt-5 grid grid-cols-1 gap-3.5 md:grid-cols-2 xl:grid-cols-[minmax(0,1.62fr)_minmax(360px,1fr)]"
     >
+      <ReportStatus report={report} label="Income report" />
       {/* Row 1 — period KPI hero cards */}
       <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 md:col-span-2 xl:col-span-2 xl:grid-cols-4">
         <HeroMetric
@@ -256,17 +235,17 @@ function IncomeAnalyzer({ from, to, accounts, dbAccountsLength }: { from: string
               onSelect={(slice) => setSelectedSource(slice.label)}
             />
             {activeSource && (
-              <IncomeSourceActivity
+              <><ReportStatus report={examples} label="Source deposits" /><IncomeSourceActivity
                 category={activeSource}
                 total={m.sourceSlices.find((slice) => slice.label === activeSource)?.value ?? 0}
                 periodTotal={m.totalInflow}
-                transactions={latestSourceTransactions}
-                largestTransaction={largestSourceTransaction}
-                onEdit={(transaction) => setSelectedTransactionId(transaction.id)}
+                transactions={examples.data ?? []}
+                source={sources.get(activeSource)!}
+                onEdit={(transaction) => setSelectedTransactionId(transaction.parentTransactionId ?? transaction.id)}
                 onViewAll={() => go('ledger', {
                   state: { source: 'income-source', category: activeSource, accountIds: accounts, from, to, incomeOnly: true },
                 })}
-              />
+              /></>
             )}
           </>
         ) : (
@@ -276,16 +255,18 @@ function IncomeAnalyzer({ from, to, accounts, dbAccountsLength }: { from: string
         )}
       </Tile>
       <Tile title="Recent deposits" tag={m.deposits.length ? `${m.deposits.length} shown` : 'none'}>
-        {m.deposits.length ? (
-          <Ledger rows={m.deposits} onEdit={(transaction) => setSelectedTransactionId(transaction.id)} />
+        <ReportStatus report={deposits} label="Recent deposits" />
+        {deposits.data && (m.deposits.length ? (
+          <Ledger rows={m.deposits} onEdit={(transaction) => setSelectedTransactionId(transaction.parentTransactionId ?? transaction.id)} />
         ) : (
           <div className="grid place-items-center py-10 text-center text-[12.5px] text-muted">
             No deposits in the selected range.
           </div>
-        )}
+        ))}
       </Tile>
+      {selectedTransactionId && <ReportStatus report={parent} label="Transaction details" />}
       <TransactionCategoryDrawer
-        transaction={selectedTransaction}
+        transaction={parent.data}
         onClose={() => setSelectedTransactionId(null)}
         onChanged={refreshAfterTransactionEdit}
       />
@@ -298,7 +279,7 @@ function IncomeSourceActivity({
   total,
   periodTotal,
   transactions,
-  largestTransaction,
+  source,
   onEdit,
   onViewAll,
 }: {
@@ -306,7 +287,7 @@ function IncomeSourceActivity({
   total: number
   periodTotal: number
   transactions: Txn[]
-  largestTransaction: Txn | null
+  source: {count:number;largest:number;latest:string}
   onEdit: (transaction: Txn) => void
   onViewAll: () => void
 }) {
@@ -319,11 +300,11 @@ function IncomeSourceActivity({
           <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-muted">Income activity · {category}</p>
           <p className="mt-1 text-[17px] font-bold tabular-nums text-ink">{fmt(total)} <span className="text-[13px] font-semibold text-muted">· {share}% of inflow</span></p>
         </div>
-        <span className="text-[12.5px] font-semibold text-accent-ink">{transactions.length} deposit{transactions.length === 1 ? '' : 's'}</span>
+        <span className="text-[12.5px] font-semibold text-accent-ink">{source.count} deposit{source.count === 1 ? '' : 's'}</span>
       </div>
 
       <p className="mt-2 text-[12.5px] leading-5 text-muted">
-        {largestTransaction ? <>Largest deposit {fmt(largestTransaction.amount)} · latest {dayLabel(transactions[0]?.date ?? largestTransaction.date)}.</> : 'No matching deposits in the selected range.'}
+        Largest deposit {fmt(source.largest)} · latest {dayLabel(source.latest)}.
       </p>
 
       <div className="mt-3 divide-y divide-[var(--hair-soft)] border-y border-[var(--hair-soft)]">

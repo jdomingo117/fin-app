@@ -1,3 +1,4 @@
+import {reportParent} from '../lib/reportParent'
 import { useState } from 'react'
 import HeroCard from '../components/HeroCard'
 import { Screen, ViewHeader, Grid } from '../components/Screen'
@@ -67,12 +68,11 @@ function getAccountIcon(type: string, name: string) {
 }
 
 export default function Dashboard() {
-  const { accounts, transactions: parentTransactions, refreshData } = useData()
+  const { accounts, refreshData } = useData()
   const { go, toast } = useView()
   const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null)
-  const selectedTransaction = selectedTransactionId
-    ? parentTransactions.find((transaction) => transaction.id === selectedTransactionId) ?? null
-    : null
+  const parent = useReport(selectedTransactionId,tenant=>reportParent(tenant,selectedTransactionId!,accounts),!!selectedTransactionId)
+
 
   const refreshAfterTransactionEdit = async () => {
     await refreshData()
@@ -294,8 +294,9 @@ export default function Dashboard() {
           ))}
         </Tile>
       </Grid>
+      {selectedTransactionId && <ReportStatus report={parent} label="Transaction details" />}
       <TransactionCategoryDrawer
-        transaction={selectedTransaction}
+        transaction={parent.data}
         onClose={() => setSelectedTransactionId(null)}
         onChanged={refreshAfterTransactionEdit}
       />

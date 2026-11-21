@@ -13,21 +13,23 @@ import HeroMetric from '../components/HeroMetric'
 import AnalyzerFilters from '../components/AnalyzerFilters'
 import RecurringHub from '../components/RecurringHub'
 import { usePeriodRange } from '../hooks/usePeriodRange'
-import { previousPeriodRange } from '../lib/period'
+import { inclusiveDayCount } from '../lib/period'
 import { expenseMetricValues } from '../lib/expenseMetrics'
 import { isGrossExpense } from '../lib/classification'
 import { shortMerchant } from '../lib/recurring'
 import {
   EMPTY_SELECTION,
   isActive,
-  matchesSelection,
   pruneSubcats,
   selectionLabel,
   toggleCategory,
   toggleSubcat,
   type CatSelection,
 } from '../lib/expenseSelection'
-import { fmt, type Txn } from '../data'
+import { fmt } from '../data'
+import {cashFlow, type FlowParams} from '../lib/reports'
+import {useReport} from '../hooks/useReport'
+import ReportStatus from '../components/ReportStatus'
 import { useData } from '../contexts/DataContext'
 
 /** Vendor names carry a `Primary // Detail` form; the hero card shows the
@@ -148,17 +150,6 @@ export default function Expenses() {
    one part deletes the comparison that is the question. Everything that answers
    "how much / which ones?" (hero · trend · ledger) follows the focus. */
 
-const sumAbs = (xs: Txn[]) => xs.reduce((a, t) => a + Math.abs(t.amount), 0)
-
-/** Highest-spending `key` over a set of outflows. */
-const topBy = (xs: Txn[], key: (t: Txn) => string) => {
-  const totals = new Map<string, number>()
-  xs.forEach((t) => totals.set(key(t), (totals.get(key(t)) ?? 0) + Math.abs(t.amount)))
-  let top = { name: '—', total: 0 }
-  totals.forEach((v, k) => { if (v > top.total) top = { name: k, total: v } })
-  return top
-}
-
 function ExpenseAnalytics({
   from,
   to,
@@ -200,81 +191,38 @@ function ExpenseAnalytics({
     window.requestAnimationFrame(() => changesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
   }
 
-  // The expensive pass: scans of `data.transactions`, keyed to the period and
-  // account filters only — so clicking a category never re-runs them.
-  const { reportingTransactions: transactions } = useData()
-  const base = useMemo(() => {
-    const gated = accounts.length > 0
-
-    // Day-level outflows within a range.
-    const outflowsIn = (a: string, b: string) =>
-      gated ? transactions.filter((t) => isGrossExpense(t) && !t.isTransfer && t.account_id && accounts.includes(t.account_id) && t.date >= a && t.date <= b) : []
-    const outflows = outflowsIn(from, to).sort((x, y) => y.date.localeCompare(x.date))
-
-    // Previous window of equal length (in days) for the vs-prev indicators.
-    const comparison = previousPeriodRange(from, to)
-    const prevOutflows = outflowsIn(comparison.from, comparison.to)
-
-    // Unfiltered period total
-    return { gated, outflows, prevOutflows, periodTotal: sumAbs(outflows) }
-  }, [from, to, accounts, transactions])
-
-  // The cheap pass: the focus applied. `prevOutflows` MUST go through the same
-  // predicate — comparing a focused total against an unfocused prior period
-  // yields a plausible-looking, entirely wrong "vs prev".
-  const m = useMemo(() => {
-    const focused = isActive(sel)
-    const catOutflows = focused ? base.outflows.filter((t) => matchesSelection(t, sel)) : base.outflows
-
-    const outflows = timeFocus
-      ? catOutflows.filter((t) => t.date >= timeFocus.from && t.date <= timeFocus.to)
-      : catOutflows
-
-    const activeFrom = timeFocus ? timeFocus.from : from
-    const activeTo = timeFocus ? timeFocus.to : to
-
-    const comparison = previousPeriodRange(activeFrom, activeTo)
-
-    const gated = base.gated
-    const prior = gated
-      ? transactions.filter((t) => isGrossExpense(t) && !t.isTransfer && t.account_id && accounts.includes(t.account_id) && t.date >= comparison.from && t.date <= comparison.to)
-      : []
-    const prevOutflows = focused ? prior.filter((t) => matchesSelection(t, sel)) : prior
-
-    const total = sumAbs(outflows)
-    const prevTotal = sumAbs(prevOutflows)
-    const metrics = expenseMetricValues(total, prevTotal, activeFrom, activeTo)
-    const topCat = topBy(outflows, (t) => t.cat)
-    const topMerch = topBy(outflows, (t) => t.merchant)
-
-    const unfilteredTimeTotal = timeFocus
-      ? sumAbs(base.outflows.filter((t) => t.date >= timeFocus.from && t.date <= timeFocus.to))
-      : base.periodTotal
-
-    return {
-      outflows,
-      catOutflows,
-      total,
-      prevTotal,
-      dailyAvg: metrics.dailyAverage,
-      deltaPct: metrics.deltaPct,
-      lenDays: metrics.lenDays,
-      gated,
-      topCat,
-      topMerch,
-      topCatShare: total > 0 ? topCat.total / total : 0,
-      periodShare: unfilteredTimeTotal > 0 ? total / unfilteredTimeTotal : 0,
-      periodTotal: unfilteredTimeTotal,
-    }
-  }, [base, sel, timeFocus, from, to])
-
+  const {reportingTransactions:transactions} = useData()
+  const activeFrom = timeFocus?.from ?? from
+  const activeTo = timeFocus?.to ?? to
+  const len = inclusiveDayCount(from,to)
+  const bucket = len <= 45 ? 'day' : len <= 130 ? 'week' : 'month'
+  const params:FlowParams = {p_from:from,p_to:to,p_account_ids:accounts,p_bucket:bucket,
+    p_categories:sel.categories,p_subcategories:sel.subcats,p_focus_from:activeFrom,p_focus_to:activeTo}
+  const report = useReport(params,tenant=>cashFlow(tenant,params),accounts.length>0 && activeFrom>=from && activeTo<=to)
+  // The transaction drill-down still uses the provider until Wave 3C.3.
+  const drillRows = useMemo(()=>transactions.filter(t=>isGrossExpense(t) && !t.isTransfer &&
+    accounts.includes(t.account_id) && t.date>=activeFrom && t.date<=activeTo),[transactions,accounts,activeFrom,activeTo])
+  const current = report.data?.categories.filter(f=>f.period==='current' && f.gross_cents>0) ?? []
+  const prior = report.data?.categories.filter(f=>f.period==='prior' && f.gross_cents>0) ?? []
+  const totals = new Map<string,number>()
+  for (const f of current) totals.set(f.category,(totals.get(f.category) ?? 0)+f.gross_cents)
+  const [name,amount] = [...totals].sort((a,b)=>b[1]-a[1])[0] ?? ['—',0]
+  const total = report.data?.periods.current.gross_cents ?? 0
+  const prevTotal = report.data?.periods.prior.gross_cents ?? 0
+  const periodTotal = current.reduce((sum,f)=>sum+f.gross_cents,0)
+  const metrics = expenseMetricValues(total,prevTotal,activeFrom,activeTo)
+  const merchant = report.data?.top_merchant
+  const m = {total,prevTotal,periodTotal,periodShare:periodTotal ? total/periodTotal : 0,
+    topCat:{name,total:amount},topCatShare:total ? amount/total : 0,
+    topMerch:{name:merchant?.merchant ?? '—',total:merchant?.gross_cents ?? 0},
+    dailyAvg:metrics.dailyAverage,lenDays:metrics.lenDays,deltaPct:metrics.deltaPct}
   const focused = isActive(sel)
   const focusLabel = selectionLabel(sel)
 
   /* Every mutation routes through the helpers so `subcats ⊆ union(TAXONOMY[categories])`
      can't be violated — an impossible pair matches zero rows with no explanation. */
   const setCategories = (next: string[]) =>
-    setSel((s) => ({ categories: next, subcats: pruneSubcats(next, s.subcats, base.outflows) }))
+    setSel((s) => ({ categories: next, subcats: pruneSubcats(next, s.subcats, current.map(f=>({cat:f.category,subcat:f.subcategory ?? undefined}))) }))
   const setSubcats = (next: string[]) => setSel((s) => ({ ...s, subcats: next }))
   const onToggleCategory = (cat: string) => setSel((s) => toggleCategory(s, cat))
   const onToggleSubcat = (cat: string, sub: string) => setSel((s) => toggleSubcat(s, cat, sub))
@@ -285,34 +233,6 @@ function ExpenseAnalytics({
     m.deltaPct == null
       ? null
       : `${m.deltaPct > 0 ? '▲' : m.deltaPct < 0 ? '▼' : '±'} ${Math.abs(Math.round(m.deltaPct * 100))}% vs prev`
-
-  const timeFilteredBaseOutflows = useMemo(() => {
-    if (!timeFocus) return base.outflows
-    return base.outflows.filter((t) => t.date >= timeFocus.from && t.date <= timeFocus.to)
-  }, [base.outflows, timeFocus])
-
-  // The category-change comparison is another source of the shared focus, so
-  // it intentionally receives unfiltered current/prior sets. Otherwise a
-  // selected category would erase the comparison that makes its change useful.
-  const priorBaseOutflows = useMemo(() => {
-    const activeFrom = timeFocus ? timeFocus.from : from
-    const activeTo = timeFocus ? timeFocus.to : to
-    const comparison = previousPeriodRange(activeFrom, activeTo)
-    if (!base.gated) return []
-    return transactions.filter((t) =>
-      isGrossExpense(t) && !t.isTransfer && t.account_id && accounts.includes(t.account_id) && t.date >= comparison.from && t.date <= comparison.to,
-    )
-  }, [accounts, base.gated, from, timeFocus, to, transactions])
-
-  const categoryFlowHeight = useMemo(() => {
-    const categoryCount = new Set(timeFilteredBaseOutflows.map((transaction) => transaction.cat)).size
-    // The flow uses 18px card labels. Give each category enough vertical room
-    // to remain individually legible instead of forcing cards to overlap.
-    return Math.max(420, Math.min(720, categoryCount * 72 + 112))
-  }, [timeFilteredBaseOutflows])
-  // Time-series charts remain compact and comparable across date ranges. They
-  // deliberately do not inherit the category-flow diagram's variable height.
-  const trendHeight = 420
 
   if (accounts.length === 0) {
     return (
@@ -332,8 +252,10 @@ function ExpenseAnalytics({
     )
   }
 
+  if (!report.data) return <ReportStatus report={report} label="Expense report" />
   return (
     <Grid>
+      <ReportStatus report={report} label="Expense report" />
       <ExpenseScopeBar
         selection={sel}
         label={focusLabel}
@@ -394,18 +316,19 @@ function ExpenseAnalytics({
       <div className="grid grid-cols-1 gap-3.5 md:col-span-2 xl:col-span-3 xl:grid-cols-[1fr_1.13fr] xl:items-stretch">
         <div className="flex h-full flex-col gap-3.5">
           <ExpenseTrendCard
-            outflows={m.catOutflows}
+            buckets={report.data.buckets}
+            bucket={bucket}
             from={from}
             to={to}
             scopeLabel={focused ? focusLabel : undefined}
             timeFocus={timeFocus}
             onTimeFocus={setTimeFocus}
-            height={trendHeight}
+            height={420}
           />
           <ExpenseChangesCard
             variant="summary"
-            outflows={timeFilteredBaseOutflows}
-            previousOutflows={priorBaseOutflows}
+            outflows={current}
+            previousOutflows={prior}
             selection={sel}
             onToggleCategory={onToggleCategory}
             onViewDetail={showDetailedChanges}
@@ -413,19 +336,19 @@ function ExpenseAnalytics({
         </div>
         {/* a selection source: takes the unfiltered set and highlights */}
         <ExpenseFlowCard
-          outflows={timeFilteredBaseOutflows}
+          outflows={current}
           selection={sel}
           onToggleCategory={onToggleCategory}
           onToggleSubcat={onToggleSubcat}
-          height={categoryFlowHeight}
+
         />
       </div>
       {/* Row 3 — a direct current-versus-prior category comparison. It is a
           selection source, but deliberately never filters itself. */}
       <div ref={changesRef} className="md:col-span-2 xl:col-span-3">
         <ExpenseChangesCard
-          outflows={timeFilteredBaseOutflows}
-          previousOutflows={priorBaseOutflows}
+          outflows={current}
+          previousOutflows={prior}
           selection={sel}
           onToggleCategory={onToggleCategory}
           expanded={changesExpanded}
@@ -436,7 +359,7 @@ function ExpenseAnalytics({
           it just sources its category state from the shared focus now. Pre-filtering
           would zero out the popover's per-category counts. */}
       <TransactionsPanel
-        rows={timeFilteredBaseOutflows}
+        rows={drillRows}
         categories={sel.categories}
         subcats={sel.subcats}
         onCategories={setCategories}

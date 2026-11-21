@@ -35,16 +35,55 @@ END $$;
 -- account pairs are unordered. The unmatched window is queue-wide.
 CREATE FUNCTION public.transfer_group_batch(p_tenant uuid,p_queue text,p_group text,p_deselected uuid[])
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY INVOKER SET search_path = public, pg_temp AS $$
+DECLARE
+  leg record;
+  normalized text;
+  original text;
+  prior text;
+  segments text[];
+  group_ids uuid[] := '{}';
 BEGIN
   IF NOT public.is_tenant_member(p_tenant) THEN RAISE insufficient_privilege; END IF;
   IF p_queue IS NULL OR p_queue NOT IN ('suggested','unmatched') THEN RAISE invalid_parameter_value; END IF;
+  -- Older imports can have a stored merchant_key different from the normalized
+  -- original description. Match the review panel's normalizeMerchant key.
+  IF p_queue='unmatched' THEN
+    FOR leg IN SELECT t.id,t.original_description FROM public.transactions_analytic t
+      WHERE t.tenant_id=p_tenant AND t.transfer_state='unmatched' ORDER BY t.date DESC,t.id DESC LIMIT 500
+    LOOP
+      original := btrim(regexp_replace(coalesce(leg.original_description,''),'^\s+|\s+$','','g'));
+      normalized := regexp_replace(original,
+        '\m(receipt\s+number:|frgn\s+amt:|foreign\s+amount:|value\s+date:|card\s+(ending|no\.?|number)\s*[:#]?\s*[x*0-9]+|ref(erence)?\s*[:#]\s*\S+|effective\s+date).*',' ','i');
+      segments := regexp_split_to_array(btrim(normalized),'\s{2,}');
+      IF cardinality(segments)>1 THEN
+        normalized := CASE WHEN length(segments[1])>=4 THEN segments[1] ELSE segments[1]||' '||segments[2] END;
+      END IF;
+      normalized := btrim(regexp_replace(normalized,'\s+',' ','g'));
+      normalized := regexp_replace(normalized,'\s+(x{1,2}|\*{2,})[0-9]{3,}(?=\s|$)','','gi');
+      LOOP
+        prior := normalized;
+        normalized := btrim(regexp_replace(normalized,
+          '^(sq\s*\*\s*|sp\s+|paypal\s*\*\s*|(visa|eftpos|mastercard)\s+(purchase|debit|payment)\s+|(direct\s+)?debit\s+|pos\s+(purchase\s+)?|(to|from)\s+)','','i'));
+        EXIT WHEN normalized=prior;
+      END LOOP;
+      LOOP
+        prior := normalized;
+        normalized := btrim(regexp_replace(normalized,
+          '(\s*-\s*[0-9]{4,}|\s+[0-9]{6,}|\s*,?\s*thank\s+you\.?|\s+(au|aus|usa|us|nz|gb|uk)|[\s,.-]+)$','','i'));
+        normalized := btrim(regexp_replace(normalized,'\s+[A-Z]{2}\s+[0-9]{5}$',''));
+        EXIT WHEN normalized=prior;
+      END LOOP;
+      normalized := lower(btrim(regexp_replace(coalesce(nullif(normalized,''),nullif(original,''),'unknown'),'\s+',' ','g')));
+      IF normalized=p_group THEN group_ids := array_append(group_ids,leg.id); END IF;
+    END LOOP;
+  END IF;
   RETURN (
     WITH recent AS (
-      SELECT t.id,t.date,t.amount,t.merchant_key FROM public.transactions_analytic t
+      SELECT t.id,t.date,t.amount FROM public.transactions_analytic t
       WHERE p_queue='unmatched' AND t.tenant_id=p_tenant AND t.transfer_state='unmatched'
       ORDER BY t.date DESC,t.id DESC LIMIT 500
     ), members AS (
-      SELECT id,date,NULL::numeric AS score,false AS ambiguous,amount FROM recent WHERE merchant_key=p_group
+      SELECT id,date,NULL::numeric AS score,false AS ambiguous,amount FROM recent WHERE id=ANY(group_ids)
       UNION ALL
       SELECT l.id,NULL::date,l.score,l.ambiguous,a.amount FROM public.transfer_links l
       JOIN public.transactions a ON a.tenant_id=p_tenant AND a.id=l.from_txn_id
@@ -68,7 +107,9 @@ CREATE FUNCTION public.transfer_overflow_summary(p_tenant uuid)
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY INVOKER SET search_path = public, pg_temp AS $$
 BEGIN
   IF NOT public.is_tenant_member(p_tenant) THEN RAISE insufficient_privilege; END IF;
-  RETURN (SELECT jsonb_build_object('bucketCount',count(*),'legCount',coalesce(sum(leg_count),0))
+  RETURN (SELECT jsonb_build_object('bucketCount',count(*),'legCount',coalesce(sum(leg_count),0),
+    'suggestedPairCount',(SELECT count(DISTINCT (least(from_account_id,to_account_id),greatest(from_account_id,to_account_id)))
+      FROM public.transfer_links WHERE tenant_id=p_tenant AND state='suggested' AND to_account_id IS NOT NULL))
     FROM public.transfer_match_overflow WHERE tenant_id=p_tenant);
 END $$;
 

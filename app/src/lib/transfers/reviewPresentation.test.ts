@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  boundedReviewSelection,
+  boundedReviewSelection, groupActionDisclosure, toggleReviewExclusion,
   suggestedReviewSelection,
   summariseOverflow,
   untrackedTransferLabel,
@@ -68,4 +68,17 @@ describe('transfer review presentation', () => {
     expect(untrackedTransferLabel(5000)).toBe('Transfer from an untracked account')
     expect(untrackedTransferLabel()).toBe('Transfer to/from an untracked account')
   })
+})
+
+it('discloses the off-page portion of the bounded group after cross-page deselections', () => {
+  const ids = Array.from({ length: 205 }, (_, i) => String(i))
+  const pageOne = toggleReviewExclusion(new Set(),ids[0])
+  const deselected = toggleReviewExclusion(pageOne,ids[51])
+  expect([...deselected]).toEqual([ids[0],ids[51]])
+  const batch = boundedReviewSelection(ids, deselected)
+  expect(batch.selectedIds).toHaveLength(200)
+  expect(batch.deferredCount).toBe(3)
+  expect(batch.selectedIds).not.toContain(ids[0])
+  expect(batch.selectedIds).not.toContain(ids[51])
+  expect(groupActionDisclosure(batch.selectedIds, ids.slice(50,100))).toBe(' (151 off-page)')
 })

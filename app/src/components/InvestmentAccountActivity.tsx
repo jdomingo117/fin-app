@@ -1,4 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useQueuePage } from '../lib/queuePage'
+import { useReport } from '../hooks/useReport'
+import { QueueNavigation } from './QueueNavigation'
+import ReportStatus from './ReportStatus'
+import { useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { fmtCents, glowColor } from '../data'
 import Tile from './Tile'
@@ -50,37 +54,34 @@ interface Monthly {
 
 export default function InvestmentAccountActivity({ accountId }: { accountId: string }) {
   const { accounts, refreshData } = useData()
-  const [summary, setSummary] = useState<Summary | null>(null)
-  const [activities, setActivities] = useState<Activity[]>([])
-  const [monthly, setMonthly] = useState<Monthly[]>([])
-  const [cashLinks, setCashLinks] = useState<CashLink[]>([])
-  const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [refreshing, setRefreshing] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
 
-  useEffect(() => {
-    let cancelled = false
-    setLoading(true); setError('')
-    Promise.all([
-      supabase.from('investment_account_overview').select('*').eq('account_id', accountId).maybeSingle(),
-      supabase.from('investment_activities').select('id, trade_date, activity_type, quantity_delta, unit_price, value_cents, brokerage_cents, source_label').eq('account_id', accountId).order('trade_date', { ascending: false }),
-      supabase.from('investment_account_monthly').select('valuation_date, value_cents, cumulative_contributions_cents').eq('account_id', accountId).order('valuation_date', { ascending: false }).limit(12),
-      supabase.from('investment_cash_links').select('state, activity_id, activity:investment_activities!inner(account_id), transaction:transactions!investment_cash_links_transaction_id_fkey(account_id, date, amount)').eq('activity.account_id', accountId),
-    ]).then(([summaryResult, activityResult, monthlyResult, cashLinkResult]) => {
-      if (cancelled) return
-      if (summaryResult.error || activityResult.error || monthlyResult.error || cashLinkResult.error) {
-        setError('Investment activity could not be loaded.')
-      } else {
-        setSummary(summaryResult.data as Summary | null)
-        setActivities((activityResult.data ?? []) as Activity[])
-        setMonthly(((monthlyResult.data ?? []) as Monthly[]).reverse())
-        setCashLinks((cashLinkResult.data ?? []) as unknown as CashLink[])
-      }
-      setLoading(false)
-    })
-    return () => { cancelled = true }
-  }, [accountId, refreshKey])
+  const activityPage = useQueuePage<Activity>('investment_activities','trade_date',{ account_id:accountId },refreshKey)
+  const activities = activityPage.data?.rows ?? []
+  const ids = activities.map(a => a.id)
+  const funding = useReport(['activity funding',accountId,ids,refreshKey],async tenant => {
+    if (!ids.length) return []
+    const { data,error } = await supabase.from('investment_cash_links')
+      .select('state,activity_id,transaction:transactions!investment_cash_links_transaction_id_fkey(account_id,date,amount)')
+      .eq('tenant_id',tenant).in('activity_id',ids).in('state',['confirmed','auto','suggested'])
+    if (error) throw error
+    return data as unknown as CashLink[]
+  })
+  const overview = useReport(['investment overview', accountId,refreshKey],async tenant => {
+    const [summary,monthly] = await Promise.all([
+      supabase.from('investment_account_overview').select('*').eq('tenant_id',tenant).eq('account_id',accountId).maybeSingle(),
+      supabase.from('investment_account_monthly').select('valuation_date,value_cents,cumulative_contributions_cents')
+        .eq('tenant_id',tenant).eq('account_id',accountId).order('valuation_date',{ascending:false}).limit(12),
+    ])
+    if (summary.error || monthly.error) throw summary.error ?? monthly.error
+    return { summary:summary.data as Summary | null,monthly:(monthly.data as Monthly[]).reverse() }
+  })
+  const summary = overview.data?.summary
+  const monthly = overview.data?.monthly ?? []
+  const cashLinks = funding.data ?? []
+  const loading = overview.pending || activityPage.pending || funding.pending
 
   const refreshPrice = async () => {
     setRefreshing(true); setError('')
@@ -98,6 +99,8 @@ export default function InvestmentAccountActivity({ accountId }: { accountId: st
     }
   }
 
+  const failed = [overview,activityPage,funding].find(report => report.error)
+  if (failed) return <ReportStatus label="Investment activity" report={failed} />
   if (loading) return <Tile title="Investment holding"><div className="flex min-h-20 items-center gap-2 py-5 text-[13px] text-muted" role="status"><InlineActivity label="Loading investment activity" size="compact" />Loading investment activity…</div></Tile>
   if (error) return <Tile title="Investment holding"><p role="alert" className="py-5 text-[13px] text-neg">{error}</p></Tile>
   if (!summary) return <Tile title="Investment holding"><div className="py-6 text-center"><p className="text-[13px] text-muted">No investment activity has been imported yet.</p><p className="mt-1 text-[12px] text-muted">Open Ingestion and upload a supported investment transaction export.</p></div></Tile>
@@ -124,6 +127,8 @@ export default function InvestmentAccountActivity({ accountId }: { accountId: st
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2"><div><p className="text-[13px] font-semibold">Value vs contributions</p><p className="text-[11.5px] text-muted">Market movement is separated from money you added.</p></div><div className="flex gap-3 text-[11px] text-muted"><span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-accent" />Value</span><span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-muted" />Contributions</span></div></div>
       <Area series={[{ data: monthly.map((point) => Number(point.value_cents)), color: glowColor.green, label: 'Value' }, { data: monthly.map((point) => Number(point.cumulative_contributions_cents)), color: glowColor.blue, fill: false, label: 'Contributions' }]} labels={monthly.map((point) => point.valuation_date.slice(0, 7))} height={220} ariaLabel="Investment value compared with cumulative contributions" />
     </div>}
+    <p>{activityPage.data?.count ?? 0} activities</p>
+    <QueueNavigation label="Investment activity pages" queue={activityPage} />
     <InvestmentTaxAwareness accountId={accountId} />
     <div className="mt-4 overflow-x-auto">
       <table className="w-full min-w-[820px] text-left text-[12.5px]">

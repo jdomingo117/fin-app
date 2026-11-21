@@ -59,3 +59,16 @@ export function untrackedTransferLabel(amountCents?: number) {
     ? 'Transfer to an untracked account'
     : 'Transfer from an untracked account'
 }
+
+export function groupActionDisclosure(selectedIds: string[], visibleIds: string[]) {
+  const visible = new Set(visibleIds)
+  const elsewhere = selectedIds.filter(id => !visible.has(id)).length
+  return ` (${elsewhere} off-page)`
+}
+
+export function toggleReviewExclusion(previous: ReadonlySet<string>, id: string) {
+  const next = new Set(previous)
+  if (next.has(id)) next.delete(id)
+  else next.add(id)
+  return next
+}

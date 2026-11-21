@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useAuth } from '../contexts/AuthContext'
+import { useQueuePage } from '../lib/queuePage'
+import { overflowSummary as readOverflow } from '../lib/ledgerPage'
+import { useReport } from '../hooks/useReport'
+import { QueueNavigation } from './QueueNavigation'
+import ReportStatus from './ReportStatus'
+import { useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '../lib/supabaseClient'
 import { useData } from '../contexts/DataContext'
@@ -6,8 +12,8 @@ import { Button } from './Controls'
 import { fmtCents } from '../data'
 import { normalizeMerchant } from '../lib/csv/normalizeMerchant'
 import {
-  summariseOverflow,
-  TRANSFER_DECISION_BATCH_LIMIT,
+
+  TRANSFER_DECISION_BATCH_LIMIT, toggleReviewExclusion,
 } from '../lib/transfers/reviewPresentation'
 import InvestmentCashLinker from './InvestmentCashLinker'
 import { OperationStatusPanel } from './OperationStatus'
@@ -62,12 +68,22 @@ function groupSuggested(suggested: TransferLinkRow[]): { groups: SuggestedGroup[
  * which is what lets a rejected suggestion stay rejected across re-imports.
  */
 export default function OskoLinker() {
+  const { user, tenantId } = useAuth()
+  return <TransferQueues key={JSON.stringify([user?.id,tenantId])} />
+}
+
+function TransferQueues() {
   const { accounts, refreshData } = useData()
-  const [links, setLinks] = useState<TransferLinkRow[]>([])
-  const [unmatched, setUnmatched] = useState<UnmatchedRow[]>([])
-  const [unmatchedTotal, setUnmatchedTotal] = useState(0)
-  const [overflow, setOverflow] = useState<OverflowRow[]>([])
-  const [loading, setLoading] = useState(true)
+  const suggestions = useQueuePage<TransferLinkRow>('transfer_links','score',{ state:'suggested' })
+  const automatic = useQueuePage<TransferLinkRow>('transfer_links','score',{ state:'auto' })
+  const legs = useQueuePage<UnmatchedRow>('transactions_analytic','date',{ transfer_state:'unmatched' })
+  const buckets = useQueuePage<OverflowRow>('transfer_match_overflow','amount_cents',{})
+  const totals = useReport('transfer overflow',readOverflow)
+  const unmatchedTotal = legs.data?.count ?? 0
+  const unmatched = legs.data?.rows ?? []
+  const suggested = suggestions.data?.rows ?? []
+  const auto = automatic.data?.rows ?? []
+  const overflow = buckets.data?.rows ?? []
   const [rescanning, setRescanning] = useState(false)
   const [deciding, setDeciding] = useState<string | null>(null)
   const [error, setError] = useState('')
@@ -92,63 +108,12 @@ export default function OskoLinker() {
   const namesById = useMemo(() => new Map(accounts.map(account => [account.id, account.name])), [accounts])
   const accountName = (id: string) => namesById.get(id) ?? 'Unknown account'
 
-  const load = useCallback(async () => {
-    setLoading(true)
-    const [linksRes, unmatchedRes, overflowRes] = await Promise.all([
-      supabase
-        .from('transfer_links')
-        .select(
-          `id, state, score, reasons, ambiguous,
-           from_txn:transactions!transfer_links_from_txn_id_fkey(id, date, amount, original_description, account_id),
-           to_txn:transactions!transfer_links_to_txn_id_fkey(id, date, amount, original_description, account_id)`,
-        )
-        .in('state', ['auto', 'suggested'])
-        .order('score', { ascending: false }),
-      // Legs that look like a transfer (transfer_candidate) but never found a
-      // counterpart — the other account may not be connected yet, or this
-      // simply isn't a transfer. These count as ordinary spending until the
-      // user says otherwise, so this list is what makes that decision
-      // reachable rather than the leg just sitting there silently.
-      // Capped at 500 (well below PostgREST's 1000-row max_rows) rather than
-      // the old 100 — now that Round Up (the dominant, structurally-unmatchable
-      // bucket) is excluded from transfer_candidate at ingest, the real volume
-      // is an order of magnitude smaller; `exact` count still reports the true
-      // total so a genuine backlog beyond one page is surfaced, not silently
-      // truncated.
-      supabase
-        .from('transactions_analytic')
-        .select('id, date, amount, original_description, account_id', { count: 'exact' })
-        .eq('transfer_state', 'unmatched')
-        .order('date', { ascending: false })
-        .limit(500),
-      // Amount buckets the matcher skipped entirely rather than scoring a
-      // truncated, order-dependent subset — see match.ts's MAX_BUCKET. Never
-      // shown before this: a skipped bucket used to be a silent gap.
-      supabase
-        .from('transfer_match_overflow')
-        .select('amount_cents, leg_count')
-        .order('amount_cents', { ascending: false }),
-    ])
-    if (linksRes.error || unmatchedRes.error || overflowRes.error) {
-      setError('Could not load transfer suggestions.')
-    } else {
-      setLinks((linksRes.data ?? []) as unknown as TransferLinkRow[])
-      setUnmatched(unmatchedRes.data ?? [])
-      setUnmatchedTotal(unmatchedRes.count ?? (unmatchedRes.data ?? []).length)
-      setOverflow(overflowRes.data ?? [])
-    }
-    setLoading(false)
-  }, [])
-
-  useEffect(() => { void load() }, [load])
-
   const rescan = async () => {
     setRescanning(true)
     setError('')
     try {
       const { error: fnErr } = await supabase.functions.invoke('link-transfers', { body: { scope: 'all' } })
       if (fnErr) throw fnErr
-      await load()
       setInvestmentRefreshKey((value) => value + 1)
       await refreshData()
     } catch {
@@ -166,7 +131,6 @@ export default function OskoLinker() {
         body: { link_id: linkId, verdict },
       })
       if (fnErr) throw fnErr
-      setLinks((prev) => prev.filter((l) => l.id !== linkId))
       await refreshData()
     } catch {
       setError('Could not save that decision — please try again.')
@@ -183,7 +147,6 @@ export default function OskoLinker() {
         body: { txn_id: txnId, verdict },
       })
       if (fnErr) throw fnErr
-      setUnmatched((prev) => prev.filter((u) => u.id !== txnId))
       await refreshData()
     } catch {
       setError('Could not save that decision — please try again.')
@@ -205,8 +168,6 @@ export default function OskoLinker() {
         body: { link_ids: linkIds, verdict },
       })
       if (fnErr) throw fnErr
-      const idSet = new Set(linkIds)
-      setLinks((prev) => prev.filter((l) => !idSet.has(l.id)))
       await refreshData()
     } catch {
       setError('Could not save that batch — please try again.')
@@ -228,9 +189,6 @@ export default function OskoLinker() {
         body: { txn_ids: txnIds, verdict },
       })
       if (fnErr) throw fnErr
-      const idSet = new Set(txnIds)
-      setUnmatched((prev) => prev.filter((u) => !idSet.has(u.id)))
-      setUnmatchedTotal((prev) => Math.max(0, prev - txnIds.length))
       await refreshData()
     } catch {
       setError('Could not save that batch — please try again.')
@@ -248,12 +206,7 @@ export default function OskoLinker() {
     })
 
   const toggleSelected = (id: string) =>
-    setDeselected((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
+    setDeselected(prev => toggleReviewExclusion(prev,id))
 
   const toggleUnmatchedGroupExpanded = (key: string) =>
     setUnmatchedExpandedGroups((prev) => {
@@ -264,21 +217,16 @@ export default function OskoLinker() {
     })
 
   const toggleUnmatchedSelected = (id: string) =>
-    setUnmatchedDeselected((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
+    setUnmatchedDeselected(prev => toggleReviewExclusion(prev,id))
 
-  if (loading) return <OperationStatusPanel state="working" title="Loading transfer suggestions" description="Fetching the current bounded review queue. No transfer decision is being changed." />
+  const reports = [suggestions, automatic, legs, buckets, totals]
+  if (reports.some(r => r.error)) return <>{reports.filter(r => r.error).map((r,i) => <ReportStatus key={i} report={r} label="Transfer review" />)}</>
+  if (reports.some(r => r.pending && !r.data)) return <OperationStatusPanel state="working" title="Loading transfer suggestions" description="Fetching the current bounded review queue. No transfer decision is being changed." />
 
-  const suggested = links.filter((l) => l.state === 'suggested')
-  const auto = links.filter((l) => l.state === 'auto')
   const { groups: suggestedGroups, groupless } = groupSuggested(suggested)
-  const overflowSummary = summariseOverflow(overflow)
+  const overflowSummary = totals.data ?? { bucketCount: 0, legCount: 0, suggestedPairCount: 0 }
 
-  if (links.length === 0 && unmatchedTotal === 0 && overflow.length === 0) {
+  if (!suggestions.data?.count && !automatic.data?.count && unmatchedTotal === 0 && overflow.length === 0) {
     return (
       <div className="grid gap-3">
         <InvestmentCashLinker refreshKey={investmentRefreshKey} />
@@ -309,8 +257,8 @@ export default function OskoLinker() {
         <p className="text-[13px] text-muted">
           {suggested.length > 0
             ? <>
-                <strong className="text-ink">{suggested.length}</strong> transfer{suggested.length === 1 ? '' : 's'} need your review
-                {suggestedGroups.length > 1 && <> across <strong className="text-ink">{suggestedGroups.length}</strong> account pairs</>}
+                <strong className="text-ink">{suggestions.data?.count}</strong> transfer{suggestions.data?.count === 1 ? '' : 's'} need your review
+                {overflowSummary.suggestedPairCount > 1 && <> across {overflowSummary.suggestedPairCount} account pairs</>}
               </>
             : 'Everything is reviewed.'}
         </p>
@@ -339,6 +287,7 @@ export default function OskoLinker() {
                 exit={{ opacity: 0, height: 0 }}
                 className="mt-2 grid gap-1 overflow-hidden border-t border-[var(--hair)] pt-2"
               >
+                <QueueNavigation label="Overflow amount pages" queue={buckets} />
                 {overflow.map((bucket) => (
                   <div key={bucket.amount_cents}>
                     <strong className="text-ink">{fmtCents(bucket.amount_cents)}</strong>
@@ -355,8 +304,8 @@ export default function OskoLinker() {
         <div className="rounded-[10px] border border-[var(--color-warn)] bg-[var(--color-warn)]/5 px-3 py-2.5 text-[12.5px] text-ink2">
           <strong className="text-ink">{unmatchedTotal}</strong> transaction{unmatchedTotal === 1 ? '' : 's'} look{unmatchedTotal === 1 ? 's' : ''} like a transfer but no matching pair was found.
           They're counted as regular income or spending until you say otherwise.
-          {unmatchedTotal > unmatched.length && (
-            <> Showing the most recent {unmatched.length}.</>
+          {unmatchedTotal > 500 && (
+            <> Showing the most recent 500.</>
           )}{' '}
           <button
             onClick={() => setShowUnmatched((s) => !s)}
@@ -386,6 +335,7 @@ export default function OskoLinker() {
         </div>
       )}
 
+      <QueueNavigation label="Suggested transfer pages" queue={suggestions} />
       {groupless.length > 0 && (
         <div className="grid gap-3">
           {groupless.map((link) => (
@@ -408,7 +358,7 @@ export default function OskoLinker() {
             className="flex min-h-11 items-center gap-2 text-left text-[13px] font-medium text-muted transition hover:text-ink"
           >
             <span className={`transition-transform ${showAuto ? 'rotate-90' : ''}`}>›</span>
-            Linked automatically ({auto.length})
+            Linked automatically ({automatic.data?.count})
           </button>
           <AnimatePresence>
             {showAuto && (
@@ -418,6 +368,7 @@ export default function OskoLinker() {
                 exit={{ opacity: 0, height: 0 }}
                 className="grid gap-2 overflow-hidden"
               >
+                <QueueNavigation label="Automatic transfer pages" queue={automatic} />
                 {auto.map((link) => (
                   <div
                     key={link.id}
@@ -452,6 +403,7 @@ export default function OskoLinker() {
               exit={{ opacity: 0, height: 0 }}
               className="grid gap-3 overflow-hidden"
             >
+              <QueueNavigation label="Unmatched transfer pages" queue={legs} />
               {groupUnmatched(unmatched).map((group) => (
                 <UnmatchedGroupPanel
                   key={group.key}

@@ -54,7 +54,7 @@ export function transferBatch(tenant: string, queue: 'suggested' | 'unmatched', 
   }))
 }
 export function overflowSummary(tenant: string) {
-  return readValue<{ bucketCount: number; legCount: number }>(supabase.rpc('transfer_overflow_summary', { p_tenant: tenant }))
+  return readValue<{ bucketCount: number; legCount: number; suggestedPairCount: number }>(supabase.rpc('transfer_overflow_summary', { p_tenant: tenant }))
 }
 
 // ID-only reconciliation after a write. Keep URL lengths bounded, and return

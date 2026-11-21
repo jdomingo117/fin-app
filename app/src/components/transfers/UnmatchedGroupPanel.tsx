@@ -1,7 +1,10 @@
+import { useReport } from '../../hooks/useReport'
+import { transferBatch } from '../../lib/ledgerPage'
+import ReportStatus from '../ReportStatus'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '../Controls'
 import { fmtCents } from '../../data'
-import { boundedReviewSelection, untrackedTransferLabel } from '../../lib/transfers/reviewPresentation'
+import { groupActionDisclosure, untrackedTransferLabel } from '../../lib/transfers/reviewPresentation'
 import { type UnmatchedGroup } from './types'
 
 /** Same shape as SuggestedGroupPanel, adapted for lone legs: no ambiguous
@@ -30,15 +33,19 @@ export function UnmatchedGroupPanel({
   onSingleDecide: (txnId: string, verdict: 'rejected' | 'external') => void
   singleBusy: string | null
 }) {
-  const selection = boundedReviewSelection(group.rows.map((row) => row.id), deselected)
+  const batch = useReport(['transfer batch','unmatched',group.key,[...deselected]], tenant =>
+    transferBatch(tenant,'unmatched',group.key,[...deselected]))
+  if (!batch.data || batch.pending || batch.error) return <ReportStatus report={batch} label="Group selection" />
+  const selection = batch.data
   const selectedIds = selection.selectedIds
   const selectedIdSet = new Set(selectedIds)
-  const deferredIdSet = new Set(selection.deferredIds)
-  const total = group.rows.reduce((sum, r) => sum + Math.abs(r.amount), 0)
+  const deferredIdSet = new Set(group.rows.filter(row => !selectedIdSet.has(row.id) && !deselected.has(row.id)).map(row => row.id))
+  const disclosure = groupActionDisclosure(selectedIds, group.rows.map(row => row.id))
+  const total = selection.amount
 
   // A single-row group needs no checkbox/select ceremony — the two buttons
   // act on that one transaction directly, same as the old flat list did.
-  if (group.rows.length === 1) {
+  if (selection.total === 1) {
     const u = group.rows[0]
     return (
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-[10px] border border-[var(--hair)] px-3 py-2.5">
@@ -82,17 +89,17 @@ export function UnmatchedGroupPanel({
           <span className="min-w-0 truncate">
             <span className="font-semibold text-ink">{group.label}</span>
             <span className="ml-2 text-[12.5px] text-muted">
-              {group.rows.length} transaction{group.rows.length === 1 ? '' : 's'} · {fmtCents(total)}
+              {selection.total} transaction{selection.total === 1 ? '' : 's'} · {fmtCents(total)}
             </span>
           </span>
         </button>
         {selectedIds.length > 0 && (
           <div className="flex flex-shrink-0 flex-wrap gap-2">
             <Button variant="ghost" onClick={() => onBulkDecide(selectedIds, 'external')} disabled={busy}>
-              Transfer to/from an untracked account ({selectedIds.length})
+              Transfer to/from an untracked account ({selectedIds.length}){disclosure}
             </Button>
             <Button variant="ghost" onClick={() => onBulkDecide(selectedIds, 'rejected')} disabled={busy}>
-              Count as regular activity ({selectedIds.length})
+              Count as regular activity ({selectedIds.length}){disclosure}
             </Button>
           </div>
         )}

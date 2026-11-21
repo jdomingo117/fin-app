@@ -1,7 +1,10 @@
+import { useReport } from '../../hooks/useReport'
+import { transferBatch } from '../../lib/ledgerPage'
+import ReportStatus from '../ReportStatus'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '../Controls'
 import { fmtCents } from '../../data'
-import { suggestedReviewSelection } from '../../lib/transfers/reviewPresentation'
+import { groupActionDisclosure } from '../../lib/transfers/reviewPresentation'
 import { type TransferLinkRow, type SuggestedGroup } from './types'
 import { LinkCard } from './LinkCard'
 
@@ -26,11 +29,15 @@ export function SuggestedGroupPanel({
 }) {
   const nonAmbiguous = group.links.filter((l) => !l.ambiguous)
   const ambiguous = group.links.filter((l) => l.ambiguous)
-  const selection = suggestedReviewSelection(group.links, deselected)
+  const batch = useReport(['transfer batch','suggested',group.key,[...deselected]], tenant =>
+    transferBatch(tenant,'suggested',group.key,[...deselected]))
+  if (!batch.data || batch.pending || batch.error) return <ReportStatus report={batch} label="Group selection" />
+  const selection = batch.data
   const selectedIds = selection.selectedIds
   const selectedIdSet = new Set(selectedIds)
-  const deferredIdSet = new Set(selection.deferredIds)
-  const total = group.links.reduce((sum, l) => sum + Math.abs(l.from_txn?.amount ?? 0), 0)
+  const deferredIdSet = new Set(group.links.filter(row => !selectedIdSet.has(row.id) && !deselected.has(row.id)).map(row => row.id))
+  const disclosure = groupActionDisclosure(selectedIds, group.links.map(row => row.id))
+  const total = selection.amount
 
   return (
     <div className="rounded-[12px] border border-[var(--hair)] overflow-hidden">
@@ -42,29 +49,30 @@ export function SuggestedGroupPanel({
               {accountName(group.fromAccountId)} ↔ {accountName(group.toAccountId)}
             </span>
             <span className="ml-2 text-[12.5px] text-muted">
-              {group.links.length} transfer{group.links.length === 1 ? '' : 's'} · {fmtCents(total)}
+              {selection.total} transfer{selection.total === 1 ? '' : 's'} · {fmtCents(total)}
             </span>
           </span>
         </button>
         <div className="flex flex-shrink-0 flex-wrap gap-2">
           {selectedIds.length > 0 ? <>
             <Button onClick={() => onBulkDecide(selectedIds, 'confirmed')} disabled={busy}>
-              Confirm {selectedIds.length} internal transfer{selectedIds.length === 1 ? '' : 's'}
+              Confirm {selectedIds.length} internal transfer{selectedIds.length === 1 ? '' : 's'}{disclosure}
             </Button>
             <Button variant="ghost" onClick={() => onBulkDecide(selectedIds, 'rejected')} disabled={busy}>
-              Count {selectedIds.length} as regular activity
+              Count {selectedIds.length} as regular activity{disclosure}
             </Button>
           </> : (
             <Button variant="ghost" onClick={onToggleExpand} disabled={busy}>
-              {selection.reviewLabel}
+              {selection.ambiguousCount ? `Review ${selection.ambiguousCount} ambiguous match${selection.ambiguousCount === 1 ? '' : 'es'}` : 'Review selections'}
             </Button>
           )}
         </div>
       </div>
 
-      {ambiguous.length > 0 && (
+      <p className="px-4 pb-2 text-xs">{selectedIds.length} selected · {selection.deferredCount} deferred · {selection.ambiguousCount} ambiguous</p>
+      {selection.ambiguousCount > 0 && (
         <div className="px-4 pb-2 text-[12px] text-muted">
-          {ambiguous.length} ambiguous match{ambiguous.length === 1 ? '' : 'es'} excluded from bulk actions — review individually.
+          {selection.ambiguousCount} ambiguous match{selection.ambiguousCount === 1 ? '' : 'es'} excluded from bulk actions — review individually.
         </div>
       )}
       {selection.deferredCount > 0 && (

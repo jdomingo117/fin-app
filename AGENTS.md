@@ -82,7 +82,7 @@ hand to find the transfer-linker gap.
 
 ## Recent changes
 
-- 2026-11-21 — Wave 3C.3 adds bounded transfer decision batches, review ID snapshots and account activity category reads.
+- 2026-11-21 — Wave 3C.3 pages Ledger, Accounts, Expenses and transfer/investment queues with full-parent editing and group-wide transfer batches.
 
 - 2026-11-21 — Wave 3C.2 wires six reporting surfaces to scoped SQL reads, including monthly valuations and account balance history.
 

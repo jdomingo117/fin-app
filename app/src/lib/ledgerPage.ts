@@ -56,3 +56,17 @@ export function transferBatch(tenant: string, queue: 'suggested' | 'unmatched', 
 export function overflowSummary(tenant: string) {
   return readValue<{ bucketCount: number; legCount: number }>(supabase.rpc('transfer_overflow_summary', { p_tenant: tenant }))
 }
+
+// ID-only reconciliation after a write. Keep URL lengths bounded, and return
+// a result only when every chunk succeeds.
+export async function missingParentIds(tenant: string, ids: string[]) {
+  const chunks: string[][] = []
+  for (let i = 0; i < ids.length; i += 50) chunks.push(ids.slice(i,i+50))
+  const available = await Promise.all(chunks.map(async chunk => {
+    const { data,error } = await supabase.from('transactions').select('id').eq('tenant_id',tenant).in('id',chunk)
+    if (error) throw error
+    return data.map(row => row.id as string)
+  }))
+  const existing = new Set(available.flat())
+  return new Set(ids.filter(id => !existing.has(id)))
+}

@@ -326,7 +326,7 @@ function IncomeSourceActivity({
       </div>
 
       <button type="button" onClick={onViewAll} className="mt-3 text-[13px] font-semibold text-accent-ink transition hover:opacity-75 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent">
-        View all {transactions.length} matching transactions →
+        View matching Ledger transactions →
       </button>
     </section>
   )

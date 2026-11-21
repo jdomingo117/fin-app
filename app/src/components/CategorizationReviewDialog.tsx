@@ -1,4 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useAuth } from '../contexts/AuthContext'
+import { hydrateParents } from '../lib/ledgerPage'
+import { applyAfterContributorCheck } from '../lib/categorizationReview'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { ALL_CATEGORIES, FULL_TAXONOMY, fmtCents, type Txn } from '../data'
 import { supabase } from '../lib/supabaseClient'
@@ -30,8 +33,9 @@ function delta(label: string, cents: number) {
 }
 
 export default function CategorizationReviewDialog({
-  transactions, scope = 'selected', scopeCandidateCount, scopeTruncated = false, suspended = false, invalidated = false, batch, onPreviewComplete, onNextBatch, onOpenTransaction, onClose, onChanged,
+  transactions, batchIds, scope = 'selected', scopeCandidateCount, scopeTruncated = false, suspended = false, invalidated = false, batch, onPreviewComplete, onNextBatch, onOpenTransaction, onClose, onChanged,
 }: {
+  batchIds: string[]
   transactions: Txn[]
   scope?: CategorizationReviewScope
   /** Candidate count before the shared 500-row atomic boundary is applied. */
@@ -65,6 +69,11 @@ export default function CategorizationReviewDialog({
   const [updated, setUpdated] = useState<number | null>(null)
   const [confirmNext, setConfirmNext] = useState(false)
   const dialogRef = useDialogFocus({ active: !suspended, fallbackSelector: '[data-category-review-trigger], [data-dialog-focus-fallback]' })
+  const { tenantId, user } = useAuth()
+  const { reportRevision } = useData()
+  const applyGeneration = useRef(0)
+  useLayoutEffect(() => () => { applyGeneration.current++ }, [user?.id, tenantId, reportRevision])
+  const [staleContributors,setStaleContributors] = useState(0)
   const completed = updated !== null && updated > 0
   const saving = savingAction !== null
   const transactionKey = transactions.map((transaction) => transaction.id).join(',')
@@ -150,18 +159,37 @@ export default function CategorizationReviewDialog({
 
   const apply = async () => {
     if (!response) return
-    if (invalidated) return
+    if (invalidated || staleContributors) return
     const assignments = buildReviewAssignments(response.rows, acceptedIds, choices)
     if (!assignments.length) return
     setSavingAction('apply'); setError('')
-    const { data, error: applyError } = await supabase.functions.invoke('review-categorization', {
-      body: { action: 'apply', assignments },
-    })
-    if (applyError) setError(applyError.message || 'Could not apply the accepted suggestions.')
-    else {
-      setOperationId(data.updated > 0 ? data.operation_id : null)
-      setUpdated(data.updated)
-      await onChanged()
+    try {
+      if (!tenantId) throw Error('The signed-in account changed.')
+      const generation = applyGeneration.current
+      const current = await hydrateParents(tenantId, batchIds)
+      const keys = [...new Set(current.map(t => t.merchantKey).filter((k): k is string => !!k))]
+      const protectedKeys = new Set<string>()
+      for (let offset = 0; offset < keys.length; offset += 25) {
+        const { data, error } = await supabase.from('merchant_rules').select('merchant_key')
+          .eq('tenant_id',tenantId).eq('source','user').in('merchant_key',keys.slice(offset,offset+25))
+        if (error) throw error
+        data.forEach(r => protectedKeys.add(r.merchant_key))
+      }
+      if (applyGeneration.current !== generation) throw Error('Ledger changed during verification. Review again.')
+      const checked = await applyAfterContributorCheck(transactions,response.rows,assignments,current,protectedKeys,scope,
+        async () => supabase.functions.invoke('review-categorization', { body: { action: 'apply', assignments } }))
+      if (checked.skipped) {
+        setStaleContributors(checked.skipped)
+        setError(`${checked.skipped} contributing row(s) became unavailable. No changes were made. Close and start a fresh preview.`)
+      } else if (checked.result) {
+        const { data, error } = checked.result
+        if (error) throw error
+        setOperationId(data.updated > 0 ? data.operation_id : null)
+        setUpdated(data.updated)
+        await onChanged()
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not verify or apply the accepted suggestions.')
     }
     setSavingAction(null)
   }
@@ -325,7 +353,7 @@ export default function CategorizationReviewDialog({
         </div>}
 
         <div className="sticky bottom-0 mt-5 flex flex-wrap gap-2 border-t border-[var(--hair)] bg-surface py-4">
-          {!completed && <Button onClick={() => void apply()} disabled={loading || saving || invalidated || impact.accepted === 0}>{savingAction === 'apply' && <InlineActivity label="Applying accepted changes" size="compact" />}{savingAction === 'apply' ? 'Applying accepted changes…' : `Apply accepted (${impact.accepted})`}</Button>}
+          {!completed && <Button onClick={() => void apply()} disabled={loading || saving || invalidated || staleContributors > 0 || impact.accepted === 0}>{savingAction === 'apply' && <InlineActivity label="Applying accepted changes" size="compact" />}{savingAction === 'apply' ? 'Applying accepted changes…' : `Apply accepted (${impact.accepted})`}</Button>}
           {operationId && <Button variant="ghost" onClick={() => void undo()} disabled={saving}>{savingAction === 'undo' && <InlineActivity label="Undoing categorisation review" size="compact" />}{savingAction === 'undo' ? 'Undoing review…' : 'Undo review'}</Button>}
           {batch?.nextSize !== undefined && response && !loading && !confirmNext && <Button variant="ghost" disabled={saving} onClick={() => { if (operationId || impact.accepted > 0 || choices.size > 0 || editingId) setConfirmNext(true); else onNextBatch?.() }}>Review next batch ({batch.nextSize})</Button>}
           <Button variant="ghost" onClick={close} disabled={saving}>{completed ? 'Done and clear selection' : 'Close preview'}</Button>

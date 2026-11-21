@@ -255,3 +255,22 @@ export function buildCategorizationReviewImpact(
     subscriptionChanges, expenseDeltaCents, earnedIncomeDeltaCents,
   }
 }
+
+/** Only unprotected preview rows contributed samples or direction to the engine. */
+export async function applyAfterContributorCheck<T>(
+  preview: Txn[], previewRows: CategorizationReviewRow[], assignments: ReviewApplyAssignment[],
+  current: Txn[], ruleKeys: ReadonlySet<string>, scope: CategorizationReviewScope,
+  write: () => Promise<T>,
+): Promise<{ skipped: number; result?: T }> {
+  const byId = new Map(current.map(t => [t.id,t]))
+  const accepted = new Set(assignments.map(a => a.transaction_id))
+  const merchants = new Set(preview.filter(t => accepted.has(t.id)).map(t => t.merchantKey))
+  const protectedIds = new Set(previewRows.filter(r => r.status === 'protected').map(r => r.transaction_id))
+  const skipped = preview.filter(t => {
+    if (!merchants.has(t.merchantKey) || protectedIds.has(t.id)) return false
+    const row = byId.get(t.id)
+    return !row || row.merchantKey !== t.merchantKey || ruleKeys.has(row.merchantKey ?? '') ||
+      !isEligibleReviewCandidate(row) || (scope === 'unresolved' && !isUnresolvedReviewCandidate(row))
+  }).length
+  return skipped ? { skipped } : { skipped: 0, result: await write() }
+}

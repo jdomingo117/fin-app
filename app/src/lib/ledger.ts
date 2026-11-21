@@ -38,10 +38,10 @@ export const MAX_BULK_SELECTION = 500
 export function summarizeLedgerSelection(
   selectedIds: ReadonlySet<string>,
   currentPage: Pick<Txn, 'id'>[],
-  allTransactions: Pick<Txn, 'id'>[],
+  allTransactions?: Pick<Txn, 'id'>[],
 ): LedgerSelectionSummary {
-  const existingIds = new Set(allTransactions.map((transaction) => transaction.id))
-  const total = [...selectedIds].filter((id) => existingIds.has(id)).length
+  const existingIds = allTransactions && new Set(allTransactions.map(transaction => transaction.id))
+  const total = existingIds ? [...selectedIds].filter(id => existingIds.has(id)).length : selectedIds.size
   const currentPageCount = currentPage.filter((transaction) => selectedIds.has(transaction.id)).length
   return { total, currentPage: currentPageCount, elsewhere: total - currentPageCount }
 }

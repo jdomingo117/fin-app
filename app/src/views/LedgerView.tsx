@@ -1,4 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useAuth } from '../contexts/AuthContext'
+import { useReport } from '../hooks/useReport'
+import { useKeysetPage } from '../hooks/useKeysetPage'
+import { hydrateParents, ledgerPage, missingParentIds, reviewIds, selectionIds, type LedgerCursor } from '../lib/ledgerPage'
+import ReportStatus from '../components/ReportStatus'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { navNumber } from '../router'
 import { Screen, ViewHeader } from '../components/Screen'
@@ -10,11 +15,11 @@ import BulkClassificationDialog from '../components/BulkClassificationDialog'
 import { ALL_CATEGORIES, fmtCents, type Txn } from '../data'
 import { useData } from '../contexts/DataContext'
 import {
-  filterLedger, isExactMatchingLedgerSelection, MAX_BULK_SELECTION, reviewCount,
-  selectAllMatchingLedgerTransactions, summarizeLedgerSelection, toggleLedgerPageSelection,
+  MAX_BULK_SELECTION,
+  summarizeLedgerSelection, toggleLedgerPageSelection,
   type LedgerReviewFilter,
 } from '../lib/ledger'
-import { resolveReviewBatch, reviewBatchIds, reviewScopeTransactions, type CategorizationReviewScope } from '../lib/categorizationReview'
+import { resolveReviewBatch, reviewBatchIds, type CategorizationReviewScope } from '../lib/categorizationReview'
 import { KIND_LABELS, TRANSACTION_KINDS, type TransactionKind } from '../lib/classification'
 import ClassificationRulesDialog from '../components/ClassificationRulesDialog'
 import CategorizationReviewDialog from '../components/CategorizationReviewDialog'
@@ -55,14 +60,19 @@ type ReviewSession = { scope: 'unresolved' | 'eligible'; batches: string[][]; cu
 type SavedLedgerFilters = { query: string; accountId: string; category: string; kind: string; review: LedgerReviewFilter; incomeSourceScope: IncomeSourceScope | null }
 
 export default function LedgerView() {
-  const { accounts, transactions, refreshData } = useData()
+  const { user, tenantId } = useAuth()
+  return <LedgerWorkspace key={JSON.stringify([user?.id,tenantId])} tenant={tenantId ?? ''} />
+}
+
+function LedgerWorkspace({ tenant }: { tenant: string }) {
+  const { accounts, refreshData, reportRevision } = useData()
   const location = useLocation()
   const [query, setQuery] = useState('')
   const [accountId, setAccountId] = useState('')
   const [category, setCategory] = useState('')
   const [kind, setKind] = useState('')
   const [review, setReview] = useState<LedgerReviewFilter>('all')
-  const [page, setPage] = useState(1)
+  const [actionError, setActionError] = useState('')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [bulkOpen, setBulkOpen] = useState(false)
@@ -89,7 +99,7 @@ export default function LedgerView() {
     if (navigationState?.source === 'income-source' && navigationState.category && navigationState.from && navigationState.to) {
       setQuery('')
       setAccountId('')
-      setCategory(navigationState.category)
+      setCategory('')
       setKind('')
       setReview('all')
       setSelectedIds(new Set())
@@ -104,73 +114,112 @@ export default function LedgerView() {
     }
   }, [location.key, location.state])
 
-  const filtered = useMemo(() => filterLedger(transactions, {
-    query,
-    accountId,
-    category,
-    kind,
-    review,
-    accountIds: incomeSourceScope?.accountIds,
-    from: incomeSourceScope?.from,
-    to: incomeSourceScope?.to,
-    incomeOnly: incomeSourceScope?.incomeOnly,
-  }), [transactions, query, accountId, category, kind, review, incomeSourceScope])
-  const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
-  const visible = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
-  const selected = selectedId ? transactions.find((transaction) => transaction.id === selectedId) ?? null : null
-  const unresolved = reviewCount(transactions)
-  const attentionInView = reviewCount(filtered)
-  const selectedTransactions = transactions.filter((transaction) => selectedIds.has(transaction.id))
-  const selection = summarizeLedgerSelection(selectedIds, visible, transactions)
+  const incomeAccounts = incomeSourceScope?.accountIds
+  const accountIds = incomeAccounts?.length
+    ? incomeAccounts.filter(id => !accountId || accountId === id)
+    : accountId ? [accountId] : null
+  const params = {
+    p_account_ids: accountIds, p_category: category || null, p_kind: kind || null, p_query: query || null,
+    p_review: review, p_from: incomeSourceScope?.from ?? null, p_to: incomeSourceScope?.to ?? null,
+    p_income_source: incomeSourceScope?.category ?? null, p_limit: PAGE_SIZE,
+  }
+  const activity = useKeysetPage(params, (owner, cursor: LedgerCursor | null) => ledgerPage(owner, params, cursor))
+  const { page } = activity
+  const matching = activity.data?.matching_count ?? 0
+  const pages = Math.max(1, Math.ceil(matching / PAGE_SIZE))
+  const visible = activity.data?.rows ?? []
+  const attentionInView = activity.data?.attention_count ?? 0
+  const counts = useReport('review counts', async owner => {
+    const [all, unresolved, eligible] = await Promise.all(['all','unresolved','eligible'].map(p_review =>
+      ledgerPage(owner, { p_review, p_limit: 1 })))
+    return { attention: all.attention_count, unresolved: unresolved.matching_count, eligible: eligible.matching_count }
+  })
+  const unresolved = counts.data?.attention ?? 0
+  const editor = useReport(['ledger editor',selectedId], owner => hydrateParents(owner,[selectedId!]), !!selectedId)
+  const selected = editor.data?.[0] ?? null
+  const bulk = useReport(['bulk', [...selectedIds]], owner => hydrateParents(owner,[...selectedIds]), bulkOpen || bulkClassificationOpen)
+  const selectedTransactions = bulk.data ?? []
+  const selection = summarizeLedgerSelection(selectedIds,visible)
   const visibleSelected = selection.currentPage
   const pageIsFullySelected = visible.length > 0 && visibleSelected === visible.length
   const clearPartialPageAtLimit = selection.total >= MAX_BULK_SELECTION && visibleSelected > 0
-  const allSelectableMatchesSelected = isExactMatchingLedgerSelection(selectedIds, filtered)
-  const unresolvedReview = useMemo(() => reviewScopeTransactions(transactions, 'unresolved'), [transactions])
-  const eligibleReview = useMemo(() => reviewScopeTransactions(transactions, 'eligible'), [transactions])
-  const openCategorizationReview = (scope: CategorizationReviewScope, batchIndex = 0, existingSession = reviewSession) => {
-    const review = scope === 'unresolved' ? unresolvedReview : scope === 'eligible' ? eligibleReview : null
-    setCategorizationReviewScope(scope)
-    if (review && scope !== 'selected') {
-      const session = existingSession?.scope === scope ? existingSession : { scope, batches: reviewBatchIds(review.candidates), currentIndex: 0, previewed: [] }
-      const index = Math.min(Math.max(0, batchIndex), session.batches.length - 1)
-      if (index < 0) return
-      const batch = resolveReviewBatch(session.batches[index], transactions, scope)
-      setReviewSession({ ...session, currentIndex: index })
+  const selectionScope = JSON.stringify([params,reportRevision])
+  const { p_account_ids, p_limit: _limit, ...selectionFilters } = params
+  const selectionParams = { ...selectionFilters, p_accounts: p_account_ids }
+  const target = useReport(['selection target',selectionScope], owner => selectionIds(owner,selectionParams),
+    selectedIds.size > 0 && selectedIds.size === Math.min(matching,MAX_BULK_SELECTION))
+  const allSelectableMatchesSelected = !!target.data?.length && target.data.length === selectedIds.size
+    && target.data.every(id => selectedIds.has(id))
+  const request = useRef(0)
+  useLayoutEffect(() => () => { request.current++ }, [selectionScope,selectedIds])
+
+  const openCategorizationReview = async (scope: CategorizationReviewScope, batchIndex = 0, existingSession = reviewSession) => {
+    const ticket = ++request.current
+    setActionError('')
+    try {
+      let ids = [...selectedIds]
+      let session: ReviewSession | null = null
+      if (scope !== 'selected') {
+        const batches = existingSession?.scope === scope ? existingSession.batches
+          : reviewBatchIds((await reviewIds(tenant, scope)).map(id => ({ id })))
+        if (!batches.length || request.current !== ticket) return
+        const index = Math.min(Math.max(0, batchIndex), batches.length - 1)
+        session = { scope, batches, currentIndex: index, previewed: existingSession?.scope === scope ? existingSession.previewed : [] }
+        ids = batches[index]
+      }
+      const rows = await hydrateParents(tenant, ids)
+      if (request.current !== ticket) return
+      const batch = scope === 'selected' ? { transactions: rows, skipped: ids.length - rows.length } : resolveReviewBatch(ids, rows, scope)
+      if (session) setReviewSession(session)
+      setCategorizationReviewScope(scope)
       setReviewSnapshot(batch.transactions)
       setBatchSkipped(batch.skipped)
-      setReviewScopeInfo({ count: session.batches[index].length, truncated: false })
-    } else {
-      setReviewSnapshot([...selectedTransactions])
-      setBatchSkipped(0)
-      setReviewScopeInfo({ count: selectedTransactions.length, truncated: false })
+      setReviewScopeInfo({ count: ids.length, truncated: false })
+      setReviewInvalidated(false)
+      setCategorizationReviewOpen(true)
+    } catch {
+      if (request.current === ticket) setActionError('Could not load the review batch. Try again.')
     }
-    setReviewInvalidated(false)
-    setCategorizationReviewOpen(true)
   }
+  const selectAllMatching = async () => {
+    const ticket = ++request.current
+    try {
+      const ids = await selectionIds(tenant,selectionParams)
+      if (request.current !== ticket) return
+      setSelectedIds(new Set(ids))
+      setActionError('')
+    } catch {
+      if (request.current === ticket) setActionError('Could not select matching transactions. Try again.')
+    }
+  }
+  // A page contains only a slice of the scope. Check existence after writes
+  // using the IDs selected at invalidation, retaining later selections.
+  useLayoutEffect(() => {
+    let current = true
+    if (selectedIds.size) {
+      missingParentIds(tenant,[...selectedIds]).then(missing => {
+        if (current && missing.size) setSelectedIds(prior => new Set([...prior].filter(id => !missing.has(id))))
+      }).catch(() => {
+        if (current) setActionError('Could not verify the selection after refresh. Your selection has been kept.')
+      })
+    }
+    return () => { current = false }
+  }, [tenant,reportRevision])
 
-  useEffect(() => setPage(1), [query, accountId, category, kind, review])
-  useEffect(() => { if (page > pages) setPage(pages) }, [page, pages])
-  useEffect(() => setSelectedIds((current) => {
-    const existingIds = new Set(transactions.map((transaction) => transaction.id))
-    const next = new Set([...current].filter((id) => existingIds.has(id)))
-    return next.size === current.size ? current : next
-  }), [transactions])
-
-  const toggleSelected = (id: string) => setSelectedIds((current) => {
+  const toggleSelected = (id: string) => { request.current++; setSelectedIds((current) => {
     const next = new Set(current)
     if (next.has(id)) next.delete(id)
     else if (next.size < MAX_BULK_SELECTION) next.add(id)
     return next
-  })
-  const toggleVisible = () => setSelectedIds((current) => toggleLedgerPageSelection(current, visible))
-  const selectAllMatching = () => setSelectedIds(selectAllMatchingLedgerTransactions(filtered))
+  }) }
+  const toggleVisible = () => { request.current++; setSelectedIds((current) => toggleLedgerPageSelection(current, visible)) }
+
   const showAttention = () => {
     if (query.trim() || accountId || category || kind || incomeSourceScope || !['all', 'needs-attention'].includes(review)) {
       setSavedFilters({ query, accountId, category, kind, review, incomeSourceScope })
     } else if (review !== 'needs-attention') setSavedFilters(null)
     setQuery(''); setAccountId(''); setCategory(''); setKind(''); setIncomeSourceScope(null)
-    setReview('needs-attention'); setPage(1)
+    setReview('needs-attention')
   }
 
   return (
@@ -181,11 +230,16 @@ export default function LedgerView() {
       </div>
 
       <Tile span={3} className="mt-5">
+        <ReportStatus report={activity} label="Ledger" />
+        <ReportStatus report={counts} label="Review counts" />
+        {selectedId && <ReportStatus report={editor} label="Transaction" />}
+        {(bulkOpen || bulkClassificationOpen) && <ReportStatus report={bulk} label="Selected transactions" />}
+        {actionError && <p role="alert">{actionError}</p>}
         <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
           <h2 className="font-display text-[18px] font-bold text-ink">Transactions</h2>
           <CategorizationReviewActions
-            unresolvedCount={unresolvedReview.candidates.length}
-            eligibleCount={eligibleReview.candidates.length}
+            unresolvedCount={counts.data?.unresolved ?? 0}
+            eligibleCount={counts.data?.eligible ?? 0}
             hasActiveFilters={Boolean(query.trim() || accountId || category || kind || review !== 'all' || incomeSourceScope)}
             hasSelection={selection.total > 0}
             onReview={openCategorizationReview}
@@ -195,7 +249,7 @@ export default function LedgerView() {
         </div>
         {savedFilters && <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--accent-border)] bg-[var(--accent-wash)] px-4 py-3 text-[13px] text-ink2">
           <span>To show all transactions needing attention, previous filters were cleared. Your selection is unchanged.</span>
-          <button type="button" onClick={() => { setQuery(savedFilters.query); setAccountId(savedFilters.accountId); setCategory(savedFilters.category); setKind(savedFilters.kind); setReview(savedFilters.review); setIncomeSourceScope(savedFilters.incomeSourceScope); setSavedFilters(null); setPage(1) }} className="min-h-11 font-semibold text-accent-ink underline">Restore previous filters</button>
+          <button type="button" onClick={() => { setQuery(savedFilters.query); setAccountId(savedFilters.accountId); setCategory(savedFilters.category); setKind(savedFilters.kind); setReview(savedFilters.review); setIncomeSourceScope(savedFilters.incomeSourceScope); setSavedFilters(null) }} className="min-h-11 font-semibold text-accent-ink underline">Restore previous filters</button>
         </div>}
         {incomeSourceScope && (
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--accent-border)] bg-[var(--accent-wash)] px-4 py-3 text-[13px]">
@@ -240,7 +294,7 @@ export default function LedgerView() {
 
         <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-b border-[var(--hair)] pb-3 text-[12px] uppercase tracking-[0.1em] text-muted">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <span>{filtered.length} transaction{filtered.length === 1 ? '' : 's'}</span>
+            <span>{matching} {incomeSourceScope ? 'matching parent transaction' : 'transaction'}{matching === 1 ? '' : 's'}</span>
             {selection.total > 0 && <span role="status" aria-live="polite" className="normal-case tracking-normal text-accent-ink">
               {selection.total} selected · {selection.currentPage} on this page · {selection.elsewhere} elsewhere
             </span>}
@@ -250,19 +304,19 @@ export default function LedgerView() {
             <button type="button" data-dialog-focus-fallback onClick={toggleVisible} disabled={visible.length === 0 || (selection.total >= MAX_BULK_SELECTION && visibleSelected === 0)} aria-describedby="ledger-bulk-selection-limit" className="min-h-11 rounded-lg border border-[var(--hair)] px-3 text-[12px] font-semibold text-ink2 disabled:cursor-not-allowed disabled:opacity-40">
               {pageIsFullySelected ? `Clear page (${visible.length})` : clearPartialPageAtLimit ? `Clear selected on page (${visibleSelected})` : `Select page (${visible.length})`}
             </button>
-            <button type="button" onClick={selectAllMatching} disabled={filtered.length === 0 || allSelectableMatchesSelected} aria-describedby="ledger-bulk-selection-limit" className="min-h-11 rounded-lg border border-[var(--hair)] px-3 text-[12px] font-semibold text-ink2 disabled:cursor-not-allowed disabled:opacity-40">
+            <button type="button" onClick={selectAllMatching} disabled={matching === 0 || allSelectableMatchesSelected} aria-describedby="ledger-bulk-selection-limit" className="min-h-11 rounded-lg border border-[var(--hair)] px-3 text-[12px] font-semibold text-ink2 disabled:cursor-not-allowed disabled:opacity-40">
               {allSelectableMatchesSelected
-                ? filtered.length > MAX_BULK_SELECTION
-                  ? `First ${MAX_BULK_SELECTION} of ${filtered.length} matching selected`
-                  : `All matching selected (${filtered.length})`
-                : filtered.length > MAX_BULK_SELECTION
-                  ? `Select first ${MAX_BULK_SELECTION} of ${filtered.length} matching`
-                  : `Select all matching (${filtered.length})`}
+                ? matching > MAX_BULK_SELECTION
+                  ? `First ${MAX_BULK_SELECTION} of ${matching} matching selected`
+                  : `All matching selected (${matching})`
+                : matching > MAX_BULK_SELECTION
+                  ? `Select first ${MAX_BULK_SELECTION} of ${matching} matching`
+                  : `Select all matching (${matching})`}
             </button>
             {selection.total > 0 && <Button onClick={() => setBulkOpen(true)}>Correct categories ({selection.total})</Button>}
             {selection.total > 0 && <Button variant="ghost" onClick={() => openCategorizationReview('selected')}>Review selected ({selection.total})</Button>}
             {selection.total > 0 && <Button variant="ghost" onClick={() => setBulkClassificationOpen(true)}>Edit attributes ({selection.total})</Button>}
-            {selection.total > 0 && <button type="button" onClick={() => setSelectedIds(new Set())} className="min-h-11 px-2 text-[12px] font-semibold text-muted">Clear all ({selection.total})</button>}
+            {selection.total > 0 && <button type="button" onClick={() => { setSelectedIds(new Set()) }} className="min-h-11 px-2 text-[12px] font-semibold text-muted">Clear all ({selection.total})</button>}
           </div>
         </div>
 
@@ -311,27 +365,27 @@ export default function LedgerView() {
 
         {pages > 1 && (
           <div className="mt-4 flex items-center justify-between border-t border-[var(--hair)] pt-4">
-            <button type="button" disabled={page === 1} onClick={() => setPage((value) => value - 1)} className="min-h-11 rounded-lg border border-[var(--hair)] px-4 text-[13px] font-semibold disabled:opacity-40">Previous</button>
+            <button type="button" disabled={page === 1} onClick={() => activity.previous()} className="min-h-11 rounded-lg border border-[var(--hair)] px-4 text-[13px] font-semibold disabled:opacity-40">Previous</button>
             <span className="text-[13px] tabular-nums text-muted">Page {page} of {pages}</span>
-            <button type="button" disabled={page === pages} onClick={() => setPage((value) => value + 1)} className="min-h-11 rounded-lg border border-[var(--hair)] px-4 text-[13px] font-semibold disabled:opacity-40">Next</button>
+            <button type="button" disabled={!activity.data?.has_more} onClick={() => activity.data?.before && activity.next(activity.data.before)} className="min-h-11 rounded-lg border border-[var(--hair)] px-4 text-[13px] font-semibold disabled:opacity-40">Next</button>
           </div>
         )}
       </Tile>
 
       <TransactionCategoryDrawer transaction={selected} onClose={() => { setSelectedId(null); setReviewEditorId(null) }} onChanged={async () => {
-        if (reviewEditorId) setReviewInvalidated(true)
         await refreshData()
       }} />
-      {bulkOpen && <BulkCategoryDialog transactions={selectedTransactions} onClose={(clearSelection) => {
+      {bulkOpen && bulk.data && <BulkCategoryDialog transactions={selectedTransactions} onClose={(clearSelection) => {
         setBulkOpen(false)
-        if (clearSelection) setSelectedIds(new Set())
+        if (clearSelection) { setSelectedIds(new Set()) }
       }} onChanged={refreshData} />}
-      {bulkClassificationOpen && <BulkClassificationDialog transactions={selectedTransactions} onClose={(clearSelection) => {
+      {bulkClassificationOpen && bulk.data && <BulkClassificationDialog transactions={selectedTransactions} onClose={(clearSelection) => {
         setBulkClassificationOpen(false)
-        if (clearSelection) setSelectedIds(new Set())
+        if (clearSelection) { setSelectedIds(new Set()) }
       }} onChanged={refreshData} />}
       {categorizationReviewOpen && <CategorizationReviewDialog
         key={`${categorizationReviewScope}-${reviewSession?.currentIndex ?? 0}`}
+        batchIds={categorizationReviewScope !== 'selected' && reviewSession ? reviewSession.batches[reviewSession.currentIndex] : reviewSnapshot.map(t => t.id)}
         transactions={reviewSnapshot}
         scope={categorizationReviewScope}
         scopeCandidateCount={reviewScopeInfo.count}
@@ -342,7 +396,7 @@ export default function LedgerView() {
         onPreviewComplete={() => setReviewSession((current) => current && current.scope === categorizationReviewScope && !current.previewed.includes(current.currentIndex) ? { ...current, previewed: [...current.previewed, current.currentIndex] } : current)}
         onNextBatch={() => { if (reviewSession) openCategorizationReview(reviewSession.scope, reviewSession.currentIndex + 1, reviewSession) }}
         onOpenTransaction={(id) => {
-          if (!transactions.some((transaction) => transaction.id === id)) { setReviewInvalidated(true); return }
+          if (!reviewSnapshot.some((transaction) => transaction.id === id)) { setReviewInvalidated(true); return }
           setReviewEditorId(id); setSelectedId(id)
         }}
         onClose={(clearSelection) => {

@@ -68,6 +68,10 @@ The owner-requested AI beginner critique is recorded in `docs/budget-ui/human-va
 
 The participant-only task card is `docs/budget-ui/human-validation/participant-tasks.md`; the moderator guide and blank results are alongside it. Preparation only; no new implementation/test pass is claimed.
 
+## Row review contracts — Wave 3C.3
+
+Migration `20261121010000_row_review_scopes.sql` adds authenticated tenant-member reads for ordered categorization candidates, full-history account category options, bounded transfer group selections and exact overflow totals. Ledger parent reads use `ledger_page` with nested allocations.
+
 ## Architecture Overview
 **R01 engineering complete — 28 October 2026.** [[BUDGET_R01_SPENDING_FORECAST]] records forward migration 96 and the owner-approved median of three monthly daily gross rates, date-aware fixed bills, separate pending warnings and conservative unavailable states. Verification: 79 final forecast checks, 243 combined forecast/affected-candidate checks with 78 passing WCAG scans plus eight final threshold-explanation scans, 472 lifecycle checks, 589 unit passes/14 existing skips, full/focused/browser types and production build. These are separate runs, not additive unique checks. All 17 BUI presentation bursts remain delivered; R01–R05 engineering findings are now corrected. Next is the R01 affected-flow owner checkpoint and M7.3 observed human accessibility/M7.4 independent beginner walkthroughs, followed by M7.5–M7.8 operational/release gates. Release remains **No-Go**. No personal migration, deployment or commit occurred.
 

@@ -82,6 +82,8 @@ hand to find the transfer-linker gap.
 
 ## Recent changes
 
+- 2026-11-21 — Wave 3C.3 adds bounded transfer decision batches, review ID snapshots and account activity category reads.
+
 - 2026-11-21 — Wave 3C.2 wires six reporting surfaces to scoped SQL reads, including monthly valuations and account balance history.
 
 - 2026-11-20 — Wave 3C.1 adds tenant-scoped portfolio, cash-flow, movement history and split-safe ledger SQL read contracts.
@@ -99,5 +101,3 @@ hand to find the transfer-linker gap.
 - 2026-11-18 — Budget Look back shows up to 12 budgets month by month (migration 20261118000000, query-budget `months`).
 
 - 2026-11-13 — Budget auto-build review lists every draft line with where its amount came from; edits relabel only that row.
-
-- 2026-11-13 — Rate-limited Budget refreshes wait out the server's retry_after and read again, so Undo no longer leaves stale "may be out of date" figures.

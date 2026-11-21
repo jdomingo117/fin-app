@@ -1,3 +1,6 @@
+import { usePlanning } from '../hooks/usePlanning'
+import ReportStatus from './ReportStatus'
+import { projectionHistory, historyBaseline, historyReview } from '../lib/projectionHistory'
 import {useReport} from '../hooks/useReport'
 import {monthlyWorth} from '../lib/reports'
 import { useEffect, useMemo, useState } from 'react'
@@ -11,7 +14,7 @@ import ProjectionChart from './ProjectionChart'
 import PlanningTimeline from './PlanningTimeline'
 import { Grid } from './Screen'
 import SegmentedTabs from './SegmentedTabs'
-import { fmt, type Account, type Txn } from '../data'
+import { fmt } from '../data'
 import { useData } from '../contexts/DataContext'
 import { supabase } from '../lib/supabaseClient'
 import PlanningGoalDialog from './PlanningGoalDialog'
@@ -19,12 +22,10 @@ import type { PlanningGoal } from '../lib/planning'
 import type { ProjectionEvent } from '../lib/projections'
 import { buildRecurring, upcomingCharges } from '../lib/recurring'
 import { TODAY } from '../lib/period'
-import { reviewCompletedMonth } from '../lib/planningReview'
 import {
   buildProjection,
   buildProjectionBreakdown,
   currentValueFor,
-  deriveProjectionBaseline,
   firstTargetPoint,
   isCashAccount,
   monthsBetween,
@@ -66,24 +67,10 @@ const describeTimingImpact = (baseline: ProjectionPoint | null, scenario: Projec
   return `The goal moves ${count} ${count === 1 ? 'month' : 'months'} ${delta < 0 ? 'sooner' : 'later'} than the baseline.`
 }
 
-function cashHistory(accounts: Account[], transactions: Txn[], current: number): ProjectionPoint[] {
-  const cashIds = new Set(accounts.filter(isCashAccount).map((account) => account.id))
-  const now = new Date()
-  return Array.from({ length: 7 }, (_, index) => {
-    const date = new Date(now.getFullYear(), now.getMonth() - (6 - index), 1)
-    const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0)
-    const futureMovement = transactions
-      .filter((transaction) => cashIds.has(transaction.account_id) && !transaction.pending && transaction.date > monthEnd.toISOString().slice(0, 10))
-      .reduce((sum, transaction) => sum + transaction.amount, 0)
-    return {
-      date: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`,
-      value: index === 6 ? current : current - futureMovement,
-    }
-  })
-}
-
 export default function StrategicProjections() {
-  const { accounts, transactions, planningGoals, planningScenarios, planningEvents, recurrenceHints, recurrenceOverrides, refreshData } = useData()
+  const { accounts, transactions, recurrenceHints, recurrenceOverrides, refreshData } = useData()
+  const planning = usePlanning()
+  const { planningGoals = [], planningScenarios = [], planningEvents = [] } = planning.data ?? {}
   const [temporaryMeasure, setTemporaryMeasure] = useState<ProjectionMetric>('cash')
   const [mode, setMode] = useState<QuestionMode>('byDate')
   const [goalName, setGoalName] = useState('Cash reserve')
@@ -142,27 +129,23 @@ export default function StrategicProjections() {
   }, [selectedScenario, recurringSeries, horizonMonths])
   const recurringEvents = useMemo(() => selectedScenario?.includeRecurring ? allRecurringEvents : [], [selectedScenario, allRecurringEvents])
   const baselineRecurringEvents = useMemo(() => baselineScenario?.includeRecurring ? allRecurringEvents : [], [baselineScenario, allRecurringEvents])
-  const baselineTransactions = useMemo(
-    () => selectedScenario?.includeRecurring ? scopedTransactions.filter((transaction) => !recurringTransactionIds.has(transaction.id)) : scopedTransactions,
-    [selectedScenario, scopedTransactions, recurringTransactionIds],
-  )
-  const baselineScenarioTransactions = useMemo(
-    () => baselineScenario?.includeRecurring ? scopedTransactions.filter((transaction) => !recurringTransactionIds.has(transaction.id)) : scopedTransactions,
-    [baselineScenario, scopedTransactions, recurringTransactionIds],
-  )
+  const accountIds = scopedAccounts.map(a=>a.id).sort()
+  const excluded = [...recurringTransactionIds].sort()
+  const movements = useReport(['projection movement',accountIds,metric,selectedScenario?.includeRecurring,baselineScenario?.includeRecurring,excluded],async tenant=>{
+    const selectedIds = selectedScenario?.includeRecurring ? excluded : []
+    const baselineIds = baselineScenario?.includeRecurring ? excluded : []
+    const selected = await projectionHistory(tenant,TODAY,accountIds,metric,selectedIds)
+    const comparison = JSON.stringify(selectedIds) === JSON.stringify(baselineIds) ? selected
+      : await projectionHistory(tenant,TODAY,accountIds,metric,baselineIds)
+    return {selected,comparison}
+  },!!planning.data && !planning.error)
   const currentValue = useMemo(() => currentValueFor(metric, scopedAccounts), [metric, scopedAccounts])
   const investmentBalance = useMemo(
     () => scopedAccounts.filter((account) => account.type === 'Invest').reduce((sum, account) => sum + account.balance, 0),
     [scopedAccounts],
   )
-  const baseline = useMemo(
-    () => deriveProjectionBaseline(metric, scopedAccounts, baselineTransactions),
-    [metric, scopedAccounts, baselineTransactions],
-  )
-  const comparisonBaseline = useMemo(
-    () => deriveProjectionBaseline(metric, scopedAccounts, baselineScenarioTransactions),
-    [metric, scopedAccounts, baselineScenarioTransactions],
-  )
+  const baseline = useMemo(()=>historyBaseline(movements.data?.selected ?? null),[movements.data])
+  const comparisonBaseline = useMemo(()=>historyBaseline(movements.data?.comparison ?? null),[movements.data])
   const inputs = useMemo(() => ({
     metric,
     currentValue,
@@ -198,7 +181,7 @@ export default function StrategicProjections() {
     () => buildProjectionBreakdown({ ...inputs, monthlyAdjustment: showScenario ? scenarioAdjustment : 0, adjustmentStartMonth: scenarioStartMonth }),
     [inputs, showScenario, scenarioAdjustment, scenarioStartMonth],
   )
-  const monthReview = useMemo(() => reviewCompletedMonth({ metric, accounts: scopedAccounts, transactions: scopedTransactions, monthlyRunRate: baseline.monthlyFlow, events: [...savedEvents, ...recurringEvents], }), [metric, scopedAccounts, scopedTransactions, baseline.monthlyFlow, savedEvents, recurringEvents])
+  const monthReview = useMemo(()=>historyReview(movements.data?.selected ?? null,baseline.monthlyFlow,[...savedEvents,...recurringEvents]),[movements.data,baseline.monthlyFlow,savedEvents,recurringEvents])
   const targetPoint = firstTargetPoint(projection, target)
   const chartProjection = mode === 'reachTarget' && targetPoint
     ? projection.slice(0, projection.indexOf(targetPoint) + 1)
@@ -234,9 +217,10 @@ export default function StrategicProjections() {
   const scenarioStartLabel = scenarioStartMode === 'now' ? 'now' : dateLabel(scenarioStartDate)
   const scenarioSentence = `${SCENARIO_ACTIONS[scenarioAction].sentence} ${fmt(scenarioAmountCents)} per month`
 
-  const monthlyReport = useReport('monthly', monthlyWorth, metric === 'netWorth')
+  const needsMonthly = metric === 'netWorth' && (!selectedGoal || selectedGoal.accountIds.length === accounts.length)
+  const monthlyReport = useReport('monthly', monthlyWorth, needsMonthly)
   const history = useMemo(() => {
-    if (metric === 'cash') return cashHistory(scopedAccounts, scopedTransactions, currentValue)
+    if (metric === 'cash') return (movements.data?.selected.months ?? []).slice(-7).map(m=>({date:m.month.slice(0,7),value:m.cash_balance_cents}))
     // net_worth_monthly is tenant-wide. Do not present it as account-scoped
     // history for a goal that deliberately includes only some accounts.
     if (selectedGoal && selectedGoal.accountIds.length !== accounts.length) {
@@ -247,7 +231,7 @@ export default function StrategicProjections() {
     if (!points.length || points.at(-1)?.date !== currentMonth) points.push({ date: currentMonth, value: currentValue })
     else points[points.length - 1] = { date: currentMonth, value: currentValue }
     return points
-  }, [metric, accounts, scopedAccounts, scopedTransactions, currentValue, monthlyReport.data, selectedGoal])
+  }, [metric, accounts, movements.data, currentValue, monthlyReport.data, selectedGoal])
 
   useEffect(() => {
     if (selectedGoal) {
@@ -316,6 +300,9 @@ export default function StrategicProjections() {
 
   const noHistory = baseline.monthsUsed === 0
   const resultTone = mode === 'byDate' ? (gap >= 0 ? 'pos' : 'neg') : targetPoint ? 'pos' : 'neg'
+
+  const unavailable = [planning,movements,...(needsMonthly ? [monthlyReport] : [])].find(r=>r.error || r.pending || !r.data)
+  if (unavailable) return <Grid><Tile span={3}><ReportStatus report={unavailable} label="Projection inputs" /></Tile></Grid>
 
   return (
     <Grid>

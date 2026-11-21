@@ -45,7 +45,7 @@ function forbiddenCalls(text: string, fileName = 'fixture.ts'): string[] {
       const name = node.arguments[0]
       const ledgerRead = fileName === 'src/lib/ledgerPage.ts' && name && ts.isStringLiteral(name)
         && ['ledger_page', 'ledger_selection_ids', 'ledger_review_ids', 'account_activity_categories', 'transfer_group_batch', 'transfer_overflow_summary'].includes(name.text)
-      const reportRead = fileName === 'src/lib/reports.ts' && name && ts.isStringLiteral(name)
+      const reportRead = ['src/lib/reports.ts','src/lib/projectionHistory.ts'].includes(fileName) && name && ts.isStringLiteral(name)
         && ['portfolio_summary', 'cash_flow_report', 'movement_history'].includes(name.text)
       if ((MUTATORS.has(method) && isSupabaseFromChain(receiver)) || (isDirectRpc && !reportRead && !ledgerRead)) {
         const { line, character } = source.getLineAndCharacterOfPosition(node.getStart(source))

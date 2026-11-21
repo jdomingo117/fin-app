@@ -5,7 +5,6 @@ import type { Account, Txn, Achievement, TransactionAllocation } from '../data'
 import type { RecurrenceHint, RecurringSeriesOverride } from '../lib/recurring'
 import { useAuth } from './AuthContext'
 import { expandTransactionAllocations } from '../lib/allocations'
-import type { PlanningGoal, PlanningScenario, PlanningEvent } from '../lib/planning'
 
 export type ProfileData = {
   callsign: string
@@ -32,9 +31,6 @@ interface DataCtx {
   budgets: Budget[]
   recurrenceHints: Map<string, RecurrenceHint>
   recurrenceOverrides: RecurringSeriesOverride[]
-  planningGoals: PlanningGoal[]
-  planningScenarios: PlanningScenario[]
-  planningEvents: PlanningEvent[]
   refreshData: () => Promise<void>
 }
 
@@ -63,9 +59,6 @@ export const DataContext = createContext<DataCtx>({
   budgets: [],
   recurrenceHints: new Map(),
   recurrenceOverrides: [],
-  planningGoals: [],
-  planningScenarios: [],
-  planningEvents: [],
   refreshData: async () => {},
 })
 
@@ -90,9 +83,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [budgets, setBudgets] = useState<Budget[]>([])
   const [recurrenceHints, setRecurrenceHints] = useState<Map<string, RecurrenceHint>>(new Map())
   const [recurrenceOverrides, setRecurrenceOverrides] = useState<RecurringSeriesOverride[]>([])
-  const [planningGoals, setPlanningGoals] = useState<PlanningGoal[]>([])
-  const [planningScenarios, setPlanningScenarios] = useState<PlanningScenario[]>([])
-  const [planningEvents, setPlanningEvents] = useState<PlanningEvent[]>([])
   // Connection ids already given a stale-sync this session — refreshData()
   // runs after nearly every mutation, and without this a single session
   // would fire the same background sync repeatedly instead of once.
@@ -112,9 +102,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setBudgets([])
     setRecurrenceHints(new Map())
     setRecurrenceOverrides([])
-    setPlanningGoals([])
-    setPlanningScenarios([])
-    setPlanningEvents([])
     setLoadError(null)
     setRefreshError(null)
     setIsRefreshing(false)
@@ -156,7 +143,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       // The getUser() round-trip that used to guard this block is also gone;
       // RequireAuth already gates every route that mounts this provider, and
       // an invalid token now fails the queries themselves.
-      const [profileRes, accountsRes, txnsRes, achievementsRes, userAchievementsRes, budgetsRes, accountConnectionsRes, recurrenceHintsRes, recurrenceOverridesRes, allocationsRes, planningGoalsRes, planningGoalAccountsRes, planningScenariosRes, planningEventsRes] = await Promise.all([
+      const [profileRes, accountsRes, txnsRes, achievementsRes, userAchievementsRes, budgetsRes, accountConnectionsRes, recurrenceHintsRes, recurrenceOverridesRes, allocationsRes] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
         supabase.from('accounts').select('*'),
         supabase.from('transactions_analytic').select('*').order('date', { ascending: false }),
@@ -167,17 +154,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
         supabase.from('merchant_recurrence_hints').select('merchant_key, is_recurring, suggested_cadence, confidence'),
         supabase.from('recurring_series_overrides').select('id,merchant_key,account_id,state,cadence_override,expected_amount_override,next_expected_override,reminder_days_before'),
         supabase.from('transaction_allocations').select('id,transaction_id,position,amount,kind,category,subcategory,note').order('position'),
-        supabase.from('planning_goals').select('id,name,metric,target_cents,target_date,status,updated_at').order('updated_at', { ascending: false }),
-        supabase.from('planning_goal_accounts').select('goal_id,account_id'),
-        supabase.from('planning_scenarios').select('id,goal_id,name,is_baseline,annual_return_bps,include_recurring,status'),
-        supabase.from('planning_events').select('id,scenario_id,name,amount_cents,cadence,start_date,end_date').order('start_date'),
       ])
       if (!isCurrent()) return
 
       const requiredError = [profileRes, accountsRes, txnsRes].find((result) => result.error)?.error
       if (requiredError) throw requiredError
 
-      const optionalResults = [achievementsRes, userAchievementsRes, budgetsRes, accountConnectionsRes, recurrenceHintsRes, recurrenceOverridesRes, allocationsRes, planningGoalsRes, planningGoalAccountsRes, planningScenariosRes, planningEventsRes]
+      const optionalResults = [achievementsRes, userAchievementsRes, budgetsRes, accountConnectionsRes, recurrenceHintsRes, recurrenceOverridesRes, allocationsRes]
       for (const result of optionalResults) {
         if (result.error) console.warn('Optional data enrichment failed:', result.error.message)
       }
@@ -291,21 +274,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
         nextExpectedOverride: override.next_expected_override,
         reminderDaysBefore: override.reminder_days_before,
       })))
-      const planningAccountsByGoal = new Map<string, string[]>()
-      for (const row of planningGoalAccountsRes.data ?? []) {
-        const ids = planningAccountsByGoal.get(row.goal_id) ?? []
-        ids.push(row.account_id)
-        planningAccountsByGoal.set(row.goal_id, ids)
-      }
-      setPlanningGoals((planningGoalsRes.data ?? []).map((goal) => ({
-        id: goal.id, name: goal.name, metric: goal.metric as PlanningGoal['metric'],
-        targetCents: goal.target_cents, targetDate: goal.target_date,
-        status: goal.status as PlanningGoal['status'], accountIds: planningAccountsByGoal.get(goal.id) ?? [],
-        updatedAt: goal.updated_at,
-      })))
-      setPlanningScenarios((planningScenariosRes.data ?? []).map((scenario) => ({ id: scenario.id, goalId: scenario.goal_id, name: scenario.name, isBaseline: scenario.is_baseline, annualReturnBps: scenario.annual_return_bps, includeRecurring: scenario.include_recurring, status: scenario.status as PlanningScenario['status'] })))
-      setPlanningEvents((planningEventsRes.data ?? []).map((event) => ({ id: event.id, scenarioId: event.scenario_id, name: event.name, amountCents: event.amount_cents, cadence: event.cadence as PlanningEvent['cadence'], startDate: event.start_date, endDate: event.end_date })))
-
       setProfile({ callsign: fetchedProfile?.callsign || 'Operator' })
       setLoadState('ready')
       setLoadError(null)
@@ -333,7 +301,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, [refreshData])
 
   return (
-    <DataContext.Provider value={{ reportRevision, loadState, loadError, isRefreshing, refreshError, profile, isAdmin, accounts, transactions, reportingTransactions, achievements, budgets, recurrenceHints, recurrenceOverrides, planningGoals, planningScenarios, planningEvents, refreshData }}>
+    <DataContext.Provider value={{ reportRevision, loadState, loadError, isRefreshing, refreshError, profile, isAdmin, accounts, transactions, reportingTransactions, achievements, budgets, recurrenceHints, recurrenceOverrides, refreshData }}>
       {children}
     </DataContext.Provider>
   )

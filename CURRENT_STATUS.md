@@ -9,7 +9,7 @@ tags:
 type: handoff
 status: current
 project: Halcyon
-updated: 2026-11-19
+updated: 2026-11-21
 related:
   - "[[README]]"
   - "[[INDEX]]"
@@ -19,16 +19,43 @@ related:
 
 # Halcyon — Current status
 
-## Resume here — 19 November 2026
+## Resume here — 21 November 2026
 
-Budget Look back now shows up to 12 budgets month by month. The owner’s local project
-received the forward migration on 18 November. The [Stage 4 record](docs/budget/BUDGET_TABLE_STAGE_4.md)
-contains the backup, parity checks and signed-in result. Observed screen-reader testing
-and hosted qualification remain open.
+The authorized Wave 1–3C audit implementation is complete on
+`feat/wave-3c-4-retire-global-refresh`, based on Wave 3C.3 `b175f80`.
+Local `main` was fast-forwarded from `28eb39e` to `b175f80`; nothing was pushed.
 
-The current engineering task is Wave 1 repository cleanup. Use the
-[offline verification commands](AGENTS.md#verification-from-app) on the cleanup branch.
-Later audit waves require separate approval.
+- Wave 1 removed dead dependencies/code and standardized the Supabase v2 runner.
+- Wave 2 extracted transfer/projection presentation and bounded sync polling.
+- Wave 3A/3B preserved provider edits, atomic anchors and session/request sequencing.
+- Wave 3C.1/3C.2 added tenant-scoped SQL reporting and wired reporting surfaces.
+- Wave 3C.3 paged row/review queues and loaded complete parents only when editing.
+- Wave 3C.4 lazily scopes taxonomy, ingestion identifiers, complete planning and
+  recurrence evidence; Projections uses movement history and on-demand monthly
+  valuations. DataContext has **three logical boot reads**, profile plus complete
+  narrow account/connection directories, down from the **17 actual reads** in
+  `b175f80` (the audit brief called this 18). No global transaction/allocation,
+  achievement, legacy Budget or specialist collection remains. Settings callsign
+  refreshes profile only. Same-user tenant switches and invalidated page/evidence
+  completions are guarded and covered by offline tests.
+
+The new additive migration is
+`20261121020000_recurrence_scoped_helpers.sql`:
+`recurrence_scope_summary(uuid,date,uuid[],text,jsonb)` is STABLE SECURITY INVOKER,
+checks tenant membership, uses explicit tenant predicates and the fixed search
+path, revokes PUBLIC/anon/service_role execution and grants authenticated only.
+BudgetContext, query-budget and private Budget service contracts are intact.
+
+Verification/deployment notes: run the full offline suite after each commit;
+the required final browser/PostgREST qualification uses a fresh disposable v2
+stack with `max_rows=1000`, >1,000 ordinary/annual observations, saved planning
+and Budget fixtures, exact request counts and zero runtime errors. Its observed
+results and teardown are reported in the task handback; temporary QA artifacts
+are removed. **No personal database contact, migration, hosted deployment or
+release approval is part of this work.** Before any later persistent-target
+migration, follow SYSTEM_INTEGRITY.md, back up that exact target, and forward
+apply the unapplied Wave 3C read-contract migrations in order. Budget's existing
+observed screen-reader and hosted qualification notes remain separate.
 
 ## Historical decisions and verification
 

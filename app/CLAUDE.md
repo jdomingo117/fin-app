@@ -24,10 +24,15 @@ which Framer Motion can't interpolate.
 
 ## Data flow
 
-`contexts/DataContext.tsx` is the fetch layer — components read from `useData()`, they don't call
-`supabase.from(...)` directly except inside a small number of contained components (`OskoLinker.tsx`,
-account modals) that manage their own local state alongside the global one. `contexts/AuthContext.tsx`
-holds `session`, `user`, `tenantId`, `role` — `DataContext` consumes it, not the other way round.
+`contexts/DataContext.tsx` owns profile identity, complete narrow account/connection
+ directories, stale sync coordination and scoped invalidation. Shared reporting and
+row-review data lives in `hooks/useReport.ts` / `useKeysetPage.ts` and tenant-scoped
+SQL reads; taxonomy, ingestion identifiers, planning and recurrence each have lazy
+complete scoped hooks. There are no global transaction/allocation arrays. Use
+`refreshData()` after broad financial mutations, `invalidateReports()` for scoped
+financial invalidation, and `refreshProfile()` for identity-only edits. Auth holds
+`session`, `user`, `tenantId`, `role`; data and scoped request identities include
+both user and tenant so a same-user tenant switch cannot retain old rows.
 
 **Money is always integer cents.** Convert to a display string in exactly one place: `fmt()` /
 `fmtCents()` in `data.ts`. Never format a raw amount inline — this bug has recurred five separate

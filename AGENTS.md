@@ -82,6 +82,8 @@ hand to find the transfer-linker gap.
 
 ## Recent changes
 
+- 2026-11-21 — Wave 3C.4 scopes taxonomy, identifiers, planning and recurrence; DataContext boots profile/account directories only, with tenant-safe targeted invalidation.
+
 - 2026-11-21 — Wave 3C.3 pages Ledger, Accounts, Expenses and transfer/investment queues with full-parent editing and group-wide transfer batches.
 
 - 2026-11-21 — Wave 3C.2 wires six reporting surfaces to scoped SQL reads, including monthly valuations and account balance history.
@@ -100,4 +102,3 @@ hand to find the transfer-linker gap.
 
 - 2026-11-18 — Budget Look back shows up to 12 budgets month by month (migration 20261118000000, query-budget `months`).
 
-- 2026-11-13 — Budget auto-build review lists every draft line with where its amount came from; edits relabel only that row.

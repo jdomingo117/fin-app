@@ -9,9 +9,12 @@ import Area from '../components/charts/Area'
 import Bar from '../components/charts/Bar'
 import { fmt, fmtCents, glowColor, type Glow } from '../data'
 import { useData } from '../contexts/DataContext'
-import { earnedIncomeCents, expenseEffectCents, isGrossExpense } from '../lib/classification'
+import { cashFlow, latestLines, monthlyWorth } from '../lib/reports'
+import { usePortfolio } from '../hooks/usePortfolio'
+import { useReport } from '../hooks/useReport'
+import ReportStatus from '../components/ReportStatus'
 import { useView } from '../router'
-import { MONTHS, TODAY, addDays, iso } from '../lib/period'
+import { addDays, iso } from '../lib/period'
 
 // Single source of truth for the Recent Activity tile, so its row count and
 // its "last N" tag text can't drift apart the way they used to (tag said 5,
@@ -64,11 +67,11 @@ function getAccountIcon(type: string, name: string) {
 }
 
 export default function Dashboard() {
-  const { accounts, reportingTransactions: transactions, netWorthHistory, refreshData } = useData()
+  const { accounts, transactions: parentTransactions, refreshData } = useData()
   const { go, toast } = useView()
   const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null)
   const selectedTransaction = selectedTransactionId
-    ? transactions.find((transaction) => transaction.id === selectedTransactionId) ?? null
+    ? parentTransactions.find((transaction) => transaction.id === selectedTransactionId) ?? null
     : null
 
   const refreshAfterTransactionEdit = async () => {
@@ -76,37 +79,28 @@ export default function Dashboard() {
     toast({ title: 'Transaction updated', sub: 'Dashboard activity has been refreshed.' })
   }
   
-  // Calculate flow — a real trailing 30-CALENDAR-day window (today - 29
-  // through today), not "the last 30 transactions". A transaction-count slice
-  // silently drifts wider or narrower than 30 days depending on how many
-  // transactions actually happened recently.
+  const today = iso(new Date())
   const thirtyDaysAgoIso = iso(addDays(new Date(), -29))
-  const recentTxns = transactions.filter(t => t.date >= thirtyDaysAgoIso && t.date <= TODAY && !t.isTransfer && !t.pending)
-  const inc = recentTxns.reduce((sum, t) => sum + earnedIncomeCents(t), 0)
-  const spend = recentTxns.reduce((sum, t) => sum + expenseEffectCents(t), 0)
+  const summary = usePortfolio()
+  const flow = useReport([thirtyDaysAgoIso,today], tenant => cashFlow(tenant,{p_from:thirtyDaysAgoIso,p_to:today}))
+  const activity = useReport('recent', tenant => latestLines(tenant,RECENT_ACTIVITY_COUNT))
+  const history = useReport('monthly',monthlyWorth)
+  const [chartType, setChartType] = useState<'line' | 'bar'>('line')
+  if (!summary.data || !flow.data) return <Screen><ViewHeader index="01 — Command" title="Dashboard" sub="Your finances at a glance" />
+    <ReportStatus report={summary} label="Portfolio" /><ReportStatus report={flow} label="Cash flow" /></Screen>
+  const inc = flow.data.periods.current.earned_cents
+  const spend = flow.data.periods.current.expense_cents
   const savings = inc === 0 ? 0 : Math.round(((inc - spend) / inc) * 100)
   const percentOfInflow = inc === 0 ? 0 : Math.round((spend / inc) * 100)
 
-  // Real vs-prior-30-days comparison (days 30-59 ago), replacing the old
-  // hardcoded +4.2%/-1.8% badges. 0% when there's no prior-window data to
-  // compare against, not a claim that nothing changed.
-  const sixtyDaysAgoIso = iso(addDays(new Date(), -59))
-  const priorTxns = transactions.filter(t => t.date >= sixtyDaysAgoIso && t.date < thirtyDaysAgoIso && !t.isTransfer && !t.pending)
-  const priorInc = priorTxns.reduce((sum, t) => sum + earnedIncomeCents(t), 0)
-  const priorSpend = priorTxns.reduce((sum, t) => sum + expenseEffectCents(t), 0)
+  const priorInc = flow.data.periods.prior.earned_cents
+  const priorSpend = flow.data.periods.prior.expense_cents
   const incChangePct = priorInc === 0 ? 0 : Math.round(((inc - priorInc) / priorInc) * 1000) / 10
   const spendChangePct = priorSpend === 0 ? 0 : Math.round(((spend - priorSpend) / priorSpend) * 1000) / 10
   
-  // Calculate allocation from actual accounts. `Liquid` and `Savings` are
-  // both spendable cash — the type split exists for account *behavior*
-  // elsewhere in the app (e.g. transfer matching), not for "is this cash".
-  // `Debt`/`Credit Card`/`Loan` are liabilities, not assets, so they're left
-  // out of this donut entirely (consistent with Math.max(0, ...) already
-  // flooring a negative balance to 0 rather than counting it as negative cash).
-  const CASH_TYPES = new Set(['liquid', 'savings'])
-  const liquidSum = accounts.filter(a => CASH_TYPES.has(a.type.toLowerCase())).reduce((sum, a) => sum + Math.max(0, a.balance), 0)
-  const investSum = accounts.filter(a => a.type.toLowerCase() === 'invest').reduce((sum, a) => sum + Math.max(0, a.balance), 0)
-  
+  const liquidSum = summary.data.cash_asset_cents
+  const investSum = summary.data.investment_asset_cents
+
   const allocation = []
   if (investSum > 0) allocation.push({ label: 'Investments', value: investSum, glow: 'green' as Glow })
   if (liquidSum > 0) allocation.push({ label: 'Cash', value: liquidSum, glow: 'cyan' as Glow })
@@ -117,21 +111,19 @@ export default function Dashboard() {
   // Spending insights use settled, real outflows only.  Unlike the old
   // capacity tile, they don't invent a budget baseline when the person has
   // not actually configured one.
-  const recentExpenses = recentTxns.filter(isGrossExpense)
-  const catSpending: Record<string, number> = {}
-  recentExpenses.forEach(t => {
-    if (t.cat) catSpending[t.cat] = (catSpending[t.cat] || 0) + Math.abs(t.amount)
-  })
+  const catSpending: Record<string, number> = Object.create(null)
+  const priorCatSpending: Record<string, number> = Object.create(null)
+  for (const facet of flow.data.categories) {
+    if (!facet.gross_cents) continue
+    const totals = facet.period === 'current' ? catSpending : priorCatSpending
+    totals[facet.category] = (totals[facet.category] ?? 0) + facet.gross_cents
+  }
   const rankedCategories = Object.entries(catSpending)
     .map(([category, amount]) => ({ category, amount }))
     .sort((a, b) => b.amount - a.amount)
   const topCategory = rankedCategories[0] ?? null
   const topCategoryShare = spend > 0 && topCategory ? Math.round((topCategory.amount / spend) * 100) : 0
 
-  const priorCatSpending: Record<string, number> = {}
-  priorTxns.filter(isGrossExpense).forEach(t => {
-    if (t.cat) priorCatSpending[t.cat] = (priorCatSpending[t.cat] || 0) + Math.abs(t.amount)
-  })
   const largestCategoryChange = Array.from(new Set([...Object.keys(catSpending), ...Object.keys(priorCatSpending)]))
     .map((category) => ({
       category,
@@ -140,48 +132,12 @@ export default function Dashboard() {
     }))
     .filter((change) => change.delta !== 0)
     .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))[0] ?? null
-  const reviewCount = recentExpenses.filter((t) => t.cat === 'Uncategorized' || t.needsReview).length
-
-  // Net worth trend calculated dynamically from transactions
-  const currentNetWorth = accounts.reduce((sum, a) => sum + a.balance, 0)
-  
-  const fallbackNetWorthTrend: number[] = []
-  let runningNW = currentNetWorth
-  
-  const now = new Date()
-  for (let i = 0; i < 12; i++) {
-    fallbackNetWorthTrend.unshift(runningNW)
-    
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
-    const monthStartIso = d.toISOString().split('T')[0]
-    const nextMonth = new Date(now.getFullYear(), now.getMonth() - i + 1, 1)
-    const nextMonthIso = nextMonth.toISOString().split('T')[0]
-    
-    // Pending (HELD) transactions may still change on settlement — excluded
-    // here for the same reason every other aggregate in this app waits for
-    // settlement, so the trend doesn't wobble as holds resolve.
-    const txnsInMonth = transactions.filter(t => t.date >= monthStartIso && t.date < nextMonthIso && !t.pending)
-    const monthDelta = txnsInMonth.reduce((sum, t) => sum + t.amount, 0)
-
-    runningNW -= monthDelta
-  }
-  const visibleNetWorthHistory = netWorthHistory.slice(-12)
-  const netWorthTrend = visibleNetWorthHistory.length > 0
-    ? visibleNetWorthHistory.map((point) => point.value)
-    : fallbackNetWorthTrend
-  const netWorthLabels = visibleNetWorthHistory.length > 0
-    ? visibleNetWorthHistory.map((point) => point.month.slice(0, 7))
-    : MONTHS
-
-  // Net worth as of the start of the current calendar month — the second-to-
-  // last trend point, a byproduct of the loop above. Reused instead of a
-  // second calculation to drive the hero card's real "this month" badge.
-  const netWorthMonthStart = netWorthTrend[netWorthTrend.length - 2] ?? currentNetWorth
-  const netWorthMonthChangePct = netWorthMonthStart === 0
-    ? 0
-    : Math.round(((currentNetWorth - netWorthMonthStart) / Math.abs(netWorthMonthStart)) * 1000) / 10
-
-  const [chartType, setChartType] = useState<'line' | 'bar'>('line')
+  const reviewCount = flow.data.periods.current.expense_attention_count
+  const currentNetWorth = summary.data.net_worth_cents
+  const netWorthTrend = history.data?.map(point=>point.value) ?? []
+  const netWorthLabels = history.data?.map(point=>point.month.slice(0,7)) ?? []
+  const previous = netWorthTrend.at(-2)
+  const netWorthMonthChangePct = previous ? Math.round((currentNetWorth-previous)/Math.abs(previous)*1000)/10 : undefined
 
   return (
     <Screen>
@@ -192,13 +148,14 @@ export default function Dashboard() {
         - On desktop, it is a 3-column layout (class 'xl:grid-cols-3').
         - On mobile/tablet, it defaults to a 1-column layout.
       */}
+      <ReportStatus report={summary} label="Portfolio" /><ReportStatus report={flow} label="Cash flow" />
       <Grid>
         {/* 
           Row 1: Three Hero KPI Cards 
           Each card takes up 1 column by default, filling the 3-column row on desktop.
         */}
         <div className="relative">
-          <HeroCard variant="tile" monthChangePct={netWorthMonthChangePct} />
+          <HeroCard variant="tile" netWorth={currentNetWorth} monthChangePct={netWorthMonthChangePct} />
         </div>
 
         <Tile>
@@ -259,11 +216,13 @@ export default function Dashboard() {
               className="h-full pb-3.5"
             >
               <div className="mt-1">
-                {chartType === 'line' ? (
+                <ReportStatus report={history} label="Net worth history" />
+                {history.data && !history.data.length && <p>No monthly history yet.</p>}
+                {netWorthTrend.length > 0 && (chartType === 'line' ? (
                   <Area key="line" series={[{ data: netWorthTrend, color: 'var(--color-accent)' }]} labels={netWorthLabels} height={240} />
                 ) : (
                   <Bar key="bar" series={[{ data: netWorthTrend, color: 'var(--color-accent)' }]} labels={netWorthLabels} height={240} />
-                )}
+                ))}
               </div>
             </Tile>
           </div>
@@ -316,8 +275,8 @@ export default function Dashboard() {
           savings={savings}
           income={inc}
           reviewCount={reviewCount}
-          onExploreExpenses={() => go('expenses', { state: { source: 'dashboard-insight', from: thirtyDaysAgoIso, to: TODAY } })}
-          onExploreCategory={(category) => go('expenses', { state: { source: 'dashboard-insight', category, from: thirtyDaysAgoIso, to: TODAY } })}
+          onExploreExpenses={() => go('expenses', { state: { source: 'dashboard-insight', from: thirtyDaysAgoIso, to: today } })}
+          onExploreCategory={(category) => go('expenses', { state: { source: 'dashboard-insight', category, from: thirtyDaysAgoIso, to: today } })}
           onReviewLedger={() => go('ledger', { state: { source: 'dashboard-insight', review: 'needs-review' } })}
           onExploreIncome={() => go('income')}
         />
@@ -327,11 +286,12 @@ export default function Dashboard() {
           - 'span={3}' translates to 'md:col-span-2 xl:col-span-3', stretching this card across the full width (3 columns) at the bottom.
         */}
         <Tile title="Recent activity" tag={`last ${RECENT_ACTIVITY_COUNT}`} span={3}>
-          {transactions.length > 0 ? <Ledger rows={transactions.slice(0, RECENT_ACTIVITY_COUNT)} onEdit={(transaction) => setSelectedTransactionId(transaction.id)} /> : (
-            <div className="py-10 text-center"><p className="body-copy">No settled transactions yet.</p>
+          <ReportStatus report={activity} label="Recent activity" />
+          {activity.data && (activity.data.length > 0 ? <Ledger rows={activity.data} onEdit={(transaction) => setSelectedTransactionId(transaction.parentTransactionId ?? transaction.id)} /> : (
+            <div className="py-10 text-center"><p className="body-copy">No transactions yet.</p>
               <button type="button" onClick={() => go('ingestion')} className="mt-3 text-[13px] font-semibold text-accent hover:opacity-80">Import a statement</button>
             </div>
-          )}
+          ))}
         </Tile>
       </Grid>
       <TransactionCategoryDrawer

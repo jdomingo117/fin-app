@@ -1,3 +1,5 @@
+import {useReport} from '../hooks/useReport'
+import {monthlyWorth} from '../lib/reports'
 import { useEffect, useMemo, useState } from 'react'
 import { Assumption, ForecastReadout, Legend, PlanningWarning } from './projections/ForecastReadout'
 import { CalculationBreakdown } from './projections/CalculationBreakdown'
@@ -81,7 +83,7 @@ function cashHistory(accounts: Account[], transactions: Txn[], current: number):
 }
 
 export default function StrategicProjections() {
-  const { accounts, transactions, netWorthHistory, planningGoals, planningScenarios, planningEvents, recurrenceHints, recurrenceOverrides, refreshData } = useData()
+  const { accounts, transactions, planningGoals, planningScenarios, planningEvents, recurrenceHints, recurrenceOverrides, refreshData } = useData()
   const [temporaryMeasure, setTemporaryMeasure] = useState<ProjectionMetric>('cash')
   const [mode, setMode] = useState<QuestionMode>('byDate')
   const [goalName, setGoalName] = useState('Cash reserve')
@@ -232,6 +234,7 @@ export default function StrategicProjections() {
   const scenarioStartLabel = scenarioStartMode === 'now' ? 'now' : dateLabel(scenarioStartDate)
   const scenarioSentence = `${SCENARIO_ACTIONS[scenarioAction].sentence} ${fmt(scenarioAmountCents)} per month`
 
+  const monthlyReport = useReport('monthly', monthlyWorth, metric === 'netWorth')
   const history = useMemo(() => {
     if (metric === 'cash') return cashHistory(scopedAccounts, scopedTransactions, currentValue)
     // net_worth_monthly is tenant-wide. Do not present it as account-scoped
@@ -239,12 +242,12 @@ export default function StrategicProjections() {
     if (selectedGoal && selectedGoal.accountIds.length !== accounts.length) {
       return [{ date: new Date().toISOString().slice(0, 7), value: currentValue }]
     }
-    const points = netWorthHistory.slice(-7).map((point) => ({ date: point.month.slice(0, 7), value: point.value }))
+    const points = (monthlyReport.data ?? []).slice(-7).map((point) => ({ date: point.month.slice(0, 7), value: point.value }))
     const currentMonth = new Date().toISOString().slice(0, 7)
     if (!points.length || points.at(-1)?.date !== currentMonth) points.push({ date: currentMonth, value: currentValue })
     else points[points.length - 1] = { date: currentMonth, value: currentValue }
     return points
-  }, [metric, accounts, scopedAccounts, scopedTransactions, currentValue, netWorthHistory, selectedGoal])
+  }, [metric, accounts, scopedAccounts, scopedTransactions, currentValue, monthlyReport.data, selectedGoal])
 
   useEffect(() => {
     if (selectedGoal) {

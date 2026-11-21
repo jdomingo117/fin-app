@@ -17,9 +17,9 @@ import { useData } from '../contexts/DataContext'
 const morph = { type: 'spring', stiffness: 210, damping: 28 } as const
 const springCfg = { stiffness: 150, damping: 18 } as const
 
-export default function HeroCard({ variant, monthChangePct }: { variant: 'card' | 'tile'; monthChangePct?: number }) {
-  const { profile, accounts } = useData()
-  const netWorth = accounts.reduce((sum, a) => sum + a.balance, 0)
+export default function HeroCard({ variant, netWorth = 0, monthChangePct }: { variant: 'card' | 'tile'; netWorth?:number; monthChangePct?: number }) {
+  const { profile } = useData()
+
 
   const mvX = useMotionValue(0)
   const mvY = useMotionValue(0)

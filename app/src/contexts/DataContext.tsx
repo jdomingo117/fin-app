@@ -32,7 +32,6 @@ interface DataCtx {
   budgets: Budget[]
   recurrenceHints: Map<string, RecurrenceHint>
   recurrenceOverrides: RecurringSeriesOverride[]
-  netWorthHistory: { month: string; value: number }[]
   planningGoals: PlanningGoal[]
   planningScenarios: PlanningScenario[]
   planningEvents: PlanningEvent[]
@@ -65,7 +64,6 @@ export const DataContext = createContext<DataCtx>({
   budgets: [],
   recurrenceHints: new Map(),
   recurrenceOverrides: [],
-  netWorthHistory: [],
   planningGoals: [],
   planningScenarios: [],
   planningEvents: [],
@@ -94,7 +92,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [budgets, setBudgets] = useState<Budget[]>([])
   const [recurrenceHints, setRecurrenceHints] = useState<Map<string, RecurrenceHint>>(new Map())
   const [recurrenceOverrides, setRecurrenceOverrides] = useState<RecurringSeriesOverride[]>([])
-  const [netWorthHistory, setNetWorthHistory] = useState<{ month: string; value: number }[]>([])
   const [planningGoals, setPlanningGoals] = useState<PlanningGoal[]>([])
   const [planningScenarios, setPlanningScenarios] = useState<PlanningScenario[]>([])
   const [planningEvents, setPlanningEvents] = useState<PlanningEvent[]>([])
@@ -118,7 +115,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setBudgets([])
     setRecurrenceHints(new Map())
     setRecurrenceOverrides([])
-    setNetWorthHistory([])
     setPlanningGoals([])
     setPlanningScenarios([])
     setPlanningEvents([])
@@ -163,7 +159,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       // The getUser() round-trip that used to guard this block is also gone;
       // RequireAuth already gates every route that mounts this provider, and
       // an invalid token now fails the queries themselves.
-      const [profileRes, accountsRes, txnsRes, achievementsRes, userAchievementsRes, budgetsRes, accountConnectionsRes, accountIdentifiersRes, recurrenceHintsRes, recurrenceOverridesRes, netWorthHistoryRes, allocationsRes, customSubcategoriesRes, taxonomyCategoriesRes, planningGoalsRes, planningGoalAccountsRes, planningScenariosRes, planningEventsRes] = await Promise.all([
+      const [profileRes, accountsRes, txnsRes, achievementsRes, userAchievementsRes, budgetsRes, accountConnectionsRes, accountIdentifiersRes, recurrenceHintsRes, recurrenceOverridesRes, allocationsRes, customSubcategoriesRes, taxonomyCategoriesRes, planningGoalsRes, planningGoalAccountsRes, planningScenariosRes, planningEventsRes] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
         supabase.from('accounts').select('*'),
         supabase.from('transactions_analytic').select('*').order('date', { ascending: false }),
@@ -174,7 +170,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
         supabase.from('account_identifiers').select('account_id, kind, value, source, confidence'),
         supabase.from('merchant_recurrence_hints').select('merchant_key, is_recurring, suggested_cadence, confidence'),
         supabase.from('recurring_series_overrides').select('id,merchant_key,account_id,state,cadence_override,expected_amount_override,next_expected_override,reminder_days_before'),
-        supabase.from('net_worth_monthly').select('month, value_cents').order('month', { ascending: true }),
         supabase.from('transaction_allocations').select('id,transaction_id,position,amount,kind,category,subcategory,note').order('position'),
         supabase.from('tenant_subcategories').select('id,category_id,display_name').eq('active', true).order('display_name'),
         supabase.from('taxonomy_categories').select('id,display_name'),
@@ -188,7 +183,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       const requiredError = [profileRes, accountsRes, txnsRes].find((result) => result.error)?.error
       if (requiredError) throw requiredError
 
-      const optionalResults = [achievementsRes, userAchievementsRes, budgetsRes, accountConnectionsRes, accountIdentifiersRes, recurrenceHintsRes, recurrenceOverridesRes, netWorthHistoryRes, allocationsRes, customSubcategoriesRes, taxonomyCategoriesRes, planningGoalsRes, planningGoalAccountsRes, planningScenariosRes, planningEventsRes]
+      const optionalResults = [achievementsRes, userAchievementsRes, budgetsRes, accountConnectionsRes, accountIdentifiersRes, recurrenceHintsRes, recurrenceOverridesRes, allocationsRes, customSubcategoriesRes, taxonomyCategoriesRes, planningGoalsRes, planningGoalAccountsRes, planningScenariosRes, planningEventsRes]
       for (const result of optionalResults) {
         if (result.error) console.warn('Optional data enrichment failed:', result.error.message)
       }
@@ -359,10 +354,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
         nextExpectedOverride: override.next_expected_override,
         reminderDaysBefore: override.reminder_days_before,
       })))
-      setNetWorthHistory((netWorthHistoryRes.data ?? []).map((point) => ({
-        month: point.month,
-        value: Number(point.value_cents),
-      })))
       const planningAccountsByGoal = new Map<string, string[]>()
       for (const row of planningGoalAccountsRes.data ?? []) {
         const ids = planningAccountsByGoal.get(row.goal_id) ?? []
@@ -405,7 +396,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, [refreshData])
 
   return (
-    <DataContext.Provider value={{ reportRevision, loadState, loadError, isRefreshing, refreshError, profile, isAdmin, accounts, transactions, reportingTransactions, customSubcategories, achievements, budgets, recurrenceHints, recurrenceOverrides, netWorthHistory, planningGoals, planningScenarios, planningEvents, refreshData }}>
+    <DataContext.Provider value={{ reportRevision, loadState, loadError, isRefreshing, refreshError, profile, isAdmin, accounts, transactions, reportingTransactions, customSubcategories, achievements, budgets, recurrenceHints, recurrenceOverrides, planningGoals, planningScenarios, planningEvents, refreshData }}>
       {children}
     </DataContext.Provider>
   )

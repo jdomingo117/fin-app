@@ -217,7 +217,7 @@ describe('DataProvider request sequencing', () => {
 
     await act(async () => { sync.resolve({ error: null }) })
     expect(current.isRefreshing).toBe(true)
-    expect(from).toHaveBeenCalledTimes(36)
+    expect(from.mock.calls.filter(([table]) => table === 'profiles')).toHaveLength(2)
     await finish(followUp, rows('a', { investment: true }))
 
     expectReady(['a'])

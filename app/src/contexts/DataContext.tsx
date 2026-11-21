@@ -8,8 +8,6 @@ import type { PlanningGoal, PlanningScenario, PlanningEvent } from '../lib/plann
 
 export type ProfileData = {
   callsign: string
-  netWorth: number
-  netWorthDelta: number
 }
 
 interface Budget {
@@ -41,7 +39,7 @@ interface DataCtx {
   refreshData: () => Promise<void>
 }
 
-const defaultProfile: ProfileData = { callsign: 'Operator', netWorth: 0, netWorthDelta: 0 }
+const defaultProfile: ProfileData = { callsign: 'Operator' }
 
 // A connection whose balance is older than this gets an automatic
 // background sync on load — no spinner, no blocking, just current data by
@@ -228,7 +226,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           .catch(() => {})
       }
 
-      const netWorth = fetchedAccounts.reduce((sum, acc) => sum + acc.balance, 0)
+
       // Map DB accounts to UI Accounts
       const mappedAccounts: Account[] = fetchedAccounts.map((a) => {
         const connection = connectionByAccountId.get(a.id)
@@ -380,28 +378,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       setPlanningScenarios((planningScenariosRes.data ?? []).map((scenario) => ({ id: scenario.id, goalId: scenario.goal_id, name: scenario.name, isBaseline: scenario.is_baseline, annualReturnBps: scenario.annual_return_bps, includeRecurring: scenario.include_recurring, status: scenario.status as PlanningScenario['status'] })))
       setPlanningEvents((planningEventsRes.data ?? []).map((event) => ({ id: event.id, scenarioId: event.scenario_id, name: event.name, amountCents: event.amount_cents, cadence: event.cadence as PlanningEvent['cadence'], startDate: event.start_date, endDate: event.end_date })))
 
-      // Calculate 30-day net worth delta
-      const thirtyDaysAgo = new Date()
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-      const thirtyDaysAgoIso = thirtyDaysAgo.toISOString().split('T')[0]
-      
-      // We assume balance is current. Sum of transactions in the last 30 days represents the delta.
-      // NetWorthDelta = (Current Net Worth) - (Net Worth 30 days ago) = Sum of all transactions in last 30 days (since transactions are deltas to the accounts)
-      // Transfers are excluded here too: a transfer leg genuinely moves this
-      // account's balance, but is_transfer marks legs already reflected on
-      // the OTHER side of the pair, so including it would double-count the
-      // net-worth swing when both legs land inside the 30-day window.
-      // Pending (HELD) rows are excluded too: a connected account's balance
-      // is already net of holds, so counting one here double-counts it now
-      // and again at its real amount once it settles.
-      const recentTxns = fetchedTxns.filter(t => t.date >= thirtyDaysAgoIso && !t.is_transfer && !t.pending)
-      const netWorthDelta = recentTxns.reduce((sum, t) => sum + t.amount, 0)
-
-      setProfile({
-        callsign: fetchedProfile?.callsign || 'Operator',
-        netWorth,
-        netWorthDelta
-      })
+      setProfile({ callsign: fetchedProfile?.callsign || 'Operator' })
       setLoadState('ready')
       setLoadError(null)
       setRefreshError(null)

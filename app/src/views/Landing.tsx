@@ -2,7 +2,9 @@ import { useEffect, useRef } from 'react'
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
 import HeroCard from '../components/HeroCard'
 import { copyGroup, copyItem } from '../components/motion'
-import { useCountUp } from '../hooks/useCountUp'
+import {usePortfolio} from '../hooks/usePortfolio'
+import ReportStatus from '../components/ReportStatus'
+import {fmtCents} from '../data'
 import { useView } from '../router'
 import { useData } from '../contexts/DataContext'
 
@@ -11,7 +13,7 @@ const soft = { stiffness: 60, damping: 18 } as const
 export default function Landing() {
   const { go } = useView()
   const { profile } = useData()
-  const netWorth = useCountUp(profile.netWorth)
+  const summary = usePortfolio()
   const wheelLock = useRef(false)
 
   // cursor-parallax depth (copy and card move on opposing layers)
@@ -61,16 +63,15 @@ export default function Landing() {
         </motion.h1>
 
         <motion.p variants={copyItem} className="mt-5 max-w-[360px] text-[15px] leading-relaxed text-ink2">
-          Your portfolio is up {profile.netWorthDelta}% this month. Everything is nominal and on track.
+          {summary.data && <>30-day net movement · {fmtCents(summary.data.net_movement_30d_cents)}</>}
         </motion.p>
+        <ReportStatus report={summary} label="Portfolio" />
 
         <motion.div variants={copyItem} className="mt-6 flex items-baseline gap-3">
           <span className="text-[40px] font-bold tabular-nums tracking-tight">
-            <motion.span>{netWorth}</motion.span>
+            {summary.data ? fmtCents(summary.data.net_worth_cents) : '—'}
           </span>
-          <span className="text-[13px] text-muted">
-            total net worth · <span className="font-semibold text-pos">+{profile.netWorthDelta}% MoM</span>
-          </span>
+          <span className="text-[13px] text-muted">total net worth</span>
         </motion.div>
 
         <motion.button

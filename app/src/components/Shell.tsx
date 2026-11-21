@@ -4,7 +4,8 @@ import { NAV, useView } from '../router'
 import { useScramble } from '../hooks/useScramble'
 import { supabase } from '../lib/supabaseClient'
 import { useData } from '../contexts/DataContext'
-import { reviewCount } from '../lib/ledger'
+import {usePortfolio} from '../hooks/usePortfolio'
+import ReportStatus from './ReportStatus'
 import ThemeToggle from './ThemeToggle'
 
 const barSpring = { type: 'spring', stiffness: 120, damping: 20 } as const
@@ -85,15 +86,14 @@ function timeAgo(iso: string, now = Date.now()): string {
 
 export default function Shell({ children }: { children: ReactNode }) {
   const { view, go, toast } = useView()
-  const { profile, transactions, accounts } = useData()
+  const { profile, accounts } = useData()
   // Real sync status only: the latest bank-provider sync. Imported accounts have no sync to report.
   const lastSync = accounts.map((a) => (a.accountConnectionId ? a.lastSyncedAt : undefined)).filter((d): d is string => !!d).sort().at(-1)
   const syncAgo = lastSync ? timeAgo(lastSync) : null
 
-  const pendingTransferReview = transactions.filter(
-    (t) => t.transferState === 'suggested' || t.transferState === 'unmatched',
-  ).length
-  const pendingCategoryReview = reviewCount(transactions)
+  const summary = usePortfolio()
+  const pendingTransferReview = summary.data?.transfer_leg_count
+  const pendingCategoryReview = summary.data?.attention_count
 
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut()
@@ -159,7 +159,7 @@ export default function Shell({ children }: { children: ReactNode }) {
             />
           ))}
         </motion.nav>
-        <main className="relative min-h-0 min-w-0">{children}</main>
+        <main className="relative min-h-0 min-w-0">{summary.error && <ReportStatus report={summary} label="Review counts" />}{children}</main>
       </div>
 
       {/* bottom status strip */}

@@ -1,3 +1,5 @@
+import ReportStatus from './ReportStatus'
+import { useTaxonomy } from '../hooks/useTaxonomy'
 import { useCallback, useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Papa from 'papaparse'
@@ -61,8 +63,10 @@ export default function CSVUploader({
   onImportStateChange,
   onReviewTransfers,
 }: Props) {
-  const { refreshData, customSubcategories } = useData()
+  const { refreshData } = useData()
   const [step, setStep] = useState<Step>('upload')
+  const taxonomy = useTaxonomy(step === 'staging')
+  const { customSubcategories } = taxonomy
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [status, setStatus] = useState('')
@@ -362,6 +366,7 @@ export default function CSVUploader({
 
   return (
     <div className="grid gap-4">
+      {step === 'staging' && <ReportStatus report={taxonomy} label="Custom categories" />}
       {error && (
         <div role="alert" className="rounded-[10px] border border-[var(--color-neg)] bg-[var(--color-neg)]/5 px-3 py-2 text-[13px] text-[var(--color-neg)]">
           {error}

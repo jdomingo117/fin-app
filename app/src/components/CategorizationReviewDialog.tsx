@@ -1,3 +1,5 @@
+import ReportStatus from './ReportStatus'
+import { useTaxonomy } from '../hooks/useTaxonomy'
 import { useAuth } from '../contexts/AuthContext'
 import { hydrateParents } from '../lib/ledgerPage'
 import { applyAfterContributorCheck } from '../lib/categorizationReview'
@@ -50,7 +52,8 @@ export default function CategorizationReviewDialog({
   onClose: (clearSelection?: boolean) => void
   onChanged: () => Promise<void>
 }) {
-  const { customSubcategories } = useData()
+  const taxonomy = useTaxonomy()
+  const { customSubcategories } = taxonomy
   const [response, setResponse] = useState<CategorizationReviewResponse | null>(null)
   const [acceptedIds, setAcceptedIds] = useState<Set<string>>(new Set())
   const [choices, setChoices] = useState<Map<string, ReviewChoice>>(new Map())
@@ -257,6 +260,7 @@ export default function CategorizationReviewDialog({
           </div>
           <button type="button" aria-label="Close preview" disabled={saving} onClick={close} className="grid min-h-11 min-w-11 place-items-center rounded-lg border border-[var(--hair)] disabled:opacity-40">×</button>
         </header>
+        <ReportStatus report={taxonomy} label="Custom categories" />
 
         {batch && batch.total > 1 && <p className="mt-4 text-[14px] font-semibold text-ink2">Batch {batch.index + 1} of {batch.total} · {transactions.length} available to preview{batch.nextSize !== undefined ? ` · ${batch.nextSize} originally in the next batch` : ''}</p>}
         {batch && batch.skipped > 0 && <p role="status" className="mt-3 rounded-xl border border-warn/40 bg-[var(--input-bg)] p-4 body-copy">{batch.skipped} transaction{batch.skipped === 1 ? ' is' : 's are'} no longer available for this review and will be skipped. Other transactions are checked again when the preview is prepared.</p>}

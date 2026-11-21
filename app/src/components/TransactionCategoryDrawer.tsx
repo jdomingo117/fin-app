@@ -1,3 +1,4 @@
+import { useTaxonomy } from '../hooks/useTaxonomy'
 import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -65,7 +66,9 @@ export default function TransactionCategoryDrawer({
   onClose: () => void
   onChanged: () => Promise<void>
 }) {
-  const { customSubcategories, reportRevision } = useData()
+  const { reportRevision } = useData()
+  const taxonomy = useTaxonomy(Boolean(transaction))
+  const { customSubcategories } = taxonomy
   const [category, setCategory] = useState('')
   const [subcategory, setSubcategory] = useState('')
   const [saving, setSaving] = useState(false)
@@ -300,6 +303,7 @@ export default function TransactionCategoryDrawer({
               </div>
               <button type="button" onClick={onClose} aria-label="Close transaction detail" className="grid min-h-11 min-w-11 place-items-center rounded-lg border border-[var(--hair)] text-ink transition hover:bg-[var(--hair-soft)]">×</button>
             </header>
+        <ReportStatus report={taxonomy} label="Custom categories" />
 
             <div className="mt-6 rounded-xl border border-[var(--hair)] bg-[var(--input-bg)] p-4">
               <div className="flex items-baseline justify-between gap-4">

@@ -3,7 +3,8 @@ import { Screen, ViewHeader, Grid } from '../components/Screen'
 import Tile from '../components/Tile'
 import CSVUploader from '../components/CSVUploader'
 import InvestmentCSVUploader from '../components/InvestmentCSVUploader'
-import { useData } from '../contexts/DataContext'
+import { useAccountIdentifiers } from '../hooks/useAccountIdentifiers'
+import ReportStatus from '../components/ReportStatus'
 import { useView, navNumber } from '../router'
 import {
   INITIAL_TARGET_ACCOUNT_ID,
@@ -27,7 +28,8 @@ import {
  * lib/csv/.
  */
 export default function Ingestion() {
-  const { accounts } = useData()
+  const identifiers = useAccountIdentifiers()
+  const { accounts } = identifiers
   const { go } = useView()
   const [accountId, setAccountId] = useState<string>(INITIAL_TARGET_ACCOUNT_ID)
   const [importActive, setImportActive] = useState(false)
@@ -43,6 +45,7 @@ export default function Ingestion() {
       />
       <Grid>
         <Tile title="Target account" span={3} className="workflow-surface">
+          <ReportStatus report={identifiers} label="Account identifiers" />
           {accounts.length === 0 ? (
             <p className="body-copy">
               Create an account before importing — transactions have to belong to one.

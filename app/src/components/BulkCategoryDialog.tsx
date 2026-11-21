@@ -1,9 +1,10 @@
+import ReportStatus from './ReportStatus'
+import { useTaxonomy } from '../hooks/useTaxonomy'
 import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { ALL_CATEGORIES, fmtCents, FULL_TAXONOMY, type Txn } from '../data'
 import { supabase } from '../lib/supabaseClient'
 import { Button, Select } from './Controls'
-import { useData } from '../contexts/DataContext'
 import { buildBulkCategoryChanges, buildBulkCategoryImpact, initialBulkCategoryDraft, LEAVE_UNCHANGED, type BulkDistributionItem } from '../lib/bulkCategory'
 import { KIND_LABELS } from '../lib/classification'
 import { useDialogFocus } from '../hooks/useDialogFocus'
@@ -24,7 +25,8 @@ export default function BulkCategoryDialog({
   onClose: (clearSelection?: boolean) => void
   onChanged: () => Promise<void>
 }) {
-  const { customSubcategories } = useData()
+  const taxonomy = useTaxonomy()
+  const { customSubcategories } = taxonomy
   const initialDraft = useMemo(() => initialBulkCategoryDraft(transactions), [transactions])
   const [category, setCategory] = useState(initialDraft.category)
   const [subcategory, setSubcategory] = useState(initialDraft.subcategory)
@@ -104,6 +106,7 @@ export default function BulkCategoryDialog({
         <p className="mt-3 text-[12.5px] leading-relaxed text-muted">This changes only the selected ledger entries. It does not create a reusable merchant rule.</p>
         {reconciliationCount > 0 && <p role="alert" className="mt-3 rounded-lg border border-[var(--color-neg)] p-3 text-[12px] text-neg">Remove the {reconciliationCount} system reconciliation entr{reconciliationCount === 1 ? 'y' : 'ies'} from the selection before continuing.</p>}
 
+        <ReportStatus report={taxonomy} label="Custom categories" />
         <div className="mt-5 grid gap-3 sm:grid-cols-2">
           <label className="grid gap-1.5 text-[12px] font-semibold text-ink2">Category
             <Select value={category} onChange={(value) => {

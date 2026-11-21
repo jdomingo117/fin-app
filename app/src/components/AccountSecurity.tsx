@@ -209,10 +209,9 @@ export function DangerZoneCard() {
   const exportData = async () => {
     setBusy(true)
     // RLS scopes each of these to the caller's own tenant.
-    const [accounts, transactions, budgets, profiles] = await Promise.all([
+    const [accounts, transactions, profiles] = await Promise.all([
       supabase.from('accounts').select('*'),
       supabase.from('transactions').select('*'),
-      supabase.from('budgets').select('*'),
       supabase.from('profiles').select('*'),
     ])
     const blob = new Blob(
@@ -221,7 +220,6 @@ export function DangerZoneCard() {
         profile: profiles.data,
         accounts: accounts.data,
         transactions: transactions.data,
-        budgets: budgets.data,
       }, null, 2)],
       { type: 'application/json' },
     )

@@ -1,18 +1,11 @@
-import {mapParent} from '../lib/reportParent'
+import { readAccounts, readAccountConnections } from '../lib/accountDirectory'
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, ReactNode } from 'react'
 import { supabase } from '../lib/supabaseClient'
-import type { Account, Txn, Achievement, TransactionAllocation } from '../data'
+import type { Account } from '../data'
 import { useAuth } from './AuthContext'
-import { expandTransactionAllocations } from '../lib/allocations'
 
 export type ProfileData = {
   callsign: string
-}
-
-interface Budget {
-  id: string
-  category: string
-  amount_limit: number
 }
 
 interface DataCtx {
@@ -24,10 +17,8 @@ interface DataCtx {
   profile: ProfileData
   isAdmin: boolean
   accounts: Account[]
-  transactions: Txn[]
-  reportingTransactions: Txn[]
-  achievements: Achievement[]
-  budgets: Budget[]
+  refreshProfile: () => Promise<void>
+  invalidateReports: () => void
   refreshData: () => Promise<void>
 }
 
@@ -50,32 +41,27 @@ export const DataContext = createContext<DataCtx>({
   profile: defaultProfile,
   isAdmin: false,
   accounts: [],
-  transactions: [],
-  reportingTransactions: [],
-  achievements: [],
-  budgets: [],
   refreshData: async () => {},
+  refreshProfile: async () => {},
+  invalidateReports: () => {},
 })
 
 export const useData = () => useContext(DataContext)
 
 export function DataProvider({ children }: { children: ReactNode }) {
-  const { session, isAdmin } = useAuth()
+  const { session, tenantId, isAdmin } = useAuth()
   const userId = session?.user.id ?? null
-  const [identity, setIdentity] = useState({ userId })
+  const [identity, setIdentity] = useState({ userId, tenantId })
   const activeIdentity = useRef<typeof identity | null>(identity)
   const [reportRevision, setReportRevision] = useState(0)
   const sequence = useRef(0)
+  const profileSequence = useRef(0)
   const [loadState, setLoadState] = useState<DataCtx['loadState']>(userId ? 'loading' : 'ready')
   const [loadError, setLoadError] = useState<string | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [refreshError, setRefreshError] = useState<string | null>(null)
   const [profile, setProfile] = useState<ProfileData>(defaultProfile)
   const [accounts, setAccounts] = useState<Account[]>([])
-  const [transactions, setTransactions] = useState<Txn[]>([])
-  const [reportingTransactions, setReportingTransactions] = useState<Txn[]>([])
-  const [achievements, setAchievements] = useState<Achievement[]>([])
-  const [budgets, setBudgets] = useState<Budget[]>([])
   // Connection ids already given a stale-sync this session — refreshData()
   // runs after nearly every mutation, and without this a single session
   // would fire the same background sync repeatedly instead of once.
@@ -85,14 +71,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   // React retries this render before rendering descendants, so consumers
   // never see the previous user's data with the new session.
-  if (identity.userId !== userId) {
-    setIdentity({ userId })
+  if (identity.userId !== userId || identity.tenantId !== tenantId) {
+    setIdentity({ userId, tenantId })
     setProfile(defaultProfile)
     setAccounts([])
-    setTransactions([])
-    setReportingTransactions([])
-    setAchievements([])
-    setBudgets([])
     setLoadError(null)
     setRefreshError(null)
     setIsRefreshing(false)
@@ -104,16 +86,30 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return () => {
       activeIdentity.current = null
       sequence.current++
+      profileSequence.current++
       hasLoaded.current = false
       staleSyncTriggered.current.clear()
       staleInvestmentSyncTriggered.current.clear()
     }
   }, [identity])
 
+  const invalidateReports = useCallback(()=>setReportRevision(n=>n+1),[])
+  // Identity edits do not invalidate financial scopes. A separate generation
+  // also prevents an older all-data refresh from overwriting the new callsign.
+  const refreshProfile = useCallback(async()=>{
+    if (!identity.userId || activeIdentity.current !== identity) return
+    const generation = ++profileSequence.current
+    const {data,error} = await supabase.from('profiles').select('callsign').eq('id',identity.userId).maybeSingle()
+    if (activeIdentity.current !== identity || generation !== profileSequence.current) return
+    if (error) throw error
+    setProfile({callsign:data?.callsign || 'Operator'})
+  },[identity])
+
   const refreshData = useCallback(async function refreshData() {
-    const { userId } = identity
-    if (!userId || activeIdentity.current !== identity) return
-    setReportRevision(n => n + 1)
+    const { userId, tenantId } = identity
+    if (!userId || !tenantId || activeIdentity.current !== identity) return
+    invalidateReports()
+    const profileGeneration = ++profileSequence.current
     const generation = ++sequence.current
     const isCurrent = () => activeIdentity.current === identity && generation === sequence.current
     const background = hasLoaded.current
@@ -125,39 +121,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
       setLoadError(null)
     }
     try {
-      // The explicit .eq('user_id', ...) filters that used to sit on these
-      // queries are gone: membership-based RLS now scopes every row to the
-      // caller's tenant server-side. Client-side filters were never the
-      // boundary, and keeping them implied otherwise — the pattern quietly
-      // invites "just one query without the filter" to become a leak.
-      //
-      // The getUser() round-trip that used to guard this block is also gone;
-      // RequireAuth already gates every route that mounts this provider, and
-      // an invalid token now fails the queries themselves.
-      const [profileRes, accountsRes, txnsRes, achievementsRes, userAchievementsRes, budgetsRes, accountConnectionsRes, allocationsRes] = await Promise.all([
-        supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
-        supabase.from('accounts').select('*'),
-        supabase.from('transactions_analytic').select('*').order('date', { ascending: false }),
-        supabase.from('achievements').select('*'),
-        supabase.from('user_achievements').select('*').eq('user_id', userId),
-        supabase.from('budgets').select('*'),
-        supabase.from('account_connections').select('id, account_id, connection_id, provider, cutover_date, balance_as_of, provider_connections(status)'),
-        supabase.from('transaction_allocations').select('id,transaction_id,position,amount,kind,category,subcategory,note').order('position'),
+      // RLS is the boundary; tenant equality additionally selects the active
+      // scope for users who belong to more than one tenant.
+      const [profileRes, fetchedAccounts, fetchedConnections] = await Promise.all([
+        supabase.from('profiles').select('callsign').eq('id',userId).maybeSingle(),
+        readAccounts(tenantId),
+        readAccountConnections(tenantId),
       ])
       if (!isCurrent()) return
-
-      const requiredError = [profileRes, accountsRes, txnsRes].find((result) => result.error)?.error
-      if (requiredError) throw requiredError
-
-      const optionalResults = [achievementsRes, userAchievementsRes, budgetsRes, accountConnectionsRes, allocationsRes]
-      for (const result of optionalResults) {
-        if (result.error) console.warn('Optional data enrichment failed:', result.error.message)
-      }
-
-      const fetchedAccounts = accountsRes.data ?? []
-      const fetchedTxns = txnsRes.data ?? []
+      if (profileRes.error) throw profileRes.error
       const fetchedProfile = profileRes.data
-      const fetchedConnections = accountConnectionsRes.data || []
       const connectionByAccountId = new Map(fetchedConnections.map(c => [c.account_id, c]))
       // Fire-and-forget: a stale connection gets synced in the background,
       // not blocking this render. sync-provider's own concurrency lock and
@@ -216,34 +189,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
           if (!error && isCurrent()) void refreshData()
         }).catch(() => {})
       }
-      const accountNameById = new Map(mappedAccounts.map((account) => [account.id, account.name]))
-
-      // Map DB transactions to UI Txn
-      const mappedTxns = fetchedTxns.map(t=>mapParent(t,accountNameById.get(t.account_id) ?? 'Unknown'))
-
-      const allocationsByTransaction = new Map<string, TransactionAllocation[]>()
-      for (const row of allocationsRes.data ?? []) {
-        const allocation: TransactionAllocation = {
-          id: row.id, position: row.position, amount: row.amount, kind: row.kind,
-          category: row.category, subcategory: row.subcategory ?? undefined, note: row.note ?? undefined,
-        }
-        const items = allocationsByTransaction.get(row.transaction_id) ?? []
-        items.push(allocation); allocationsByTransaction.set(row.transaction_id, items)
-      }
-      const withAllocations = mappedTxns.map((transaction) => ({ ...transaction, allocations: allocationsByTransaction.get(transaction.id) ?? [] }))
-      const expanded = expandTransactionAllocations(withAllocations)
-
       setAccounts(mappedAccounts)
-      setTransactions(withAllocations)
-      setReportingTransactions(expanded)
-      const allAchievements = achievementsRes.data || []
-      const userUnlockIds = new Set((userAchievementsRes.data || []).map(ua => ua.achievement_id))
-      const unlockedAchievements = allAchievements.filter(a => userUnlockIds.has(a.id))
-      setAchievements(unlockedAchievements)
-      
-      setBudgets(budgetsRes.data || [])
-
-      setProfile({ callsign: fetchedProfile?.callsign || 'Operator' })
+      if (profileGeneration === profileSequence.current) setProfile({ callsign: fetchedProfile?.callsign || 'Operator' })
       setLoadState('ready')
       setLoadError(null)
       setRefreshError(null)
@@ -260,9 +207,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
     } finally {
       if (background && isCurrent()) setIsRefreshing(false)
     }
-  }, [identity])
+  }, [identity, invalidateReports])
 
-  // Keyed on the user id rather than the session object: a token refresh
+  // Keyed on user and active tenant rather than the session object: a token refresh
   // produces a new session every 15 minutes with the same user, and refetching
   // the whole dataset on each one would be pure churn.
   useEffect(() => {
@@ -270,7 +217,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, [refreshData])
 
   return (
-    <DataContext.Provider value={{ reportRevision, loadState, loadError, isRefreshing, refreshError, profile, isAdmin, accounts, transactions, reportingTransactions, achievements, budgets, refreshData }}>
+    <DataContext.Provider value={{ reportRevision, loadState, loadError, isRefreshing, refreshError, profile, isAdmin, accounts, refreshData, refreshProfile, invalidateReports }}>
       {children}
     </DataContext.Provider>
   )

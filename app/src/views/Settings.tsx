@@ -20,7 +20,7 @@ const ACCENTS = [
 
 export default function Settings() {
   const { motionOn, setMotionOn, dark, setDark, toast } = useView()
-  const { profile, isAdmin, refreshData } = useData()
+  const { profile, isAdmin, refreshProfile } = useData()
   const { user, signOut: doSignOut } = useAuth()
   const [redact, setRedact] = useState(false)
   const [accent, setAccent] = useState('Mint')
@@ -35,11 +35,16 @@ export default function Settings() {
       return
     }
     setIsSaving(true)
-    const { error } = await supabase.functions.invoke('update-callsign', { body: { callsign: newCallsign } })
-    if (error) toast({ title: 'Error updating callsign', sub: error.message })
-    else await refreshData()
-    setIsSaving(false)
-    setEditingCallsign(false)
+    try {
+      const { error } = await supabase.functions.invoke('update-callsign', { body: { callsign: newCallsign } })
+      if (error) throw error
+      await refreshProfile()
+      setEditingCallsign(false)
+    } catch (error) {
+      toast({ title: 'Error updating callsign', sub: error instanceof Error ? error.message : 'Could not refresh your profile.' })
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const initials =

@@ -7,7 +7,7 @@ export function useReport<T>(params:unknown, read:(tenant:string)=>Promise<T>, e
   const {user,tenantId} = useAuth()
   const {reportRevision} = useData()
   const [attempt,retry] = useReducer((n:number)=>n+1,0)
-  const key = JSON.stringify([user?.id,tenantId,params,enabled])
+  const key = JSON.stringify([user?.id,tenantId,reportRevision,params,enabled])
   const generation = useRef(0)
   const loader = useRef(read)
   useLayoutEffect(()=>{loader.current=read})

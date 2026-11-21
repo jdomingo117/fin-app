@@ -4,14 +4,15 @@ import { useLayoutEffect, act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { DataProvider, useData } from './DataContext'
+import { useReport } from '../hooks/useReport'
 
 const { auth, from, invoke } = vi.hoisted(() => ({
-  auth: { session: null as { user: { id: string } } | null, isAdmin: false },
+  auth: { session: null as { user: { id: string } } | null, isAdmin: false, tenantId: null as string|null },
   from: vi.fn(),
   invoke: vi.fn(),
 }))
 
-vi.mock('./AuthContext', () => ({ useAuth: () => auth }))
+vi.mock('./AuthContext', () => ({ useAuth: () => ({...auth,user:auth.session?.user}) }))
 vi.mock('../lib/supabaseClient', () => ({ supabase: { from, functions: { invoke } } }))
 
 function deferred<T>() {
@@ -58,7 +59,16 @@ function Probe() {
   return null
 }
 
+const scopedRead=vi.fn(async()=>({ok:true}))
+function FinancialProbe() {
+  useReport('ledger',scopedRead)
+  useReport('report',scopedRead)
+  useReport('account history',scopedRead)
+  return <Probe/>
+}
+
 async function session(userId: string | null) {
+  auth.tenantId = userId ? 'tenant-'+userId : null
   auth.session = userId ? { user: { id: userId } } : null
   await act(async () => { root!.render(<DataProvider><Probe /></DataProvider>) })
 }
@@ -83,7 +93,6 @@ async function startSession(userId: string) {
 
 function expectReady(ids: string[]) {
   expect.soft(current.accounts.map(({ id }) => id)).toEqual(ids)
-  expect.soft(current.transactions.map(({ id }) => id)).toEqual(ids)
   expect.soft(current.loadState).toBe('ready')
   expect.soft(current.isRefreshing).toBe(false)
   expect.soft(current.loadError).toBeNull()
@@ -93,6 +102,7 @@ function expectReady(ids: string[]) {
 beforeEach(() => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
   auth.session = null
+  auth.tenantId = null
   commits = []
   queuedReads = []
   root = createRoot(document.createElement('div'))
@@ -103,12 +113,14 @@ beforeEach(() => {
   from.mockReset().mockImplementation((table: string) => {
     if (table === 'profiles') read = queuedReads.shift()
     if (!read) throw new Error(`Unexpected provider read: ${table}`)
-    const response = read.promise.then(result => result[table] ?? { data: null, error: null })
+    const response = read.promise.then(result => result[table] ?? { data: [], error: null })
     const query = {
       select: () => query,
       eq: () => query,
       order: () => query,
       maybeSingle: () => query,
+      limit: () => query,
+      gt: () => query,
       then: response.then.bind(response),
     }
     return query
@@ -123,6 +135,41 @@ afterEach(async () => {
 })
 
 describe('DataProvider request sequencing', () => {
+  it('immediately isolates a same-user tenant switch and ignores its old late response', async () => {
+    await finish(await startSession('a'), rows('tenant-a'))
+    const pending = await startRefresh()
+    const switched = deferred<ReadResult>(); queuedReads.push(switched)
+    const firstCommit = commits.length
+    auth.tenantId = 'tenant-b'
+    await act(async()=>{root!.render(<DataProvider><Probe /></DataProvider>)})
+    expect(commits.slice(firstCommit).every(data=>data.accounts.length===0)).toBe(true)
+    expect(current.profile.callsign).toBe('Operator')
+    await finish(switched, rows('tenant-b'))
+    const latest=current
+    await finish(pending,rows('late-tenant-a',{bank:true,investment:true}))
+    expectReady(['tenant-b'])
+    expect(current).toBe(latest)
+    expect(invoke).not.toHaveBeenCalled()
+  })
+
+  it('refreshes profile without invalidating reports or reloading accounts', async () => {
+    await finish(await startSession('a'),rows('initial'))
+    await act(async()=>root!.render(<DataProvider><FinancialProbe/></DataProvider>))
+    scopedRead.mockClear()
+    const revision=current.reportRevision
+    from.mockClear()
+    const response=deferred<ReadResult>();queuedReads.push(response)
+    let refresh!:Promise<void>
+    await act(async()=>{refresh=current.refreshProfile()})
+    await finish(response,rows('new callsign'))
+    await refresh
+    expect(current.profile.callsign).toBe('new callsign')
+    expect(current.reportRevision).toBe(revision)
+    expect(from.mock.calls.map(([table])=>table)).toEqual(['profiles'])
+    expect(scopedRead).not.toHaveBeenCalled()
+    expectReady(['initial'])
+  })
+
   it('keeps signed-out data cleared when an in-flight refresh succeeds late', async () => {
     await finish(await startSession('a'), rows('a'))
     const pending = await startRefresh()
@@ -143,7 +190,7 @@ describe('DataProvider request sequencing', () => {
     const firstSwitchCommit = commits.length
     const userB = await startSession('b')
 
-    expect.soft(commits.slice(firstSwitchCommit).some(data => data.accounts.length || data.transactions.length)).toBe(false)
+    expect.soft(commits.slice(firstSwitchCommit).some(data => data.accounts.length)).toBe(false)
     expect.soft(current.loadState).toBe('loading')
     expect.soft(current.isRefreshing).toBe(false)
     await finish(userB, rows('b'))

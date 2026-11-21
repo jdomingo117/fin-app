@@ -18,13 +18,15 @@ const SavePayload = z.object({
   expected_amount_override: z.number().int().positive().max(100_000_000).nullable(),
   next_expected_override: IsoDate.nullable(),
   reminder_days_before: z.number().int().min(0).max(60).nullable(),
-}).superRefine((payload, ctx) => {
-  if (new Set(payload.evidence_transaction_ids).size !== payload.evidence_transaction_ids.length) {
+})
+const UndoPayload = z.object({ action: z.literal('undo'), event_id: z.string().uuid() })
+// Refine the union, not one of its members: discriminatedUnion requires plain
+// ZodObjects so it can inspect their action discriminators at startup.
+const Payload = z.discriminatedUnion('action', [SavePayload, UndoPayload]).superRefine((payload, ctx) => {
+  if (payload.action === 'save' && new Set(payload.evidence_transaction_ids).size !== payload.evidence_transaction_ids.length) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Duplicate supporting transactions' })
   }
 })
-const UndoPayload = z.object({ action: z.literal('undo'), event_id: z.string().uuid() })
-const Payload = z.discriminatedUnion('action', [SavePayload, UndoPayload])
 
 Deno.serve(withAuth({ schema: Payload, requireRole: 'member' }, async (ctx) => {
   if (ctx.body.action === 'undo') {

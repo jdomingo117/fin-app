@@ -45,6 +45,9 @@ The new additive migration is
 checks tenant membership, uses explicit tenant predicates and the fixed search
 path, revokes PUBLIC/anon/service_role execution and grants authenticated only.
 BudgetContext, query-budget and private Budget service contracts are intact.
+Live acceptance QA required a corrective commit: recurring save validation now
+refines the completed discriminated union, and detected-bill acceptance retains
+its audit event for guarded Undo and clears its pre-selection when undone.
 
 Verification/deployment notes: run the full offline suite after each commit;
 the required final browser/PostgREST qualification uses a fresh disposable v2

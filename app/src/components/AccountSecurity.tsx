@@ -253,7 +253,7 @@ export function DangerZoneCard() {
       <div className="grid gap-4 pt-1">
         <div>
           <p className="text-[13px] text-muted">
-            Download every account, transaction and budget on this profile as JSON.
+            Download accounts, transactions and profile details as JSON.
           </p>
           <div className="mt-2">
             <Button variant="ghost" onClick={exportData} disabled={busy}>Export my data</Button>

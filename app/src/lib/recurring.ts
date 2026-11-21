@@ -249,7 +249,7 @@ export function upcomingCharges(s: Series, from: string, to: string): Charge[] {
 }
 
 /** Pure signal detection; reporting totals remain bounded to the normal year. */
-function detect(id: string, txns: Txn[], today: string, reportingFrom: string): Series | null {
+function detect(id: string, txns: Txn[], today: string, reportingFrom: string, facts?: RecurringFacts): Series | null {
  const signal=detectRecurringSignal(txns.map(t=>({transactionId:t.id,date:t.date,amount:Math.abs(t.amount)})),today)
  if(!signal)return null
  const t0=txns[0]
@@ -257,7 +257,7 @@ function detect(id: string, txns: Txn[], today: string, reportingFrom: string): 
  merchant:t0.merchant,label:shortMerchant(t0.merchant),cat:t0.cat,subcat:t0.subcat??'Other',
  detectedCadence:signal.cadence,detectedExpected:signal.expected,detectedNextExpected:signal.nextExpected,
  monthly:signal.expected*CADENCE_PER_MONTH[signal.cadence],
- trailingTotal:signal.charges.filter(c=>c.date>=reportingFrom).reduce((sum,c)=>sum+c.amount,0),
+ trailingTotal:facts ? (facts.groups.get(id)?.trailing ?? 0) : signal.charges.filter(c=>c.date>=reportingFrom).reduce((sum,c)=>sum+c.amount,0),
  fundingAccount:t0.account||'Unknown account',fundingAccountGlow:'cyan',trackingState:'detected',reminderDaysBefore:null}
 }
 
@@ -300,12 +300,18 @@ function annualEvidenceCandidate(id: string, txns: Txn[], today: string): Recurr
  *  see real, live data instead of the (now-deleted) mock dataset it silently
  *  ran against for every real user. Required, not optional, so a caller can't
  *  accidentally fall back to nothing. */
+export interface RecurringFacts {
+  groups:Map<string,{trailing:number;pressure:number}>
+  totalPressure:number
+}
+
 export function buildRecurring(
   transactions: Txn[],
   accounts: Account[],
   today: string = TODAY,
   hints: Map<string, RecurrenceHint> = new Map(),
   overrides: RecurringSeriesOverride[] = [],
+  facts?: RecurringFacts,
 ): Recurring {
   const bounds = { from: shift(today, -364), to: today }
   const annualBounds = { from: shift(today, -ANNUAL_EVIDENCE_DAYS), to: today }
@@ -344,7 +350,7 @@ export function buildRecurring(
   const candidates: RecurringCandidate[] = []
   const detectedKeys = new Set<string>()
   groups.forEach((txns, k) => {
-    const s = detect(k, txns, today, bounds.from)
+    const s = detect(k, txns, today, bounds.from, facts)
     if (s) {
       detectedSeries.push({ ...s, fundingAccountGlow: glowFor(s.fundingAccount) })
       detectedKeys.add(k)
@@ -357,7 +363,7 @@ export function buildRecurring(
   const annualCandidateKeys = new Set<string>()
   annualGroups.forEach((txns, k) => {
     if (detectedKeys.has(k)) return
-    const s = detect(k, txns, today, bounds.from)
+    const s = detect(k, txns, today, bounds.from, facts)
     if (s?.cadence === 'Annual') {
       detectedSeries.push({ ...s, fundingAccountGlow: glowFor(s.fundingAccount) })
       detectedKeys.add(k)
@@ -453,6 +459,10 @@ export function buildRecurring(
   const activeKeys = new Set(active.map((s) => s.id))
   let recurringSpend = 0
   let totalSpend = 0
+  if (facts) {
+    totalSpend = facts.totalPressure
+    for (const key of activeKeys) recurringSpend += facts.groups.get(key)?.pressure ?? 0
+  } else {
   transactions.forEach((t) => {
     if (t.kind !== 'expense' || t.amount >= 0 || t.isTransfer || t.pending) return
     const d = t.date
@@ -461,6 +471,7 @@ export function buildRecurring(
     totalSpend += amt
     if (activeKeys.has(detectorKeyFor(t))) recurringSpend += amt
   })
+  }
 
   // Aggregated dynamically from whichever real accounts actually fund active
   // series — not a fixed fake list. An account with no active commitments

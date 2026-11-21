@@ -1,10 +1,11 @@
-import {useMemo,useState} from 'react'
+import {useState} from 'react'
 import {Button} from '../Controls'
 import {useData} from '../../contexts/DataContext'
 import {useBudget} from '../../contexts/BudgetContext'
 import {supabase} from '../../lib/supabaseClient'
 import {fmtCents} from '../../data'
-import {buildRecurring} from '../../lib/recurring'
+import {useRecurrence} from '../../hooks/useRecurrence'
+import ReportStatus from '../ReportStatus'
 import {billSavePayload,detectedBills,type DetectedBill} from '../../lib/budgetDetectedBills'
 import type {AssistanceResult} from '../../lib/budgetAssistance'
 import {cadenceLabel,IMPORT_GAP_NOTE} from '../../lib/budgetBillSuggestions'
@@ -20,10 +21,10 @@ const at=(date:string)=>day.format(new Date(`${date}T00:00:00Z`))
  */
 export default function BudgetDetectedBills({result,accountName,activity,today,onAdded}:{result:AssistanceResult;accountName:(id:string)=>string;activity:AccountActivity[];today:string;onAdded:(keys:string[])=>void}){
   const d=useData(),b=useBudget()
-  const recurring=useMemo(()=>buildRecurring(d.reportingTransactions,d.accounts,undefined,d.recurrenceHints,d.recurrenceOverrides),
-    [d.reportingTransactions,d.accounts,d.recurrenceHints,d.recurrenceOverrides])
-  const bills=detectedBills(recurring,result,new Map(activity.map(a=>[a.account_id,a.last_activity_date])))
+  const recurrence=useRecurrence(result.account_ids,'reporting',today)
+  const bills=recurrence.data ? detectedBills(recurrence.data,result,new Map(activity.map(a=>[a.account_id,a.last_activity_date]))) : []
   const [saving,setSaving]=useState(false),[error,setError]=useState('')
+  if(recurrence.error||recurrence.pending||!recurrence.data)return <ReportStatus report={recurrence} label="Regular payment evidence"/>
   if(!bills.length)return null
   const fixed=bills.filter(x=>x.fixed&&x.addable)
   async function add(list:DetectedBill[]){

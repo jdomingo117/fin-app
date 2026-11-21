@@ -1,10 +1,12 @@
-import { useMemo, useState } from 'react'
+import { useRecurrence } from '../hooks/useRecurrence'
+import ReportStatus from './ReportStatus'
+import { useState } from 'react'
 import { Grid } from './Screen'
 import HeroMetric from './HeroMetric'
 import RecurringDirectory from './RecurringDirectory'
 import BillingCalendar from './BillingCalendar'
 import Tile from './Tile'
-import { buildRecurring, type FundingAccountSummary } from '../lib/recurring'
+import { type FundingAccountSummary } from '../lib/recurring'
 import { dayLabel, monthLabel } from '../lib/period'
 import { fmt, glowColor } from '../data'
 import { useData } from '../contexts/DataContext'
@@ -97,18 +99,16 @@ function FundingAccountsCard({
 }
 
 export default function RecurringHub() {
-  const { reportingTransactions: transactions, accounts, recurrenceHints, recurrenceOverrides, refreshData } = useData()
-  const r = useMemo(
-    () => buildRecurring(transactions, accounts, undefined, recurrenceHints, recurrenceOverrides),
-    [transactions, accounts, recurrenceHints, recurrenceOverrides],
-  )
-
+  const { refreshData } = useData()
+  const recurrence = useRecurrence()
   // Cross-highlighting states (ui-ux-pro-max)
   const [focusedSeriesId, setFocusedSeriesId] = useState<string | null>(null)
   const [hoveredSeriesId, setHoveredSeriesId] = useState<string | null>(null)
   const [hoveredDate, setHoveredDate] = useState<string | null>(null)
   const [hoveredAccount, setHoveredAccount] = useState<string | null>(null)
 
+  if (recurrence.error || recurrence.pending || !recurrence.data) return <Grid><Tile span={3}><ReportStatus report={recurrence} label="Recurring evidence" /></Tile></Grid>
+  const r = recurrence.data
   const fixed = r.active.filter((s) => s.kind === 'fixed').length
   const variable = r.active.length - fixed
   const none = r.active.length === 0

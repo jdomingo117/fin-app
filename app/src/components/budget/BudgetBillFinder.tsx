@@ -1,7 +1,9 @@
 import {useMemo} from 'react'
 import {Button} from '../Controls'
 import {fmtCents} from '../../data'
-import {useData} from '../../contexts/DataContext'
+import {useReport} from '../../hooks/useReport'
+import {recurrenceSummary,recurrenceKey} from '../../lib/recurrenceScope'
+import ReportStatus from '../ReportStatus'
 import {shortMerchant} from '../../lib/recurring'
 import {IMPORT_GAP_NOTE,cadenceLabel,classifySuggestions,merchantLabel,rollForward,type Suggestion} from '../../lib/budgetBillSuggestions'
 import type {BudgetItem,BudgetItemConfig,BudgetRecurringEvidence} from '../../lib/budgetItems'
@@ -21,9 +23,11 @@ export default function BudgetBillFinder({evidence,items,recurring,accountName,c
   evidence:BudgetRecurringEvidence;items:BudgetItem[];recurring:Override[];accountName:(id:string)=>string;canWrite:boolean
   onReview:(item:BudgetItem|undefined,proposal:Partial<BudgetItemConfig>)=>void
 }){
-  const {reportingTransactions}=useData(),activity=useAccountActivity()
-  // One pass over the ledger for display names; never used for money.
-  const names=useMemo(()=>{const m=new Map<string,string>();for(const t of reportingTransactions)if(t.merchantKey&&!m.has(t.merchantKey))m.set(t.merchantKey,shortMerchant(t.merchant));return m},[reportingTransactions])
+  const activity=useAccountActivity()
+  const proposals=evidence.proposals.map(g=>({account_id:g.account_id,merchant_key:g.merchant_key}))
+  const namesReport=useReport(['bill names',proposals,evidence.as_of],tenant=>recurrenceSummary(tenant,evidence.as_of,[],'reporting',proposals))
+  const names=namesReport.data?.names ?? new Map<string,string>()
+  const nameFor=(account:string,key:string)=>merchantLabel(key,new Map([[key,shortMerchant(names.get(recurrenceKey(account,key)) ?? key)]]))
   const last=useMemo(()=>new Map((activity??[]).map(a=>[a.account_id,a.last_activity_date])),[activity])
   const today=evidence.as_of
   const all=classifySuggestions(evidence,last)
@@ -33,7 +37,7 @@ export default function BudgetBillFinder({evidence,items,recurring,accountName,c
   function row(s:Suggestion){
     const saved=items.find(i=>i.config?.source_account_id===s.account_id&&i.config?.source_merchant_key===s.merchant_key)
     const override=recurring.find(r=>r.account_id===s.account_id&&r.merchant_key===s.merchant_key)
-    const name=merchantLabel(s.merchant_key,names)
+    const name=nameFor(s.account_id,s.merchant_key)
     if(override&&override.state!=='active')return <li key={`${s.account_id}:${s.merchant_key}`} className="budget-detected-bill"><div className="min-w-0"><strong>{name}</strong><span className="block detail-copy text-muted">{accountName(s.account_id)} · you stopped tracking this, so it isn’t suggested.</span></div></li>
     const sig=s.signal!
     const cadence=override?.cadence??sig.cadence,expected=Math.round(override?.amount_cents??sig.expected)
@@ -55,11 +59,12 @@ export default function BudgetBillFinder({evidence,items,recurring,accountName,c
   }
   const quietText=(s:Suggestion)=>s.kind==='stopped'?`No payment since around ${at(s.signal!.nextExpected)}, so it looks like this stopped.`:s.kind==='possible-annual'?'Seen twice, about a year apart. Add it yourself if it’s a yearly bill.':'Too many payments to check automatically. Add it yourself if it’s a bill.'
 
+  if(namesReport.error||namesReport.pending||!namesReport.data)return <ReportStatus report={namesReport} label="Bill names"/>
   return <details id="budget-find-bills" className="glass p-5"><summary className="min-h-11 cursor-pointer py-3 font-semibold">Find bills from recorded spending</summary>
     <p className="body-copy text-muted">Regular payments we found in this budget’s accounts. Check each one before adding it. Nothing is added until you save it.</p>
     {offer.length?<ul className="budget-coverage-list mt-3">{offer.map(row)}</ul>:<p className="body-copy mt-3">No regular payments found yet. You can always add a bill yourself.</p>}
     {quiet.length>0&&<details className="mt-3"><summary className="min-h-11 cursor-pointer py-2 detail-copy">Other patterns we noticed ({quiet.length})</summary>
-      <ul className="detail-copy space-y-2 pt-2">{quiet.map(s=>{const saved=s.kind==='stopped'?items.find(i=>i.config?.source_account_id===s.account_id&&i.config?.source_merchant_key===s.merchant_key&&!i.archived):undefined,name=merchantLabel(s.merchant_key,names)
+      <ul className="detail-copy space-y-2 pt-2">{quiet.map(s=>{const saved=s.kind==='stopped'?items.find(i=>i.config?.source_account_id===s.account_id&&i.config?.source_merchant_key===s.merchant_key&&!i.archived):undefined,name=nameFor(s.account_id,s.merchant_key)
         return <li key={`${s.account_id}:${s.merchant_key}`}><strong>{name}</strong> · {accountName(s.account_id)} · {quietText(s)}{saved&&saved.config?.state!=='paused'&&<> It’s still in your plan. <Button variant="ghost" disabled={!canWrite} ariaLabel={`Review pausing ${name}`} onClick={()=>onReview(saved,{...saved.config,state:'paused'})}>Review pausing it</Button></>}</li>})}</ul></details>}
     {evidence.limited&&<p className="detail-copy text-muted mt-3">We checked the {evidence.group_limit} merchants that look most like regular bills, out of {evidence.group_count} you’ve paid. Add any others yourself.</p>}
   </details>

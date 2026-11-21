@@ -1,3 +1,4 @@
+import { useRecurrence } from '../hooks/useRecurrence'
 import { usePlanning } from '../hooks/usePlanning'
 import ReportStatus from './ReportStatus'
 import { projectionHistory, historyBaseline, historyReview } from '../lib/projectionHistory'
@@ -20,7 +21,7 @@ import { supabase } from '../lib/supabaseClient'
 import PlanningGoalDialog from './PlanningGoalDialog'
 import type { PlanningGoal } from '../lib/planning'
 import type { ProjectionEvent } from '../lib/projections'
-import { buildRecurring, upcomingCharges } from '../lib/recurring'
+import { upcomingCharges } from '../lib/recurring'
 import { TODAY } from '../lib/period'
 import {
   buildProjection,
@@ -68,7 +69,7 @@ const describeTimingImpact = (baseline: ProjectionPoint | null, scenario: Projec
 }
 
 export default function StrategicProjections() {
-  const { accounts, transactions, recurrenceHints, recurrenceOverrides, refreshData } = useData()
+  const { accounts, refreshData } = useData()
   const planning = usePlanning()
   const { planningGoals = [], planningScenarios = [], planningEvents = [] } = planning.data ?? {}
   const [temporaryMeasure, setTemporaryMeasure] = useState<ProjectionMetric>('cash')
@@ -102,10 +103,6 @@ export default function StrategicProjections() {
     () => selectedGoal ? accounts.filter((account) => selectedGoal.accountIds.includes(account.id)) : accounts,
     [accounts, selectedGoal],
   )
-  const scopedTransactions = useMemo(
-    () => selectedGoal ? transactions.filter((transaction) => selectedGoal.accountIds.includes(transaction.account_id)) : transactions,
-    [transactions, selectedGoal],
-  )
   const allGoalScenarios = useMemo(() => selectedGoal ? planningScenarios.filter((scenario) => scenario.goalId === selectedGoal.id) : [], [planningScenarios, selectedGoal])
   const goalScenarios = useMemo(() => allGoalScenarios.filter((scenario) => scenario.status === 'active'), [allGoalScenarios])
   const archivedScenarios = useMemo(() => allGoalScenarios.filter((scenario) => scenario.status === 'archived'), [allGoalScenarios])
@@ -117,10 +114,8 @@ export default function StrategicProjections() {
   const target = Math.max(0, dollarsToCents(targetInput))
   const datedMonths = monthsBetween(new Date(), targetDate)
   const horizonMonths = mode === 'byDate' ? datedMonths : 120
-  const recurringSeries = useMemo(
-    () => buildRecurring(scopedTransactions, scopedAccounts, TODAY, recurrenceHints, recurrenceOverrides).active,
-    [scopedTransactions, scopedAccounts, recurrenceHints, recurrenceOverrides],
-  )
+  const recurrence = useRecurrence(scopedAccounts.map(a=>a.id),'parent',TODAY,!!planning.data && !planning.error)
+  const recurringSeries = recurrence.data?.active ?? []
   const recurringTransactionIds = useMemo(() => new Set(recurringSeries.flatMap((series) => series.charges.map((charge) => charge.transactionId).filter((id): id is string => !!id))), [recurringSeries])
   const allRecurringEvents = useMemo<ProjectionEvent[]>(() => {
     const to = new Date(); to.setMonth(to.getMonth() + horizonMonths + 1)
@@ -138,7 +133,7 @@ export default function StrategicProjections() {
     const comparison = JSON.stringify(selectedIds) === JSON.stringify(baselineIds) ? selected
       : await projectionHistory(tenant,TODAY,accountIds,metric,baselineIds)
     return {selected,comparison}
-  },!!planning.data && !planning.error)
+  },!!planning.data && !planning.error && !!recurrence.data && !recurrence.error)
   const currentValue = useMemo(() => currentValueFor(metric, scopedAccounts), [metric, scopedAccounts])
   const investmentBalance = useMemo(
     () => scopedAccounts.filter((account) => account.type === 'Invest').reduce((sum, account) => sum + account.balance, 0),
@@ -301,7 +296,7 @@ export default function StrategicProjections() {
   const noHistory = baseline.monthsUsed === 0
   const resultTone = mode === 'byDate' ? (gap >= 0 ? 'pos' : 'neg') : targetPoint ? 'pos' : 'neg'
 
-  const unavailable = [planning,movements,...(needsMonthly ? [monthlyReport] : [])].find(r=>r.error || r.pending || !r.data)
+  const unavailable = [planning,recurrence,movements,...(needsMonthly ? [monthlyReport] : [])].find(r=>r.error || r.pending || !r.data)
   if (unavailable) return <Grid><Tile span={3}><ReportStatus report={unavailable} label="Projection inputs" /></Tile></Grid>
 
   return (

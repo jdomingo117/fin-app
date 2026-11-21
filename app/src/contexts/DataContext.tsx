@@ -2,7 +2,6 @@ import {mapParent} from '../lib/reportParent'
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, ReactNode } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import type { Account, Txn, Achievement, TransactionAllocation } from '../data'
-import type { RecurrenceHint, RecurringSeriesOverride } from '../lib/recurring'
 import { useAuth } from './AuthContext'
 import { expandTransactionAllocations } from '../lib/allocations'
 
@@ -29,8 +28,6 @@ interface DataCtx {
   reportingTransactions: Txn[]
   achievements: Achievement[]
   budgets: Budget[]
-  recurrenceHints: Map<string, RecurrenceHint>
-  recurrenceOverrides: RecurringSeriesOverride[]
   refreshData: () => Promise<void>
 }
 
@@ -57,8 +54,6 @@ export const DataContext = createContext<DataCtx>({
   reportingTransactions: [],
   achievements: [],
   budgets: [],
-  recurrenceHints: new Map(),
-  recurrenceOverrides: [],
   refreshData: async () => {},
 })
 
@@ -81,8 +76,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [reportingTransactions, setReportingTransactions] = useState<Txn[]>([])
   const [achievements, setAchievements] = useState<Achievement[]>([])
   const [budgets, setBudgets] = useState<Budget[]>([])
-  const [recurrenceHints, setRecurrenceHints] = useState<Map<string, RecurrenceHint>>(new Map())
-  const [recurrenceOverrides, setRecurrenceOverrides] = useState<RecurringSeriesOverride[]>([])
   // Connection ids already given a stale-sync this session — refreshData()
   // runs after nearly every mutation, and without this a single session
   // would fire the same background sync repeatedly instead of once.
@@ -100,8 +93,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setReportingTransactions([])
     setAchievements([])
     setBudgets([])
-    setRecurrenceHints(new Map())
-    setRecurrenceOverrides([])
     setLoadError(null)
     setRefreshError(null)
     setIsRefreshing(false)
@@ -143,7 +134,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       // The getUser() round-trip that used to guard this block is also gone;
       // RequireAuth already gates every route that mounts this provider, and
       // an invalid token now fails the queries themselves.
-      const [profileRes, accountsRes, txnsRes, achievementsRes, userAchievementsRes, budgetsRes, accountConnectionsRes, recurrenceHintsRes, recurrenceOverridesRes, allocationsRes] = await Promise.all([
+      const [profileRes, accountsRes, txnsRes, achievementsRes, userAchievementsRes, budgetsRes, accountConnectionsRes, allocationsRes] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
         supabase.from('accounts').select('*'),
         supabase.from('transactions_analytic').select('*').order('date', { ascending: false }),
@@ -151,8 +142,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
         supabase.from('user_achievements').select('*').eq('user_id', userId),
         supabase.from('budgets').select('*'),
         supabase.from('account_connections').select('id, account_id, connection_id, provider, cutover_date, balance_as_of, provider_connections(status)'),
-        supabase.from('merchant_recurrence_hints').select('merchant_key, is_recurring, suggested_cadence, confidence'),
-        supabase.from('recurring_series_overrides').select('id,merchant_key,account_id,state,cadence_override,expected_amount_override,next_expected_override,reminder_days_before'),
         supabase.from('transaction_allocations').select('id,transaction_id,position,amount,kind,category,subcategory,note').order('position'),
       ])
       if (!isCurrent()) return
@@ -160,7 +149,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       const requiredError = [profileRes, accountsRes, txnsRes].find((result) => result.error)?.error
       if (requiredError) throw requiredError
 
-      const optionalResults = [achievementsRes, userAchievementsRes, budgetsRes, accountConnectionsRes, recurrenceHintsRes, recurrenceOverridesRes, allocationsRes]
+      const optionalResults = [achievementsRes, userAchievementsRes, budgetsRes, accountConnectionsRes, allocationsRes]
       for (const result of optionalResults) {
         if (result.error) console.warn('Optional data enrichment failed:', result.error.message)
       }
@@ -254,26 +243,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
       
       setBudgets(budgetsRes.data || [])
 
-      setRecurrenceHints(new Map(
-        (recurrenceHintsRes.data || []).map((h) => [
-          h.merchant_key,
-          {
-            isRecurring: h.is_recurring,
-            suggestedCadence: h.suggested_cadence as RecurrenceHint['suggestedCadence'],
-            confidence: h.confidence,
-          },
-        ]),
-      ))
-      setRecurrenceOverrides((recurrenceOverridesRes.data || []).map((override) => ({
-        id: override.id,
-        merchantKey: override.merchant_key,
-        accountId: override.account_id,
-        state: override.state as RecurringSeriesOverride['state'],
-        cadenceOverride: override.cadence_override as RecurringSeriesOverride['cadenceOverride'],
-        expectedAmountOverride: override.expected_amount_override,
-        nextExpectedOverride: override.next_expected_override,
-        reminderDaysBefore: override.reminder_days_before,
-      })))
       setProfile({ callsign: fetchedProfile?.callsign || 'Operator' })
       setLoadState('ready')
       setLoadError(null)
@@ -301,7 +270,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, [refreshData])
 
   return (
-    <DataContext.Provider value={{ reportRevision, loadState, loadError, isRefreshing, refreshError, profile, isAdmin, accounts, transactions, reportingTransactions, achievements, budgets, recurrenceHints, recurrenceOverrides, refreshData }}>
+    <DataContext.Provider value={{ reportRevision, loadState, loadError, isRefreshing, refreshError, profile, isAdmin, accounts, transactions, reportingTransactions, achievements, budgets, refreshData }}>
       {children}
     </DataContext.Provider>
   )

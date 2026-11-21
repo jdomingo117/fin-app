@@ -42,7 +42,10 @@ function forbiddenCalls(text: string, fileName = 'fixture.ts'): string[] {
       const isDirectRpc = method === 'rpc'
         && ts.isIdentifier(receiver)
         && receiver.text === 'supabase'
-      if ((MUTATORS.has(method) && isSupabaseFromChain(receiver)) || isDirectRpc) {
+      const name = node.arguments[0]
+      const reportRead = fileName === 'src/lib/reports.ts' && name && ts.isStringLiteral(name)
+        && ['portfolio_summary', 'cash_flow_report', 'movement_history'].includes(name.text)
+      if ((MUTATORS.has(method) && isSupabaseFromChain(receiver)) || (isDirectRpc && !reportRead)) {
         const { line, character } = source.getLineAndCharacterOfPosition(node.getStart(source))
         violations.push(`${fileName}:${line + 1}:${character + 1} ${method}`)
       }

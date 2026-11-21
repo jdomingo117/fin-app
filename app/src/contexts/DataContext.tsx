@@ -19,6 +19,7 @@ interface Budget {
 }
 
 interface DataCtx {
+  reportRevision: number
   loadState: 'loading' | 'ready' | 'error'
   loadError: string | null
   isRefreshing: boolean
@@ -51,6 +52,7 @@ const STALE_SYNC_MS = 30 * 60 * 1000
 const STALE_INVESTMENT_SYNC_MS = 30 * 60 * 60 * 1000
 
 export const DataContext = createContext<DataCtx>({
+  reportRevision: 0,
   loadState: 'loading',
   loadError: null,
   isRefreshing: false,
@@ -79,6 +81,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const userId = session?.user.id ?? null
   const [identity, setIdentity] = useState({ userId })
   const activeIdentity = useRef<typeof identity | null>(identity)
+  const [reportRevision, setReportRevision] = useState(0)
   const sequence = useRef(0)
   const [loadState, setLoadState] = useState<DataCtx['loadState']>(userId ? 'loading' : 'ready')
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -141,6 +144,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const refreshData = useCallback(async function refreshData() {
     const { userId } = identity
     if (!userId || activeIdentity.current !== identity) return
+    setReportRevision(n => n + 1)
     const generation = ++sequence.current
     const isCurrent = () => activeIdentity.current === identity && generation === sequence.current
     const background = hasLoaded.current
@@ -424,7 +428,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, [refreshData])
 
   return (
-    <DataContext.Provider value={{ loadState, loadError, isRefreshing, refreshError, profile, isAdmin, accounts, transactions, reportingTransactions, customSubcategories, achievements, budgets, recurrenceHints, recurrenceOverrides, netWorthHistory, planningGoals, planningScenarios, planningEvents, refreshData }}>
+    <DataContext.Provider value={{ reportRevision, loadState, loadError, isRefreshing, refreshError, profile, isAdmin, accounts, transactions, reportingTransactions, customSubcategories, achievements, budgets, recurrenceHints, recurrenceOverrides, netWorthHistory, planningGoals, planningScenarios, planningEvents, refreshData }}>
       {children}
     </DataContext.Provider>
   )

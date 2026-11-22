@@ -4,8 +4,8 @@
 
 ## Set up the same signed-in build
 
-1. Use the Phase 3 review commit and worktree listed in the review note. From its `app/` directory, run `CHOKIDAR_USEPOLLING=1 npm run dev -- --host 127.0.0.1 --port 5320 --strictPort --force`. Keep the configured Auth and report API available. Do not reset the local database.
-2. Open [Dashboard](http://127.0.0.1:5320/dashboard), sign in and choose **Console**. Use the same account and data on both devices. A review account is preferable when sharing traces. Keep personal-data recordings local until reviewed.
+1. Use the Phase 3 review commit and worktree listed in the review note. From its `app/` directory, run `CHOKIDAR_USEPOLLING=1 npm run dev -- --host 127.0.0.1 --port 5320 --strictPort --force`. If port 5320 already has a listener, use `lsof -nP -iTCP:5320 -sTCP:LISTEN` to find its PID and `lsof -a -p PID -d cwd` to verify its working directory. Reuse the matching listener or restart the old Vite instance from this worktree. Keep the configured Auth and report API available.
+2. Open [Dashboard](http://127.0.0.1:5320/dashboard) and sign in. Select **Console** if Classic is visible. Use the same account and data on both devices. A review account is preferable when sharing traces. Keep personal-data recordings local until reviewed.
 3. Set browser zoom to 100%, leave CPU and network throttling disabled, turn off the optional start screen and mute sound for the comparison. Leave the OS motion preference unchanged across runs and record its state. Use a 60 Hz display setting. On the Pixel, turn off Smooth Display if it is enabled. Record the selected tier and effective tier.
 4. Warm the exact path once by opening Overview and Income and returning Home. Begin each recording on the Overview preview after the scene settles. Measure **Full** on Safari and **Balanced** on the Pixel, then repeat the same scenario in **Reduce effects** on each device. If Automatic resolves to another tier, record that result separately.
 
@@ -20,7 +20,7 @@
 
 1. On the Pixel, enable **Developer options** from the build number screen if needed, then enable **USB debugging**. Connect a data-capable USB cable, unlock the Pixel and accept the computer’s debugging prompt.
 2. In desktop Chrome, open `chrome://inspect/#devices`, enable **Discover USB devices**, then open **Port forwarding**. Map device port `5320` to Mac `localhost:5320`. If the app uses local Supabase on `127.0.0.1:54321`, also map device `54321` to Mac `localhost:54321`. Leave hosted HTTPS API connections alone. Enable port forwarding.
-3. In Chrome **on the Pixel**, open [Dashboard](http://127.0.0.1:5320/dashboard), sign in and enable Console. From `chrome://inspect/#devices` on the Mac, click **Inspect** for that Pixel tab. Disable live screencasting in the remote DevTools toolbar. Drive the sequence on the phone.
+3. In Chrome **on the Pixel**, open [Dashboard](http://127.0.0.1:5320/dashboard), sign in and select **Console** if Classic is visible. From `chrome://inspect/#devices` on the Mac, click **Inspect** for that Pixel tab. Disable live screencasting in the remote DevTools toolbar. Drive the sequence on the phone.
 4. Open **Performance** and confirm **No throttling** for CPU and network. Start a runtime recording. After the sequence, stop and inspect **Frames**, **Main**, available raster/compositor tracks and **Layout Shifts**. Use the download menu → **Save trace**. Name the files `phase3-pixel6a-chrome-balanced.json.gz` and `phase3-pixel6a-chrome-reduce.json.gz`. [Remote device setup](https://developer.chrome.com/docs/devtools/remote-debugging) · [USB port forwarding](https://developer.chrome.com/docs/devtools/remote-debugging/local-server) · [Save performance traces](https://developer.chrome.com/docs/devtools/performance/save-trace)
 
 ## Trace sequence
@@ -36,6 +36,8 @@ Repeat at normal speed in each tier. Note elapsed recording times for each step.
 | 5 | Switch to another browser tab for 3 s, then return and wait 3 s. Keep the same app tab open. | Scene work stops while hidden and resumes without replaying a stale transition. If recording stops automatically, retain both segments and note the gap. |
 
 Use actual rendered frame intervals against the 60 Hz target of 16.67 ms. For comparable timing lanes, collect mean and p95 CPU work per frame for the matched five-second windows. Subtract Reduce effects from the corresponding mean and p95 of the active tier. Report the work that the profiler exposes and record missing lanes explicitly. The local Mac Chrome regression budget is **≤2 ms added mean and ≤3 ms added p95**. Use the physical traces to judge frame delivery, interaction and whether the effects budget holds on the devices.
+
+After recording, use VoiceOver on the Mac and TalkBack on the Pixel to check the reading order without adding screen-reader work to the trace. On Home, move from the section row through the headline, movement figure, trend description and activity. In Overview, verify that the chart and its text alternative precede the companion and secondary modules. Return Home and confirm the originating tile receives focus.
 
 ## Results template
 
@@ -54,4 +56,5 @@ Copy this table and fill in measured values. Attach both traces for each device.
 | Ambient CPU Reduce mean / p95 | | |
 | Ambient added mean / p95 / available profiling lanes | | |
 | Pause and resume, Control Centre, hero/collapse observations | | |
+| VoiceOver / TalkBack reading order and focus return | | |
 | Verdict and reason | Pass / Fail / Unmeasured | Pass / Fail / Unmeasured |

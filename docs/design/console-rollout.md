@@ -51,7 +51,7 @@ Login, onboarding, callback, password reset and the internal concept route get d
 
 ## Review reproduction
 
-[Phase 2 Gate 1 review and captures](console-phase-2-gate-1.md) · [Phase 2 Gate 2 walkthrough and trace](console-phase-2-gate-2.md) · [Phase 2 Gate 3 acceptance and Balanced trace](console-phase-2-gate-3.md).
+[Phase 2 Gate 1 review and captures](console-phase-2-gate-1.md) · [Phase 2 Gate 2 walkthrough and trace](console-phase-2-gate-2.md) · [Phase 2 Gate 3 acceptance and Balanced trace](console-phase-2-gate-3.md) · [Phase 3 review and device gate](console-phase-3-review.md).
 
 Start each review note with the **branch, commit, worktree path, exact dev-server command and URL**, followed by a capture of that URL.
 

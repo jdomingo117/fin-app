@@ -8,7 +8,7 @@ The owner confirmed the local HTML export as the reference, §4 as the authority
 
 ## Appearance and token ownership
 
-Extend the appearance state above the pathname-keyed route tree. Expose `theme="console"` to the shell and apply it as `html[data-theme="console"]` for portals and first paint. Keep the existing `halcyon-theme` light/dark preference. Use a separate `halcyon-appearance` preference for classic/console. A fresh or unreadable preference falls back to classic. Offer Classic light, Classic dark and dark Console. Settings and the existing appearance control can switch live. Switching appearance must preserve route, keyboard target where available, active tenant, provider state, unsaved forms and balances redaction.
+Extend the appearance state above the pathname-keyed route tree. Expose `theme="console"` to the shell and apply it as `html[data-theme="console"]` for portals and first paint. Keep the existing `halcyon-theme` light/dark preference. Use a separate `halcyon-appearance` preference for classic/console. Keep the existing Classic fallback during the flagged spikes. Console is the future default. Freeze Classic and remove it after Phase 5. Settings and the existing appearance control can switch live while the fallback is available. Switching appearance must preserve route, keyboard target where available, active tenant, provider state, unsaved forms and balances redaction.
 
 The names below are proposed house tokens. Braces expand to individual CSS properties, in the order shown. Define visual values once in the console scope in `index.css`, next to the current theme tokens. Read and cache the resolved motion tokens when the appearance/effects mode changes. Convert CSS time units to seconds and easing tuples to Framer Motion 11 transitions in one adapter. CSS consumes those same tokens directly. Anime.js v3 retains chart ownership. Evaluate v4 as a separate follow-up. Keep synthesis values as typed SoundEngine presets. Scoped animations must cancel on interruption and dispose on unmount. [House tokens](../../app/src/index.css) · [Current chart adapter](../../app/src/hooks/useChartReveal.ts)
 
@@ -25,7 +25,7 @@ The names below are proposed house tokens. Braces expand to individual CSS prope
 | `hubIn / hubOut` | Opacity 0→1, scale 1.08→1, blur 10→0px in 600ms settle. Reverse endpoints on Back. | Apply to the hub presentation. Keyboard and navigation work from activation. |
 | `sheetUp` | Cards Y 60→0px in 550ms after 50ms. Bar Y 60→0px in 500ms. Icons Y 24→0px, scale .8→1, opacity 0→1 in 450ms, starting at 60ms + index × 35ms | Control Centre. Scrim opacity 0→1 in 400ms. Reverse the sheet from its current position on dismissal. |
 
-Each recipe field with a time, offset, scale, filter or colour is a named preset value. Components supply only intent, section ID and sibling index. CSS and JS may animate transform, opacity and filter. Set final layout dimensions and shadows in static styles. For console pages that inherit a legacy width, dash or bar-height reveal, use the existing chart final-state path or a transform-only presentation. Classic chart behaviour retains its existing anime.js v3 adapter.
+Each recipe field with a time, offset, scale, filter or colour is a named preset value. Components supply only intent, section ID and sibling index. CSS and JS may animate transform, opacity and filter. Set final layout dimensions and shadows in static styles. For console pages that inherit a legacy width, dash or bar-height reveal, use the existing chart final-state path or a transform-only presentation. The shared chart adapter stays on anime.js v3.
 
 ## §4.2–4.3 · Focus and geometry
 
@@ -98,7 +98,7 @@ Keep focus ownership separate from financial state. Re-key only copy, summary an
 | Expenses | Dashboard's 30-day spending and available category observation | Open Expenses, carrying an existing period/category scope when applicable. |
 | Budget, when enabled | Labelled Budget entry until the user opens its workspace | Open the existing permission-gated Budget route. Keep unavailable or loading amounts explicitly labelled. |
 
-Control Centre actions can open Dashboard, Ledger review, Transfer review, Ingestion and Settings, plus the local effects/audio controls. Build the notifications row from available attention counts and sync status, including empty, loading and unavailable states. Keep primary rail destinations and native controls visible and usable across both appearances.
+Control Centre actions can open Dashboard, Ledger review, Transfer review, Ingestion and Settings, plus the local effects/audio controls. Build the notifications row from available attention counts and sync status, including empty, loading and unavailable states. Console exposes the existing destinations through the section row and Control Centre. Keep the Classic rail usable while the fallback ships.
 
 ## §4.8 · SoundEngine presets
 
@@ -128,7 +128,7 @@ First visit is silent. The top-bar mute affects all buses including reverb tails
 | Keyboard, touch and contrast | Native controls have a visible or accessible name. Verify both ends of every row, touch scrolling, focus restoration, 200% zoom, editable C, forced colours, meaningful loading/error states and signed figures. For each section, check both signed-figure colours against its own backdrop at gradient extrema and intermediate transitions. Inspect Expenses/Spending (35°) with the negative figure hue (25°), and verify that signs stay identifiable in monochrome. Record any required glow cap or local gradient. |
 | Performance | 60fps target at 60Hz (16.67ms frame budget), zero focus-induced layout shift, no navigation main-thread task >50ms, ambient work ≤2ms per frame. Use Safari on a physical 2020 M1 MacBook Air and Chrome on a physical Pixel 6a at 60Hz. At the ends of Phases 3 and 5, collect frame, main-thread, style/paint and compositor tracks using each platform’s profiler. Use a Chrome DevTools trace on the local Mac for each implementation commit. Include a static-scene comparison to isolate ambient work. |
 
-After the Phase 2a feel review, run the applicable checks against a deterministic fictional-data fixture with classic light, classic dark and console. Check runtime switching without reload, tokens in CSS and Framer Motion targets, keyboard reachability, both effect reductions, and fresh/persisted/muted sound. Record screen and device evidence with each commit. Phase 5 adds matched Playwright captures, axe, manual interaction and the end-to-end sound matrix. The component demos provide coverage before Dashboard integration. [Screen and verification plan](console-rollout.md)
+After the Phase 2c feel review, run the applicable Console checks against a deterministic fictional-data fixture. Smoke-check that the Classic fallback renders, navigates and reports no browser console errors. Check runtime switching without reload, tokens in CSS and Framer Motion targets, keyboard reachability, both effect reductions, and fresh/persisted/muted sound. Record screen and device evidence with each commit. Phase 5 adds Console Playwright captures, axe, manual interaction and the end-to-end sound matrix. The component demos provide coverage before Dashboard integration. [Screen and verification plan](console-rollout.md)
 
 
 ## Phase 2a review gate
@@ -142,8 +142,32 @@ Use fixed-layer cross-fades for title tracking and tile silhouettes. Draw the ri
 
 Home fills 100dvh with horizontal activity overflow and a full-bleed ambient scene behind the transparent header. The header holds the Halcyon home action, Console toggle, Control Centre button, Settings, avatar and clock. Sections and Control Centre provide navigation in Console. Classic owns its numbered rail.
 
-Opening a section enters its existing route in the persistent viewport frame. Overview uses `/dashboard?hub=overview`, Income uses `/income`, and the other destinations use their existing routes. The full-screen composition has an ambient backdrop and an opaque, independently scrollable reading surface. Back or Escape reverses the zoom and restores the initiating tile on Home. The rough modal Control Centre provides Ledger review, Transfers, Ingestion, Settings and Sign out. Review counts come from the portfolio report.
+The Phase 2b spike opens each section on its existing route in the persistent viewport frame. Overview uses `/dashboard?hub=overview`, Income uses `/income`, and the other destinations use their existing routes. The spike uses an ambient backdrop and an opaque, independently scrollable reading surface. Phase 2c replaces that surface with individual modules. Back or Escape reverses the zoom and restores the initiating tile on Home. The rough modal Control Centre provides Ledger review, Transfers, Ingestion, Settings and Sign out. Review counts come from the portfolio report.
 
 The hero displays the headline amount in tabular 200-weight type at clamp(48px, 6.4vw, 96px). The label names the figure and the period. Secondary values use 28px. The orb uses existing monthly net worth or daily flow buckets, with the graph marked decorative and a text equivalent for available series. Cards use the existing 300px width, a category icon and visually truncated titles with accessible full names. Mask and fade tiles as they pass the anchor. The row omits step buttons.
 
 Income and Expenses retain the inclusive 30-day reporting window and show its dates and latest available transaction date. Activity comes from the bounded recent list filtered to matching dates and reporting classifications. The zero state names the empty period. Income stays at 85° and Spending at 35°. For Income, tile L is .74/.60/.42 and C .17. For Spending, L is .73/.57/.39 and C .17. Compensated card and ambient tokens also lift the warm palettes. Review the signed figure contrast against each adjusted section in hardening.
+
+
+## Phase 2c hub design language
+
+Home’s direction is approved. The first review compares two static Income layouts using identical fictional data at 1440 × 900 and 390 × 844. Both remain design studies until the owner selects a direction. The selected layout will be applied to Income and Overview behind the flag as a second spike. [Direction captures and rollout](console-rollout.md#phase-2c--income-hub-directions)
+
+Restyle shared components in place for Console. The implementation may replace their old styling while preserving their data and behaviour.
+
+| Surface | Console treatment |
+| --- | --- |
+| Hub modules | Individual 16px-radius surfaces. Reveal ambient light in the gaps. Give each dense table, long list or form an opaque surface sized around that content and its own existing controls. |
+| Figures and labels | Display figures use weights 200–300 with tabular numerals. Keep 13px labels in sentence case by default. Keep cents in hubs and activity cards. |
+| Charts | Use white or near-white strokes with a soft section-hued glow. Keep gridlines at or below 8% white. Tint areas softly with the section hue. Keep data, chart semantics, tooltip interaction and keyboard alternatives. Use stroke style and labels to distinguish series. |
+| Controls and focus | Restyle tabs, filters and date pickers as pills or rounded rectangles with a white-on-glass selection state. Reuse the tile focus ring. Arrow keys traverse card rows and Tab moves between rows and into workflow controls. Tables and forms retain their native keys and focus order. |
+
+### Home follow-up after direction approval
+
+- Move the focused tile glow outside the track’s clipping and fade layers.
+- Plot cumulative inflow and cumulative gross outflow from the existing daily buckets for the monotonic Home key art. Label gross outflow as such when the headline is net spending, so refunds and reimbursements cannot make one read as the other.
+- Show Accounts cards with their balance, type and available institution. Use available holdings for the key art and a designed empty state when there is no eligible data.
+- Reserve space for the hero number and art from 320px up. Stack or reduce the art on narrow displays. Display whole dollars in the Home hero and expose the exact cents in its accessible name.
+- Place a horizontal row of real attention cards over a bottom bar of round Control Centre actions. Reveal action labels on focus.
+
+No primitive hardening or automated coverage is part of the two Phase 2c spikes.

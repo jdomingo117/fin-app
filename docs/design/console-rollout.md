@@ -10,7 +10,7 @@ Proposed props describe ownership. The existing router identifies destinations. 
 
 | Primitive | Inputs and events | States and responsibilities |
 | --- | --- | --- |
-| Appearance and effects preferences | Appearance, saved classic light/dark choice, OS motion preference, app motion, reduce effects, sound opt-in, mute, volume, music opt-in | Own the runtime flag, first-paint preference and effective settings above the keyed routes. Default to the existing appearance. On exit release console listeners, timers, animations and audio nodes. Persist presentation preferences only. |
+| Appearance and effects preferences | Appearance, saved classic light/dark choice, OS motion preference, app motion, reduce effects, sound opt-in, mute, volume, music opt-in | Own the runtime flag, first-paint preference and effective settings above the keyed routes. Console is the future default. Keep the frozen Classic fallback available until removal after Phase 5. On exit release console listeners, timers, animations and audio nodes. Persist presentation preferences only. |
 | FocusRing | `kind` (section, activity, control), `active`, native focus-visible, disabled, effective motion | Style the actual button or link, with decorative layers excluded from interaction and accessibility. Rest, focused, pressed, disabled, static/reduced and forced-colours states. Assign scale to a visual child so the hit target and layout slot remain stable. |
 | FocusRow | `kind`, labelled ordered items with stable IDs, active ID, `onFocusChange(id)`, `onActivate(id)`, return ID | Own a row-local roving tab stop and input modality. Scope horizontal arrows to the row. Tab exits. Suppress activation after a touch pan. Distinguish hover, DOM focus, pointer activation and the delayed ambient section. Preserve one visible focus anchor when changing modality. Single-action cards open on first activation. |
 | AmbientBackground | Committed section hue, effective effects, page visibility, covering overlay, input capability | Keep one gradient mounted per enabled section. Mix their opacity on a committed ambient change. Active, cross-fading, suspended and static. Coalesce pointer input into one frame update. Give touch a stable centre. Clear pending work on section changes, theme exit and unmount. |
@@ -27,14 +27,15 @@ Use a standalone fictional-data demo following the existing Vite concept-entry p
 | --- | --- | --- |
 | 2a · Dashboard feel spike | Runtime appearance flag, rough Dashboard section row, ambient background and keyed previews using existing reads | Capture a local Chrome DevTools trace. Stop for owner review before hardening. Automated coverage begins with hardening after the feel review. |
 | 2b · Console viewport spike | Full-screen Home, existing-route Overview and Income hubs, and rough Control Centre | Capture Home Overview, Home Income, Overview hub and Control Centre at 1440×900 and 390×844. Include a 10–15s recording, warm-palette comparison and Chrome trace. Stop for owner feel review. |
-| 2 · appearance and token foundation | Live switch and effective preferences | First visit, reload, blocked storage, light → console → light and dark → console → dark, including a form with unsaved state. |
+| 2c · review, then implement | Compare two static Income hub directions. After owner selection, apply the selected language to Income and Overview and make the Home corrections. | First review four static captures and the Ledger and Budget notes. After implementation, capture Income hub, Overview hub and Home Accounts at both sizes, a 15-second walkthrough and a Chrome trace. Stop again for owner review. |
+| 2 · appearance and token foundation | Live switch and effective preferences | Check Console first visit, reload, blocked storage and switching with unsaved input. Classic gets a render, navigation and browser-console smoke check. |
 | 2 · one commit per primitive | Motion presets, FocusRing, FocusRow, GlassSurface, AmbientBackground, SoundEngine, then ControlCentre | Each commit names the demo state, keyboard/touch path and reduced-effects result. Include a local Chrome DevTools trace. |
 | 3 · Dashboard | Harden Home and the Overview hub as separate surfaces | Test rapid browsing, open during dwell, Back to the same tile, screen reader order, redaction, empty/error results and recent-transaction editing. Compare report requests before/after focus movement. |
 | 4.1 · Accounts | Balances and holdings hub | Account selection, balance history, activity, add/edit and provider connection dialogs. Restore the initiating control after a dialog closes. |
 | 4.2 · Income | Income summary and projection entry | Date/account filters, analyzer/projections tabs, keyboard chart alternatives and saved planning edits retain their state while appearance changes. |
 | 4.3 · Expenses | Spending summary and recurring entry | Category and time filters, recurring directory, calendar and drill-through still agree. Escape dismisses a picker before any hub navigation. |
-| 4.4 · Budget | Budget hub with its existing task workspace on an opaque scrollable surface | Verify flag-off and owner/member access, draft and interrupted-save recovery, native modal focus and its docked appearance control. |
-| 4.5 · Ledger | Ledger hub with its transaction workspace on an opaque scrollable surface | Type C in search, select multiple rows, page, open a full-parent drawer, close and restore focus. Keep a visible ring around the active control within the table. |
+| 4.4 · Budget | Budget hub with its existing task workspace in focused reading and editing modules | Verify Console owner/member access, draft and interrupted-save recovery, native modal focus and its docked appearance control. |
+| 4.5 · Ledger | Ledger hub with a dedicated opaque table module and companion controls | Type C in search, select multiple rows, page, open a full-parent drawer, close and restore focus. Keep a visible ring around the active control within the table. |
 | 4.6 · Ingestion | Ingestion hub with its statement-import workspace | Operate file input, mapping, staging and error recovery. Keep progress text, native inputs and the current staged work visible during appearance changes. |
 | 4.7 · Transfers | Transfers hub with its review queues | Preserve group selection, queue position, batch confirmation and keyboard operation. |
 | 4.8 · Settings | Appearance, sound/volume, reduce effects and shortcut controls in the existing form | Connect final settings presentation to the Phase 2 preference owner. Test native interaction, independent music/mute, OS preference changes and persistence. |
@@ -45,7 +46,8 @@ Login, onboarding, callback, password reset and the internal concept route get d
 
 ## Acceptance evidence
 
-- **Appearance and layout.** Capture the same fictional state at 320, 390, 768, 1024 and 1440px. Compare matching classic light and dark captures against their baselines, then compare console against the supplied target. Include the first and last tile, long names, ring edges, an open overlay, and 200% zoom. Check focus-induced layout shift independently of the intended track transform.
+- **Appearance and layout.** Capture the same fictional state at 320, 390, 768, 1024 and 1440px. Compare Console against the supplied target. Include the first and last tile, long names, ring edges, an open overlay, and 200% zoom. Check focus-induced layout shift independently of the intended track transform.
+- **Classic fallback.** Smoke-check rendering, navigation and browser console errors while the frozen fallback remains available. Remove Classic after Phase 5.
 - **Input and accessibility.** Use Playwright and axe on real states, then operate each row and dialog using keyboard and touch. Inspect accessible names, focus restoration, visible labels, both signed-figure colours against each section’s gradient extremes, including Spending 35° against negative 25°, forced colours and native controls. Verify that navigation works while the entrance is playing.
 - **Effects and sound.** Test fresh/off, explicit opt-in, persisted opt-in before/after a gesture, muted, zero volume, music off/on, unavailable Web Audio, OS reduce and explicit override. Combine OS reduce and in-app Reduce effects separately and together. Verify no ambient movement when reduced or obscured, no decorative blur/particles with Reduce effects, 150ms reduced entrances and visible feedback for every cue.
 - **Performance.** Use a local Mac Chrome DevTools trace per implementation commit. At the ends of Phases 3 and 5, measure Safari on a 2020 M1 MacBook Air and Chrome on a Pixel 6a, both at 60Hz. Record OS/browser version, build, viewport and effects settings. Trace rapid focus changes, dwell, section open/Back, overlay open/close and a hidden/visible cycle at normal speed. Record frame intervals against 60fps, navigation tasks over 50ms, ambient work against 2ms per frame, and focus-induced layout shift against zero. Profile rendering/compositing as well as script. Attach the trace or its artifact link to the commit note. An emulated viewport establishes layout coverage only.
@@ -61,7 +63,7 @@ In the Phase 2a spike, the signed-in Dashboard offered **Console** in the top ba
 The Chrome DevTools Performance trace uses a fictional signed-in Dashboard on a 1440×900 viewport in local Chrome 157. It records pointer movement, rapid keyboard changes, the background dwell and colour cross-fade. Load the compressed recording in Chrome’s Performance panel. Physical-device traces and contrast qualification are phase gates. [Phase 2a Chrome trace](traces/console-phase-2a-chrome.json.gz)
 
 
-Phase 4 extends the route-based hub model to each screen. Existing charts, forms and tables occupy the opaque reading surface and keep their controls. The ambient scene and global actions belong to the same viewport as Home.
+Phase 4 extends the chosen hub language to each screen by restyling shared components in place for Console. Individual charts, forms and tables keep their controls and use their own reading surfaces. The ambient scene and global actions belong to the same viewport as Home.
 
 ### Phase 2b review artifacts
 
@@ -82,3 +84,31 @@ The captures use matching fictional data. The palette comparison holds geometry 
 ![Spending palette before and after](captures/console-phase-2b/palette-expenses.jpg)
 
 [13-second walkthrough](captures/console-phase-2b/walkthrough.webm) · [Local Chrome DevTools Performance trace](traces/console-phase-2b-chrome.json.gz)
+
+
+## Phase 2c · Income hub directions
+
+Both directions use the same fictional 30-day report. $7,080 in inflow and $3,140 in spending leave $3,940 after spending. Dates, deposit amounts, source shares and chart series refer to that same fixture. The focus ring in each capture illustrates an active module. These are static design studies.
+
+| Direction | 1440 × 900 | 390 × 844 |
+| --- | --- | --- |
+| A · Game hub | [Desktop capture](captures/console-phase-2c/game-hub-1440.png) | [Phone capture](captures/console-phase-2c/game-hub-390.png) |
+| B · Analysis workspace | [Desktop capture](captures/console-phase-2c/analysis-workspace-1440.png) | [Phone capture](captures/console-phase-2c/analysis-workspace-390.png) |
+
+### A · Game hub
+
+The translucent hero continues the visual rhythm of Home. It gives the report’s name, inflow and dates one clear place, with an actual retained-income ratio in the key art. A horizontal row carries secondary metrics, followed by independently surfaced analysis and activity. On phone, the metric strip scrolls sideways and the deeper modules stack.
+
+- **Ledger.** Use a shorter route header and a row of All, Needs review and Uncategorised views. Keep search and filters directly above one opaque transaction table. The table keeps its own horizontal overflow and row controls.
+- **Budget.** Open on the selected period and its primary figure. Keep overview metrics on the browse row. Group editable fields into separately surfaced tasks such as allocations and goals, with save and recovery controls inside the relevant task.
+
+### B · Analysis workspace
+
+A compact header and filters lead directly to the cash-flow chart. The headline is inside the chart module, where it explains the end of the inflow line. A smaller column pairs period balance with recent deposits, and the ambient scene runs through the two columns. On phone, the chart comes first and the other modules follow the reading order vertically.
+
+- **Ledger.** Put the table in the main work area and move review counts and data scope to compact companion modules. On phone, put filters above the table and move secondary summaries after it. Keep table scanning, selections and pagination together.
+- **Budget.** Put the active form in the main work area, with totals and the effect of changes in an adjacent summary. On phone, place a compact funding readout before the form and keep its fields, validation and save action together.
+
+### Approval and next review
+
+Choose A or B before app edits. Then implement the chosen direction for Income and Overview, plus the Home corrections in the spec. The next review includes desktop and phone captures of Income hub, Overview hub and Home Accounts, a 15-second Home → Income → scroll → Back → Accounts walkthrough, and a local Chrome trace. Return for review before hardening.

@@ -1,4 +1,4 @@
-import { useLayoutEffect, useState } from 'react'
+import { useState } from 'react'
 import Ledger from '../../components/Ledger'
 import ReportStatus from '../../components/ReportStatus'
 import TransactionCategoryDrawer from '../../components/TransactionCategoryDrawer'
@@ -18,17 +18,12 @@ export function useDashboardTransaction(redacted = false) {
   const scope = `${user?.id ?? ''}/${tenantId ?? ''}`
   const [selection, select] = useState<{ scope: string; id: string; rowId: string; opener: HTMLElement | null }>()
   const id = selection?.scope === scope ? selection.id : undefined
-  const report = useReport(id, tenant => reportParent(tenant, id!, accounts), !!id)
-  const [previous, setPrevious] = useState<{ scope: string; id: string; data: Txn }>()
-  useLayoutEffect(() => {
-    if (id && report.data) setPrevious({ scope, id, data: report.data })
-  }, [scope, id, report.data])
-  const transaction = report.data ?? (previous?.id === id && previous?.scope === scope && id ? previous.data : null)
+  const report = useReport(id, tenant => reportParent(tenant, id!, accounts), !!id, true)
+  const transaction = report.data
   const rowSelector = selection ? `[data-dashboard-activity="${CSS.escape(selection.rowId)}"]` : undefined
   function close() {
     const opener = selection?.opener
     select(undefined)
-    setPrevious(undefined)
     if (!transaction && opener?.isConnected) opener.focus({ preventScroll: true })
   }
   return {

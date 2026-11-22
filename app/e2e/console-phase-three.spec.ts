@@ -79,7 +79,11 @@ test('phone Overview art shares the figure row and modules follow the reading or
     await checkHero(home)
   }
   await openOverview(page)
+  await expect(home).toHaveCount(0)
   await expect(hub).toHaveCSS('opacity', '1')
+  for (const movingPart of await hub.locator('.console-handoff').all()) {
+    await expect(movingPart).toHaveCSS('transform', 'none')
+  }
   for (const width of [320, 390]) {
     await page.setViewportSize({ width, height: 844 })
     await checkHero(hub)
@@ -171,6 +175,7 @@ test('recent activity edits and reloads the full parent through the signed-in ap
   await openOverview(page)
   const recent = page.getByRole('region', { name: 'Recent activity' })
   const row = recent.getByRole('button', { name: /Market grocer.*21 Nov/ })
+  await row.evaluate(node => node.setAttribute('data-test-original-row', 'true'))
   await row.focus()
   await page.keyboard.press('Enter')
   const editor = page.getByRole('dialog', { name: 'Market grocer' })
@@ -180,6 +185,7 @@ test('recent activity edits and reloads the full parent through the signed-in ap
   await editor.getByRole('button', { name: 'Save correction' }).click()
   await expect(page.getByText('Transaction updated', { exact: true })).toBeVisible()
   await expect(row).toContainText('Transport')
+  await expect(row).toHaveAttribute('data-test-original-row', 'true')
   await expect(editor).toBeVisible()
   await editor.getByRole('button', { name: 'Close transaction detail' }).click()
   await expect(editor).toHaveCount(0)

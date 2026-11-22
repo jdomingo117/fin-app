@@ -14,11 +14,33 @@ let current:ReturnType<typeof useReport<string[]>>
 let commits:typeof current[]
 let requests:ReturnType<typeof deferred<string[]>>[]
 const read=vi.fn(async()=>{const d=deferred<string[]>();requests.push(d);return d.promise})
-function Probe(){const report=useReport('evidence',read);useLayoutEffect(()=>{current=report;commits.push(report)},[report]);return null}
-async function render(){await act(async()=>{root.render(<Probe/>)})}
+function Probe({ params, keepDuringRefresh }: { params: string; keepDuringRefresh: boolean }) {
+  const report = useReport(params, read, true, keepDuringRefresh)
+  useLayoutEffect(() => { current = report; commits.push(report) }, [report])
+  return null
+}
+async function render(params = 'evidence', keepDuringRefresh = false) {
+  await act(async () => { root.render(<Probe params={params} keepDuringRefresh={keepDuringRefresh} />) })
+}
 beforeEach(()=>{vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT',true);root=createRoot(document.createElement('div'));requests=[];commits=[];read.mockClear();auth.tenantId='a';revision.reportRevision=0})
 afterEach(async()=>{await act(async()=>root.unmount());vi.unstubAllGlobals()})
 describe('scoped response publication',()=>{
+  it('keeps a previous result only while refreshing the same identity and params', async () => {
+    await render('recent', true)
+    await act(async () => requests[0].resolve(['cached']))
+    revision.reportRevision++
+    await render('recent', true)
+    expect(current).toMatchObject({ data: ['cached'], pending: true })
+    await act(async () => requests[1].resolve(['edited']))
+    expect(current.data).toEqual(['edited'])
+
+    await render('different scope', true)
+    expect(current.data).toBeNull()
+    await act(async () => requests[2].resolve(['other result']))
+    auth.tenantId = 'b'
+    await render('different scope', true)
+    expect(current.data).toBeNull()
+  })
   it.each(['mutation','tenant switch'])('rejects a pre-edit page after %s',async boundary=>{
     await render()
     const old=requests[0]

@@ -17,10 +17,10 @@ export function useDashboardCashFlow(from: string, to: string, accountScope?: st
     cashFlow(tenant, { p_from: from, p_to: to, p_account_ids: accountScope }), enabled)
 }
 
-export function useDashboardReports(from: string, to: string, enabled = true) {
+export function useDashboardReports(from: string, to: string, enabled = true, keepActivityDuringRefresh = false) {
   const summary = usePortfolio(enabled)
   const flow = useDashboardCashFlow(from, to, undefined, enabled)
-  const activity = useReport('recent', tenant => latestLines(tenant, RECENT_ACTIVITY_COUNT), enabled)
+  const activity = useReport('recent', tenant => latestLines(tenant, RECENT_ACTIVITY_COUNT), enabled, keepActivityDuringRefresh)
   const history = useReport('monthly', monthlyWorth, enabled)
   return { summary, flow, activity, history }
 }
@@ -36,7 +36,7 @@ export function DashboardReportsProvider({ children }: { children: ReactNode }) 
   }, [view])
   const { today, from } = dashboardWindow()
   const enabled = visited || view === 'dashboard'
-  const reports = useDashboardReports(from, today, enabled)
+  const reports = useDashboardReports(from, today, enabled, true)
   return <DashboardReportsContext.Provider value={reports}>{children}</DashboardReportsContext.Provider>
 }
 

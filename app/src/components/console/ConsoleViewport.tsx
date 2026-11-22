@@ -1,3 +1,4 @@
+import { AmbientBackground } from './AmbientBackground'
 import { AnimatePresence, LayoutGroup, motion, PresenceContext, useIsPresent } from 'framer-motion'
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { useOutlet, useLocation, useNavigate } from 'react-router-dom'
@@ -172,12 +173,7 @@ export default function ConsoleViewport() {
   return (
     <div ref={root} className="console-viewport" data-reduced={reduce} data-paused={!visible || centreOpen} data-snap-hue={snapHue}
       style={consoleMotionStyle}>
-      <div className="console-scene" aria-hidden="true">
-        {enabledSections.map(item => <div key={item.id} data-section={item.id} className="console-ambient" data-current={item.id === ambient} />)}
-        <div className="console-rays" />
-        <div className="console-beam" />
-        <div className="console-grain" />
-      </div>
+      <AmbientBackground section={ambient} paused={!visible || centreOpen} reduced={reduce} reduceEffects={false} />
       <header className="console-topbar">
         <button type="button" className="console-brand" aria-label="Halcyon Home" onClick={() => { if (!home) setClosing(true) }}>
           <span aria-hidden="true" className="console-brand-letter" /><strong>HALCYON</strong>

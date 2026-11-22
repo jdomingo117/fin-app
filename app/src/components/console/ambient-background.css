@@ -1,0 +1,89 @@
+.console-scene, .console-ambient-plane, .console-ambient, .console-rays, .console-beam, .console-grain, .console-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.console-scene { overflow: clip; --ambient-pointer-x: 0; --ambient-pointer-y: 0; }
+.console-ambient-plane {
+  inset: -4%;
+  transform: translate3d(calc(var(--ambient-pointer-x) * var(--depth-x)), calc(var(--ambient-pointer-y) * var(--depth-y)), 0);
+  transition: transform var(--ambient-settle) var(--ease-glide);
+}
+.console-ambient-plane[data-depth="background"] { --depth-x: -10px; --depth-y: -8px; }
+.console-ambient-plane[data-depth="ribbons"] { --depth-x: -26px; --depth-y: -18px; }
+.console-ambient-plane[data-depth="particles"] { --depth-x: -48px; --depth-y: -30px; }
+.console-light-plane { inset: -5%; }
+.console-ambient {
+  background:
+    radial-gradient(65% 68% at 90% 8%, oklch(var(--scene-l-key) var(--scene-c-key) var(--section-hue) / .77), transparent 60%),
+    radial-gradient(60% 60% at 4% 96%, oklch(var(--scene-l-edge) var(--scene-c-edge) calc(var(--section-hue) + 40) / .9), transparent 70%),
+    radial-gradient(45% 35% at 49% 55%, oklch(.32 .1 calc(var(--section-hue) - 30) / .55), transparent 80%),
+    linear-gradient(175deg, oklch(var(--scene-l-base) .08 var(--section-hue)), oklch(var(--scene-l-floor) .04 var(--section-hue)));
+  opacity: 0;
+  transition: opacity var(--dur-bg) var(--ease-fade);
+}
+.console-ambient[data-current="true"] { opacity: 1; }
+.console-rays {
+  inset: -70% -30% 0 32%;
+  transform-origin: 50% 0;
+  background: repeating-conic-gradient(from 200deg at 50% 0%, rgb(255 255 255 / .065) 0deg 2.5deg, transparent 2.5deg 9deg);
+  mask-image: radial-gradient(60% 55% at 50% 0%, black, transparent 75%);
+  mix-blend-mode: screen;
+  animation: console-rays var(--dur-rays) linear infinite;
+}
+.console-beam {
+  background: linear-gradient(198deg, rgb(255 255 255 / .14), transparent 45%);
+  filter: blur(38px);
+  mix-blend-mode: screen;
+  animation: console-beam var(--dur-beam) ease-in-out infinite;
+}
+.console-grain {
+  opacity: .06;
+  background: radial-gradient(rgb(255 255 255 / .9) .5px, transparent .6px) 0 0 / 3px 3px;
+}
+.console-ribbon,
+.console-light-circle { position: absolute; display: block; }
+.console-ribbon {
+  inset: var(--ribbon-lane) -15% auto;
+  block-size: 22%;
+  border-radius: 50%;
+  transform: translate3d(0, 0, 0) rotate(var(--ribbon-angle));
+  background: radial-gradient(ellipse at center, oklch(.69 .12 var(--section-hue) / .20), transparent 68%);
+  animation: console-ribbon var(--ribbon-cycle) ease-in-out var(--ribbon-delay) infinite alternate;
+}
+.console-light-circle {
+  inset: var(--light-y) auto auto var(--light-x);
+  inline-size: var(--light-size);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, oklch(.78 .11 calc(var(--section-hue) + 25) / .22), transparent 68%);
+  animation: console-light-circle var(--light-cycle) ease-in-out var(--light-delay) infinite alternate;
+}
+.console-particles {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+}
+.console-vignette {
+  background:
+    radial-gradient(ellipse at 50% 42%, transparent 43%, rgb(2 4 11 / .70)),
+    linear-gradient(rgb(2 4 11 / .25), transparent 27% 72%, rgb(2 4 11 / .45));
+}
+.console-scene[data-paused="true"] :is(.console-rays, .console-beam, .console-ribbon, .console-light-circle) {
+  animation-play-state: paused;
+}
+.console-scene[data-static="true"] .console-ambient-plane { transform: none; transition: none; }
+.console-scene[data-static="true"] :is(.console-rays, .console-beam) { animation: none; }
+.console-scene[data-static="true"] .console-ambient { transition: none; }
+.console-viewport[data-reduce-effects="true"] .console-beam { filter: none; }
+@keyframes console-rays { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg); } }
+@keyframes console-beam { 0%, 100% { opacity: .55; } 50% { opacity: .95; } }
+@keyframes console-ribbon {
+  from { opacity: .44; transform: translate3d(-3%, 4%, 0) rotate(var(--ribbon-angle)); }
+  to { opacity: .82; transform: translate3d(4%, -12%, 0) rotate(calc(var(--ribbon-angle) + 8deg)); }
+}
+@keyframes console-light-circle {
+  from { opacity: .25; transform: translate3d(0, 0, 0); }
+  to { opacity: .60; transform: translate3d(30px, -46px, 0); }
+}

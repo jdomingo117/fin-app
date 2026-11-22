@@ -7,11 +7,14 @@ import { consoleRise, useConsoleReducedMotion } from './motion'
 import { FocusRing } from './FocusRing'
 import { useConsolePreferences } from './ConsolePreferences'
 import { GlassSurface } from './GlassSurface'
+import ReportStatus from '../ReportStatus'
 import './console-dashboard.css'
 
 type Props = {
   figures: Partial<Record<SectionId, ConsoleFigure[]>>
   activity?: Txn[]
+  activityReport: React.ComponentProps<typeof ReportStatus>['report']
+  figureReport: React.ComponentProps<typeof ReportStatus>['report']
   accounts: Account[]
   period: string
   latestDate?: string
@@ -20,13 +23,14 @@ type Props = {
   selectSection: (section: SectionId) => void
   restoreFocus: boolean
   covered: boolean
+  redacted: boolean
   open: (section: SectionId) => void
   openTransaction: (transaction: Txn) => void
 }
 
 export default function ConsoleHome({
-  figures, activity, accounts, period, latestDate, trends, activeId, selectSection, restoreFocus,
-  covered, open, openTransaction,
+  figures, activity, activityReport, figureReport, accounts, period, latestDate, trends, activeId, selectSection, restoreFocus,
+  covered, redacted, open, openTransaction,
 }: Props) {
   const reduce = useConsoleReducedMotion()
   const audio = useConsolePreferences()
@@ -37,6 +41,7 @@ export default function ConsoleHome({
 
   return (
     <section className="console-home" aria-label="Dashboard section previews" data-paused={covered}>
+      <h1 className="sr-only">Home</h1>
       <SectionFocusRow items={enabledSections} activeId={activeId} restoreFocus={restoreFocus}
         onPreview={selectSection} onActivate={open} />
       <motion.div
@@ -48,11 +53,14 @@ export default function ConsoleHome({
         <div className="console-hero">
           <div className="console-summary">
             <ConsoleHeadline home id={section.id} label={`${section.name}${headline ? ` · ${headline.label}` : ''}`}
-              figure={headline} reduced={!!reduce} period={isFlow ? period : undefined} />
-            {secondary.length > 0 && <ConsoleFigureStrip figures={secondary} />}
+              figure={headline} reduced={!!reduce} period={isFlow ? period : undefined} redacted={redacted} />
+            {secondary.length > 0 && <ConsoleFigureStrip figures={secondary} redacted={redacted} />}
             {isFlow && <p className="console-asof">{latestDate ? `Latest transaction · ${latestDate}` : '\u00a0'}</p>}
+            {headline && figureReport.error && <div className="console-preview-report">
+              <ReportStatus report={figureReport} label={headline.label} />
+            </div>}
           </div>
-          <ConsoleHeroArt home id={section.id} art={trends[section.id]} reduced={!!reduce} />
+          <ConsoleHeroArt home id={section.id} art={trends[section.id]} reduced={!!reduce} redacted={redacted && !!headline} />
         </div>
         {section.id === 'accounts' && <div className="console-activity console-home-activity">
           <h2>Accounts</h2>
@@ -62,7 +70,8 @@ export default function ConsoleHome({
               <FocusRing layer="sweep" />
               <span className="console-card-emblem"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 6h18v12H3zM3 10h18M7 15h4" /></svg></span>
               <span className="console-card-category">{account.type}{account.institution ? ` · ${account.institution}` : ''}</span>
-              <strong className="tabular-nums" data-sign={account.balance < 0 ? 'negative' : undefined}>{consoleMoney(account.balance)}</strong>
+              {redacted ? <strong>Balance hidden</strong> :
+                <strong className="tabular-nums" data-sign={account.balance < 0 ? 'negative' : undefined}>{consoleMoney(account.balance)}</strong>}
               <span className="console-card-title">{account.name}</span>
             </GlassSurface>)}
           </FocusRow> : <p className="console-empty console-activity-placeholder">No accounts to show.</p>}
@@ -76,17 +85,27 @@ export default function ConsoleHome({
               const amount = consoleMoney(transaction.amount, true)
               return (
                 <GlassSurface as="button" material="activity" className="console-activity-card" key={transaction.id}
-                  data-console-row-item onClick={() => { audio?.play('select'); openTransaction(transaction) }}>
+                  data-console-row-item data-dashboard-activity={transaction.id}
+                  onClick={() => { audio?.play('select'); openTransaction(transaction) }}>
                   <FocusRing layer="sweep" />
                   <span className="console-card-emblem"><ActivityIcon transaction={transaction} /></span>
                   <span className="console-card-category">{category}</span>
-                  <strong className="tabular-nums" data-sign={transaction.amount > 0 ? 'positive' : transaction.amount < 0 ? 'negative' : undefined}>{amount}</strong>
+                  {redacted ? <strong>Amount hidden</strong> :
+                    <strong className="tabular-nums" data-sign={transaction.amount > 0 ? 'positive' : transaction.amount < 0 ? 'negative' : undefined}>{amount}</strong>}
                   <span className="console-card-title">{merchant}</span>
                 </GlassSurface>
               )
             })}
-          </FocusRow> : <p className="console-empty console-activity-placeholder">{activity ? 'No matching transactions in the recent preview.' : 'Activity is unavailable.'}</p>}
-        </div> : null}
+          </FocusRow> : <div className="console-empty console-activity-placeholder">
+            <ReportStatus report={activityReport} label="Recent activity" />
+            {!activityReport.pending && !activityReport.error && <p>
+              {isFlow ? 'No matching transactions in the recent preview.' : 'No recent transactions yet.'}
+            </p>}
+          </div>}
+          {!!cards?.length && activityReport.error && <div className="console-preview-report">
+            <ReportStatus report={activityReport} label="Recent activity" />
+          </div>}
+        </div> : section.id === 'budget' ? <div aria-hidden="true" className="console-home-activity console-activity-spacer" /> : null}
       </motion.div>
     </section>
   )

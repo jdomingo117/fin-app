@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test'
+import type { Page, Request } from '@playwright/test'
 
 // Serve fictional replies at the local Auth and report boundaries.
 const origin = 'http://127.0.0.1:5320'
@@ -75,7 +75,10 @@ const cors = {
 const fixtureEmail = 'console-review@example.invalid'
 const fixturePassword = 'fictional-password-not-a-credential'
 
-export async function signInForConsole(page: Page, controlledClock = true, beforeRead?: (resource: string) => void | Promise<void>) {
+type FixtureResponse = { json: unknown; status?: number }
+
+export async function signInForConsole(page: Page, controlledClock = true, beforeRead?: (resource: string) => void | Promise<void>,
+  override?: (resource: string, request: Request, body: unknown) => FixtureResponse | undefined) {
   const context = page.context()
   await context.route('**/*', async route => {
     const request = route.request()
@@ -97,12 +100,14 @@ export async function signInForConsole(page: Page, controlledClock = true, befor
     }
     const key = url.pathname.split('/').at(-1) ?? ''
     await beforeRead?.(key)
+    let body = fixtures[key] ?? []
     if (key === 'reporting_transaction_lines') {
       const category = url.searchParams.get('category')?.slice(3)
       const rows = url.searchParams.get('amount') === 'gt.0' ? recent.filter(row=>row.amount>0) : recent
-      return route.fulfill({ headers:cors, json:category ? rows.filter(row=>row.category===category) : rows })
+      body = category ? rows.filter(row=>row.category===category) : rows
     }
-    return route.fulfill({headers:cors,json:fixtures[key] ?? []})
+    const response = override?.(key, request, body) ?? { json: body }
+    return route.fulfill({headers:cors,...response})
   })
   if (controlledClock) await page.addInitScript(anchor => {
     // Shift calendar time while retaining the browser’s own frame and timer scheduler.

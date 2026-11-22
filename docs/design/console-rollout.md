@@ -31,7 +31,7 @@ Use the development-only foundation demo on the signed-in Dashboard at `/dashboa
 | 2 · Batch 1 foundation | Appearance, scoped tokens, shared motion presets, FocusRing, FocusRow, GlassSurface. Remove the superseded spike code. | Gate 1 captures Home, Income expanded and compact, and Overview at 1440×900 and 390×844. Supply a visual comparison note and run Playwright and axe on those states. Classic gets a render, navigation and browser-console smoke check. Stop for review. |
 | 2 · Batch 2 ambient and sound | AmbientBackground, optional start screen and SoundEngine, including music and the sound opt-in in the top bar and Settings. | Gate 2 requires a 30-second walkthrough with audible cues and music, a Reduce-effects capture, and a local Chrome trace measuring ambient work against the 2ms/frame budget. Stop for feel review. |
 | 2 · Batch 3 Control Centre and qualification | Harden the full-width bottom sheet, focus trap, shortcut guards and shortcut preference. Qualify the startup, tile paint, effects tiers and master volume. Run the Phase 2 acceptance matrix. | Gate 3 reports pass/fail for each acceptance item and supplies the 1440×900 Balanced trace. Stop before Phase 3. |
-| 3 · Dashboard | Harden Home and the Overview hub as separate surfaces | Test rapid browsing, open during dwell, Back to the same tile, screen reader order, redaction, empty/error results and recent-transaction editing. Compare report requests before/after focus movement. |
+| 3 · Dashboard | Harden Home and the Overview hub as separate surfaces, with the phone Overview trend beside the movement figure | Test rapid browsing, open during dwell, Back to the same tile, reading order, redaction, empty/error results and recent-transaction editing. Compare report requests before and after focus movement. Stop for Joel's physical-device gate. |
 | 4.1 · Accounts | Balances and holdings hub | Account selection, balance history, activity, add/edit and provider connection dialogs. Restore the initiating control after a dialog closes. |
 | 4.2 · Income | Income summary and projection entry | Date/account filters, analyzer/projections tabs, keyboard chart alternatives and saved planning edits retain their state while appearance changes. |
 | 4.3 · Expenses | Spending summary and recurring entry | Category and time filters, recurring directory, calendar and drill-through still agree. Escape dismisses a picker before any hub navigation. |
@@ -47,7 +47,6 @@ Login, onboarding, callback, password reset and the internal concept route get d
 
 ## Later mobile refinements
 
-- Phase 3 moves the Home and Overview orb beside the secondary figures or scales it into the hero row to reduce the empty space on phones.
 - Phase 4.2 moves the Income filters below the hero or into a sheet on phones. This frees the title from the three rows of Home, tabs and filters above it.
 
 ## Review reproduction

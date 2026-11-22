@@ -86,6 +86,22 @@
 .console-expanded-hero .console-orb-stat { font-size: 13px; }
 .console-expanded-hero .console-figures { gap: 12px 32px; }
 .console-hub-body { padding: 2px var(--console-gutter) max(32px, env(safe-area-inset-bottom)); }
+.console-viewport .console-transaction-status {
+  position: absolute;
+  inset-inline: var(--console-gutter);
+  inset-block-end: var(--console-gutter);
+  z-index: 6;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  width: fit-content;
+  padding: 10px 14px;
+  border: 1px solid var(--console-line);
+  border-radius: var(--console-button-radius);
+  background: var(--console-base);
+}
+.console-transaction-status > button { text-decoration: underline; }
 .console-module-grid, .console-module-secondary {
   display: grid;
   gap: clamp(14px, 1.6vw, 24px);
@@ -162,4 +178,17 @@
   .console-compact-title strong { font-size: 25px; }
   .console-hub-back { min-height: 35px; padding-inline: 10px; }
   .console-hub-dock { padding-top: 2px; }
+}
+
+@media (max-width: 600px) {
+  .console-designed-scroll[data-section="dashboard"] .console-expanded-hero {
+    grid-template: "headline headline" auto "movement art" auto / minmax(0, 1fr) var(--console-overview-phone-art);
+  }
+  .console-designed-scroll[data-section="dashboard"] .console-expanded-copy { display: contents; }
+  .console-designed-scroll[data-section="dashboard"] .console-headline { grid-area: headline; }
+  .console-designed-scroll[data-section="dashboard"] .console-figures { grid-area: movement; }
+  .console-designed-scroll[data-section="dashboard"] .console-expanded-hero > :is(.console-handoff, .console-orb) {
+    grid-area: art;
+    width: var(--console-overview-phone-art);
+  }
 }

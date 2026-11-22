@@ -12,12 +12,16 @@ export function dashboardWindow() {
   return { today: iso(now), from: iso(addDays(now, -29)) }
 }
 
-export function useDashboardReports(from: string, to: string, accountScope?: string[], baseEnabled = true, flowEnabled = true) {
-  const summary = usePortfolio(baseEnabled)
-  const flow = useReport([from, to, accountScope], tenant =>
-    cashFlow(tenant, { p_from: from, p_to: to, p_account_ids: accountScope }), flowEnabled)
-  const activity = useReport('recent', tenant => latestLines(tenant, RECENT_ACTIVITY_COUNT), baseEnabled)
-  const history = useReport('monthly', monthlyWorth, baseEnabled)
+export function useDashboardCashFlow(from: string, to: string, accountScope?: string[], enabled = true) {
+  return useReport([from, to, accountScope], tenant =>
+    cashFlow(tenant, { p_from: from, p_to: to, p_account_ids: accountScope }), enabled)
+}
+
+export function useDashboardReports(from: string, to: string, enabled = true) {
+  const summary = usePortfolio(enabled)
+  const flow = useDashboardCashFlow(from, to, undefined, enabled)
+  const activity = useReport('recent', tenant => latestLines(tenant, RECENT_ACTIVITY_COUNT), enabled)
+  const history = useReport('monthly', monthlyWorth, enabled)
   return { summary, flow, activity, history }
 }
 
@@ -32,10 +36,12 @@ export function DashboardReportsProvider({ children }: { children: ReactNode }) 
   }, [view])
   const { today, from } = dashboardWindow()
   const enabled = visited || view === 'dashboard'
-  const reports = useDashboardReports(from, today, undefined, enabled, enabled)
+  const reports = useDashboardReports(from, today, enabled)
   return <DashboardReportsContext.Provider value={reports}>{children}</DashboardReportsContext.Provider>
 }
 
 export function useCachedDashboardReports() {
-  return useContext(DashboardReportsContext)
+  const reports = useContext(DashboardReportsContext)
+  if (!reports) throw new Error('Console Dashboard needs its viewport report provider')
+  return reports
 }

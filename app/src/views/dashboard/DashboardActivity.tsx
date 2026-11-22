@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useLayoutEffect, useState } from 'react'
 import Ledger from '../../components/Ledger'
 import ReportStatus from '../../components/ReportStatus'
 import TransactionCategoryDrawer from '../../components/TransactionCategoryDrawer'
@@ -20,29 +20,16 @@ export function useDashboardTransaction(redacted = false) {
   const id = selection?.scope === scope ? selection.id : undefined
   const report = useReport(id, tenant => reportParent(tenant, id!, accounts), !!id)
   const [previous, setPrevious] = useState<{ scope: string; id: string; data: Txn }>()
-  const returnRow = useRef<string>()
   useLayoutEffect(() => {
     if (id && report.data) setPrevious({ scope, id, data: report.data })
   }, [scope, id, report.data])
   const transaction = report.data ?? (previous?.id === id && previous?.scope === scope && id ? previous.data : null)
-  function restoreRow() {
-    const id = returnRow.current
-    returnRow.current = undefined
-    if (!id) return
-    requestAnimationFrame(() => {
-      if (document.querySelector('[role="dialog"][aria-modal="true"]')) return
-      document.querySelector<HTMLElement>(`[data-dashboard-activity="${CSS.escape(id)}"]`)?.focus({ preventScroll: true })
-    })
-  }
+  const rowSelector = selection ? `[data-dashboard-activity="${CSS.escape(selection.rowId)}"]` : undefined
   function close() {
     const opener = selection?.opener
-    returnRow.current = selection?.rowId
     select(undefined)
     setPrevious(undefined)
-    if (!transaction) {
-      if (opener?.isConnected) opener.focus({ preventScroll: true })
-      else restoreRow()
-    }
+    if (!transaction && opener?.isConnected) opener.focus({ preventScroll: true })
   }
   return {
     open: !!id,
@@ -55,7 +42,7 @@ export function useDashboardTransaction(redacted = false) {
         <ReportStatus report={report} label="Transaction details" />
         {report.error && <button type="button" onClick={close}>Dismiss</button>}
       </div>}
-      <TransactionCategoryDrawer transaction={transaction} redacted={redacted} onClose={close} onAfterClose={restoreRow} onChanged={async () => {
+      <TransactionCategoryDrawer transaction={transaction} redacted={redacted} onClose={close} restoreSelector={rowSelector} onChanged={async () => {
         await refreshData()
         toast({ title: 'Transaction updated', sub: 'Dashboard activity has been refreshed.' })
       }} />

@@ -63,13 +63,13 @@ export default function TransactionCategoryDrawer({
   transaction,
   redacted = false,
   onClose,
-  onAfterClose,
+  restoreSelector,
   onChanged,
 }: {
   transaction: Txn | null
   redacted?: boolean
   onClose: () => void
-  onAfterClose?: () => void
+  restoreSelector?: string
   onChanged: () => Promise<void>
 }) {
   const { reportRevision } = useData()
@@ -94,7 +94,7 @@ export default function TransactionCategoryDrawer({
   const [classificationSaving, setClassificationSaving] = useState(false)
   const [addingSubcategory, setAddingSubcategory] = useState(false)
   const [customName, setCustomName] = useState('')
-  const dialogRef = useDialogFocus({ active: Boolean(transaction) })
+  const dialogRef = useDialogFocus({ active: Boolean(transaction), restoreSelector })
 
   const audit = useReport(['edit history',transaction?.id,reportRevision], async tenant => {
     const id = transaction!.id
@@ -283,7 +283,7 @@ export default function TransactionCategoryDrawer({
   }
 
   return createPortal(
-    <AnimatePresence onExitComplete={onAfterClose}>
+    <AnimatePresence>
       {transaction && (
         <motion.div
           className="fixed inset-0 z-50 flex justify-end bg-black/35"

@@ -197,7 +197,7 @@ Phase 2c implements the selected composition in Overview and Income. The remaini
 
 ## Phase 3 Dashboard surfaces
 
-Home and Overview are separate signed-in views within the Console Dashboard route. The viewport owns the unfiltered Dashboard reports. Home focuses or opens sections without issuing a report read, and a warm return paints from the current cache. The cold Home reserves the headline line, activity rail and Overview-art slot. Dashboard preview errors expose retry actions, and empty report results keep their module and navigation context.
+Home and Overview are separate signed-in views within the Console Dashboard route. The viewport owns the unfiltered Dashboard reports. Home previews and Overview entry reuse the current Dashboard reports, and a warm return paints from the cache. Entering another hub loads that hub’s own data. The cold Home reserves the headline line, activity rail and Overview-art slot. Dashboard preview errors expose retry actions, and empty report results keep their module and navigation context.
 
 On Home's Overview preview and the Overview hub, widths up to 600px place the trend orb beside the 30-day net movement. The headline uses the whole row above. The `--console-overview-phone-art` size is `clamp(70px, 22vw, 94px)`. Validate 320px and 390px with the headline, movement and art boxes clear of one another.
 

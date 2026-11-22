@@ -44,6 +44,14 @@ Use a standalone fictional-data demo following the existing Vite concept-entry p
 
 Login, onboarding, callback, password reset and the internal concept route get direct-entry and keyboard regression checks. Their functional forms and recovery routes are unaffected by the home-screen treatment. A section without existing Dashboard data can expose a labelled route action. Hovering it must never query a specialist screen or display a fabricated zero.
 
+## Review reproduction
+
+Start each review note with the **branch, commit, worktree path, exact dev-server command and URL**, followed by a capture of that URL.
+
+Record every capture and walkthrough on the signed-in route of the actual dev server named in the note. Use either a seeded local account or a data-source switch at the API boundary on that same route for fictional values. The review browser and personal browser load the same app entry, route, appearance flag and shell.
+
+When reusing a preview port, verify the listener’s working directory and the served app source before trusting it. Restart a stale process from the named worktree. Reopen the documented URL, sign in and activate Console to verify the viewport shell before recording. Keep real-account confirmation separate from fictional-data recording.
+
 ## Acceptance evidence
 
 - **Appearance and layout.** Capture the same fictional state at 320, 390, 768, 1024 and 1440px. Compare Console against the supplied target. Include the first and last tile, long names, ring edges, an open overlay, and 200% zoom. Check focus-induced layout shift independently of the intended track transform.
@@ -123,4 +131,4 @@ The implementation review captures Income expanded and compact, Overview expande
 | Home · Accounts | [Desktop](captures/console-phase-2c/implementation/1440-home-accounts.jpg) | [Phone](captures/console-phase-2c/implementation/390-home-accounts.jpg) |
 | Control Centre | [Desktop](captures/console-phase-2c/implementation/1440-control-centre.jpg) | [Phone](captures/console-phase-2c/implementation/390-control-centre.jpg) |
 
-The implementation captures and recording use fictional account and report data in local Chrome. [20-second walkthrough](captures/console-phase-2c/implementation/walkthrough.webm) · [Chrome DevTools Performance trace](traces/console-phase-2c-chrome.json.gz)
+The original implementation captures used fictional data on a separate dev listener. They are historical review evidence. See the [reproduction report](console-phase-2c-reproduction.md) for the verified 5320 build and replacement evidence. [20-second walkthrough](captures/console-phase-2c/implementation/walkthrough.webm) · [Chrome DevTools Performance trace](traces/console-phase-2c-chrome.json.gz)

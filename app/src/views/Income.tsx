@@ -367,7 +367,7 @@ function IncomeSourceActivity({
     <section aria-label={`${category} income activity`} className="mt-5 border-t border-[var(--hair-soft)] pt-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-muted">Income activity · {category}</p>
+          <p className={theme === 'console' ? 'text-[13px] text-muted' : 'text-[11px] font-bold uppercase tracking-[0.1em] text-muted'}>Income activity · {category}</p>
           <p className="mt-1 text-[17px] font-bold tabular-nums text-ink">{money(total)} <span className="text-[13px] font-semibold text-muted">· {share}% of inflow</span></p>
         </div>
         <span className="text-[12.5px] font-semibold text-accent-ink">{source.count} deposit{source.count === 1 ? '' : 's'}</span>

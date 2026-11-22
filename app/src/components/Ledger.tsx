@@ -1,5 +1,6 @@
 import type { Txn } from '../data'
 import { fmtCents } from '../data'
+import { dayLabel } from '../lib/period'
 
 export default function Ledger({ rows, onEdit, consoleStyle = false }: {
   rows: Txn[]; onEdit?: (transaction: Txn) => void; consoleStyle?: boolean
@@ -8,7 +9,7 @@ export default function Ledger({ rows, onEdit, consoleStyle = false }: {
     {rows.map(transaction => {
       const content = <>
         <span><strong>{transaction.merchant || 'Transaction details'}</strong>
-          <small>{transaction.date}{transaction.cat ? ` · ${transaction.cat}` : ''}{transaction.pending ? ' · Held' : ''}</small>
+          <small><time dateTime={transaction.date}>{dayLabel(transaction.date)}</time>{transaction.cat ? ` · ${transaction.cat}` : ''}{transaction.pending ? ' · Held' : ''}</small>
         </span>
         <span className="tabular-nums" data-sign={transaction.amount > 0 ? 'positive' : transaction.amount < 0 ? 'negative' : undefined}>
           {transaction.amount > 0 ? '+' : ''}{fmtCents(transaction.amount)}

@@ -1,5 +1,5 @@
 import {reportParent} from '../lib/reportParent'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { useNavigate, useOutletContext } from 'react-router-dom'
 import ConsoleDashboardSpike from '../components/console/ConsoleDashboardSpike'
 import ConsoleHubSpike, { ConsoleChartValues, ConsoleModule, consoleRowKeys, cumulativeValues, type ConsoleArt, type ConsoleFigure } from '../components/console/ConsoleHubSpike'
@@ -257,14 +257,6 @@ export default function Dashboard() {
       figure={{ label: 'Net worth', cents: currentNetWorth }}
       strip={[{ label: '30-day net movement', cents: summary.data?.net_movement_30d_cents, signed: true }]}
       art={netWorthTrend.length ? { label: 'Monthly net worth', values: netWorthTrend } : consoleRoute.entry?.id === 'dashboard' ? consoleRoute.entry.art : undefined}
-      filters={<>
-        <span className="console-filter-caption">Spending insights</span>
-        <DateRangePicker from={overviewRange.from} to={overviewRange.to} onFrom={overviewRange.changeFrom}
-          onTo={overviewRange.changeTo} min={MIN_DATE} max={MAX_DATE} presets={PRESETS}
-          activePreset={overviewRange.preset} onPreset={overviewRange.applyPreset} ariaLabel="Spending insights date range" />
-        <MultiSelect options={accounts.map(account => ({ value: account.id, label: account.name }))} selected={activeAccounts}
-          onChange={setInsightAccounts} allLabel="All accounts" emptyLabel="No accounts" noun="accounts" ariaLabel="Spending insights accounts" />
-      </>}
       onBack={consoleRoute.back}>
       <ReportStatus report={summary} label="Portfolio" />
       <div className="console-module-grid" onKeyDown={consoleRowKeys}>
@@ -295,10 +287,21 @@ export default function Dashboard() {
         </div>
       </div>
       <div className="console-module-secondary" onKeyDown={consoleRowKeys}>
-        <div className="console-spending-module" data-console-row-item tabIndex={0} aria-label="Spending insights">
+        <ConsoleModule title="Spending insights" kind="flat" order={3}
+          tools={topCategory && <button type="button" className="console-chart-values"
+            onClick={() => go('expenses', { state: { source: 'dashboard-insight', from: flowFrom, to: flowTo } })}>
+            View all spending →
+          </button>}>
+          <div className="console-hub-filters console-spending-filters" role="group" aria-label="Spending insights filters">
+            <DateRangePicker from={overviewRange.from} to={overviewRange.to} onFrom={overviewRange.changeFrom}
+              onTo={overviewRange.changeTo} min={MIN_DATE} max={MAX_DATE} presets={PRESETS}
+              activePreset={overviewRange.preset} onPreset={overviewRange.applyPreset} ariaLabel="Spending insights date range" />
+            <MultiSelect options={accounts.map(account => ({ value: account.id, label: account.name }))} selected={activeAccounts}
+              onChange={setInsightAccounts} allLabel="All accounts" emptyLabel="No accounts" noun="accounts" ariaLabel="Spending insights accounts" />
+          </div>
           <ReportStatus report={flow} label="Spending insights" />
           {flow.data && spendingInsights}
-        </div>
+        </ConsoleModule>
         <ConsoleModule title="Recent activity" kind="flat" order={4}>{recent}</ConsoleModule>
       </div>
       {drawer}
@@ -478,31 +481,30 @@ function SpendingInsights({
   period?: string
 }) {
   const { theme } = useView()
-  const money = theme === 'console' ? fmtCents : fmt
+  const consoleStyle = theme === 'console'
+  const money = consoleStyle ? fmtCents : fmt
+  const panel = (content: ReactNode, tag: ReactNode) => consoleStyle ? content : (
+    <Tile title="Spending insights" tag={tag} span={2} className="flex min-h-[300px] flex-col overflow-hidden">
+      {content}
+    </Tile>
+  )
   if (!topCategory) {
-    return (
-      <Tile title="Spending insights" tag={period ?? "last 30 days"} span={2} className="flex min-h-[300px] flex-col">
-        <div className="flex flex-1 flex-col items-start justify-center rounded-[14px] border border-dashed border-[var(--hair)] bg-[var(--hair-soft)] px-5">
+    return panel(
+        <div className={`flex flex-1 flex-col items-start justify-center rounded-[14px] border border-dashed border-[var(--hair)] bg-[var(--hair-soft)] px-5 ${consoleStyle ? 'py-5' : ''}`}>
           <span className="text-[12px] font-semibold uppercase tracking-[0.1em] text-accent-ink">No settled outflows yet</span>
           <p className="mt-2 max-w-md text-[15px] leading-6 text-muted">Insights appear once spending activity has settled. Importing a statement or reviewing recent activity will make this panel useful.</p>
           <button type="button" onClick={onReviewLedger} className="mt-5 text-[14px] font-semibold text-accent-ink transition hover:opacity-75 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent">
             Review transactions →
           </button>
-        </div>
-      </Tile>
+        </div>,
+        'last 30 days',
     )
   }
 
   const changeDirection = (largestCategoryChange?.delta ?? 0) >= 0 ? 'increased' : 'decreased'
   const changeTone = changeDirection === 'increased' ? 'text-neg' : 'text-pos'
 
-  return (
-    <Tile
-      title="Spending insights"
-      tag={<button type="button" onClick={onExploreExpenses} className="font-semibold text-accent-ink transition hover:opacity-75 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent">View all spending →</button>}
-      span={2}
-      className="flex min-h-[300px] flex-col overflow-hidden"
-    >
+  return panel(<>
       <div className="flex flex-1 flex-col gap-3.5">
         <button
           type="button"
@@ -529,7 +531,7 @@ function SpendingInsights({
           {largestCategoryChange ? (
             <InsightAction
               eyebrow="Period change"
-              sentence={`${largestCategoryChange.category} ${changeDirection} by ${money(Math.abs(largestCategoryChange.delta))} versus the prior 30 days.`}
+              sentence={`${largestCategoryChange.category} ${changeDirection} by ${money(Math.abs(largestCategoryChange.delta))} versus ${period ? "the preceding period" : "the prior 30 days"}.`}
               tone={changeTone}
               action="Explore category →"
               onClick={() => onExploreCategory(largestCategoryChange.category)}
@@ -556,8 +558,9 @@ function SpendingInsights({
           )}
         </div>
       </div>
-      <p className="mt-4 border-t border-[var(--hair-soft)] pt-3.5 text-[11.5px] text-muted">Based on settled activity from the last 30 days.</p>
-    </Tile>
+      <p className="mt-4 border-t border-[var(--hair-soft)] pt-3.5 text-[11.5px] text-muted">Based on settled activity {period ? `for ${period}` : 'from the last 30 days'}.</p>
+    </>,
+    <button type="button" onClick={onExploreExpenses} className="font-semibold text-accent-ink transition hover:opacity-75 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent">View all spending →</button>,
   )
 }
 

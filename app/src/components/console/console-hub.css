@@ -8,9 +8,7 @@
   inset: 0;
   overflow: auto;
   overscroll-behavior: contain;
-  scrollbar-gutter: stable;
-  scrollbar-width: thin;
-  scrollbar-color: var(--console-line) transparent;
+  scrollbar-width: none;
   --console-chart-ink: oklch(.98 .014 var(--section-hue));
   --console-chart-net: oklch(.88 .057 var(--section-hue));
   --console-chart-tint: oklch(.67 .14 var(--section-hue));
@@ -28,10 +26,14 @@
 }
 .console-dock-material {
   position: absolute;
-  inset: 0;
+  inset: 0 0 -28px;
   z-index: -1;
-  background: oklch(.185 .03 var(--section-hue) / .97);
-  border-bottom: 1px solid var(--console-line);
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    oklch(.185 .03 var(--section-hue) / .97) calc(100% - 28px),
+    oklch(.185 .03 var(--section-hue) / 0)
+  );
 }
 .console-dock-top { display: flex; align-items: center; gap: 14px; min-height: var(--console-control-size); }
 .console-hub-back {
@@ -53,7 +55,7 @@
 .console-compact-title strong { font: 200 30px/1.05 var(--font-display); overflow-wrap: anywhere; }
 .console-hub-tabs { margin-inline-start: auto; }
 .console-hub-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
-.console-filter-caption { color: var(--console-label); font-size: 13px; }
+.console-spending-filters { position: relative; z-index: 1; margin: 0 0 16px; }
 .console-designed-scroll :is(.console-hub-filters button[aria-haspopup], .console-chart-switch button) {
   min-height: 42px;
   border-radius: 99px;
@@ -98,7 +100,7 @@
 .console-module-grid { grid-template-columns: minmax(0, 1.85fr) minmax(280px, 1fr); }
 .console-module-secondary { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: clamp(14px, 1.6vw, 24px); }
 .console-module-companions { display: grid; gap: clamp(14px, 1.6vw, 24px); min-width: 0; }
-.console-module, .console-spending-module > .glass {
+.console-module {
   min-width: 0;
   background: var(--console-module-tint);
   color: var(--console-ink);
@@ -110,7 +112,7 @@
   animation: console-module-rise var(--dur-enter) var(--ease-settle) both;
   animation-delay: calc(var(--console-module-order, 0) * var(--console-rise-stagger));
 }
-.console-module[data-kind="flat"], .console-spending-module > .glass { background: var(--console-module-flat); }
+.console-module[data-kind="flat"] { background: var(--console-module-flat); }
 .console-module > header { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 6px 14px; margin-bottom: 14px; }
 .console-module h2 { font: 400 19px/1.2 var(--font-display); letter-spacing: -.012em; }
 .console-module-readouts { display: flex; flex-wrap: wrap; gap: 14px 22px; }
@@ -133,8 +135,7 @@
 .console-holdings { display: grid; gap: 7px; }
 .console-holdings li { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 14px; }
 .console-holdings small { display: block; color: var(--console-label); }
-.console-spending-module .glass { box-shadow: none; }
-.console-spending-module .uppercase, .console-designed-scroll .allocation-donut .uppercase { text-transform: none; letter-spacing: normal; }
+.console-designed-scroll :is([aria-label="Spending insights"],.allocation-donut) .uppercase { text-transform: none; letter-spacing: normal; }
 .console-designed-scroll .allocation-donut__visual svg { max-width: 100%; }
 .console-designed-scroll .allocation-donut .donut-center { font-size: 14px; font-weight: 400; }
 .console-designed-scroll .allocation-donut [aria-pressed="true"] { background: var(--console-fill); }
@@ -160,7 +161,6 @@
 
 @media (max-width: 760px) {
   .console-module-grid, .console-module-secondary { grid-template-columns: minmax(0, 1fr); }
-  .console-designed-scroll { scrollbar-gutter: auto; }
   .console-expanded-hero { grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 3px 0 18px; }
   .console-expanded-hero .console-orb { width: 100px; justify-self: end; }
   .console-expanded-hero > .console-handoff { width: 100px; justify-self: end; }

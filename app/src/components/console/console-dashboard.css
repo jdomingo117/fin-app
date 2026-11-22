@@ -428,6 +428,19 @@
 .console-centre-actions button:is(:hover,:focus-visible) span { opacity: 1; }
 .console-centre-actions button:focus-visible, .console-centre-cards button:focus-visible { box-shadow: var(--console-ring); outline: none; }
 
+@media (hover: none), (pointer: coarse) {
+  .console-centre-actions { padding-bottom: 40px; }
+  .console-centre-actions button span {
+    inset-block: calc(100% + 7px) auto;
+    width: calc(100% + 6px);
+    opacity: 1;
+    white-space: normal;
+    text-align: center;
+    font-size: 12px;
+    line-height: 1.15;
+  }
+}
+
 @media (max-width: 959px) {
   .console-section[data-after="true"] { --advance: calc(var(--console-tile-active) - var(--console-tile)); }
   .console-selection { position: static; margin: -7px 0 8px; }

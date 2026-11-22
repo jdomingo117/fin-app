@@ -82,6 +82,8 @@ hand to find the transfer-linker gap.
 
 ## Recent changes
 
+- 2026-11-22 — Console Phase 2 foundation shares appearance tokens, motion presets, FocusRing, FocusRow and GlassSurface, with signed-in browser checks.
+
 - 2026-11-22 — Console Phase 2c spikes the shared hero transition, collapsing Income and Overview hubs, Accounts preview and Control Centre review cards.
 
 - 2026-11-21 — Wave 3C.4 scopes taxonomy, identifiers, planning and recurrence; DataContext boots profile/account directories only, with tenant-safe targeted invalidation and guarded detected-bill Undo.
@@ -99,5 +101,3 @@ hand to find the transfer-linker gap.
 - 2026-11-20 — Strategic projection readouts and calculation breakdown now live in components/projections/.
 
 - 2026-11-20 — Transfer review panels and cards now live beside the OskoLinker controller in components/transfers/.
-
-- 2026-11-19 — Default unit tests run offline; live CSV ingestion uses a verified disposable project.

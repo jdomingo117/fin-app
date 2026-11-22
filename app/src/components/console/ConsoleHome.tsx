@@ -74,7 +74,7 @@ export default function ConsoleHome({
               const amount = consoleMoney(transaction.amount, true)
               return (
                 <GlassSurface as="button" material="activity" className="console-activity-card" key={transaction.id}
-                  data-console-row-item aria-label={`${merchant}, ${category}, ${amount}`} onClick={() => openTransaction(transaction)}>
+                  data-console-row-item onClick={() => openTransaction(transaction)}>
                   <FocusRing layer="sweep" />
                   <span className="console-card-emblem"><ActivityIcon transaction={transaction} /></span>
                   <span className="console-card-category">{category}</span>

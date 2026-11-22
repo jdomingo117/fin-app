@@ -1,4 +1,4 @@
-import { AnimatePresence, LayoutGroup, motion, useIsPresent } from 'framer-motion'
+import { AnimatePresence, LayoutGroup, motion, PresenceContext, useIsPresent } from 'framer-motion'
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { useOutlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
@@ -8,6 +8,7 @@ import { useView, type View } from '../../router'
 import { enabledSections, type SectionId } from './sections'
 import { captureConsoleOrigin, type ConsoleEntry } from './ConsoleHub'
 import { GlassSurface } from './GlassSurface'
+import FoundationDemo from './FoundationDemo'
 import { consoleDuration, consoleMotionStyle, consoleTransition, useConsoleReducedMotion } from './motion'
 
 export type ConsoleOutlet = {
@@ -46,7 +47,9 @@ function ConsoleRouteLayer({ children, reduced }: { children: ReactNode; reduced
   }, [present])
   return <motion.div ref={layer} className="console-route-layer" aria-hidden={!present}
     exit={{ opacity: 0 }} transition={consoleTransition('hub', reduced)}>
-    {children}
+    {/* Shared hero projection can continue during the fade. Only the route
+        layer owns its exit lifecycle. */}
+    <PresenceContext.Provider value={null}>{children}</PresenceContext.Provider>
   </motion.div>
 }
 
@@ -57,7 +60,9 @@ export default function ConsoleViewport() {
   const portfolio = usePortfolio()
   const location = useLocation()
   const navigate = useNavigate()
-  const home = view === 'dashboard' && new URLSearchParams(location.search).get('hub') !== 'overview'
+  const query = new URLSearchParams(location.search)
+  const home = view === 'dashboard' && query.get('hub') !== 'overview'
+  const demo = import.meta.env.DEV && home && query.get('demo') === 'foundation'
   const [active, setActive] = useState<SectionId>(() => sceneSection(view))
   const [entry, setEntry] = useState<ConsoleEntry>()
   const [snapHue, setSnapHue] = useState(false)
@@ -175,7 +180,7 @@ export default function ConsoleViewport() {
       </div>
       <header className="console-topbar">
         <button type="button" className="console-brand" aria-label="Halcyon Home" onClick={() => { if (!home) setClosing(true) }}>
-          <span aria-hidden="true">H</span><strong>HALCYON</strong>
+          <span aria-hidden="true" className="console-brand-letter" /><strong>HALCYON</strong>
         </button>
         <div className="console-utilities">
           <button type="button" className="console-toggle" aria-pressed="true" onClick={() => setTheme('classic')}>Console</button>
@@ -200,7 +205,7 @@ export default function ConsoleViewport() {
                 <h1 ref={hubHeading} tabIndex={-1}>{hubTitles[view]}</h1>
               </header>}
               <div className={home ? 'console-home-slot' : designed ? 'console-designed-hub' : 'console-hub'} data-closing={closing}>
-                {outlet}
+                {demo ? <FoundationDemo /> : outlet}
               </div>
             </ConsoleRouteLayer>
           </AnimatePresence>

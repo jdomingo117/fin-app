@@ -598,13 +598,13 @@ what-if. The fictional concept remains the design reference; the production M6 f
 implemented but the remaining M6 verification gates are still open.
 
 ### `app/` (Frontend)
-- `src/components/console/ConsoleDashboardSpike.tsx` / `console-dashboard.css` — Phase 2a
-  through 2c Dashboard feel review. `ConsoleViewportSpike.tsx` owns Home, the persistent scene,
-  route-based hubs and the rough Control Centre. `ConsoleHubSpike.tsx` and `console-hub.css`
-  provide the shared-entry hero, sticky collapse and modules for Income and Overview.
-  The tile row previews existing Dashboard reads,
-  with a separate ambient dwell. The scope and later
-  verification gates are in [the console rollout](docs/design/console-rollout.md).
+- `src/components/console/ConsoleViewport.tsx` owns the signed-in Console appearance, Home routing,
+  the persistent scene and the rough Control Centre. `ConsoleHome.tsx` previews existing Dashboard
+  reports. `ConsoleHub.tsx` provides the shared-entry hero, sticky compact header and modules for
+  Income and Overview. The Phase 2 foundation shares appearance preferences, CSS/Framer Motion
+  presets, `FocusRing`, `FocusRow` and `GlassSurface` across those views. The signed-in
+  `/dashboard?demo=foundation` route shows the foundation states in development.
+  See [the console rollout](docs/design/console-rollout.md) for gate fixtures and checks.
 - `budget-concept.html` / `src/budget-concept-main.tsx` / `src/concept/budget/` — Standalone,
   fictional-data Budget design review. Includes guided setup with local draft resume, monthly/fortnightly
   workspace, purchase goals with amount/date planning and impact previews, category reallocation,

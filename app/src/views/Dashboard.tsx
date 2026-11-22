@@ -295,9 +295,9 @@ export default function Dashboard() {
           <div className="console-hub-filters console-spending-filters" role="group" aria-label="Spending insights filters">
             <DateRangePicker from={overviewRange.from} to={overviewRange.to} onFrom={overviewRange.changeFrom}
               onTo={overviewRange.changeTo} min={MIN_DATE} max={MAX_DATE} presets={PRESETS}
-              activePreset={overviewRange.preset} onPreset={overviewRange.applyPreset} ariaLabel="Spending insights date range" />
+              activePreset={overviewRange.preset} onPreset={overviewRange.applyPreset} />
             <MultiSelect options={accounts.map(account => ({ value: account.id, label: account.name }))} selected={activeAccounts}
-              onChange={setInsightAccounts} allLabel="All accounts" emptyLabel="No accounts" noun="accounts" ariaLabel="Spending insights accounts" />
+              onChange={setInsightAccounts} allLabel="All accounts" emptyLabel="No accounts" noun="accounts" />
           </div>
           <ReportStatus report={flow} label="Spending insights" />
           {flow.data && spendingInsights}
@@ -509,7 +509,7 @@ function SpendingInsights({
         <button
           type="button"
           onClick={() => onExploreCategory(topCategory.category)}
-          aria-label={`Explore ${topCategory.category} spending for ${period ?? "the last 30 days"}`}
+          aria-label={consoleStyle ? undefined : `Explore ${topCategory.category} spending for ${period ?? "the last 30 days"}`}
           className="group w-full rounded-[14px] border border-[color-mix(in_srgb,var(--color-accent)_35%,var(--hair))] bg-[var(--accent-wash)] px-4 py-3.5 text-left transition hover:border-accent/60 hover:bg-[color-mix(in_srgb,var(--accent-wash)_72%,var(--surface))] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
         >
           <div className="flex items-start justify-between gap-4">

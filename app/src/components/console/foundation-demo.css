@@ -1,0 +1,22 @@
+.console-foundation-demo {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  block-size: 100%;
+  overflow: auto;
+  padding: 16px var(--console-gutter) var(--console-section-gap);
+}
+.console-foundation-demo h1 { font: 300 32px/1.25 var(--font-display); }
+.console-foundation-demo > .console-toggle { justify-self: start; }
+.console-foundation-materials {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding: 14px;
+}
+.console-foundation-materials > [data-console-surface] {
+  flex: 1 1 180px;
+  padding: 18px;
+  min-block-size: 90px;
+  aspect-ratio: auto;
+}

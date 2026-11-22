@@ -70,9 +70,9 @@ export default function Income() {
         tabs: <SegmentedTabs tabs={TABS} active={view} onChange={setView} layoutId="income-hub-tabs" />,
         filters: view === 'analyzer' ? <>
           <DateRangePicker from={from} to={to} min={MIN_DATE} max={MAX_DATE} presets={PRESETS}
-            activePreset={preset} onPreset={applyPreset} onFrom={changeFrom} onTo={changeTo} ariaLabel="Income date range" />
+            activePreset={preset} onPreset={applyPreset} onFrom={changeFrom} onTo={changeTo} />
           <MultiSelect options={ACCOUNT_OPTIONS} selected={accounts} onChange={setAccounts}
-            ariaLabel="Linked financial accounts" allLabel="All accounts" emptyLabel="No accounts" noun="accounts" />
+            allLabel="All accounts" emptyLabel="No accounts" noun="accounts" />
         </> : undefined,
         projections: view === 'projections',
       }}
@@ -384,7 +384,7 @@ function IncomeSourceActivity({
             key={transaction.id}
             type="button"
             onClick={() => onEdit(transaction)}
-            aria-label={`Edit ${transaction.merchant} on ${dayLabel(transaction.date)}`}
+            aria-label={theme === 'console' ? undefined : `Edit ${transaction.merchant} on ${dayLabel(transaction.date)}`}
             className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 py-2.5 text-left transition hover:bg-[var(--hair-soft)] focus-visible:bg-[var(--accent-wash)]"
           >
             <div className="min-w-0">

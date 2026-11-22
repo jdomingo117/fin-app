@@ -1,5 +1,4 @@
-import { useReducedMotion } from 'framer-motion'
-import type { CSSProperties } from 'react'
+import { useSyncExternalStore, type CSSProperties } from 'react'
 import { useView } from '../../router'
 
 const ease = {
@@ -53,7 +52,20 @@ export function consoleRise(reduced: boolean) {
   }
 }
 
+const reducedMotionQuery = '(prefers-reduced-motion: reduce)'
+
+function subscribeToMotionPreference(callback: () => void) {
+  const media = window.matchMedia(reducedMotionQuery)
+  media.addEventListener('change', callback)
+  return () => media.removeEventListener('change', callback)
+}
+
+function readMotionPreference() {
+  return window.matchMedia(reducedMotionQuery).matches
+}
+
 export function useConsoleReducedMotion() {
   const { motionOn } = useView()
-  return !!useReducedMotion() || !motionOn
+  const prefersReduced = useSyncExternalStore(subscribeToMotionPreference, readMotionPreference)
+  return prefersReduced || !motionOn
 }

@@ -1,0 +1,803 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Strata — console home</title>
+<script src="./vendor/react.js"></script>
+<script src="./vendor/react-dom.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#04060c}
+a{color:#cfe0ff}a:hover{color:#fff}
+.root *{box-sizing:border-box}
+.root{--mx:0;--my:0}
+
+/* ---------- Ambient background ---------- */
+.bg-layer{position:absolute;inset:-4%;transition:opacity 1400ms cubic-bezier(.4,0,.2,1)}
+.par1{transform:translate3d(calc(var(--mx) * -10px),calc(var(--my) * -8px),0);transition:transform 1.2s cubic-bezier(.2,.8,.2,1)}
+.par2{transform:translate3d(calc(var(--mx) * -26px),calc(var(--my) * -18px),0);transition:transform 1.2s cubic-bezier(.2,.8,.2,1)}
+.par3{transform:translate3d(calc(var(--mx) * -48px),calc(var(--my) * -30px),0);transition:transform 1.2s cubic-bezier(.2,.8,.2,1)}
+.rays{position:absolute;left:30%;top:-60%;width:140%;height:180%;background:repeating-conic-gradient(from 200deg at 50% 0%,rgba(255,255,255,.075) 0deg 2.5deg,transparent 2.5deg 9deg);-webkit-mask:radial-gradient(60% 55% at 50% 0%,#000 0%,transparent 75%);mask:radial-gradient(60% 55% at 50% 0%,#000 0%,transparent 75%);animation:rays 70s linear infinite;transform-origin:50% 0%;mix-blend-mode:screen}
+@keyframes rays{0%{transform:rotate(-6deg)}50%{transform:rotate(6deg)}100%{transform:rotate(-6deg)}}
+.beam{position:absolute;right:-8%;top:-30%;width:62%;height:120%;background:linear-gradient(200deg,rgba(255,255,255,.22) 0%,rgba(255,255,255,.05) 35%,transparent 60%);filter:blur(38px);transform:rotate(18deg);animation:beam 9s ease-in-out infinite;mix-blend-mode:screen}
+@keyframes beam{0%,100%{opacity:.55}50%{opacity:.95}}
+.ribbon{position:absolute;left:-20%;bottom:6%;width:140%;height:420px;opacity:.55;mix-blend-mode:screen}
+.ribbon path{animation:sway 18s ease-in-out infinite alternate}
+.ribbon path:nth-child(2){animation-duration:23s;animation-delay:-6s}
+.ribbon path:nth-child(3){animation-duration:29s;animation-delay:-11s}
+.ribbon path:nth-child(4){animation-duration:35s;animation-delay:-3s}
+@keyframes sway{0%{transform:translate(0,0) scaleY(1)}50%{transform:translate(-4%,14px) scaleY(1.25)}100%{transform:translate(-8%,-10px) scaleY(.85)}}
+.bokeh{position:absolute;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.55) 0%,rgba(255,255,255,.12) 45%,transparent 70%);filter:blur(2px);animation:bokeh ease-in-out infinite alternate;mix-blend-mode:screen}
+@keyframes bokeh{0%{transform:translate(0,0);opacity:.25}100%{transform:translate(30px,-46px);opacity:.6}}
+.particle{position:absolute;border-radius:50%;background:#fff;box-shadow:0 0 6px 1px rgba(255,255,255,.85),0 0 14px 3px rgba(190,215,255,.35);animation:drift linear infinite;pointer-events:none}
+.particle::after{content:"";position:absolute;inset:-3px;border-radius:50%;animation:twinkle 2.2s ease-in-out infinite}
+@keyframes drift{0%{transform:translate(0,0);opacity:0}10%{opacity:.95}80%{opacity:.6}100%{transform:translate(60px,-360px);opacity:0}}
+@keyframes twinkle{0%,100%{box-shadow:0 0 0 0 rgba(255,255,255,0)}50%{box-shadow:0 0 10px 3px rgba(255,255,255,.55)}}
+.vignette{position:absolute;inset:0;background:radial-gradient(130% 110% at 40% 10%,transparent 45%,rgba(0,0,6,.7) 100%),linear-gradient(180deg,rgba(0,0,0,.25) 0%,transparent 22%,transparent 70%,rgba(0,0,0,.45) 100%);pointer-events:none}
+.grain{position:absolute;inset:0;opacity:.06;background-image:radial-gradient(rgba(255,255,255,.9) .5px,transparent .6px);background-size:3px 3px;pointer-events:none}
+
+/* ---------- Splash ---------- */
+.splash{position:absolute;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;background:radial-gradient(60% 60% at 50% 50%,#0d1a3a 0%,#03050b 70%);transition:opacity 1.1s ease,filter 1.1s ease}
+.splash.out{opacity:0;filter:blur(14px) brightness(2);pointer-events:none}
+.splash-glow{position:absolute;left:50%;top:50%;width:620px;height:620px;margin:-310px 0 0 -310px;border-radius:50%;background:radial-gradient(circle,rgba(120,170,255,.35) 0%,rgba(60,110,255,.12) 35%,transparent 65%);animation:pulse 3.2s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(.92);opacity:.7}50%{transform:scale(1.06);opacity:1}}
+.splash-word{animation:wordIn 2.2s cubic-bezier(.2,.8,.2,1) both}
+@keyframes wordIn{from{opacity:0;letter-spacing:.9em;filter:blur(10px)}to{opacity:1;letter-spacing:.42em;filter:none}}
+.press{animation:press 2.4s ease-in-out 1.2s infinite both}
+@keyframes press{0%,100%{opacity:.35}50%{opacity:1}}
+.splash.out .splash-word{animation:wordOut 1s ease both}
+@keyframes wordOut{to{transform:scale(1.25);opacity:0}}
+
+/* ---------- Home ---------- */
+.home-in{animation:homeIn 1.1s cubic-bezier(.2,.8,.2,1) both}
+@keyframes homeIn{from{opacity:0;transform:scale(1.04)}to{opacity:1;transform:none}}
+.tab{transition:opacity .25s,transform .25s;cursor:pointer;position:relative}
+.tab::after{content:"";position:absolute;left:0;right:0;bottom:-2px;height:2px;border-radius:2px;background:#fff;transform:scaleX(var(--u,0));transition:transform .35s cubic-bezier(.2,.8,.2,1);box-shadow:0 0 10px rgba(255,255,255,.8)}
+.tab:hover{opacity:1!important}
+.track{transition:transform .55s cubic-bezier(.16,.9,.2,1)}
+.tile-wrap{animation:tileIn .7s cubic-bezier(.2,.9,.2,1) both}
+@keyframes tileIn{from{opacity:0;transform:translateX(60px)}to{opacity:1;transform:none}}
+.tile{position:relative;overflow:hidden;transition:width .42s cubic-bezier(.16,.9,.2,1),height .42s cubic-bezier(.16,.9,.2,1),border-radius .42s,opacity .3s,filter .3s,transform .2s}
+.tile:hover{filter:brightness(1.15)}
+.tile:focus-visible{outline:none}
+.tile::before{content:"";position:absolute;inset:0;background:linear-gradient(160deg,rgba(255,255,255,.28) 0%,rgba(255,255,255,0) 42%),radial-gradient(120% 80% at 50% 120%,rgba(0,0,0,.35) 0%,transparent 60%);pointer-events:none}
+.tile.sel{animation:breathe 2.8s ease-in-out infinite}
+.tile.sel::after{content:"";position:absolute;inset:-20%;background:linear-gradient(110deg,transparent 38%,rgba(255,255,255,.55) 50%,transparent 62%);transform:translateX(-120%);animation:sweep 3.6s cubic-bezier(.4,0,.2,1) .5s infinite;pointer-events:none}
+@keyframes sweep{0%{transform:translateX(-120%)}30%,100%{transform:translateX(120%)}}
+@keyframes breathe{0%,100%{box-shadow:0 0 0 3px rgba(6,8,16,.85),0 0 0 6px #fff,0 0 26px 6px rgba(255,255,255,.28),0 18px 40px rgba(0,0,0,.5)}50%{box-shadow:0 0 0 3px rgba(6,8,16,.85),0 0 0 6px #fff,0 0 46px 14px rgba(255,255,255,.42),0 18px 40px rgba(0,0,0,.5)}}
+.label-in{animation:labelIn .5s cubic-bezier(.2,.8,.2,1) .08s both}
+@keyframes labelIn{from{opacity:0;transform:translateX(-14px)}to{opacity:1;transform:none}}
+.rise{animation:rise .8s cubic-bezier(.16,.9,.2,1) both}
+@keyframes rise{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
+.title-in{animation:titleIn 1s cubic-bezier(.16,.9,.2,1) .05s both}
+@keyframes titleIn{from{opacity:0;transform:translateY(18px);filter:blur(8px);letter-spacing:.04em}to{opacity:1;transform:none;filter:none}}
+.float{animation:float 8s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-14px) rotate(.6deg)}}
+.ring-draw{animation:draw 1.8s cubic-bezier(.16,.9,.2,1) .3s both}
+@keyframes draw{from{stroke-dashoffset:942.48}}
+.spin-slow{animation:spin 50s linear infinite;transform-origin:180px 180px}
+.spin-rev{animation:spin 32s linear infinite reverse;transform-origin:180px 180px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.orb{position:absolute;inset:44px;border-radius:50%;animation:orb 6s ease-in-out infinite}
+@keyframes orb{0%,100%{transform:scale(1)}50%{transform:scale(1.03)}}
+.glass{background:rgba(255,255,255,.075);border:1px solid rgba(255,255,255,.14);backdrop-filter:blur(24px) saturate(150%);-webkit-backdrop-filter:blur(24px) saturate(150%)}
+.card{position:relative;overflow:hidden;transition:transform .3s cubic-bezier(.16,.9,.2,1),box-shadow .3s,filter .3s;cursor:pointer}
+.card::before{content:"";position:absolute;inset:0;background:linear-gradient(160deg,rgba(255,255,255,.22) 0%,transparent 40%);pointer-events:none}
+.card::after{content:"";position:absolute;inset:-30%;background:linear-gradient(110deg,transparent 40%,rgba(255,255,255,.35) 50%,transparent 60%);transform:translateX(-120%);pointer-events:none}
+.card:hover,.card:focus-visible{transform:scale(1.06);z-index:2;outline:none;box-shadow:0 0 0 3px rgba(6,8,16,.85),0 0 0 6px #fff,0 0 34px 8px rgba(255,255,255,.3),0 24px 50px rgba(0,0,0,.55)}
+.card:hover::after,.card:focus-visible::after{animation:sweep 1.4s cubic-bezier(.4,0,.2,1) .1s 1 both}
+.cardrow{scrollbar-width:none}
+.cardrow::-webkit-scrollbar{display:none}
+.btn{transition:transform .25s cubic-bezier(.16,.9,.2,1),background .2s,box-shadow .25s;cursor:pointer}
+.btn:hover,.btn:focus-visible{transform:scale(1.06);outline:none}
+.btn-primary:hover,.btn-primary:focus-visible{box-shadow:0 0 0 3px rgba(6,8,16,.85),0 0 0 6px #fff,0 0 36px 10px rgba(255,255,255,.35)}
+.icon-btn{transition:background .2s,transform .25s cubic-bezier(.16,.9,.2,1),box-shadow .25s;cursor:pointer}
+.icon-btn:hover,.icon-btn:focus-visible{background:rgba(255,255,255,.18)!important;transform:scale(1.1);outline:none;box-shadow:0 0 0 2px #fff,0 0 18px 4px rgba(255,255,255,.3)}
+.tab:focus-visible{outline:2px solid #fff;outline-offset:6px;border-radius:4px}
+.overlay{animation:zoomIn .6s cubic-bezier(.16,.9,.2,1) both}
+@keyframes zoomIn{from{opacity:0;transform:scale(1.08);filter:blur(10px)}to{opacity:1;transform:none;filter:none}}
+.scrim{animation:fade .4s ease both}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.cc-cards{animation:ccUp .55s cubic-bezier(.16,.9,.2,1) .05s both}
+.cc-bar{animation:ccUp .5s cubic-bezier(.16,.9,.2,1) both}
+@keyframes ccUp{from{opacity:0;transform:translateY(60px)}to{opacity:1;transform:none}}
+.cc-ico{animation:icoIn .45s cubic-bezier(.16,.9,.2,1) both;transition:transform .25s cubic-bezier(.16,.9,.2,1),background .2s,box-shadow .25s;cursor:pointer;position:relative}
+@keyframes icoIn{from{opacity:0;transform:translateY(24px) scale(.8)}to{opacity:1;transform:none}}
+.cc-ico:hover,.cc-ico:focus-visible{transform:scale(1.14);outline:none;background:rgba(255,255,255,.22)!important;box-shadow:0 0 0 3px rgba(6,8,16,.85),0 0 0 5px #fff,0 0 24px 6px rgba(255,255,255,.35)}
+.cc-ico .tip{position:absolute;bottom:calc(100% + 14px);left:50%;transform:translate(-50%,6px);opacity:0;white-space:nowrap;font-size:14px;font-weight:400;transition:opacity .2s,transform .25s;pointer-events:none;text-shadow:0 2px 10px rgba(0,0,0,.6)}
+.cc-ico:hover .tip,.cc-ico:focus-visible .tip{opacity:1;transform:translate(-50%,0)}
+.cc-ico.on{background:rgba(255,255,255,.9)!important;color:#0a0d16!important}
+.cc-card{animation:rise .6s cubic-bezier(.16,.9,.2,1) both}
+.eq span{display:inline-block;width:3px;border-radius:2px;background:#fff;animation:eq 1s ease-in-out infinite}
+.eq span:nth-child(2){animation-delay:-.3s}.eq span:nth-child(3){animation-delay:-.6s}
+@keyframes eq{0%,100%{height:4px}50%{height:14px}}
+.nomotion *,.nomotion *::after,.nomotion *::before{animation:none!important;transition:none!important}
+@media (prefers-reduced-motion:reduce){.root *,.root *::after,.root *::before{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div class="root {{motionCls}}" onMouseMove="{{onMove}}" style="position: relative; min-height: 100vh; overflow: hidden; background: #04060c; color: #ffffff; font-family: 'Inter', system-ui, sans-serif">
+
+  <!-- ========== Ambient background ========== -->
+  <div aria-hidden="true" style="position: absolute; inset: 0; overflow: hidden">
+    <div class="par1" style="position: absolute; inset: 0">
+      <sc-for list="{{bgLayers}}" as="bg" hint-placeholder-count="1">
+        <div class="bg-layer" style="{{bg.style}}"></div>
+      </sc-for>
+    </div>
+    <div class="par1" style="position: absolute; inset: 0"><div class="rays"></div><div class="beam"></div></div>
+    <div class="par2" style="position: absolute; inset: 0">
+      <svg class="ribbon" viewBox="0 0 1440 420" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="rg" x1="0" x2="1" y1="0" y2="0">
+            <stop offset="0" stop-color="#fff" stop-opacity="0"></stop>
+            <stop offset=".35" stop-color="#fff" stop-opacity=".55"></stop>
+            <stop offset=".7" stop-color="#fff" stop-opacity=".25"></stop>
+            <stop offset="1" stop-color="#fff" stop-opacity="0"></stop>
+          </linearGradient>
+        </defs>
+        <path d="M0 260 C 240 140, 480 340, 720 230 S 1200 120, 1440 220" fill="none" stroke="url(#rg)" stroke-width="1.4"></path>
+        <path d="M0 280 C 260 170, 500 360, 740 250 S 1180 150, 1440 240" fill="none" stroke="url(#rg)" stroke-width=".9"></path>
+        <path d="M0 300 C 280 200, 520 380, 760 270 S 1160 180, 1440 262" fill="none" stroke="url(#rg)" stroke-width=".6"></path>
+        <path d="M0 240 C 220 120, 460 320, 700 210 S 1220 100, 1440 200" fill="none" stroke="url(#rg)" stroke-width="2.2" opacity=".5"></path>
+      </svg>
+      <sc-for list="{{bokeh}}" as="b" hint-placeholder-count="0">
+        <span class="bokeh" style="{{b.style}}"></span>
+      </sc-for>
+    </div>
+    <div class="par3" style="position: absolute; inset: 0">
+      <sc-for list="{{particles}}" as="p" hint-placeholder-count="0">
+        <span class="particle" style="{{p.style}}"></span>
+      </sc-for>
+    </div>
+    <div class="vignette"></div>
+    <div class="grain"></div>
+  </div>
+
+  <!-- ========== Home ========== -->
+  <sc-if value="{{booted}}" hint-placeholder-val="{{true}}">
+  <div class="home-in" style="position: relative; z-index: 1; display: flex; flex-direction: column; min-height: 100vh">
+
+    <!-- Top bar -->
+    <header style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding: 30px clamp(20px, 4vw, 72px) 6px">
+      <nav aria-label="Sections" style="display: flex; gap: 36px; align-items: center">
+        <sc-for list="{{tabs}}" as="tab" hint-placeholder-count="2">
+          <button class="tab" type="button" aria-pressed="{{tab.pressed}}" onClick="{{tab.pick}}" style="{{tab.style}}">{{tab.label}}</button>
+        </sc-for>
+      </nav>
+      <div style="display: flex; align-items: center; gap: 8px">
+        <button class="icon-btn" type="button" aria-label="Search" onMouseEnter="{{hover}}" style="width: 46px; height: 46px; border-radius: 50%; border: 0; background: transparent; color: #fff; display: flex; align-items: center; justify-content: center">
+          <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM21 21l-5-5"></path></svg>
+        </button>
+        <button class="icon-btn" type="button" aria-label="{{soundLabel}}" aria-pressed="{{soundOn}}" onClick="{{toggleSound}}" onMouseEnter="{{hover}}" style="width: 46px; height: 46px; border-radius: 50%; border: 0; background: transparent; color: #fff; display: flex; align-items: center; justify-content: center">
+          <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="{{soundIcon}}"></path></svg>
+        </button>
+        <button class="icon-btn" type="button" aria-label="Settings" onMouseEnter="{{hover}}" style="width: 46px; height: 46px; border-radius: 50%; border: 0; background: transparent; color: #fff; display: flex; align-items: center; justify-content: center">
+          <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"></path></svg>
+        </button>
+        <div role="img" aria-label="Profile: Joel" style="width: 46px; height: 46px; border-radius: 50%; margin-left: 4px; background: linear-gradient(145deg, oklch(0.72 0.13 240), oklch(0.48 0.17 285)); display: flex; align-items: center; justify-content: center; font-weight: 400; font-size: 18px; box-shadow: 0 0 0 2px rgba(255,255,255,.85), 0 0 16px rgba(140,180,255,.45); position: relative">J<span style="position: absolute; right: -1px; bottom: -1px; width: 12px; height: 12px; border-radius: 50%; background: oklch(0.8 0.17 150); box-shadow: 0 0 0 2px #0a0d16"></span></div>
+        <div style="font-size: 22px; font-weight: 300; margin-left: 14px; font-variant-numeric: tabular-nums; min-width: 76px; text-align: right; letter-spacing: .01em">{{clock}}</div>
+      </div>
+    </header>
+
+    <!-- Tile row: focused tile stays anchored left, row slides beneath it -->
+    <div role="toolbar" aria-label="Apps" onKeyDown="{{onRowKey}}" style="overflow: hidden; padding: 26px clamp(20px, 4vw, 72px) 20px; min-height: 210px">
+      <div class="track" style="{{trackStyle}}">
+        <sc-for list="{{tiles}}" as="item" hint-placeholder-count="6">
+          <div class="tile-wrap" style="{{item.wrapStyle}}">
+            <button class="{{item.cls}}" type="button" aria-label="{{item.title}}" aria-pressed="{{item.sel}}" onClick="{{item.pick}}" onMouseEnter="{{hover}}" style="{{item.tileStyle}}">
+              <svg aria-hidden="true" width="{{item.iconSize}}" height="{{item.iconSize}}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="position: relative; filter: drop-shadow(0 2px 6px rgba(0,0,0,.35)); transition: width .42s, height .42s"><path d="{{item.icon}}"></path></svg>
+            </button>
+            <sc-if value="{{item.sel}}" hint-placeholder-val="{{false}}">
+              <div class="label-in" style="display: flex; flex-direction: column; gap: 6px; padding-right: 22px">
+                <span style="font-size: 28px; font-weight: 300; white-space: nowrap; letter-spacing: -.01em; text-shadow: 0 2px 16px rgba(0,0,0,.45)">{{item.title}}</span>
+                <span style="font-size: 13px; white-space: nowrap; color: rgba(255,255,255,.78)">{{item.eyebrow}}</span>
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <!-- Hero: remounts per selection so its entrance replays -->
+    <main style="flex: 1; padding: 0 clamp(20px, 4vw, 72px) 18px">
+      <sc-for list="{{tiles}}" as="item" hint-placeholder-count="1">
+        <sc-if value="{{item.sel}}" hint-placeholder-val="{{false}}">
+          <section aria-label="{{item.title}}" style="display: flex; flex-direction: column; gap: 34px">
+            <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 28px">
+              <div style="flex: 1 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+                <h1 class="title-in" style="margin: 0; font-size: clamp(48px, 6.4vw, 96px); line-height: .98; font-weight: 200; letter-spacing: -.025em; text-shadow: 0 6px 40px rgba(0,0,0,.35)">{{item.title}}</h1>
+                <p class="rise" style="margin: 0; max-width: 560px; font-size: 18px; line-height: 1.55; color: rgba(255,255,255,.84); font-weight: 300; animation-delay: 140ms">{{item.desc}}</p>
+                <div class="rise" style="display: flex; flex-wrap: wrap; gap: 40px; margin-top: 4px; animation-delay: 200ms">
+                  <sc-for list="{{item.stats}}" as="st" hint-placeholder-count="3">
+                    <div style="display: flex; flex-direction: column; gap: 4px">
+                      <span style="font-size: 13px; color: rgba(255,255,255,.75)">{{st.label}}</span>
+                      <span style="{{st.style}}">{{st.value}}</span>
+                    </div>
+                  </sc-for>
+                </div>
+                <div class="rise" style="display: flex; gap: 16px; align-items: center; margin-top: 14px; animation-delay: 260ms">
+                  <button class="btn btn-primary" type="button" onClick="{{open}}" onMouseEnter="{{hover}}" style="height: 56px; min-width: 220px; padding: 0 30px; border-radius: 12px; border: 0; background: #ffffff; color: #0a0d16; font: 500 18px 'Inter', sans-serif; display: flex; align-items: center; justify-content: center; gap: 10px">
+                    <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l12.5-7.5z"></path></svg>
+                    Open {{item.title}}
+                  </button>
+                  <button class="btn icon-btn" type="button" aria-label="More options" onMouseEnter="{{hover}}" style="width: 56px; height: 56px; border-radius: 12px; border: 0; background: rgba(255,255,255,.14); color: #fff; display: flex; align-items: center; justify-content: center">
+                    <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="19" cy="12" r="1.8"></circle></svg>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Key art: glass orb + progress ring -->
+              <div class="rise" style="flex: 0 1 400px; display: flex; justify-content: center; animation-delay: 100ms">
+                <div class="float" style="position: relative; width: 380px; height: 380px; max-width: 82vw; max-height: 82vw">
+                  <div aria-hidden="true" class="orb" style="{{item.orbStyle}}"></div>
+                  <svg role="img" aria-label="{{item.ringAria}}" viewBox="0 0 360 360" width="100%" height="100%" style="position: relative">
+                    <g class="spin-slow"><circle cx="180" cy="180" r="174" fill="none" stroke="rgba(255,255,255,.28)" stroke-width="1" stroke-dasharray="1.5 9"></circle></g>
+                    <g class="spin-rev"><circle cx="180" cy="180" r="164" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="1"></circle><circle cx="180" cy="16" r="3" fill="#fff" style="filter: drop-shadow(0 0 6px #fff)"></circle></g>
+                    <circle cx="180" cy="180" r="150" fill="none" stroke="rgba(255,255,255,.13)" stroke-width="10"></circle>
+                    <circle class="ring-draw" cx="180" cy="180" r="150" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round" stroke-dasharray="942.48" stroke-dashoffset="{{item.ringOffset}}" transform="rotate(-90 180 180)" style="filter: drop-shadow(0 0 10px rgba(255,255,255,.75)) drop-shadow(0 0 24px rgba(255,255,255,.35))"></circle>
+                  </svg>
+                  <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; padding: 70px">
+                    <span style="font-size: 66px; font-weight: 200; letter-spacing: -.035em; font-variant-numeric: tabular-nums; text-shadow: 0 4px 24px rgba(0,0,0,.3)">{{item.ringBig}}</span>
+                    <span style="font-size: 15px; color: rgba(255,255,255,.86); line-height: 1.4">{{item.ringSub}}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Activity cards (16:10, horizontally scrolling) -->
+            <div style="display: flex; flex-direction: column; gap: 14px">
+              <h2 class="rise" style="margin: 0; font-size: 16px; font-weight: 400; color: rgba(255,255,255,.88); animation-delay: 280ms">Activities</h2>
+              <div class="cardrow" style="display: flex; gap: 20px; overflow-x: auto; padding: 14px 10px 26px; margin: -14px -10px -26px">
+                <sc-for list="{{item.cards}}" as="c" hint-placeholder-count="4">
+                  <button class="card rise" type="button" onClick="{{open}}" onMouseEnter="{{hover}}" style="{{c.cardStyle}}">
+                    <span style="position: relative; font-size: 13px; color: rgba(255,255,255,.85)">{{c.s}}</span>
+                    <span style="position: relative; margin-top: auto; font-size: 34px; font-weight: 200; letter-spacing: -.02em; font-variant-numeric: tabular-nums">{{c.v}}</span>
+                    <span style="position: relative; font-size: 16px; font-weight: 500">{{c.t}}</span>
+                    <sc-if value="{{c.hasBar}}" hint-placeholder-val="{{false}}">
+                      <span style="position: relative; display: block; height: 4px; margin-top: 6px; border-radius: 4px; background: rgba(255,255,255,.22); overflow: hidden"><span style="{{c.barStyle}}"></span></span>
+                    </sc-if>
+                  </button>
+                </sc-for>
+              </div>
+            </div>
+          </section>
+        </sc-if>
+      </sc-for>
+    </main>
+
+    <!-- Hint bar -->
+    <footer style="display: flex; flex-wrap: wrap; gap: 26px; justify-content: flex-end; align-items: center; padding: 12px clamp(20px, 4vw, 72px) 24px; font-size: 13px; color: rgba(255,255,255,.8)">
+      <span style="display: flex; align-items: center; gap: 8px"><kbd style="font: 500 12px 'Inter', sans-serif; border: 1px solid rgba(255,255,255,.55); border-radius: 6px; padding: 3px 7px">← →</kbd> Navigate</span>
+      <span style="display: flex; align-items: center; gap: 8px"><kbd style="font: 500 12px 'Inter', sans-serif; border: 1px solid rgba(255,255,255,.55); border-radius: 6px; padding: 3px 7px">Enter</kbd> Open</span>
+      <button class="btn" type="button" onClick="{{toggleCC}}" style="display: flex; align-items: center; gap: 8px; background: transparent; border: 0; color: rgba(255,255,255,.9); font: 13px 'Inter', sans-serif; min-height: 44px; padding: 0 4px">
+        <kbd style="font: 500 12px 'Inter', sans-serif; border: 1px solid rgba(255,255,255,.55); border-radius: 6px; padding: 3px 7px">C</kbd>
+        Control centre
+      </button>
+    </footer>
+  </div>
+  </sc-if>
+
+  <!-- ========== Opened app hub ========== -->
+  <sc-if value="{{opened}}" hint-placeholder-val="{{false}}">
+    <div class="overlay" role="dialog" aria-modal="true" aria-label="{{cur.title}}" onKeyDown="{{onOverlayKey}}" style="position: absolute; inset: 0; z-index: 5; overflow: auto">
+      <div aria-hidden="true" style="{{cur.bgStyle}}"></div>
+      <div aria-hidden="true" style="position: absolute; inset: 0; background: linear-gradient(180deg, rgba(4,6,12,.25), rgba(4,6,12,.65))"></div>
+      <div style="position: relative; max-width: 1280px; margin: 0 auto; padding: 34px clamp(20px, 4vw, 56px) 56px; display: flex; flex-direction: column; gap: 30px">
+        <div style="display: flex; align-items: center; gap: 20px">
+          <button class="icon-btn" type="button" aria-label="Back to home" autoFocus="{{true}}" onClick="{{close}}" style="width: 50px; height: 50px; border-radius: 50%; border: 0; background: rgba(255,255,255,.12); color: #fff; display: flex; align-items: center; justify-content: center">
+            <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg>
+          </button>
+          <div style="width: 72px; height: 72px; border-radius: 16px; display: flex; align-items: center; justify-content: center; box-shadow: 0 12px 30px rgba(0,0,0,.4); {{cur.iconBg}}">
+            <svg aria-hidden="true" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="{{cur.icon}}"></path></svg>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 4px">
+            <span style="font-size: 13px; color: rgba(255,255,255,.8)">{{cur.eyebrow}}</span>
+            <h1 class="title-in" style="margin: 0; font-size: 46px; font-weight: 200; letter-spacing: -.02em">{{cur.title}}</h1>
+          </div>
+        </div>
+
+        <div class="rise" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; animation-delay: 80ms">
+          <sc-for list="{{cur.stats}}" as="st" hint-placeholder-count="3">
+            <div class="glass" style="border-radius: 16px; padding: 22px 24px; display: flex; flex-direction: column; gap: 6px">
+              <span style="font-size: 13px; color: rgba(255,255,255,.78)">{{st.label}}</span>
+              <span style="{{st.style}}">{{st.value}}</span>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="display: flex; flex-wrap: wrap; gap: 24px">
+          <div class="rise glass" style="flex: 999 1 520px; min-width: 0; border-radius: 18px; padding: 8px 0; animation-delay: 160ms">
+            <h2 style="margin: 0; padding: 18px 24px 10px; font-size: 15px; font-weight: 500">Recent activity</h2>
+            <ul style="list-style: none; margin: 0; padding: 0">
+              <sc-for list="{{cur.rows}}" as="r" hint-placeholder-count="4">
+                <li style="display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 24px; border-top: 1px solid rgba(255,255,255,.08)">
+                  <div style="display: flex; flex-direction: column; gap: 3px; min-width: 0">
+                    <span style="font-size: 16px">{{r.name}}</span>
+                    <span style="font-size: 13px; color: rgba(255,255,255,.75)">{{r.meta}}</span>
+                  </div>
+                  <span style="{{r.amtStyle}}">{{r.amt}}</span>
+                </li>
+              </sc-for>
+            </ul>
+          </div>
+          <div style="flex: 1 1 300px; display: flex; flex-direction: column; gap: 16px">
+            <sc-for list="{{cur.cards}}" as="c" hint-placeholder-count="4">
+              <div class="glass rise" style="{{c.sideStyle}}">
+                <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 12px">
+                  <span style="font-size: 15px; font-weight: 500">{{c.t}}</span>
+                  <span style="font-size: 20px; font-weight: 300; font-variant-numeric: tabular-nums">{{c.v}}</span>
+                </div>
+                <span style="font-size: 13px; color: rgba(255,255,255,.78)">{{c.s}}</span>
+                <sc-if value="{{c.hasBar}}" hint-placeholder-val="{{false}}">
+                  <span style="display: block; height: 4px; border-radius: 4px; background: rgba(255,255,255,.18); overflow: hidden"><span style="{{c.barStyle}}"></span></span>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ========== Control centre ========== -->
+  <sc-if value="{{cc}}" hint-placeholder-val="{{false}}">
+    <div role="dialog" aria-label="Control centre" onKeyDown="{{onCCKey}}" style="position: absolute; inset: 0; z-index: 6; display: flex; flex-direction: column; justify-content: flex-end">
+      <button class="scrim" type="button" aria-label="Close control centre" onClick="{{toggleCC}}" style="position: absolute; inset: 0; border: 0; background: linear-gradient(180deg, rgba(0,0,0,.25) 0%, rgba(0,0,0,.7) 100%); backdrop-filter: blur(14px) brightness(.8); -webkit-backdrop-filter: blur(14px) brightness(.8); cursor: pointer"></button>
+
+      <div class="cc-cards" style="position: relative; display: flex; gap: 20px; overflow-x: auto; padding: 20px clamp(20px, 4vw, 72px) 26px">
+        <sc-for list="{{notes}}" as="n" hint-placeholder-count="3">
+          <button class="card cc-card" type="button" onMouseEnter="{{hover}}" onClick="{{n.go}}" style="{{n.style}}">
+            <span style="position: relative; display: flex; align-items: center; gap: 10px; font-size: 13px; color: rgba(255,255,255,.88)"><span aria-hidden="true" style="{{n.dot}}"></span>{{n.k}}</span>
+            <span style="position: relative; margin-top: auto; font-size: 22px; font-weight: 300; line-height: 1.2">{{n.t}}</span>
+            <span style="position: relative; font-size: 14px; color: rgba(255,255,255,.82)">{{n.s}}</span>
+          </button>
+        </sc-for>
+        <div class="cc-card glass" style="flex: 0 0 300px; height: 190px; border-radius: 16px; padding: 20px 22px; display: flex; flex-direction: column; gap: 10px; animation-delay: 240ms">
+          <span style="display: flex; align-items: center; gap: 10px; font-size: 13px; color: rgba(255,255,255,.85)">
+            <sc-if value="{{musicOn}}" hint-placeholder-val="{{false}}"><span class="eq" aria-hidden="true" style="display: inline-flex; align-items: flex-end; gap: 2px; height: 14px"><span></span><span></span><span></span></span></sc-if>
+            Ambient music
+          </span>
+          <span style="font-size: 22px; font-weight: 300; margin-top: auto">{{musicTitle}}</span>
+          <button class="btn" type="button" onClick="{{toggleMusic}}" style="align-self: flex-start; height: 44px; padding: 0 20px; border-radius: 10px; border: 0; background: #fff; color: #0a0d16; font: 500 15px 'Inter', sans-serif">{{musicBtn}}</button>
+        </div>
+      </div>
+
+      <nav class="cc-bar glass" aria-label="Control centre shortcuts" style="position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding: 46px clamp(20px, 4vw, 72px) 30px; border-radius: 0; border-left: 0; border-right: 0; border-bottom: 0; background: rgba(12,16,28,.72)">
+        <sc-for list="{{actions}}" as="a" hint-placeholder-count="9">
+          <button class="{{a.cls}}" type="button" aria-label="{{a.label}}" aria-pressed="{{a.on}}" onClick="{{a.pick}}" onMouseEnter="{{hover}}" style="{{a.style}}">
+            <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="{{a.icon}}"></path></svg>
+            <span class="tip">{{a.label}}</span>
+          </button>
+        </sc-for>
+        <span style="margin-left: auto; font-size: 22px; font-weight: 300; font-variant-numeric: tabular-nums">{{clock}}</span>
+      </nav>
+    </div>
+  </sc-if>
+
+  <!-- ========== Start screen ========== -->
+  <sc-if value="{{showSplash}}" hint-placeholder-val="{{false}}">
+    <div class="{{splashCls}}">
+      <div class="splash-glow" aria-hidden="true"></div>
+      <button type="button" autoFocus="{{true}}" onClick="{{boot}}" aria-label="Start Strata" style="position: absolute; inset: 0; border: 0; background: transparent; color: #fff; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 30px; font-family: inherit">
+        <span class="splash-word" style="font-size: clamp(40px, 6vw, 76px); font-weight: 200; letter-spacing: .42em; padding-left: .42em; text-shadow: 0 0 40px rgba(140,180,255,.6)">STRATA</span>
+        <span class="press" style="font-size: 16px; font-weight: 300; letter-spacing: .08em; color: rgba(255,255,255,.9)">Press Enter or click to start</span>
+      </button>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"intro":{"editor":"boolean","default":true,"section":"Experience"},"sound":{"editor":"boolean","default":true,"section":"Experience"},"motion":{"editor":"boolean","default":true,"section":"Effects"},"particles":{"editor":"int","default":55,"min":0,"max":120,"section":"Effects"},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    const intro = props.intro ?? true;
+    this.state = { tab: 'money', sel: { money: 0, plan: 0 }, bgFor: null, opened: false, cc: false, now: new Date(), frozen: false, dnd: false,
+      booted: !intro, booting: false, splashGone: !intro, soundOn: true, musicOn: false };
+  }
+  componentDidMount() { this.timer = setInterval(() => this.setState({ now: new Date() }), 15000); }
+  componentWillUnmount() { clearInterval(this.timer); clearTimeout(this._bgT); this.stopMusic(); if (this.ac) { try { this.ac.close(); } catch (e) {} } }
+
+  /* ================= Audio engine (Web Audio, synthesised) ================= */
+  audio() {
+    if ((this.props.sound ?? true) === false || !this.state.soundOn) return null;
+    if (!this.ac) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      const ac = new AC();
+      this.ac = ac;
+      this.master = ac.createGain(); this.master.gain.value = 0.55;
+      const comp = ac.createDynamicsCompressor(); comp.threshold.value = -18; comp.ratio.value = 3;
+      this.master.connect(comp); comp.connect(ac.destination);
+      this.dry = ac.createGain(); this.dry.connect(this.master);
+      const conv = ac.createConvolver(); conv.buffer = this.impulse(2.8, 2.6);
+      this.wet = ac.createGain(); this.wet.gain.value = 0.32;
+      this.dry.connect(conv); conv.connect(this.wet); this.wet.connect(this.master);
+      this.musicBus = ac.createGain(); this.musicBus.gain.value = 0; this.musicBus.connect(this.dry);
+    }
+    if (this.ac.state === 'suspended') this.ac.resume();
+    return this.ac;
+  }
+  impulse(sec, decay) {
+    const ac = this.ac, len = Math.floor(ac.sampleRate * sec), buf = ac.createBuffer(2, len, ac.sampleRate);
+    for (let c = 0; c < 2; c++) { const d = buf.getChannelData(c); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay); }
+    return buf;
+  }
+  tone(f, t, dur, type, vol, atk, dest) {
+    const ac = this.ac, o = ac.createOscillator(), g = ac.createGain();
+    o.type = type || 'sine'; o.frequency.setValueAtTime(f, t);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + (atk || 0.003));
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(dest || this.dry); o.start(t); o.stop(t + dur + 0.05);
+    return o;
+  }
+  bell(f, t, dur, vol) { // glassy: fundamental + inharmonic partials
+    this.tone(f, t, dur, 'sine', vol, 0.002);
+    this.tone(f * 2.76, t, dur * 0.45, 'sine', vol * 0.32, 0.001);
+    this.tone(f * 5.4, t, dur * 0.18, 'sine', vol * 0.12, 0.001);
+  }
+  noise(t, dur, f0, f1, vol, q) {
+    const ac = this.ac, len = Math.floor(ac.sampleRate * dur), buf = ac.createBuffer(1, len, ac.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    const s = ac.createBufferSource(); s.buffer = buf;
+    const bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = q || 1.2;
+    bp.frequency.setValueAtTime(f0, t); bp.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    const g = ac.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + dur * 0.35); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    s.connect(bp); bp.connect(g); g.connect(this.dry); s.start(t); s.stop(t + dur + 0.02);
+  }
+  sfx(name, arg) {
+    const ac = this.audio(); if (!ac) return;
+    const t = ac.currentTime + 0.005;
+    if (name === 'move') { // crisp, short tick — pitch steps with position
+      const f = 2093 * Math.pow(2, ((arg || 0) % 5) / 24);
+      this.tone(f, t, 0.055, 'sine', 0.13, 0.0015);
+      this.tone(f * 2, t, 0.025, 'sine', 0.035, 0.001);
+      this.noise(t, 0.02, 6000, 9000, 0.02, 3);
+    } else if (name === 'hover') {
+      const n = performance.now(); if (this._h && n - this._h < 55) return; this._h = n;
+      this.tone(3136, t, 0.03, 'sine', 0.04, 0.001);
+    } else if (name === 'select') {
+      this.bell(1318.5, t, 0.5, 0.14);
+      this.bell(1975.5, t + 0.05, 0.7, 0.11);
+    } else if (name === 'back') {
+      this.bell(1174.7, t, 0.28, 0.1);
+      this.bell(880, t + 0.06, 0.4, 0.08);
+    } else if (name === 'tab') {
+      this.tone(1567.98, t, 0.09, 'triangle', 0.08, 0.002);
+      this.tone(2349.3, t + 0.03, 0.12, 'sine', 0.05, 0.002);
+    } else if (name === 'ccOpen') {
+      this.noise(t, 0.45, 260, 3200, 0.09, 0.9);
+      this.bell(987.77, t + 0.16, 0.6, 0.08);
+      this.bell(1479.98, t + 0.22, 0.7, 0.06);
+    } else if (name === 'ccClose') {
+      this.noise(t, 0.35, 2800, 300, 0.07, 0.9);
+    } else if (name === 'toggleOn') {
+      this.bell(1760, t, 0.25, 0.09); this.bell(2637, t + 0.06, 0.35, 0.07);
+    } else if (name === 'toggleOff') {
+      this.bell(2093, t, 0.22, 0.08); this.bell(1396.9, t + 0.06, 0.3, 0.06);
+    } else if (name === 'boot') {
+      // long dreamy swell, then a short four-note figure (original, not Sony's)
+      const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 2;
+      lp.frequency.setValueAtTime(250, t); lp.frequency.exponentialRampToValueAtTime(3200, t + 2.2); lp.frequency.exponentialRampToValueAtTime(900, t + 4.5);
+      const g = ac.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.11, t + 1.8); g.gain.exponentialRampToValueAtTime(0.0001, t + 5);
+      lp.connect(g); g.connect(this.dry);
+      [146.83, 220, 293.66, 329.63, 440].forEach((f, i) => {
+        [-6, 6].forEach((det) => { const o = ac.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f; o.detune.value = det + i; o.connect(lp); o.start(t); o.stop(t + 5.1); });
+      });
+      [659.25, 880, 1108.73, 1318.51].forEach((f, i) => this.bell(f, t + 1.75 + i * 0.17, 1.6 - i * 0.15, 0.12));
+    }
+  }
+  startMusic() {
+    const ac = this.audio(); if (!ac || this._mus) return;
+    const chords = [[110, 164.81, 220, 261.63], [98, 146.83, 196, 233.08], [87.31, 130.81, 174.61, 220], [103.83, 155.56, 207.65, 246.94]];
+    let k = 0;
+    const play = () => {
+      const t = ac.currentTime + 0.05, dur = 11;
+      const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 520; lp.Q.value = 0.8;
+      const lfo = ac.createOscillator(), lg = ac.createGain(); lfo.frequency.value = 0.08; lg.gain.value = 260; lfo.connect(lg); lg.connect(lp.frequency); lfo.start(t); lfo.stop(t + dur);
+      const g = ac.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.05, t + 3.5); g.gain.setValueAtTime(0.05, t + dur - 4); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      lp.connect(g); g.connect(this.musicBus);
+      chords[k % chords.length].forEach((f) => [-7, 7].forEach((d) => { const o = ac.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f; o.detune.value = d; o.connect(lp); o.start(t); o.stop(t + dur + 0.1); }));
+      if (k % 2 === 0) [880, 1318.5, 1174.7].forEach((f, i) => this.bell(f, t + 2 + i * 2.4, 3, 0.018));
+      k++;
+    };
+    this.musicBus.gain.cancelScheduledValues(ac.currentTime);
+    this.musicBus.gain.setTargetAtTime(1, ac.currentTime, 0.8);
+    play(); this._mus = setInterval(play, 8000);
+  }
+  stopMusic() {
+    if (this._mus) { clearInterval(this._mus); this._mus = null; }
+    if (this.ac && this.musicBus) this.musicBus.gain.setTargetAtTime(0, this.ac.currentTime, 0.6);
+  }
+
+  /* ================= Data ================= */
+  data() {
+    if (this._d) return this._d;
+    const I = {
+      overview: 'M3 11l9-7 9 7M5 9.5V20h14V9.5M10 20v-5h4v5',
+      accounts: 'M3 6h18v12H3zM3 10h18M7 15h4',
+      budget: 'M12 3v9h9M21 12a9 9 0 1 1-9-9',
+      spending: 'M6 7h12l-1 13H7zM9 7a3 3 0 0 1 6 0',
+      invest: 'M3 17l6-6 4 4 8-8M15 7h6v6',
+      sup: 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z',
+      goals: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM12 12h.01',
+      bills: 'M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6',
+      tax: 'M6 3h12v18H6zM9 7h6M9 12h.01M12 12h.01M15 12h.01M9 16h.01M12 16h.01M15 16h.01',
+      reports: 'M4 20V10M10 20V4M16 20v-8M2 20h20'
+    };
+    const r = (name, meta, amt) => ({ name, meta, amt });
+    const money = [
+      { id: 'overview', hue: 255, title: 'Overview', eyebrow: 'Money · November', icon: I.overview,
+        desc: 'Everything you own, minus everything you owe — refreshed across all seven linked accounts.',
+        stats: [['Net worth', '$184,320'], ['This month', '+$2,140', 'pos'], ['Cash on hand', '$12,880']],
+        ring: [68, '68%', 'of the $270k net-worth goal for 2026'],
+        cards: [['Net-worth goal', '$184k of $270k', '68%', 68], ['Linked accounts', 'All synced 4 min ago', '7'], ['Savings rate', 'November so far', '24%', 24], ['Bills due', 'Next 14 days', '$642']],
+        rows: [r('Salary', 'Income · 15 Nov', '+$4,380.00'), r('Coles Baulkham Hills', 'Groceries · 17 Nov', '−$148.35'), r('Transfer to Savings', 'Internal · 16 Nov', '−$600.00'), r('Opal top-up', 'Transport · 14 Nov', '−$40.00')] },
+      { id: 'accounts', hue: 200, title: 'Accounts', eyebrow: 'Money · 7 linked', icon: I.accounts,
+        desc: 'Everyday, savings, credit and offset accounts in one place. Open any account to see its full history.',
+        stats: [['Everyday', '$4,215.60'], ['Savings', '$8,664.90'], ['Credit card', '−$1,312.40', 'neg']],
+        ring: [82, '$12.9k', 'available across cash accounts'],
+        cards: [['Everyday', 'Card ending 4417', '$4,215.60'], ['High-interest savings', '5.10% p.a.', '$8,664.90'], ['Credit card', 'Statement due 2 Dec', '−$1,312.40'], ['Offset', 'Linked to home loan', '$0.00']],
+        rows: [r('Interest earned', 'Savings · 1 Nov', '+$36.82'), r('Card repayment', 'Credit · 28 Oct', '−$950.00'), r('Transfer to Savings', 'Everyday · 16 Nov', '−$600.00'), r('Refund — JB Hi-Fi', 'Everyday · 12 Nov', '+$89.00')] },
+      { id: 'budget', hue: 295, title: 'Budget', eyebrow: 'Money · 11 days left', icon: I.budget,
+        desc: 'You have spent $3,140 of your $4,200 November budget. At this pace you finish $310 under.',
+        stats: [['Spent', '$3,140'], ['Remaining', '$1,060', 'pos'], ['Daily allowance', '$96']],
+        ring: [75, '75%', 'of the November budget used'],
+        cards: [['Groceries', '$612 of $700', '87%', 87], ['Eating out', '$284 of $300', '95%', 95], ['Transport', '$180 of $250', '72%', 72], ['Fun money', '$210 of $400', '53%', 53]],
+        rows: [r('Groceries is close to its limit', 'Alert · today', '$88 left'), r('Eating out', 'Thai Riffic · 16 Nov', '−$64.50'), r('Fun money', 'Event Cinemas · 15 Nov', '−$42.00'), r('Transport', 'Fuel · 13 Nov', '−$78.10')] },
+      { id: 'spending', hue: 35, title: 'Spending', eyebrow: 'Money · vs October', icon: I.spending,
+        desc: 'Spending is down 8% on October. Groceries remain your largest category, followed by rent and transport.',
+        stats: [['This month', '$3,140'], ['vs October', '−8%', 'pos'], ['Largest category', 'Groceries']],
+        ring: [42, '$612', 'on groceries — 19% of spending'],
+        cards: [['Groceries', '19% of spending', '$612', 19], ['Eating out', '9% of spending', '$284', 9], ['Transport', '6% of spending', '$180', 6], ['Subscriptions', '6 active', '$96']],
+        rows: [r('Coles Baulkham Hills', 'Groceries · 17 Nov', '−$148.35'), r('Thai Riffic', 'Eating out · 16 Nov', '−$64.50'), r('Spotify', 'Subscription · 14 Nov', '−$13.99'), r('Ampol', 'Transport · 13 Nov', '−$78.10')] },
+      { id: 'invest', hue: 150, title: 'Investments', eyebrow: 'Money · Portfolio', icon: I.invest,
+        desc: 'A diversified ETF portfolio with automatic monthly contributions. Next buy runs on 1 December.',
+        stats: [['Portfolio', '$96,450'], ['Year to date', '+7.4%', 'pos'], ['Next buy', '1 Dec']],
+        ring: [74, '+7.4%', 'year-to-date return'],
+        cards: [['Australian shares', '45% of portfolio', '$43,400', 45], ['Global shares', '40% of portfolio', '$38,580', 40], ['Bonds', '15% of portfolio', '$14,470', 15], ['Dividends', 'Last 12 months', '$2,910']],
+        rows: [r('Auto-invest', 'Global shares ETF · 1 Nov', '+$500.00'), r('Distribution', 'Australian shares ETF · 15 Oct', '+$412.60'), r('Auto-invest', 'Australian shares ETF · 1 Oct', '+$500.00'), r('Rebalance', 'Bonds ETF · 2 Sep', '+$240.00')] },
+      { id: 'sup', hue: 228, title: 'Super', eyebrow: 'Money · Retirement', icon: I.sup,
+        desc: 'Your superannuation balance, employer contributions and projected balance at retirement.',
+        stats: [['Balance', '$71,200'], ['Contributions YTD', '$6,840'], ['Investment option', 'High growth']],
+        ring: [36, '$71.2k', 'of a $200k milestone'],
+        cards: [['Employer contributions', 'This financial year', '$5,840'], ['Voluntary', 'Salary sacrifice', '$1,000'], ['Concessional cap', '$6,840 of $30,000', '23%', 23], ['Insurance', 'Death & TPD cover', 'Active']],
+        rows: [r('Employer contribution', 'October', '+$1,168.00'), r('Salary sacrifice', 'October', '+$200.00'), r('Insurance premium', 'October', '−$32.40'), r('Admin fee', 'October', '−$6.50')] }
+    ];
+    const plan = [
+      { id: 'goals', hue: 340, title: 'Goals', eyebrow: 'Plan · 3 active', icon: I.goals,
+        desc: 'Niseko snowboarding trip is 70% funded. Keep $400 a fortnight going and it is covered by early June.',
+        stats: [['Niseko trip', '$5,600 / $8,000'], ['Emergency fund', '$8,665 / $12,000'], ['New camera', '$1,150 / $3,500']],
+        ring: [70, '70%', 'Niseko trip — funded'],
+        cards: [['Niseko trip', 'Target: June 2027', '$5,600', 70], ['Emergency fund', '3 months of expenses', '$8,665', 72], ['New camera', 'Cinema body + lens', '$1,150', 33], ['New goal', 'Set a target and date', '+']],
+        rows: [r('Niseko trip', 'Auto-save · 14 Nov', '+$400.00'), r('Emergency fund', 'Auto-save · 14 Nov', '+$250.00'), r('New camera', 'Round-ups · November', '+$46.20'), r('Niseko trip', 'Auto-save · 31 Oct', '+$400.00')] },
+      { id: 'bills', hue: 75, title: 'Bills', eyebrow: 'Plan · 5 upcoming', icon: I.bills,
+        desc: 'Five bills are due in the next 14 days, totalling $642. All are covered by your everyday balance.',
+        stats: [['Next due', 'Electricity · 24 Nov'], ['Next 14 days', '$642'], ['Autopay', '4 of 5']],
+        ring: [80, '4/5', 'bills on autopay'],
+        cards: [['Electricity', 'Due 24 Nov', '$186'], ['Internet', 'Due 26 Nov', '$89'], ['Phone', 'Due 28 Nov', '$45'], ['Car insurance', 'Due 1 Dec', '$322']],
+        rows: [r('Water', 'Paid · 10 Nov', '−$118.40'), r('Gym membership', 'Paid · 8 Nov', '−$29.95'), r('Streaming bundle', 'Paid · 5 Nov', '−$24.99'), r('Strata levy', 'Paid · 1 Nov', '−$810.00')] },
+      { id: 'tax', hue: 180, title: 'Tax time', eyebrow: 'Plan · FY 2026–27', icon: I.tax,
+        desc: 'Deductions tagged so far this financial year. Receipts are stored with each transaction.',
+        stats: [['Deductions tagged', '$1,284'], ['Receipts', '23'], ['Lodgement due', '31 Oct 2027']],
+        ring: [41, '$1,284', 'in tagged deductions'],
+        cards: [['Work from home', 'Fixed-rate method', '$612'], ['Professional development', 'Courses & books', '$420'], ['Equipment', 'Under $300 items', '$252'], ['Untagged', 'May be deductible', '9']],
+        rows: [r('Online course', 'Professional development · 3 Nov', '$249.00'), r('Monitor stand', 'Equipment · 21 Oct', '$89.00'), r('Technical books', 'Professional development · 9 Oct', '$171.00'), r('Headset', 'Equipment · 2 Sep', '$163.00')] },
+      { id: 'reports', hue: 265, title: 'Reports', eyebrow: 'Plan · Insights', icon: I.reports,
+        desc: 'Monthly cash-flow, category trends and net-worth history. Export any report as CSV or PDF.',
+        stats: [['Avg monthly income', '$8,760'], ['Avg monthly spend', '$3,410'], ['Avg saved', '$2,050', 'pos']],
+        ring: [61, '61%', 'of income kept, 12-month average'],
+        cards: [['Cash flow', 'Last 12 months', '+$24.6k'], ['Category trends', 'Last 6 months', '9'], ['Net-worth history', 'Since 2023', '+$62k'], ['Export', 'CSV or PDF', '2']],
+        rows: [r('October report', 'Generated · 1 Nov', 'Ready'), r('September report', 'Generated · 1 Oct', 'Ready'), r('Q1 FY27 summary', 'Generated · 1 Oct', 'Ready'), r('August report', 'Generated · 1 Sep', 'Ready')] }
+    ];
+    this._d = { money, plan, all: money.concat(plan) };
+    return this._d;
+  }
+
+  bg(h) {
+    return 'background: radial-gradient(90% 75% at 80% 12%, oklch(0.52 0.16 ' + h + ' / .95) 0%, transparent 60%), radial-gradient(60% 60% at 4% 96%, oklch(0.36 0.14 ' + (h + 40) + ' / .9) 0%, transparent 70%), radial-gradient(45% 35% at 45% 55%, oklch(0.32 0.1 ' + (h - 30) + ' / .55) 0%, transparent 80%), linear-gradient(175deg, oklch(0.24 0.08 ' + h + ') 0%, oklch(0.11 0.04 ' + h + ') 100%)';
+  }
+
+  /* ================= Interaction ================= */
+  dwell() {
+    clearTimeout(this._bgT);
+    this._bgT = setTimeout(() => {
+      const { tab, sel } = this.state;
+      this.setState({ bgFor: this.data()[tab][sel[tab]].id });
+    }, 380);
+  }
+  pick(i) {
+    const { tab, sel } = this.state;
+    if (sel[tab] === i) { this.sfx('select'); this.setState({ opened: true }); return; }
+    this.sfx('move', i);
+    this.setState({ sel: Object.assign({}, sel, { [tab]: i }) }, () => this.dwell());
+  }
+  move(delta, row) {
+    const { tab, sel } = this.state;
+    const n = this.data()[tab].length;
+    const i = Math.max(0, Math.min(n - 1, sel[tab] + delta));
+    if (i === sel[tab]) { this.sfx('hover'); return; }
+    this.sfx('move', i);
+    this.setState({ sel: Object.assign({}, sel, { [tab]: i }) }, () => {
+      this.dwell();
+      const btns = row && row.querySelectorAll('button');
+      if (btns && btns[i]) btns[i].focus({ preventScroll: true });
+    });
+  }
+  boot() {
+    if (this.state.booting || this.state.booted) return;
+    this.sfx('boot');
+    this.setState({ booting: true });
+    setTimeout(() => this.setState({ booted: true }), 950);
+    setTimeout(() => this.setState({ splashGone: true }), 2000);
+  }
+  rest() {
+    this.sfx('ccClose'); this.stopMusic();
+    this.setState({ cc: false, opened: false, booted: false, booting: false, splashGone: false, musicOn: false });
+  }
+  toggleCC() {
+    const on = !this.state.cc;
+    this.sfx(on ? 'ccOpen' : 'ccClose');
+    this.setState({ cc: on });
+  }
+  toggleMusic() {
+    const on = !this.state.musicOn;
+    if (on) { this.sfx('toggleOn'); this.startMusic(); } else { this.sfx('toggleOff'); this.stopMusic(); }
+    this.setState({ musicOn: on });
+  }
+
+  renderVals() {
+    const D = this.data();
+    const { tab, sel, opened, cc, now, frozen, dnd, booted, booting, splashGone, soundOn, musicOn } = this.state;
+    const motion = this.props.motion ?? true;
+    const pCount = this.props.particles ?? 55;
+    const set = D[tab];
+    const si = sel[tab];
+    const curId = set[si].id;
+    const bgId = this.state.bgFor && D.all.some((t) => t.id === this.state.bgFor) ? this.state.bgFor : curId;
+    const posC = 'oklch(0.87 0.14 150)', negC = 'oklch(0.82 0.12 25)';
+    const TS = 96, TL = 152, GAP = 18;
+
+    const statFmt = (s, big) => ({ label: s[0], value: s[1], style: 'font-size: ' + (big ? 30 : 28) + 'px; font-weight: 200; letter-spacing: -.015em; font-variant-numeric: tabular-nums; color: ' + (s[2] === 'pos' ? posC : s[2] === 'neg' ? negC : '#ffffff') });
+
+    const build = (t, i) => {
+      const isSel = i === si;
+      const size = isSel ? TL : TS;
+      return {
+        title: t.title, eyebrow: t.eyebrow, desc: t.desc, icon: t.icon, sel: isSel,
+        cls: isSel ? 'tile sel' : 'tile',
+        iconSize: isSel ? 62 : 40,
+        wrapStyle: 'display: flex; align-items: center; gap: 26px; flex-shrink: 0; animation-delay: ' + (i * 60) + 'ms',
+        tileStyle: 'width: ' + size + 'px; height: ' + size + 'px; flex-shrink: 0; border: 0; padding: 0; border-radius: ' + (isSel ? 18 : 13) + 'px; cursor: pointer; color: #fff; display: flex; align-items: center; justify-content: center; opacity: ' + (isSel ? 1 : .78) + '; background: linear-gradient(145deg, oklch(0.66 0.15 ' + t.hue + ') 0%, oklch(0.46 0.16 ' + (t.hue + 18) + ') 55%, oklch(0.30 0.12 ' + (t.hue + 30) + ') 100%); box-shadow: ' + (isSel ? 'none' : '0 10px 26px rgba(0,0,0,.4)'),
+        pick: () => this.pick(i),
+        stats: t.stats.map((s) => statFmt(s, false)),
+        ringOffset: (942.48 * (1 - t.ring[0] / 100)).toFixed(2),
+        ringBig: t.ring[1], ringSub: t.ring[2], ringAria: t.ring[1] + ' ' + t.ring[2],
+        orbStyle: 'background: radial-gradient(circle at 32% 28%, rgba(255,255,255,.55) 0%, oklch(0.62 0.15 ' + t.hue + ' / .55) 22%, oklch(0.34 0.13 ' + (t.hue + 25) + ' / .35) 58%, transparent 72%); box-shadow: inset 0 0 60px rgba(255,255,255,.12), 0 0 90px oklch(0.6 0.16 ' + t.hue + ' / .45); backdrop-filter: blur(6px)',
+        cards: t.cards.map((c, j) => ({
+          t: c[0], s: c[1], v: c[2], hasBar: c[3] != null,
+          barStyle: 'display: block; height: 100%; border-radius: 4px; background: #ffffff; width: ' + (c[3] || 0) + '%; box-shadow: 0 0 10px rgba(255,255,255,.7)',
+          cardStyle: 'animation-delay: ' + (320 + j * 80) + 'ms; flex: 0 0 300px; aspect-ratio: 16 / 10; border: 0; border-radius: 16px; padding: 20px 22px; display: flex; flex-direction: column; gap: 4px; text-align: left; color: #fff; font-family: inherit; background: radial-gradient(90% 90% at 100% 0%, oklch(0.56 0.15 ' + (t.hue + j * 14) + ' / .9) 0%, transparent 65%), linear-gradient(160deg, oklch(0.42 0.12 ' + (t.hue + j * 10) + ') 0%, oklch(0.22 0.07 ' + (t.hue + 30) + ') 100%); box-shadow: 0 14px 34px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.18)',
+          sideStyle: 'animation-delay: ' + (220 + j * 70) + 'ms; border-radius: 16px; padding: 16px 20px; display: flex; flex-direction: column; gap: 8px'
+        }))
+      };
+    };
+    const tiles = set.map(build);
+
+    const curT = set[si];
+    const cur = Object.assign(build(curT, si), {
+      bgStyle: 'position: absolute; inset: 0; ' + this.bg(curT.hue),
+      iconBg: 'background: linear-gradient(145deg, oklch(0.66 0.15 ' + curT.hue + '), oklch(0.30 0.12 ' + (curT.hue + 30) + '))',
+      stats: curT.stats.map((s) => statFmt(s, true)),
+      rows: curT.rows.map((x) => ({ name: x.name, meta: x.meta, amt: x.amt, amtStyle: 'font-size: 16px; font-variant-numeric: tabular-nums; white-space: nowrap; color: ' + (x.amt.charAt(0) === '+' ? posC : '#ffffff') }))
+    });
+
+    const bgLayers = D.all.map((t) => ({ style: this.bg(t.hue) + '; opacity: ' + (t.id === bgId ? 1 : 0) }));
+
+    const particles = [];
+    for (let i = 0; i < pCount; i++) {
+      const sz = 1.5 + (i % 4) * 0.8;
+      particles.push({ style: 'left: ' + ((i * 37 + 11) % 100) + '%; bottom: ' + ((i * 53) % 80 - 12) + '%; width: ' + sz + 'px; height: ' + sz + 'px; animation-duration: ' + (11 + (i % 7) * 2.6) + 's; animation-delay: -' + (i * 1.37).toFixed(2) + 's' });
+    }
+    const bokeh = [];
+    for (let i = 0; i < 9; i++) {
+      const sz = 40 + (i * 29) % 110;
+      bokeh.push({ style: 'left: ' + ((i * 23 + 7) % 96) + '%; top: ' + ((i * 41 + 12) % 85) + '%; width: ' + sz + 'px; height: ' + sz + 'px; animation-duration: ' + (14 + i * 3) + 's; animation-delay: -' + (i * 2.3) + 's' });
+    }
+
+    const tabs = [{ id: 'money', label: 'Money' }, { id: 'plan', label: 'Plan' }].map((x) => ({
+      label: x.label, pressed: x.id === tab,
+      pick: () => { if (x.id === tab) return; this.sfx('tab'); this.setState({ tab: x.id }, () => this.dwell()); },
+      style: '--u: ' + (x.id === tab ? 1 : 0) + '; background: transparent; border: 0; padding: 6px 0; min-height: 44px; color: #fff; font: ' + (x.id === tab ? 400 : 300) + ' 30px \'Inter\', sans-serif; letter-spacing: -.01em; opacity: ' + (x.id === tab ? 1 : .66)
+    }));
+
+    const ico = {
+      home: 'M3 11l9-7 9 7M5 9.5V20h14V9.5',
+      switcher: 'M4 5h7v7H4zM13 5h7v7h-7zM4 14h7v5H4zM13 14h7v5h-7z',
+      bell: 'M6 9a6 6 0 1 1 12 0c0 6 2 7 2 7H4s2-1 2-7M10 20a2 2 0 0 0 4 0',
+      transfer: 'M4 8h14l-4-4M20 16H6l4 4',
+      pay: 'M6 3h12v18l-3-2-3 2-3-2-3 2zM9 9h6M9 13h4',
+      add: 'M12 5v14M5 12h14',
+      freeze: 'M12 2v20M4 6l16 12M20 6L4 18',
+      quiet: 'M6 9a6 6 0 1 1 12 0c0 6 2 7 2 7H4s2-1 2-7M10 20a2 2 0 0 0 4 0M3 3l18 18',
+      music: 'M9 18V5l12-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM21 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z',
+      rest: 'M12 3v9M6.3 6.3a8 8 0 1 0 11.4 0'
+    };
+    const qaDefs = [
+      { label: 'Home', icon: ico.home, go: 'home' },
+      { label: 'Switcher', icon: ico.switcher, go: 'home' },
+      { label: 'Notifications', icon: ico.bell, go: 'home' },
+      { label: 'Transfer', icon: ico.transfer, go: 'open' },
+      { label: 'Pay a bill', icon: ico.pay, go: 'open' },
+      { label: 'Add expense', icon: ico.add, go: 'open' },
+      { label: frozen ? 'Card frozen' : 'Freeze card', icon: ico.freeze, toggle: 'frozen', on: frozen },
+      { label: dnd ? 'Alerts muted' : 'Quiet alerts', icon: ico.quiet, toggle: 'dnd', on: dnd },
+      { label: musicOn ? 'Music on' : 'Music', icon: ico.music, music: true, on: musicOn },
+      { label: 'Rest', icon: ico.rest, rest: true }
+    ];
+    const actions = qaDefs.map((a, i) => ({
+      label: a.label, icon: a.icon, on: !!a.on, cls: a.on ? 'cc-ico on' : 'cc-ico',
+      style: 'animation-delay: ' + (60 + i * 35) + 'ms; width: 60px; height: 60px; border-radius: 50%; border: 0; background: rgba(255,255,255,.1); color: #fff; display: flex; align-items: center; justify-content: center; font-family: inherit',
+      pick: () => {
+        if (a.rest) return this.rest();
+        if (a.music) return this.toggleMusic();
+        if (a.toggle) { const v = !this.state[a.toggle]; this.sfx(v ? 'toggleOn' : 'toggleOff'); return this.setState({ [a.toggle]: v }); }
+        this.sfx(a.go === 'open' ? 'select' : 'ccClose');
+        this.setState({ cc: false, opened: a.go === 'open' });
+      }
+    }));
+
+    const dot = (h) => 'width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; background: oklch(0.82 0.15 ' + h + '); box-shadow: 0 0 10px oklch(0.82 0.15 ' + h + ')';
+    const noteCard = (h, j) => 'animation-delay: ' + (80 + j * 70) + 'ms; flex: 0 0 340px; height: 190px; border: 0; border-radius: 16px; padding: 20px 22px; display: flex; flex-direction: column; gap: 6px; text-align: left; color: #fff; font-family: inherit; background: radial-gradient(90% 100% at 100% 0%, oklch(0.55 0.15 ' + h + ' / .9) 0%, transparent 65%), linear-gradient(160deg, oklch(0.38 0.11 ' + h + ') 0%, oklch(0.2 0.06 ' + (h + 30) + ') 100%); box-shadow: 0 14px 34px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.18)';
+    const goTo = (tb, idx) => () => { this.sfx('select'); this.setState({ cc: false, tab: tb, sel: Object.assign({}, this.state.sel, { [tb]: idx }) }, () => this.dwell()); };
+    const notes = [
+      { k: 'Budget', t: 'Groceries is at 87%', s: '$88 left for the next 11 days', dot: dot(35), style: noteCard(35, 0), go: goTo('money', 2) },
+      { k: 'Bills', t: 'Electricity due Monday', s: '$186 · autopay is on', dot: dot(75), style: noteCard(75, 1), go: goTo('plan', 1) },
+      { k: 'Goals', t: 'Niseko trip hit 70%', s: '$2,400 to go', dot: dot(340), style: noteCard(340, 2), go: goTo('plan', 0) }
+    ];
+
+    const soundIcon = soundOn ? 'M11 5L6 9H3v6h3l5 4zM15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13' : 'M11 5L6 9H3v6h3l5 4zM16 9l6 6M22 9l-6 6';
+
+    return {
+      motionCls: motion ? '' : 'nomotion',
+      clock: now.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' }),
+      tabs, tiles, cur, bgLayers, particles, bokeh, opened, cc, notes, actions, booted,
+      showSplash: !splashGone, splashCls: booting ? 'splash out' : 'splash',
+      trackStyle: 'display: flex; align-items: flex-start; gap: ' + GAP + 'px; transform: translateX(-' + (si * (TS + GAP)) + 'px)',
+      soundOn, soundIcon, soundLabel: soundOn ? 'Mute sounds' : 'Turn sounds on',
+      musicOn, musicTitle: musicOn ? 'Playing — Deep Field' : 'Deep Field', musicBtn: musicOn ? 'Pause' : 'Play',
+      boot: () => this.boot(),
+      hover: () => this.sfx('hover'),
+      open: () => { this.sfx('select'); this.setState({ opened: true }); },
+      close: () => { this.sfx('back'); this.setState({ opened: false }); },
+      toggleCC: () => this.toggleCC(),
+      toggleMusic: () => this.toggleMusic(),
+      toggleSound: () => {
+        const on = !this.state.soundOn;
+        if (!on) this.stopMusic();
+        this.setState({ soundOn: on, musicOn: on ? this.state.musicOn : false }, () => { if (on) this.sfx('toggleOn'); });
+      },
+      onMove: (e) => {
+        const el = e.currentTarget, r = el.getBoundingClientRect();
+        el.style.setProperty('--mx', (((e.clientX - r.left) / r.width) - 0.5) * 2);
+        el.style.setProperty('--my', (((e.clientY - r.top) / r.height) - 0.5) * 2);
+      },
+      onRowKey: (e) => {
+        if (e.key === 'ArrowRight') { e.preventDefault(); this.move(1, e.currentTarget); }
+        else if (e.key === 'ArrowLeft') { e.preventDefault(); this.move(-1, e.currentTarget); }
+        else if (e.key === 'c' || e.key === 'C') { e.preventDefault(); this.toggleCC(); }
+      },
+      onOverlayKey: (e) => { if (e.key === 'Escape' || e.key === 'Backspace') { e.preventDefault(); this.sfx('back'); this.setState({ opened: false }); } },
+      onCCKey: (e) => { if (e.key === 'Escape' || e.key === 'c' || e.key === 'C') { e.preventDefault(); this.toggleCC(); } }
+    };
+  }
+}
+</script>
+</body>
+</html>

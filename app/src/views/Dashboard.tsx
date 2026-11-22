@@ -1,5 +1,14 @@
+import { RECENT_ACTIVITY_COUNT, dashboardWindow, useCachedDashboardReports, useDashboardReports } from '../components/console/DashboardReports'
 import {reportParent} from '../lib/reportParent'
-import { useState } from 'react'
+import { FocusRow } from '../components/console/FocusRow'
+import { useEffect, useState, type ReactNode } from 'react'
+import { useNavigate, useOutletContext } from 'react-router-dom'
+import ConsoleHome from '../components/console/ConsoleHome'
+import ConsoleHub, { ConsoleChartValues, ConsoleModule, cumulativeValues, type ConsoleArt, type ConsoleFigure } from '../components/console/ConsoleHub'
+import { DateRangePicker, MultiSelect } from '../components/Controls'
+import { usePeriodRange } from '../hooks/usePeriodRange'
+import type { ConsoleOutlet } from '../components/console/ConsoleViewport'
+import { expenseEffectCents, isEarnedIncome } from '../lib/classification'
 import HeroCard from '../components/HeroCard'
 import { Screen, ViewHeader, Grid } from '../components/Screen'
 import Tile from '../components/Tile'
@@ -10,17 +19,10 @@ import Area from '../components/charts/Area'
 import Bar from '../components/charts/Bar'
 import { fmt, fmtCents, glowColor, type Glow } from '../data'
 import { useData } from '../contexts/DataContext'
-import { cashFlow, latestLines, monthlyWorth } from '../lib/reports'
-import { usePortfolio } from '../hooks/usePortfolio'
 import { useReport } from '../hooks/useReport'
 import ReportStatus from '../components/ReportStatus'
 import { useView } from '../router'
-import { addDays, iso } from '../lib/period'
-
-// Single source of truth for the Recent Activity tile, so its row count and
-// its "last N" tag text can't drift apart the way they used to (tag said 5,
-// body sliced 10).
-const RECENT_ACTIVITY_COUNT = 10
+import { dateRangeLabel, fullDayLabel, MAX_DATE, MIN_DATE, monthAxisLabels, monthLabel, PRESETS } from '../lib/period'
 
 function getAccountIcon(type: string, name: string) {
   const t = type.toLowerCase()
@@ -69,7 +71,9 @@ function getAccountIcon(type: string, name: string) {
 
 export default function Dashboard() {
   const { accounts, refreshData } = useData()
-  const { go, toast } = useView()
+  const { go, toast, theme } = useView()
+  const consoleRoute = useOutletContext<ConsoleOutlet | null>()
+  const navigate = useNavigate()
   const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null)
   const parent = useReport(selectedTransactionId,tenant=>reportParent(tenant,selectedTransactionId!,accounts),!!selectedTransactionId)
 
@@ -79,27 +83,101 @@ export default function Dashboard() {
     toast({ title: 'Transaction updated', sub: 'Dashboard activity has been refreshed.' })
   }
   
-  const today = iso(new Date())
-  const thirtyDaysAgoIso = iso(addDays(new Date(), -29))
-  const summary = usePortfolio()
-  const flow = useReport([thirtyDaysAgoIso,today], tenant => cashFlow(tenant,{p_from:thirtyDaysAgoIso,p_to:today}))
-  const activity = useReport('recent', tenant => latestLines(tenant,RECENT_ACTIVITY_COUNT))
-  const history = useReport('monthly',monthlyWorth)
+  const { today, from: thirtyDaysAgoIso } = dashboardWindow()
+  const consoleOverview = theme === 'console' && !!consoleRoute && !consoleRoute.home
+  const overviewRange = usePeriodRange(undefined, { from: thirtyDaysAgoIso, to: today })
+  const [insightAccounts, setInsightAccounts] = useState<string[] | null>(null)
+  const flowFrom = consoleOverview ? overviewRange.from : thirtyDaysAgoIso
+  const flowTo = consoleOverview ? overviewRange.to : today
+  const accountScope = consoleOverview ? insightAccounts ?? undefined : undefined
+  const cached = useCachedDashboardReports()
+  const scopedFlow = flowFrom !== thirtyDaysAgoIso || flowTo !== today || accountScope !== undefined
+  const local = useDashboardReports(flowFrom, flowTo, accountScope, !cached, !cached || scopedFlow)
+  const { summary, activity, history } = cached ?? local
+  const flow = cached && !scopedFlow ? cached.flow : local.flow
+  useEffect(() => {
+    if (consoleRoute?.home) void import('./Income')
+  }, [consoleRoute?.home])
   const [chartType, setChartType] = useState<'line' | 'bar'>('line')
-  if (!summary.data || !flow.data) return <Screen><ViewHeader index="01 — Command" title="Dashboard" sub="Your finances at a glance" />
+  const drawer = <>
+    {selectedTransactionId && <ReportStatus report={parent} label="Transaction details" />}
+    <TransactionCategoryDrawer
+      transaction={parent.data}
+      onClose={() => setSelectedTransactionId(null)}
+      onChanged={refreshAfterTransactionEdit}
+    />
+  </>
+  if (theme === 'console' && consoleRoute?.home) {
+    const { active, select, restoreFocus } = consoleRoute
+    const flowPeriod = active === 'income' || active === 'expenses'
+    const cash = summary.data?.cash_asset_cents ?? 0
+    const investments = summary.data?.investment_asset_cents ?? 0
+    const previewFigures: Partial<Record<typeof active, ConsoleFigure[]>> = {
+      dashboard: [
+        { label: 'Net worth', cents: summary.data?.net_worth_cents },
+        { label: '30-day net movement', cents: summary.data?.net_movement_30d_cents, signed: true },
+      ],
+      accounts: [
+        { label: 'Cash assets', cents: summary.data?.cash_asset_cents },
+        { label: 'Investment assets', cents: summary.data?.investment_asset_cents },
+      ],
+      income: [{ label: 'Inflow', cents: flow.data?.periods.current.earned_cents }],
+      expenses: [{ label: 'Net spending', cents: flow.data?.periods.current.expense_cents }],
+    }
+    const previewArt: Partial<Record<typeof active, ConsoleArt>> = {
+      dashboard: { label: 'Monthly net worth', values: history.data?.map(point => point.value) ?? [] },
+      ...(cash + investments > 0 ? { accounts: { label: 'Cash share of assets', percent: Math.round(cash / (cash + investments) * 100) } } : {}),
+      income: { label: 'Cumulative inflow for this period', values: cumulativeValues(flow.data?.buckets.map(point => point.earned_cents) ?? []) },
+      expenses: { label: 'Cumulative gross outflow for this period', values: cumulativeValues(flow.data?.buckets.map(point => point.gross_cents) ?? []) },
+    }
+    const latestDate = activity.data?.[0]?.date
+    const cards = activity.data?.filter(transaction => {
+      if (!flowPeriod) return active === 'dashboard'
+      if (transaction.date < thirtyDaysAgoIso || transaction.date > today || transaction.isTransfer) return false
+      return active === 'income' ? isEarnedIncome(transaction) : expenseEffectCents(transaction) !== 0
+    })
+    return <>
+      <ConsoleHome
+        activeId={active}
+        selectSection={select}
+        restoreFocus={restoreFocus}
+        covered={!!selectedTransactionId}
+        activity={cards}
+        accounts={accounts}
+        period={dateRangeLabel(thirtyDaysAgoIso, today, true)}
+        latestDate={latestDate ? fullDayLabel(latestDate) : undefined}
+        openTransaction={transaction => setSelectedTransactionId(transaction.parentTransactionId ?? transaction.id)}
+        figures={previewFigures}
+        trends={previewArt}
+        open={section => {
+          consoleRoute.begin({ id: section, headline: previewFigures[section]?.[0], art: previewArt[section] })
+          if (section === 'dashboard') {
+            navigate('/dashboard?hub=overview')
+          } else if (section === 'expenses') {
+            go(section, { state: { source: 'dashboard-insight', from: thirtyDaysAgoIso, to: today } })
+          } else {
+            go(section)
+          }
+        }}
+      />
+      {drawer}
+    </>
+  }
+  const header = <ViewHeader index="01 — Command" title="Dashboard" sub="Your finances at a glance" />
+  if ((!summary.data || !flow.data) && !consoleOverview) return <Screen>{header}
     <ReportStatus report={summary} label="Portfolio" /><ReportStatus report={flow} label="Cash flow" /></Screen>
-  const inc = flow.data.periods.current.earned_cents
-  const spend = flow.data.periods.current.expense_cents
+  const inc = flow.data?.periods.current.earned_cents ?? 0
+  const spend = flow.data?.periods.current.expense_cents ?? 0
   const savings = inc === 0 ? 0 : Math.round(((inc - spend) / inc) * 100)
   const percentOfInflow = inc === 0 ? 0 : Math.round((spend / inc) * 100)
 
-  const priorInc = flow.data.periods.prior.earned_cents
-  const priorSpend = flow.data.periods.prior.expense_cents
+  const priorInc = flow.data?.periods.prior.earned_cents ?? 0
+  const priorSpend = flow.data?.periods.prior.expense_cents ?? 0
   const incChangePct = priorInc === 0 ? 0 : Math.round(((inc - priorInc) / priorInc) * 1000) / 10
   const spendChangePct = priorSpend === 0 ? 0 : Math.round(((spend - priorSpend) / priorSpend) * 1000) / 10
   
-  const liquidSum = summary.data.cash_asset_cents
-  const investSum = summary.data.investment_asset_cents
+  const liquidSum = summary.data?.cash_asset_cents ?? 0
+  const investSum = summary.data?.investment_asset_cents ?? 0
 
   const allocation = []
   if (investSum > 0) allocation.push({ label: 'Investments', value: investSum, glow: 'green' as Glow })
@@ -113,7 +191,7 @@ export default function Dashboard() {
   // not actually configured one.
   const catSpending: Record<string, number> = Object.create(null)
   const priorCatSpending: Record<string, number> = Object.create(null)
-  for (const facet of flow.data.categories) {
+  for (const facet of flow.data?.categories ?? []) {
     if (!facet.gross_cents) continue
     const totals = facet.period === 'current' ? catSpending : priorCatSpending
     totals[facet.category] = (totals[facet.category] ?? 0) + facet.gross_cents
@@ -132,16 +210,98 @@ export default function Dashboard() {
     }))
     .filter((change) => change.delta !== 0)
     .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))[0] ?? null
-  const reviewCount = flow.data.periods.current.expense_attention_count
-  const currentNetWorth = summary.data.net_worth_cents
+  const reviewCount = flow.data?.periods.current.expense_attention_count ?? 0
+  const currentNetWorth = summary.data?.net_worth_cents ?? (consoleRoute?.entry?.id === 'dashboard' ? consoleRoute.entry.headline?.cents : undefined)
   const netWorthTrend = history.data?.map(point=>point.value) ?? []
-  const netWorthLabels = history.data?.map(point=>point.month.slice(0,7)) ?? []
+  const netWorthMonths = history.data?.map(point => point.month) ?? []
+  const netWorthLabels = consoleOverview ? monthAxisLabels(netWorthMonths) : netWorthMonths.map(month => month.slice(0, 7))
   const previous = netWorthTrend.at(-2)
-  const netWorthMonthChangePct = previous ? Math.round((currentNetWorth-previous)/Math.abs(previous)*1000)/10 : undefined
+  const netWorthMonthChangePct = previous && currentNetWorth !== undefined ? Math.round((currentNetWorth-previous)/Math.abs(previous)*1000)/10 : undefined
+
+  const spendingInsights = <SpendingInsights
+    topCategory={topCategory}
+    topCategoryShare={topCategoryShare}
+    largestCategoryChange={largestCategoryChange}
+    savings={savings}
+    income={inc}
+    reviewCount={reviewCount}
+    onExploreExpenses={() => go('expenses', { state: { source: 'dashboard-insight', from: flowFrom, to: flowTo } })}
+    onExploreCategory={category => go('expenses', { state: { source: 'dashboard-insight', category, from: flowFrom, to: flowTo } })}
+    onReviewLedger={() => go('ledger', { state: { source: 'dashboard-insight', review: 'needs-review' } })}
+    onExploreIncome={() => go('income')}
+    period={consoleOverview ? dateRangeLabel(flowFrom, flowTo) : undefined}
+  />
+  const recent = <>
+    <ReportStatus report={activity} label="Recent activity" />
+    {activity.data && (activity.data.length > 0 ? <Ledger consoleStyle={consoleOverview} rows={activity.data} onEdit={transaction => setSelectedTransactionId(transaction.parentTransactionId ?? transaction.id)} /> : (
+      <div className="py-10 text-center"><p className="body-copy">No transactions yet.</p>
+        <button type="button" onClick={() => go('ingestion')} className="mt-3 text-[13px] font-semibold text-accent hover:opacity-80">Import a statement</button>
+      </div>
+    ))}
+  </>
+
+  if (consoleOverview && consoleRoute) {
+    const chartSeries = [{ label: 'Net worth', data: netWorthTrend, color: 'var(--console-chart-ink)' }]
+    const activeAccounts = insightAccounts ?? accounts.map(account => account.id)
+    return <ConsoleHub id="dashboard" title="Overview" entry={consoleRoute.entry?.id === 'dashboard' ? consoleRoute.entry : undefined}
+      period={`Balances as of ${fullDayLabel(today)}`}
+      figure={{ label: 'Net worth', cents: currentNetWorth }}
+      strip={[{ label: '30-day net movement', cents: summary.data?.net_movement_30d_cents, signed: true }]}
+      art={netWorthTrend.length ? { label: 'Monthly net worth', values: netWorthTrend } : consoleRoute.entry?.id === 'dashboard' ? consoleRoute.entry.art : undefined}
+      onBack={consoleRoute.back}>
+      <ReportStatus report={summary} label="Portfolio" />
+      <FocusRow label="Primary modules" className="console-module-grid">
+        <ConsoleModule title="Cumulative net worth" kind="chart" tools={<div className="console-chart-switch">
+          <button type="button" aria-pressed={chartType === 'line'} onClick={() => setChartType('line')}>Line</button>
+          <button type="button" aria-pressed={chartType === 'bar'} onClick={() => setChartType('bar')}>Bar</button>
+        </div>}>
+          <ReportStatus report={history} label="Net worth history" />
+          {history.data && !history.data.length && <p>No monthly history yet.</p>}
+          {netWorthTrend.length > 0 && <>
+            {chartType === 'line' ? <Area consoleStyle series={chartSeries} labels={netWorthLabels} height={275} ariaLabel="Cumulative net worth" />
+              : <Bar consoleStyle series={chartSeries} labels={netWorthLabels} height={275} ariaLabel="Cumulative net worth by month" />}
+            <ConsoleChartValues labels={netWorthMonths.map(monthLabel)} series={chartSeries} />
+          </>}
+        </ConsoleModule>
+        <div className="console-module-companions">
+          <ConsoleModule title="Asset allocation" order={1}>
+            {summary.data && (liquidSum || investSum ? <AllocationDonut consoleStyle totalLabel="Gross assets" data={allocation} /> : <p>No cash or investment assets to allocate.</p>)}
+          </ConsoleModule>
+          <ConsoleModule title="Holdings" kind="flat" order={2}>
+            <ul className="console-holdings">
+              {accounts.map(account => <li key={account.id}>
+                <div>{account.name}<small>{account.type}{account.institution ? ` · ${account.institution}` : ''}</small></div>
+                <span className="tabular-nums">{fmtCents(account.balance)}</span>
+              </li>)}
+            </ul>
+          </ConsoleModule>
+        </div>
+      </FocusRow>
+      <FocusRow label="Secondary modules" className="console-module-secondary">
+        <ConsoleModule title="Spending insights" kind="flat" order={3}
+          tools={topCategory && <button type="button" className="console-chart-values"
+            onClick={() => go('expenses', { state: { source: 'dashboard-insight', from: flowFrom, to: flowTo } })}>
+            View all spending →
+          </button>}>
+          <div className="console-hub-filters console-spending-filters" role="group" aria-label="Spending insights filters">
+            <DateRangePicker from={overviewRange.from} to={overviewRange.to} onFrom={overviewRange.changeFrom}
+              onTo={overviewRange.changeTo} min={MIN_DATE} max={MAX_DATE} presets={PRESETS}
+              activePreset={overviewRange.preset} onPreset={overviewRange.applyPreset} />
+            <MultiSelect options={accounts.map(account => ({ value: account.id, label: account.name }))} selected={activeAccounts}
+              onChange={setInsightAccounts} allLabel="All accounts" emptyLabel="No accounts" noun="accounts" />
+          </div>
+          <ReportStatus report={flow} label="Spending insights" />
+          {flow.data && spendingInsights}
+        </ConsoleModule>
+        <ConsoleModule title="Recent activity" kind="flat" order={4}>{recent}</ConsoleModule>
+      </FocusRow>
+      {drawer}
+    </ConsoleHub>
+  }
 
   return (
     <Screen>
-      <ViewHeader index="01 — Command" title="Dashboard" sub="Your finances at a glance" />
+      {header}
       {/* 
         GRID LAYOUT GUIDE:
         - The <Grid> wrapper is defined in 'app/src/components/Screen.tsx'.
@@ -155,7 +315,7 @@ export default function Dashboard() {
           Each card takes up 1 column by default, filling the 3-column row on desktop.
         */}
         <div className="relative">
-          <HeroCard variant="tile" netWorth={currentNetWorth} monthChangePct={netWorthMonthChangePct} />
+          <HeroCard variant="tile" netWorth={currentNetWorth ?? 0} monthChangePct={netWorthMonthChangePct} />
         </div>
 
         <Tile>
@@ -268,38 +428,17 @@ export default function Dashboard() {
           </div>
         </Tile>
 
-        <SpendingInsights
-          topCategory={topCategory}
-          topCategoryShare={topCategoryShare}
-          largestCategoryChange={largestCategoryChange}
-          savings={savings}
-          income={inc}
-          reviewCount={reviewCount}
-          onExploreExpenses={() => go('expenses', { state: { source: 'dashboard-insight', from: thirtyDaysAgoIso, to: today } })}
-          onExploreCategory={(category) => go('expenses', { state: { source: 'dashboard-insight', category, from: thirtyDaysAgoIso, to: today } })}
-          onReviewLedger={() => go('ledger', { state: { source: 'dashboard-insight', review: 'needs-review' } })}
-          onExploreIncome={() => go('income')}
-        />
+        {spendingInsights}
 
         {/* 
           Row 4: Recent Activity 
           - 'span={3}' translates to 'md:col-span-2 xl:col-span-3', stretching this card across the full width (3 columns) at the bottom.
         */}
         <Tile title="Recent activity" tag={`last ${RECENT_ACTIVITY_COUNT}`} span={3}>
-          <ReportStatus report={activity} label="Recent activity" />
-          {activity.data && (activity.data.length > 0 ? <Ledger rows={activity.data} onEdit={(transaction) => setSelectedTransactionId(transaction.parentTransactionId ?? transaction.id)} /> : (
-            <div className="py-10 text-center"><p className="body-copy">No transactions yet.</p>
-              <button type="button" onClick={() => go('ingestion')} className="mt-3 text-[13px] font-semibold text-accent hover:opacity-80">Import a statement</button>
-            </div>
-          ))}
+          {recent}
         </Tile>
       </Grid>
-      {selectedTransactionId && <ReportStatus report={parent} label="Transaction details" />}
-      <TransactionCategoryDrawer
-        transaction={parent.data}
-        onClose={() => setSelectedTransactionId(null)}
-        onChanged={refreshAfterTransactionEdit}
-      />
+      {drawer}
     </Screen>
   )
 }
@@ -318,6 +457,7 @@ function SpendingInsights({
   onExploreCategory,
   onReviewLedger,
   onExploreIncome,
+  period,
 }: {
   topCategory: CategoryAmount | null
   topCategoryShare: number
@@ -329,43 +469,45 @@ function SpendingInsights({
   onExploreCategory: (category: string) => void
   onReviewLedger: () => void
   onExploreIncome: () => void
+  period?: string
 }) {
+  const { theme } = useView()
+  const consoleStyle = theme === 'console'
+  const money = consoleStyle ? fmtCents : fmt
+  const panel = (content: ReactNode, tag: ReactNode) => consoleStyle ? content : (
+    <Tile title="Spending insights" tag={tag} span={2} className="flex min-h-[300px] flex-col overflow-hidden">
+      {content}
+    </Tile>
+  )
   if (!topCategory) {
-    return (
-      <Tile title="Spending insights" tag="last 30 days" span={2} className="flex min-h-[300px] flex-col">
-        <div className="flex flex-1 flex-col items-start justify-center rounded-[14px] border border-dashed border-[var(--hair)] bg-[var(--hair-soft)] px-5">
+    return panel(
+        <div className={`flex flex-1 flex-col items-start justify-center rounded-[14px] border border-dashed border-[var(--hair)] bg-[var(--hair-soft)] px-5 ${consoleStyle ? 'py-5' : ''}`}>
           <span className="text-[12px] font-semibold uppercase tracking-[0.1em] text-accent-ink">No settled outflows yet</span>
           <p className="mt-2 max-w-md text-[15px] leading-6 text-muted">Insights appear once spending activity has settled. Importing a statement or reviewing recent activity will make this panel useful.</p>
           <button type="button" onClick={onReviewLedger} className="mt-5 text-[14px] font-semibold text-accent-ink transition hover:opacity-75 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent">
             Review transactions →
           </button>
-        </div>
-      </Tile>
+        </div>,
+        'last 30 days',
     )
   }
 
   const changeDirection = (largestCategoryChange?.delta ?? 0) >= 0 ? 'increased' : 'decreased'
   const changeTone = changeDirection === 'increased' ? 'text-neg' : 'text-pos'
 
-  return (
-    <Tile
-      title="Spending insights"
-      tag={<button type="button" onClick={onExploreExpenses} className="font-semibold text-accent-ink transition hover:opacity-75 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent">View all spending →</button>}
-      span={2}
-      className="flex min-h-[300px] flex-col overflow-hidden"
-    >
+  return panel(<>
       <div className="flex flex-1 flex-col gap-3.5">
         <button
           type="button"
           onClick={() => onExploreCategory(topCategory.category)}
-          aria-label={`Explore ${topCategory.category} spending for the last 30 days`}
+          aria-label={consoleStyle ? undefined : `Explore ${topCategory.category} spending for ${period ?? "the last 30 days"}`}
           className="group w-full rounded-[14px] border border-[color-mix(in_srgb,var(--color-accent)_35%,var(--hair))] bg-[var(--accent-wash)] px-4 py-3.5 text-left transition hover:border-accent/60 hover:bg-[color-mix(in_srgb,var(--accent-wash)_72%,var(--surface))] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
         >
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-accent-ink">Largest outflow</p>
               <p className="mt-1.5 max-w-xl text-[17px] font-semibold leading-6 tracking-tight text-ink">
-                <span className="text-accent-ink">{topCategory.category}</span> was your largest outflow: {fmt(topCategory.amount)} ({topCategoryShare}% of spending).
+                <span className={consoleStyle ? undefined : 'text-accent-ink'}>{topCategory.category}</span> was your largest outflow: {money(topCategory.amount)} ({topCategoryShare}% of spending).
               </p>
               <p className="mt-2 body-copy">Explore this category in the Expenses analysis <span className="font-semibold text-accent-ink group-hover:underline">→</span></p>
             </div>
@@ -380,8 +522,8 @@ function SpendingInsights({
           {largestCategoryChange ? (
             <InsightAction
               eyebrow="Period change"
-              sentence={`${largestCategoryChange.category} ${changeDirection} by ${fmt(Math.abs(largestCategoryChange.delta))} versus the prior 30 days.`}
-              tone={changeTone}
+              sentence={`${largestCategoryChange.category} ${changeDirection} by ${money(Math.abs(largestCategoryChange.delta))} versus ${period ? "the preceding period" : "the prior 30 days"}.`}
+              tone={consoleStyle ? 'text-ink' : changeTone}
               action="Explore category →"
               onClick={() => onExploreCategory(largestCategoryChange.category)}
             />
@@ -392,7 +534,7 @@ function SpendingInsights({
             <InsightAction
               eyebrow="Needs attention"
               sentence={`${reviewCount} transaction${reviewCount === 1 ? '' : 's'} need${reviewCount === 1 ? 's' : ''} review before this period is fully classified.`}
-              tone="text-warn"
+              tone={consoleStyle ? 'text-ink' : 'text-warn'}
               action="Review transactions →"
               onClick={onReviewLedger}
             />
@@ -400,15 +542,16 @@ function SpendingInsights({
             <InsightAction
               eyebrow="Cash flow"
               sentence={income > 0 ? `You saved ${savings}% of settled inflow after spending this period.` : 'A savings insight will appear once settled inflow is recorded.'}
-              tone={income > 0 ? (savings >= 0 ? 'text-pos' : 'text-neg') : 'text-muted'}
+              tone={!consoleStyle && income > 0 ? (savings >= 0 ? 'text-pos' : 'text-neg') : 'text-muted'}
               action="Explore income →"
               onClick={onExploreIncome}
             />
           )}
         </div>
       </div>
-      <p className="mt-4 border-t border-[var(--hair-soft)] pt-3.5 text-[11.5px] text-muted">Based on settled activity from the last 30 days.</p>
-    </Tile>
+      <p className="mt-4 border-t border-[var(--hair-soft)] pt-3.5 text-[11.5px] text-muted">Based on settled activity {period ? `for ${period}` : 'from the last 30 days'}.</p>
+    </>,
+    <button type="button" onClick={onExploreExpenses} className="font-semibold text-accent-ink transition hover:opacity-75 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent">View all spending →</button>,
   )
 }
 

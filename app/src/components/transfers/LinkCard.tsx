@@ -1,3 +1,4 @@
+import { useConsoleDayLabel } from '../../hooks/useConsoleDayLabel'
 import { Button } from '../Controls'
 import { fmtCents } from '../../data'
 import { type LinkedTxn, type TransferLinkRow } from './types'
@@ -46,12 +47,13 @@ export function LinkCard({
 }
 
 function TxnLeg({ txn, accountName }: { txn: LinkedTxn | null; accountName: string }) {
+  const formatDay = useConsoleDayLabel()
   if (!txn) return <div className="rounded-[8px] border border-[var(--hair-soft)] p-2.5 text-[12.5px] text-muted">Missing leg</div>
   return (
     <div className="rounded-[8px] border border-[var(--hair-soft)] p-2.5">
       <div className="flex items-baseline justify-between gap-2">
         <span className="text-[12px] font-semibold text-ink">{accountName}</span>
-        <span className="text-[12px] tabular-nums text-muted">{txn.date}</span>
+        <span className="text-[12px] tabular-nums text-muted">{formatDay(txn.date)}</span>
       </div>
       <div className="mt-1 flex items-baseline justify-between gap-2">
         <span className="min-w-0 truncate text-[12.5px] text-muted">{txn.original_description || '—'}</span>

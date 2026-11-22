@@ -1,3 +1,4 @@
+import { useConsoleDayLabel } from '../../hooks/useConsoleDayLabel'
 import {useBudget} from '../../contexts/BudgetContext'
 import {fmtCents} from '../../data'
 import {addDays} from '../../lib/budget'
@@ -7,6 +8,7 @@ const labels:Record<ForecastStatus,string>={within_plan:'On track',likely_to_exc
 const monthFmt=new Intl.DateTimeFormat('en-AU',{month:'long',year:'numeric',timeZone:'UTC'}),dayFmt=new Intl.DateTimeFormat('en-AU',{day:'numeric',month:'short',timeZone:'UTC'})
 const monthOf=(d:string)=>{try{return monthFmt.format(new Date(`${d}T00:00:00Z`))}catch{return d}},at=(d:string)=>{try{return dayFmt.format(new Date(`${d}T00:00:00Z`))}catch{return d}}
 export default function BudgetForecast(){
+  const formatDay = useConsoleDayLabel()
  const b=useBudget(),s=b.snapshot!,f=s.details?.forecast,problem=forecastReadProblem(s,b.readState,!!b.pending)
  if(problem)return <section aria-label="Spending estimate" className="budget-forecast"><h4>Estimated everyday spending</h4><p className="detail-copy text-warn">{problem}</p></section>
  if(!f)return null
@@ -34,7 +36,7 @@ export default function BudgetForecast(){
    <p className="detail-copy">Refunds don’t lower the daily rate. Bills and set-asides are checked by their due dates instead.{flex.policy_names.length>0&&<> Left out of the daily rate: {flex.policy_names.join(', ')}.</>}</p>
    {flex.available&&<p className="detail-copy">We only say “likely to go over” if the estimate is more than {money(flex.threshold_cents)} over your plan (5% of it, and at least $25).</p>}
    <p className="detail-copy text-muted">Checked {checked}.{f.through_date?` Includes spending up to ${at(f.through_date)}.`:''}</p>
-   {f.fixed.length>0&&<><h5 className="font-semibold">Bills, by their due dates</h5>{f.fixed.map(x=><div key={x.line_id} className="budget-forecast-fixed"><strong>{x.name}</strong>{x.available&&<p className="detail-copy">{labels[x.status]}</p>}{x.available?<p className="detail-copy">{f.phase==='future'?'Provisional expected total':'Matched net charges plus remaining expected occurrences'}: {money(x.projected_cents)} · allowance {money(x.allocation_cents)}.</p>:<p className="detail-copy">{forecastReason(x.reason)}</p>}<p className="detail-copy">Matched net {money(x.settled_net_cents)}; still expected {money(x.expected_remaining_cents)}.{!!x.overdue_expected_cents&&<> {money(x.overdue_expected_cents)} is dated today or earlier and remains expected until resolved.</>} Unmatched does not prove unpaid.</p><ul className="detail-copy">{x.occurrences.map(o=><li key={o.date}>{o.date}: {money(o.expected_cents)} expected, {money(o.matched_cents)} matched, {money(o.remaining_cents)} still expected.</li>)}</ul></div>)}</>}
+   {f.fixed.length>0&&<><h5 className="font-semibold">Bills, by their due dates</h5>{f.fixed.map(x=><div key={x.line_id} className="budget-forecast-fixed"><strong>{x.name}</strong>{x.available&&<p className="detail-copy">{labels[x.status]}</p>}{x.available?<p className="detail-copy">{f.phase==='future'?'Provisional expected total':'Matched net charges plus remaining expected occurrences'}: {money(x.projected_cents)} · allowance {money(x.allocation_cents)}.</p>:<p className="detail-copy">{forecastReason(x.reason)}</p>}<p className="detail-copy">Matched net {money(x.settled_net_cents)}; still expected {money(x.expected_remaining_cents)}.{!!x.overdue_expected_cents&&<> {money(x.overdue_expected_cents)} is dated today or earlier and remains expected until resolved.</>} Unmatched does not prove unpaid.</p><ul className="detail-copy">{x.occurrences.map(o=><li key={o.date}>{formatDay(o.date)}: {money(o.expected_cents)} expected, {money(o.matched_cents)} matched, {money(o.remaining_cents)} still expected.</li>)}</ul></div>)}</>}
    <p className="detail-copy">Savings goals and set-asides are tracked against their targets and due dates, not as spending.</p>
   </div></details>
  </section>

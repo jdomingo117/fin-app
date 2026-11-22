@@ -4,6 +4,7 @@ import { useChartReveal, CHART_EASE } from '../../hooks/useChartReveal'
 import { useResponsiveChartSize } from '../../hooks/useResponsiveChartSize'
 import { chartYTickCount, visibleTickIndices } from '../../lib/chartDensity'
 import { chartIndexFromPointer } from '../../lib/chartInteraction'
+import { fmtCents } from '../../data'
 import SharedChartTooltip from './SharedChartTooltip'
 
 export interface BarSeries {
@@ -36,12 +37,16 @@ export default function Bar({
   height = 240,
   selectedIndex = null,
   onClickDataPoint,
+  ariaLabel = "Outflow per-period bar chart",
+  consoleStyle = false,
 }: {
   series: BarSeries[]
   labels?: string[]
   height?: number
   selectedIndex?: number | null
   onClickDataPoint?: (idx: number) => void
+  ariaLabel?: string
+  consoleStyle?: boolean
 }) {
   const { ref: containerRef, width: W, height: H, ready } = useResponsiveChartSize({
     // Preserve each existing call site's intended desktop proportion while
@@ -140,14 +145,14 @@ export default function Bar({
           if (hoveredIdx !== null) onClickDataPoint?.(hoveredIdx)
         }}
         role="img"
-        aria-label="Outflow per-period bar chart"
+        aria-label={ariaLabel}
       >
       {/* Gradients definitions */}
       <defs>
         {series.map((s, si) => (
           <linearGradient key={si} id={`bar-grad-${uid}-${si}`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={s.color} stopOpacity={0.85} />
-            <stop offset="100%" stopColor={s.color} stopOpacity={0.12} />
+            <stop offset="0%" stopColor={consoleStyle ? 'var(--console-chart-tint)' : s.color} stopOpacity={consoleStyle ? .28 : .85} />
+            <stop offset="100%" stopColor={consoleStyle ? 'var(--console-chart-tint)' : s.color} stopOpacity={consoleStyle ? 0 : .12} />
           </linearGradient>
         ))}
       </defs>
@@ -211,7 +216,7 @@ export default function Bar({
             return (
               <rect
                 key={i}
-                className="bar-rect"
+                className={consoleStyle ? 'console-area-line' : 'bar-rect'}
                 data-y={y}
                 data-h={h}
                 x={x}
@@ -222,7 +227,7 @@ export default function Bar({
                 fill={`url(#${gradId})`}
                 stroke={isSelected ? 'var(--color-accent)' : s.color}
                 strokeWidth={isSelected ? 2 : 1.2}
-                style={{ opacity, transition: 'opacity 0.15s ease, stroke 0.15s ease, stroke-width 0.15s ease', filter: isSelected ? 'drop-shadow(0 0 3px var(--color-accent))' : undefined }}
+                style={{ opacity, transition: consoleStyle ? 'opacity var(--dur-reduced) ease' : 'opacity 0.15s ease, stroke 0.15s ease, stroke-width 0.15s ease', filter: isSelected ? 'drop-shadow(0 0 3px var(--color-accent))' : undefined }}
               />
             )
           })}
@@ -237,7 +242,7 @@ export default function Bar({
             items={series.map((s, index) => ({
               color: s.color,
               label: s.label ?? (series.length === 1 ? 'Value' : `Series ${index + 1}`),
-              value: formatChartVal(s.data[hoveredIdx]),
+              value: consoleStyle ? fmtCents(s.data[hoveredIdx]) : formatChartVal(s.data[hoveredIdx]),
             }))}
             anchorX={padL + hoveredIdx * spacing + spacing / 2}
             pointYs={series.map((s) => yOf(s.data[hoveredIdx]))}

@@ -1,3 +1,5 @@
+import { useView } from '../router'
+import { monthAxisLabels, monthLabel } from '../lib/period'
 import { useState } from 'react'
 import type { ProjectionPoint } from '../lib/projections'
 import { fmt } from '../data'
@@ -27,6 +29,7 @@ export default function ProjectionChart({
   scenario?: ProjectionPoint[]
   target: number
 }) {
+  const { theme } = useView()
   const [hovered, setHovered] = useState<number | null>(null)
   const { ref: containerRef, width: W, height: H, ready } = useResponsiveChartSize({
     // The planner shares a row with a substantial what-if panel. Let the plot
@@ -39,6 +42,7 @@ export default function ProjectionChart({
   const pad = { left: 64, right: 28, top: 34, bottom: 42 }
   const actual = history.length ? history : [baseline[0]]
   const allDates = [...actual.map((point) => point.date), ...baseline.slice(1).map((point) => point.date)]
+  const axisLabels = theme === 'console' ? monthAxisLabels(allDates) : allDates.map(label)
   const values = [...actual, ...baseline, ...(scenario ?? []), { date: '', value: target }].map((point) => point.value)
   const rawMin = Math.min(...values)
   const rawMax = Math.max(...values)
@@ -109,12 +113,12 @@ export default function ProjectionChart({
         <circle cx={x(projectionOffset)} cy={y(actual.at(-1)?.value ?? baseline[0]?.value ?? 0)} r="4" fill="var(--color-ink2)" stroke="var(--surface)" strokeWidth="2" />
         <circle cx={x(baselineEndIndex)} cy={y(baseline.at(-1)?.value ?? 0)} r="4.5" fill="var(--color-accent)" stroke="var(--surface)" strokeWidth="2" />
         {scenario && <circle cx={x(baselineEndIndex)} cy={y(scenario.at(-1)?.value ?? 0)} r="4" fill="var(--color-blue)" stroke="var(--surface)" strokeWidth="2" />}
-        {dateTickIndices.map((index) => <text key={allDates[index]} x={x(index)} y={H - 10} textAnchor="middle" fontSize="12" fill="var(--color-muted)">{label(allDates[index])}</text>)}
+        {dateTickIndices.map((index) => <text key={allDates[index]} x={x(index)} y={H - 10} textAnchor="middle" fontSize="12" fill="var(--color-muted)">{axisLabels[index]}</text>)}
         {hovered !== null && <line x1={x(projectionOffset + hovered)} x2={x(projectionOffset + hovered)} y1={pad.top} y2={pad.top + innerH} stroke="var(--color-accent)" opacity="0.4" />}
       </svg>}
       {hoverPoint && (
         <div className="pointer-events-none absolute right-4 top-4 rounded-lg border border-[var(--hair)] bg-[var(--toast-bg)] px-4 py-3 text-[14px] shadow-lg">
-          <div className="font-semibold text-muted">{label(hoverPoint.date)}</div>
+          <div className="font-semibold text-muted">{theme === 'console' ? monthLabel(`${hoverPoint.date}-01`) : label(hoverPoint.date)}</div>
           <div className="mt-0.5 font-bold tabular-nums text-ink">Baseline {fmt(hoverPoint.value)}</div>
           {scenarioHoverPoint && <div className="font-semibold tabular-nums text-[var(--color-blue)]">Scenario {fmt(scenarioHoverPoint.value)}</div>}
         </div>

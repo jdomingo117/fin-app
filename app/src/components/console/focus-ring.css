@@ -1,0 +1,94 @@
+.console-focus-decoration {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.console-focus-decoration[data-layer="edge"] {
+  border-radius: calc(var(--console-active-radius) / var(--console-tile-scale));
+  box-shadow:
+    0 0 0 calc(var(--console-ring-gap) / var(--console-tile-scale)) var(--console-ring-gap-ink),
+    0 0 0 calc(var(--console-ring-edge) / var(--console-tile-scale)) var(--console-ink);
+  opacity: 0;
+  transition: opacity var(--dur-focus) var(--ease-fade);
+}
+.console-section:is([data-active="true"], :focus-visible) .console-focus-decoration[data-layer="edge"] { opacity: 1; }
+.console-focus-decoration[data-layer="glow"] {
+  inset: 20px auto auto 0;
+  inline-size: var(--console-tile-active);
+  block-size: var(--console-tile-active);
+  border-radius: var(--console-active-radius);
+  box-shadow: var(--console-glow-low);
+}
+.console-focus-decoration[data-layer="glow"]::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0;
+  box-shadow: var(--console-glow-high);
+  animation: console-glow var(--dur-breathe) ease-in-out infinite;
+}
+.console-focus-decoration[data-layer="sweep"] {
+  overflow: clip;
+  border-radius: inherit;
+}
+.console-focus-decoration[data-layer="sweep"]::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--console-sweep-paint);
+  opacity: 0;
+  transform: translateX(-120%);
+}
+.console-section[data-active="true"] .console-focus-decoration[data-layer="sweep"]::before {
+  animation: console-tile-sweep var(--dur-sweep) linear var(--dur-sweep-delay) infinite;
+}
+
+.console-viewport [data-focus-ring]:focus-visible,
+.console-viewport :is(button, a, input, select, textarea, summary):not(.console-section):focus-visible {
+  outline: 0;
+  box-shadow: var(--console-ring);
+}
+
+.console-activity-card {
+  position: relative;
+  isolation: isolate;
+  transition: transform var(--dur-micro) var(--ease-settle);
+}
+.console-activity-card .console-focus-decoration { z-index: -1; }
+.console-activity-card:is(:hover, :focus-visible):not(:disabled) {
+  z-index: 2;
+  transform: scale(var(--console-card-focus-scale));
+  box-shadow: var(--console-ring);
+}
+.console-activity-card:is(:hover, :focus-visible):not(:disabled) .console-focus-decoration::before {
+  animation: console-card-sweep var(--dur-card-sweep) linear var(--dur-card-sweep-delay) both;
+}
+.console-activity-card:disabled { cursor: default; opacity: .65; }
+
+.console-viewport[data-paused="true"] .console-focus-decoration::after,
+.console-viewport[data-paused="true"] .console-focus-decoration::before,
+.console-home[data-paused="true"] .console-focus-decoration::after { animation-play-state: paused; }
+.console-viewport[data-reduced="true"] .console-focus-decoration::after,
+.console-viewport[data-reduced="true"] .console-focus-decoration::before { animation: none !important; }
+.console-viewport[data-reduced="true"] :is(.console-focus-decoration, .console-activity-card) { transition: none; }
+.console-viewport[data-reduced="true"] .console-activity-card { transform: none; }
+
+@media (forced-colors: active) {
+  .console-section:is([data-active="true"], :focus-visible) .console-focus-decoration[data-layer="edge"],
+  .console-viewport [data-focus-ring]:focus-visible,
+  .console-viewport :is(button, a, input, select, textarea, summary):not(.console-section):focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 3px;
+  }
+}
+
+@keyframes console-glow { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
+@keyframes console-tile-sweep {
+  from { opacity: 1; transform: translateX(-120%); }
+  30%, to { opacity: 1; transform: translateX(120%); }
+}
+@keyframes console-card-sweep {
+  from { opacity: .35; transform: translateX(-120%); }
+  to { opacity: .35; transform: translateX(120%); }
+}

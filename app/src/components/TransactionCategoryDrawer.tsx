@@ -1,3 +1,5 @@
+import { useUnsavedChanges } from '../hooks/useUnsavedChanges'
+import { useConsoleDayLabel } from '../hooks/useConsoleDayLabel'
 import { useTaxonomy } from '../hooks/useTaxonomy'
 import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
@@ -67,6 +69,7 @@ export default function TransactionCategoryDrawer({
   onChanged: () => Promise<void>
 }) {
   const { reportRevision } = useData()
+  const formatDay = useConsoleDayLabel()
   const taxonomy = useTaxonomy(Boolean(transaction))
   const { customSubcategories } = taxonomy
   const [category, setCategory] = useState('')
@@ -155,6 +158,8 @@ export default function TransactionCategoryDrawer({
       && isReimbursable === (transaction.isReimbursable ?? false)
       && isTaxRelated === (transaction.isTaxRelated ?? false)
     : true
+
+  useUnsavedChanges(!!transaction && (!unchanged || !classificationUnchanged || scope === 'merchant_rule' || !!customName.trim()))
 
   const saveClassification = async () => {
     if (!transaction || isReconciliation) return
@@ -299,7 +304,7 @@ export default function TransactionCategoryDrawer({
               <div className="min-w-0">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-accent-ink">Transaction detail</p>
                 <h2 id="transaction-drawer-title" className="mt-1 truncate font-display text-[25px] font-black text-ink">{transaction.merchant}</h2>
-                <p className="mt-1 text-[13px] text-muted">{transaction.date} · {transaction.account}</p>
+                <p className="mt-1 text-[13px] text-muted">{formatDay(transaction.date)} · {transaction.account}</p>
               </div>
               <button type="button" onClick={onClose} aria-label="Close transaction detail" className="grid min-h-11 min-w-11 place-items-center rounded-lg border border-[var(--hair)] text-ink transition hover:bg-[var(--hair-soft)]">×</button>
             </header>

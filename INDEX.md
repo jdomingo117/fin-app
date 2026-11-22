@@ -598,6 +598,17 @@ what-if. The fictional concept remains the design reference; the production M6 f
 implemented but the remaining M6 verification gates are still open.
 
 ### `app/` (Frontend)
+- `src/components/console/ConsoleViewport.tsx` owns the signed-in Console appearance, Home routing,
+  and the persistent scene. `ControlCentre.tsx` owns the modal, keyboard shortcut and focus return. `ConsoleHome.tsx` previews existing Dashboard
+  reports. `ConsoleHub.tsx` provides the shared-entry hero, sticky compact header and modules for
+  Income and Overview. The Phase 2 foundation shares appearance preferences, CSS/Framer Motion
+  presets, `FocusRing`, `FocusRow` and `GlassSurface` across those views.
+  `AmbientBackground.tsx` owns the six-material scene, effects tiers and suspension rules.
+  `SoundEngine.ts` synthesizes cues and music from user gestures. `ConsolePreferences.tsx`
+  owns the local controls, and `ConsoleStartScreen.tsx` is the optional Home entry.
+  The signed-in
+  `/dashboard?demo=foundation` route shows the foundation states in development.
+  See [the console rollout](docs/design/console-rollout.md) for gate fixtures and checks.
 - `budget-concept.html` / `src/budget-concept-main.tsx` / `src/concept/budget/` — Standalone,
   fictional-data Budget design review. Includes guided setup with local draft resume, monthly/fortnightly
   workspace, purchase goals with amount/date planning and impact previews, category reallocation,

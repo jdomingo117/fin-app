@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { useEffect, useRef, type ReactNode } from 'react'
+import { useView } from '../router'
 import { gridStagger } from './motion'
 
 const FADE = 32 // px — how far content dissolves into the letterbox bars
@@ -12,12 +13,13 @@ const FADE = 32 // px — how far content dissolves into the letterbox bars
  *  below — header stays crisp at rest), plus an `is-scrolling` class that
  *  reveals the minimal scrollbar while scrolling and hides it when idle. */
 export function Screen({ children }: { children: ReactNode }) {
+  const { theme } = useView()
   const ref = useRef<HTMLDivElement>(null)
   const idle = useRef<number | undefined>(undefined)
 
   useEffect(() => {
     const el = ref.current
-    if (!el) return
+    if (!el || theme === 'console') return
     const update = () => {
       const top = Math.min(el.scrollTop, FADE)
       const bottom = Math.min(el.scrollHeight - el.clientHeight - el.scrollTop, FADE)
@@ -42,12 +44,14 @@ export function Screen({ children }: { children: ReactNode }) {
       window.removeEventListener('resize', update)
       window.clearTimeout(idle.current)
     }
-  }, [])
+  }, [theme])
 
   return (
     <motion.div
       ref={ref}
-      className="scroll-region absolute inset-0 overflow-y-auto pb-4 pr-1"
+      className={theme === 'console'
+        ? 'console-hub-scroll'
+        : 'scroll-region absolute inset-0 overflow-y-auto pb-4 pr-1'}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.35 }}
     >
@@ -57,6 +61,8 @@ export function Screen({ children }: { children: ReactNode }) {
 }
 
 export function ViewHeader({ index, title, sub }: { index: string; title: string; sub?: string }) {
+  const { theme } = useView()
+  if (theme === 'console') return null
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
       <div className="text-[12px] font-semibold uppercase tracking-[0.18em] text-accent-ink">{index}</div>

@@ -6,10 +6,10 @@ import { DEFAULT_PRESET, PRESETS, presetRange } from '../lib/period'
  *  clears the active preset (so the pill row shows nothing selected and the
  *  custom-range picker reads as active). ISO date strings compare
  *  lexicographically, so `from ≤ to` is kept with a plain compare. */
-export function usePeriodRange(initialPreset: string = DEFAULT_PRESET) {
-  const [preset, setPreset] = useState<string | null>(initialPreset)
-  const [from, setFrom] = useState(() => presetRange(initialPreset).from)
-  const [to, setTo] = useState(() => presetRange(initialPreset).to)
+export function usePeriodRange(initialPreset: string = DEFAULT_PRESET, initialRange?: { from: string; to: string }) {
+  const [preset, setPreset] = useState<string | null>(initialRange ? null : initialPreset)
+  const [from, setFrom] = useState(() => initialRange?.from ?? presetRange(initialPreset).from)
+  const [to, setTo] = useState(() => initialRange?.to ?? presetRange(initialPreset).to)
 
   const applyPreset = (id: string) => {
     if (!PRESETS.some((p) => p.id === id)) return

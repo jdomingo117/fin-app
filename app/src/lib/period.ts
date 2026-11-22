@@ -72,6 +72,22 @@ export const monthLabel = (isoDate: string) => {
   return `${MON[d.getMonth()]} ${d.getFullYear()}`
 }
 
+export const fullDayLabel = (date: string) => `${dayLabel(date)} ${date.slice(0, 4)}`
+
+export function dateRangeLabel(from: string, to: string, includeYear = false) {
+  const crossesYear = from.slice(0, 4) !== to.slice(0, 4)
+  return `${crossesYear ? fullDayLabel(from) : dayLabel(from)} – ${crossesYear || includeYear ? fullDayLabel(to) : dayLabel(to)}`
+}
+
+/** A year appears at the first plotted month after the calendar year changes. */
+export function monthAxisLabels(dates: string[]) {
+  return dates.map((date, index) => {
+    const year = date.slice(0, 4)
+    const month = MON[Number(date.slice(5, 7)) - 1]
+    return index > 0 && dates[index - 1].slice(0, 4) !== year ? `${month} ${year}` : month
+  })
+}
+
 export const TODAY = iso(now)
 export const MIN_DATE = iso(monthStart(0))
 export const MAX_DATE = iso(new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0)) // last day of current month

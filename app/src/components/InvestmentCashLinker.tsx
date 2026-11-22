@@ -1,3 +1,4 @@
+import { useConsoleDayLabel } from '../hooks/useConsoleDayLabel'
 import { useQueuePage } from '../lib/queuePage'
 import { QueueNavigation } from './QueueNavigation'
 import ReportStatus from './ReportStatus'
@@ -83,6 +84,7 @@ function CashLinkRow({ link, accountName, busy, onDecide }: {
   busy: boolean
   onDecide: (id: string, verdict: 'confirmed' | 'rejected') => void
 }) {
+  const formatDay = useConsoleDayLabel()
   const amount = Math.abs(link.transaction?.amount ?? link.activity?.value_cents ?? 0)
   const direction = link.activity?.activity_type === 'redemption' ? 'Redemption to' : 'Contribution from'
   return <div className="flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-[var(--hair)] px-3 py-2.5">
@@ -91,7 +93,7 @@ function CashLinkRow({ link, accountName, busy, onDecide }: {
         {direction} {accountName(link.transaction?.account_id)} · {fmtCents(amount)}
       </p>
       <p className="mt-0.5 text-[11.5px] text-muted">
-        {link.transaction?.date} → {accountName(link.activity?.account_id)} · {Math.round(link.score * 100)}% confidence
+        {formatDay(link.transaction?.date)} → {accountName(link.activity?.account_id)} · {Math.round(link.score * 100)}% confidence
         {link.ambiguous ? ' · ambiguous' : ''}
       </p>
     </div>

@@ -5,7 +5,7 @@ import { hydrateParents, ledgerPage, missingParentIds, reviewIds, selectionIds, 
 import ReportStatus from '../components/ReportStatus'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
-import { navNumber } from '../router'
+import { navNumber, useView } from '../router'
 import { Screen, ViewHeader } from '../components/Screen'
 import Tile from '../components/Tile'
 import { Button, Chip, SearchInput, Select } from '../components/Controls'
@@ -65,6 +65,8 @@ export default function LedgerView() {
 }
 
 function LedgerWorkspace({ tenant }: { tenant: string }) {
+  const { theme } = useView()
+  const transactionDate = (date: string) => theme === 'console' ? dayLabel(date) : date
   const { accounts, refreshData, reportRevision } = useData()
   const location = useLocation()
   const [query, setQuery] = useState('')
@@ -328,7 +330,7 @@ function LedgerWorkspace({ tenant }: { tenant: string }) {
           <div className="divide-y divide-[var(--hair-soft)]">
             {visible.map((transaction) => (
               <div key={transaction.id} className="flex items-center gap-2">
-                <label className="grid min-h-11 min-w-11 cursor-pointer place-items-center" aria-label={`Select ${transaction.merchant} on ${transaction.date}`}>
+                <label className="grid min-h-11 min-w-11 cursor-pointer place-items-center" aria-label={`Select ${transaction.merchant} on ${transactionDate(transaction.date)}`}>
                   <input type="checkbox" checked={selectedIds.has(transaction.id)} disabled={!selectedIds.has(transaction.id) && selection.total >= MAX_BULK_SELECTION} aria-describedby="ledger-bulk-selection-limit" onChange={() => toggleSelected(transaction.id)} className="h-4 w-4 accent-[var(--color-accent)] disabled:cursor-not-allowed disabled:opacity-40" />
                 </label>
                 <button
@@ -336,11 +338,11 @@ function LedgerWorkspace({ tenant }: { tenant: string }) {
                   onClick={() => setSelectedId(transaction.id)}
                   className="grid min-h-[72px] min-w-0 flex-1 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 py-3.5 text-left transition hover:bg-[var(--hair-soft)] focus-visible:bg-[var(--accent-wash)] xl:grid-cols-[96px_minmax(0,1.4fr)_minmax(120px,0.7fr)_minmax(132px,0.85fr)_108px_106px]"
                 >
-                <span className="hidden text-[14px] tabular-nums text-muted xl:block">{transaction.date}</span>
+                <span className="hidden text-[14px] tabular-nums text-muted xl:block">{transactionDate(transaction.date)}</span>
                 <span className="min-w-0">
                   <span className="block truncate text-[15px] font-semibold text-ink">{transaction.merchant}</span>
                   {!!transaction.allocations?.length && <span className="mr-1 inline-flex rounded-full border border-accent px-1.5 py-0.5 text-[10px] font-semibold uppercase text-accent-ink">Split {transaction.allocations.length}</span>}
-                  <span className="mt-1 block truncate text-[13px] text-muted xl:hidden">{transaction.account} · {transaction.date}</span>
+                  <span className="mt-1 block truncate text-[13px] text-muted xl:hidden">{transaction.account} · {transactionDate(transaction.date)}</span>
                   <span className="mt-1 block truncate text-[13px] text-ink2 xl:hidden">{transaction.cat}{transaction.subcat ? ` · ${transaction.subcat}` : ''}</span>
                   <span className="hidden truncate text-[12.5px] text-muted xl:block">{transaction.originalDescription || transaction.merchant}</span>
                 </span>

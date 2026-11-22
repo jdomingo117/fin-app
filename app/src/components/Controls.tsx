@@ -1,4 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion'
+import { dateRangeLabel } from '../lib/period'
+import { useView } from '../router'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 
 export function Button({
@@ -309,9 +311,9 @@ export function MultiSelect({
             aria-multiselectable
             className="absolute left-0 right-0 z-50 mt-1.5 rounded-[12px] border border-[var(--hair)] p-1.5"
             style={{
-              background: 'var(--toast-bg)',
-              backdropFilter: 'blur(22px) saturate(1.2)',
-              WebkitBackdropFilter: 'blur(22px) saturate(1.2)',
+              background: 'var(--console-popover-paint, var(--toast-bg))',
+              backdropFilter: 'var(--console-popover-filter, blur(22px) saturate(1.2))',
+              WebkitBackdropFilter: 'var(--console-popover-filter, blur(22px) saturate(1.2))',
               boxShadow: 'var(--shadow-glass)',
             }}
           >
@@ -475,6 +477,7 @@ export function DateRangePicker({
     }
   }, [open])
 
+  const { theme } = useView()
   const crossYear = new Date(`${from}T00:00:00`).getFullYear() !== new Date(`${to}T00:00:00`).getFullYear()
   const fmtDay = (s: string) =>
     new Date(`${s}T00:00:00`).toLocaleDateString(undefined, {
@@ -482,7 +485,7 @@ export function DateRangePicker({
       day: 'numeric',
       ...(crossYear ? { year: '2-digit' } : {}),
     })
-  const label = `${fmtDay(from)} – ${fmtDay(to)}`
+  const label = theme === 'console' ? dateRangeLabel(from, to) : `${fmtDay(from)} – ${fmtDay(to)}`
 
   return (
     <div ref={ref} className={`relative ${className}`}>
@@ -525,9 +528,9 @@ export function DateRangePicker({
             aria-label="Select date range"
             className="absolute right-0 z-50 mt-1.5 w-[320px] rounded-[12px] border border-[var(--hair)] p-3"
             style={{
-              background: 'var(--toast-bg)',
-              backdropFilter: 'blur(22px) saturate(1.2)',
-              WebkitBackdropFilter: 'blur(22px) saturate(1.2)',
+              background: 'var(--console-popover-paint, var(--toast-bg))',
+              backdropFilter: 'var(--console-popover-filter, blur(22px) saturate(1.2))',
+              WebkitBackdropFilter: 'var(--console-popover-filter, blur(22px) saturate(1.2))',
               boxShadow: 'var(--shadow-glass)',
             }}
           >

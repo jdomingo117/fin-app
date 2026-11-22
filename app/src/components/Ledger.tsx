@@ -1,7 +1,26 @@
 import type { Txn } from '../data'
 import { fmtCents } from '../data'
+import { dayLabel } from '../lib/period'
 
-export default function Ledger({ rows, onEdit }: { rows: Txn[]; onEdit?: (transaction: Txn) => void }) {
+export default function Ledger({ rows, onEdit, consoleStyle = false }: {
+  rows: Txn[]; onEdit?: (transaction: Txn) => void; consoleStyle?: boolean
+}) {
+  if (consoleStyle) return <ul className="console-ledger-list">
+    {rows.map(transaction => {
+      const content = <>
+        <span><strong>{transaction.merchant || 'Transaction details'}</strong>
+          <small><time dateTime={transaction.date}>{dayLabel(transaction.date)}</time>{transaction.cat ? ` · ${transaction.cat}` : ''}{transaction.pending ? ' · Held' : ''}</small>
+        </span>
+        <span className="tabular-nums" data-sign={transaction.amount > 0 ? 'positive' : transaction.amount < 0 ? 'negative' : undefined}>
+          {transaction.amount > 0 ? '+' : ''}{fmtCents(transaction.amount)}
+        </span>
+      </>
+      return <li key={transaction.id}>
+        {onEdit ? <button type="button" onClick={() => onEdit(transaction)}>{content}</button> : <div>{content}</div>}
+      </li>
+    })}
+  </ul>
+
   const columns = onEdit
     ? 'grid-cols-[56px_minmax(0,1fr)_106px_102px_auto] sm:grid-cols-[72px_1fr_140px_122px_72px]'
     : 'grid-cols-[56px_1fr_106px_102px] sm:grid-cols-[72px_1fr_140px_122px]'

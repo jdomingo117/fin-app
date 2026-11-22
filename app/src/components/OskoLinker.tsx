@@ -1,3 +1,4 @@
+import { useConsoleDayLabel } from '../hooks/useConsoleDayLabel'
 import { useAuth } from '../contexts/AuthContext'
 import { useQueuePage } from '../lib/queuePage'
 import { overflowSummary as readOverflow } from '../lib/ledgerPage'
@@ -73,6 +74,7 @@ export default function OskoLinker() {
 }
 
 function TransferQueues() {
+  const formatDay = useConsoleDayLabel()
   const { accounts, refreshData } = useData()
   const suggestions = useQueuePage<TransferLinkRow>('transfer_links','score',{ state:'suggested' })
   const automatic = useQueuePage<TransferLinkRow>('transfer_links','score',{ state:'auto' })
@@ -377,7 +379,7 @@ function TransferQueues() {
                     <span className="min-w-0 truncate text-muted">
                       {accountName(link.from_txn?.account_id ?? '')} → {accountName(link.to_txn?.account_id ?? '')}
                       {' · '}{link.from_txn ? fmtCents(Math.abs(link.from_txn.amount)) : ''}
-                      {' · '}{link.from_txn?.date}
+                      {' · '}{formatDay(link.from_txn?.date)}
                     </span>
                     <button
                       onClick={() => decide(link.id, 'rejected')}

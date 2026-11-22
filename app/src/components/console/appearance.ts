@@ -1,3 +1,4 @@
+import { confirmAppearanceChange } from '../../hooks/useUnsavedChanges'
 import { useCallback, useLayoutEffect, useState } from 'react'
 
 export type Appearance = 'classic' | 'console'
@@ -19,9 +20,10 @@ export function useAppearancePreferences() {
   )
   const [dark, setClassicDark] = useState(() => readPreference(classicThemeKey) === 'dark')
   const setTheme = useCallback((appearance: Appearance) => {
+    if (appearance === theme || !confirmAppearanceChange()) return
     setAppearance(appearance)
     writePreference(appearanceKey, appearance)
-  }, [])
+  }, [theme])
   const setDark = useCallback((enabled: boolean) => {
     setClassicDark(enabled)
     writePreference(classicThemeKey, enabled ? 'dark' : 'light')

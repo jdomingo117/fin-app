@@ -13,7 +13,7 @@ import HeroMetric from '../components/HeroMetric'
 import AnalyzerFilters from '../components/AnalyzerFilters'
 import { usePeriodRange } from '../hooks/usePeriodRange'
 import { useResponsiveChartSize } from '../hooks/useResponsiveChartSize'
-import { addDays, dayLabel, iso, MAX_DATE, MIN_DATE, monthLabel, PRESETS } from '../lib/period'
+import { addDays, dateRangeLabel, dayLabel, iso, MAX_DATE, MIN_DATE, monthAxisLabels, monthLabel, PRESETS } from '../lib/period'
 import { cashFlowGranularity } from '../lib/cashFlowSeries'
 import {cashFlow, latestLines} from '../lib/reports'
 import {useReport} from '../hooks/useReport'
@@ -171,7 +171,9 @@ function IncomeAnalyzer({ from, to, accounts, dbAccountsLength, consoleHub }: {
   const inc = buckets.map(b=>b.earned_cents)
   const exp = buckets.map(b=>b.expense_cents)
   const net = inc.map((v,i)=>v-exp[i])
-  const labels = buckets.map(b=>granularity === 'month' ? monthLabel(b.bucket) : dayLabel(b.bucket))
+  const dates = buckets.map(bucket => bucket.bucket)
+  const labels = consoleHub && granularity === 'month' ? monthAxisLabels(dates)
+    : dates.map(granularity === 'month' ? monthLabel : dayLabel)
   const n = inc.length || 1
   const peakVal = Math.max(0,...inc)
   const surplus = totalInflow-totalOutflow
@@ -228,7 +230,7 @@ function IncomeAnalyzer({ from, to, accounts, dbAccountsLength, consoleHub }: {
   </>
 
   if (consoleHub) {
-    const period = `${dayLabel(from)} – ${dayLabel(to)} ${to.slice(0, 4)}`
+    const period = dateRangeLabel(from, to, true)
     const series = [
       { label: 'Inflow', data: m.cumInflow, color: 'var(--console-chart-ink)' },
       { label: 'Net after spending', data: m.cumNet, color: 'var(--console-chart-net)', fill: false },

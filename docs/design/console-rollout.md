@@ -45,6 +45,11 @@ Use the development-only foundation demo on the signed-in Dashboard at `/dashboa
 
 Login, onboarding, callback, password reset and the internal concept route get direct-entry and keyboard regression checks. Their functional forms and recovery routes are unaffected by the home-screen treatment. A section without existing Dashboard data can expose a labelled route action. Hovering it must never query a specialist screen or display a fabricated zero.
 
+## Later mobile refinements
+
+- Phase 3 moves the Home and Overview orb beside the secondary figures or scales it into the hero row to reduce the empty space on phones.
+- Phase 4.2 moves the Income filters below the hero or into a sheet on phones. This frees the title from the three rows of Home, tabs and filters above it.
+
 ## Review reproduction
 
 [Phase 2 Gate 1 review and captures](console-phase-2-gate-1.md).

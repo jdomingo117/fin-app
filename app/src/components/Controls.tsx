@@ -1,4 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion'
+import { dateRangeLabel } from '../lib/period'
+import { useView } from '../router'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 
 export function Button({
@@ -475,6 +477,7 @@ export function DateRangePicker({
     }
   }, [open])
 
+  const { theme } = useView()
   const crossYear = new Date(`${from}T00:00:00`).getFullYear() !== new Date(`${to}T00:00:00`).getFullYear()
   const fmtDay = (s: string) =>
     new Date(`${s}T00:00:00`).toLocaleDateString(undefined, {
@@ -482,7 +485,7 @@ export function DateRangePicker({
       day: 'numeric',
       ...(crossYear ? { year: '2-digit' } : {}),
     })
-  const label = `${fmtDay(from)} – ${fmtDay(to)}`
+  const label = theme === 'console' ? dateRangeLabel(from, to) : `${fmtDay(from)} – ${fmtDay(to)}`
 
   return (
     <div ref={ref} className={`relative ${className}`}>

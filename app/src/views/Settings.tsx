@@ -10,6 +10,7 @@ import {
   PasswordCard, EmailCard, SessionsCard, DangerZoneCard,
 } from '../components/AccountSecurity'
 import AuditLogCard from '../components/AuditLogCard'
+import { useUnsavedChanges } from '../hooks/useUnsavedChanges'
 
 const ACCENTS = [
   { name: 'Mint', accent: '#11b596', ink: '#0a7d67' },
@@ -28,6 +29,7 @@ export default function Settings() {
   const [editingCallsign, setEditingCallsign] = useState(false)
   const [newCallsign, setNewCallsign] = useState(profile.callsign)
   const [isSaving, setIsSaving] = useState(false)
+  useUnsavedChanges(editingCallsign && newCallsign !== profile.callsign)
 
   const saveCallsign = async () => {
     if (!newCallsign.trim() || newCallsign === profile.callsign) {

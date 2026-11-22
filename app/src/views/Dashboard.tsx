@@ -23,7 +23,7 @@ import { usePortfolio } from '../hooks/usePortfolio'
 import { useReport } from '../hooks/useReport'
 import ReportStatus from '../components/ReportStatus'
 import { useView } from '../router'
-import { addDays, dayLabel, iso, MAX_DATE, MIN_DATE, monthLabel, PRESETS } from '../lib/period'
+import { addDays, dateRangeLabel, fullDayLabel, iso, MAX_DATE, MIN_DATE, monthAxisLabels, monthLabel, PRESETS } from '../lib/period'
 
 // Single source of truth for the Recent Activity tile, so its row count and
 // its "last N" tag text can't drift apart the way they used to (tag said 5,
@@ -138,9 +138,6 @@ export default function Dashboard() {
       expenses: { label: 'Cumulative gross outflow for this period', values: cumulativeValues(flow.data?.buckets.map(point => point.gross_cents) ?? []) },
     }
     const latestDate = activity.data?.[0]?.date
-    const fromYear = thirtyDaysAgoIso.slice(0, 4)
-    const todayYear = today.slice(0, 4)
-    const fromLabel = fromYear === todayYear ? dayLabel(thirtyDaysAgoIso) : `${dayLabel(thirtyDaysAgoIso)} ${fromYear}`
     const cards = activity.data?.filter(transaction => {
       if (!flowPeriod) return active === 'dashboard'
       if (transaction.date < thirtyDaysAgoIso || transaction.date > today || transaction.isTransfer) return false
@@ -154,8 +151,8 @@ export default function Dashboard() {
         covered={!!selectedTransactionId}
         activity={cards}
         accounts={accounts}
-        period={`${fromLabel} – ${dayLabel(today)} ${todayYear}`}
-        latestDate={latestDate ? `${dayLabel(latestDate)} ${latestDate.slice(0, 4)}` : undefined}
+        period={dateRangeLabel(thirtyDaysAgoIso, today, true)}
+        latestDate={latestDate ? fullDayLabel(latestDate) : undefined}
         openTransaction={transaction => setSelectedTransactionId(transaction.parentTransactionId ?? transaction.id)}
         figures={previewFigures}
         trends={previewArt}
@@ -223,7 +220,8 @@ export default function Dashboard() {
   const reviewCount = flow.data?.periods.current.expense_attention_count ?? 0
   const currentNetWorth = summary.data?.net_worth_cents ?? (consoleRoute?.entry?.id === 'dashboard' ? consoleRoute.entry.headline?.cents : undefined)
   const netWorthTrend = history.data?.map(point=>point.value) ?? []
-  const netWorthLabels = history.data?.map(point=>point.month.slice(0,7)) ?? []
+  const netWorthMonths = history.data?.map(point => point.month) ?? []
+  const netWorthLabels = consoleOverview ? monthAxisLabels(netWorthMonths) : netWorthMonths.map(month => month.slice(0, 7))
   const previous = netWorthTrend.at(-2)
   const netWorthMonthChangePct = previous && currentNetWorth !== undefined ? Math.round((currentNetWorth-previous)/Math.abs(previous)*1000)/10 : undefined
 
@@ -238,7 +236,7 @@ export default function Dashboard() {
     onExploreCategory={category => go('expenses', { state: { source: 'dashboard-insight', category, from: flowFrom, to: flowTo } })}
     onReviewLedger={() => go('ledger', { state: { source: 'dashboard-insight', review: 'needs-review' } })}
     onExploreIncome={() => go('income')}
-    period={consoleOverview ? `${dayLabel(flowFrom)} – ${dayLabel(flowTo)}` : undefined}
+    period={consoleOverview ? dateRangeLabel(flowFrom, flowTo) : undefined}
   />
   const recent = <>
     <ReportStatus report={activity} label="Recent activity" />
@@ -253,7 +251,7 @@ export default function Dashboard() {
     const chartSeries = [{ label: 'Net worth', data: netWorthTrend, color: 'var(--console-chart-ink)' }]
     const activeAccounts = insightAccounts ?? accounts.map(account => account.id)
     return <ConsoleHub id="dashboard" title="Overview" entry={consoleRoute.entry?.id === 'dashboard' ? consoleRoute.entry : undefined}
-      period={`Balances as of ${dayLabel(today)} ${today.slice(0, 4)}`}
+      period={`Balances as of ${fullDayLabel(today)}`}
       figure={{ label: 'Net worth', cents: currentNetWorth }}
       strip={[{ label: '30-day net movement', cents: summary.data?.net_movement_30d_cents, signed: true }]}
       art={netWorthTrend.length ? { label: 'Monthly net worth', values: netWorthTrend } : consoleRoute.entry?.id === 'dashboard' ? consoleRoute.entry.art : undefined}
@@ -269,7 +267,7 @@ export default function Dashboard() {
           {netWorthTrend.length > 0 && <>
             {chartType === 'line' ? <Area consoleStyle series={chartSeries} labels={netWorthLabels} height={275} ariaLabel="Cumulative net worth" />
               : <Bar consoleStyle series={chartSeries} labels={netWorthLabels} height={275} ariaLabel="Cumulative net worth by month" />}
-            <ConsoleChartValues labels={netWorthLabels} series={chartSeries} />
+            <ConsoleChartValues labels={netWorthMonths.map(monthLabel)} series={chartSeries} />
           </>}
         </ConsoleModule>
         <div className="console-module-companions">

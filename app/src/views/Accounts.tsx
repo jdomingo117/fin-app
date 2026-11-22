@@ -13,7 +13,7 @@ import Ledger from '../components/Ledger'
 import { fmtCents, glowColor, type Glow } from '../data'
 import { gridStagger } from '../components/motion'
 import { useData } from '../contexts/DataContext'
-import { MONTHS, iso, TODAY, monthStart, monthEnd, addDays, auFyStart, LAST } from '../lib/period'
+import { MONTHS, iso, TODAY, monthStart, monthEnd, addDays, auFyStart, LAST, monthLabel } from '../lib/period'
 import AddAccountModal from '../components/AddAccountModal'
 import InvestmentAccountActivity from '../components/InvestmentAccountActivity'
 import EditAccountModal from '../components/EditAccountModal'
@@ -52,7 +52,7 @@ function timeframeRange(tf: string): { from: string; to: string } | null {
 
 export default function Accounts() {
   const { accounts, refreshData } = useData()
-  const { toast } = useView()
+  const { toast, theme } = useView()
   // Default to the first account (the router prevents this view from loading if accounts is empty)
   const [selectedAccountId, setSelectedAccountId] = useState(accounts[0]?.id)
   
@@ -285,7 +285,7 @@ export default function Accounts() {
             >
               <div className="mt-2">
                 <ReportStatus report={history} label="Balance history" />
-                <ol aria-label="Monthly closing balances" className="sr-only">{history.data?.months.map(m=><li key={m.month}>{m.month.slice(0,7)} · {fmtCents(m.account_balance_cents)}</li>)}</ol>
+                <ol aria-label="Monthly closing balances" className="sr-only">{history.data?.months.map(m=><li key={m.month}>{theme === 'console' ? monthLabel(m.month) : m.month.slice(0,7)} · {fmtCents(m.account_balance_cents)}</li>)}</ol>
                 {history.data && (chartType === 'line' ? (
                   <Area
                     key={selectedAccount.name + 'line'} // Force re-render on account swap for visual reveal animations
@@ -410,7 +410,7 @@ export default function Accounts() {
             {selectedTransactionId && <ReportStatus report={editor} label="Transaction" />}
             <div className="min-h-[300px]">
               {paginatedTxns.length > 0 ? (
-                <Ledger rows={paginatedTxns} onEdit={(transaction) => setSelectedTransactionId(transaction.id)} />
+                <Ledger consoleStyle={theme === 'console'} rows={paginatedTxns} onEdit={(transaction) => setSelectedTransactionId(transaction.id)} />
               ) : (
                 <div className="py-10 text-center body-copy font-medium">No transactions found for this category.</div>
               )}

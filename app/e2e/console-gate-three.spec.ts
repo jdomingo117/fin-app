@@ -86,30 +86,48 @@ test('C ignores text entry and other modals, and its preference persists', async
 })
 
 test('the focused silhouette keeps a painted base during rapid focus changes', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' })
   await openConsole(page)
   const overview = sections(page).getByRole('button', { name: 'Overview' })
+  const accounts = sections(page).getByRole('button', { name: 'Accounts' })
+  await expect(accounts.locator('.console-tile-active')).toHaveCSS('opacity', '0')
   await overview.focus()
+  await accounts.evaluate(tile => {
+    const rest = tile.querySelector('.console-tile-rest')!
+    const active = tile.querySelector('.console-tile-active')!
+    // Attach before the keypress and sample the actual CSS transition at
+    // fixed times. Runner load cannot cause a missed animation window.
+    const samples = new Promise<{ gradient: boolean; incoming: number; combined: number }[]>(resolve => {
+      active.addEventListener('transitionrun', async () => {
+        const transition = active.getAnimations().find(animation =>
+          animation instanceof CSSTransition && animation.transitionProperty === 'opacity')
+        const duration = Number(transition?.effect?.getTiming().duration)
+        if (!transition || !duration) return resolve([])
+        transition.pause()
+        const frames = []
+        for (const progress of [0.25, 0.5, 0.75]) {
+          transition.currentTime = duration * progress
+          await new Promise<number>(next => requestAnimationFrame(next))
+          const under = getComputedStyle(rest)
+          const over = getComputedStyle(active)
+          frames.push({
+            gradient: under.backgroundImage.startsWith('linear-gradient'),
+            incoming: Number(over.opacity),
+            combined: 1 - (1 - Number(under.opacity)) * (1 - Number(over.opacity)),
+          })
+        }
+        transition.play()
+        resolve(frames)
+      }, { once: true })
+      setTimeout(() => resolve([]), 5_000)
+    })
+    Reflect.set(tile, 'consolePaintSamples', samples)
+  })
   await page.keyboard.press('ArrowRight')
-  await page.waitForFunction(() => {
-    const active = document.querySelector('.console-section[data-active="true"] .console-tile-active')
-    const opacity = active ? Number(getComputedStyle(active).opacity) : 0
-    return opacity > 0 && opacity < 1
-  })
-  const sampled = await page.evaluate(async () => {
-    const samples = []
-    for (let i = 0; i < 8; i++) {
-      await new Promise<number>(resolve => requestAnimationFrame(resolve))
-      const tile = document.querySelector('.console-section[data-active="true"]')!
-      const under = getComputedStyle(tile.querySelector('.console-tile-rest')!)
-      const over = getComputedStyle(tile.querySelector('.console-tile-active')!)
-      samples.push({
-        gradient: under.backgroundImage.startsWith('linear-gradient'),
-        incoming: Number(over.opacity),
-        combined: 1 - (1 - Number(under.opacity)) * (1 - Number(over.opacity)),
-      })
-    }
-    return samples
-  })
+  await expect(accounts).toBeFocused()
+  const sampled = await accounts.evaluate(tile => Reflect.get(tile, 'consolePaintSamples') as
+    Promise<{ gradient: boolean; incoming: number; combined: number }[]>)
+  expect(sampled).toHaveLength(3)
   expect(sampled.some(sample => sample.incoming > 0 && sample.incoming < 1)).toBe(true)
   expect(sampled.every(sample => sample.gradient && sample.combined === 1)).toBe(true)
   await page.keyboard.press('ArrowLeft')

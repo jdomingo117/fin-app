@@ -1,23 +1,29 @@
-import { useReducedMotion } from 'framer-motion'
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { AnimatePresence, LayoutGroup, motion, useIsPresent, useReducedMotion } from 'framer-motion'
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { useOutlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { useData } from '../../contexts/DataContext'
 import { usePortfolio } from '../../hooks/usePortfolio'
 import { useView, type View } from '../../router'
 import { enabledSections, type SectionId } from './ConsoleDashboardSpike'
+import { captureConsoleOrigin, consoleProjection, type ConsoleEntry } from './ConsoleHubSpike'
 
 export type ConsoleOutlet = {
   home: boolean
   active: SectionId
   select: (id: SectionId) => void
   restoreFocus: boolean
+  entry?: ConsoleEntry
+  begin: (entry: ConsoleEntry) => void
+  back: () => void
 }
 
 const hubTitles: Partial<Record<View, string>> = {
   dashboard: 'Overview', accounts: 'Accounts', income: 'Income', expenses: 'Expenses', budget: 'Budget',
   ledger: 'Ledger review', transfers: 'Transfers', ingestion: 'Ingestion', settings: 'Settings',
 }
+
+const expandedHubs: View[] = ['dashboard', 'income', 'expenses', 'accounts']
 
 const actions = [
   { id: 'ledger', title: 'Ledger review', icon: 'M5 4h14v16H5zM8 9h8M8 13h8M8 17h4' },
@@ -30,6 +36,18 @@ function sceneSection(view: View): SectionId {
   return enabledSections.find(section => section.id === view)?.id ?? 'dashboard'
 }
 
+function ConsoleRouteLayer({ children, reduced }: { children: ReactNode; reduced: boolean }) {
+  const present = useIsPresent()
+  const layer = useRef<HTMLDivElement>(null)
+  useLayoutEffect(() => {
+    if (layer.current) layer.current.inert = !present
+  }, [present])
+  return <motion.div ref={layer} className="console-route-layer" aria-hidden={!present}
+    exit={{ opacity: 0 }} transition={{ duration: reduced ? .15 : consoleProjection.duration }}>
+    {children}
+  </motion.div>
+}
+
 export default function ConsoleViewportSpike() {
   const { go, view, setTheme, motionOn, toast } = useView()
   const { profile } = useData()
@@ -38,7 +56,9 @@ export default function ConsoleViewportSpike() {
   const location = useLocation()
   const navigate = useNavigate()
   const home = view === 'dashboard' && new URLSearchParams(location.search).get('hub') !== 'overview'
-  const [active, select] = useState<SectionId>(() => sceneSection(view))
+  const [active, setActive] = useState<SectionId>(() => sceneSection(view))
+  const [entry, setEntry] = useState<ConsoleEntry>()
+  const [snapHue, setSnapHue] = useState(false)
   const [ambient, setAmbient] = useState(active)
   const [closing, setClosing] = useState(false)
   const [centreOpen, setCentreOpen] = useState(false)
@@ -50,6 +70,22 @@ export default function ConsoleViewportSpike() {
   const centre = useRef<HTMLDialogElement>(null)
   const wasHome = useRef(home)
   const reduce = !!useReducedMotion() || !motionOn
+  const designed = !home && (view === 'dashboard' || view === 'income')
+  const outlet = useOutlet({ home, active, select, restoreFocus, entry, begin, back: () => setClosing(true) } satisfies ConsoleOutlet)
+
+  function select(id: SectionId) {
+    setSnapHue(false)
+    setActive(id)
+  }
+
+  function begin(next: ConsoleEntry) {
+    setEntry({ ...next, origin: home && next.id === active ? captureConsoleOrigin(root.current) : undefined })
+    setActive(next.id)
+    if (ambient !== next.id) {
+      setSnapHue(true)
+      setAmbient(next.id)
+    }
+  }
 
   useEffect(() => {
     const onVisibility = () => setVisible(!document.hidden)
@@ -62,15 +98,18 @@ export default function ConsoleViewportSpike() {
   }, [])
 
   useEffect(() => {
-    if (active === ambient || !visible || centreOpen || !root.current) return
+    if (!home || active === ambient || !visible || centreOpen || !root.current) return
     const dwell = parseFloat(getComputedStyle(root.current).getPropertyValue('--dur-dwell'))
     const timer = window.setTimeout(() => setAmbient(active), dwell)
     return () => window.clearTimeout(timer)
-  }, [active, ambient, visible, centreOpen])
+  }, [active, ambient, visible, centreOpen, home])
 
   useLayoutEffect(() => {
     if (home) {
-      if (!wasHome.current) setRestoreFocus(true)
+      if (!wasHome.current) {
+        setRestoreFocus(true)
+        setEntry(undefined)
+      }
     } else {
       setRestoreFocus(false)
       hubHeading.current?.focus({ preventScroll: true })
@@ -125,7 +164,11 @@ export default function ConsoleViewportSpike() {
   const initials = profile.callsign?.trim().split(/\s+/).map(name => name.charAt(0)).slice(0, 2).join('').toUpperCase() || 'H'
 
   return (
-    <div ref={root} className="console-viewport" data-reduced={reduce} data-paused={!visible || centreOpen}>
+    <div ref={root} className="console-viewport" data-reduced={reduce} data-paused={!visible || centreOpen} data-snap-hue={snapHue}
+      style={{
+        '--dur-hub': `${consoleProjection.duration * 1000}ms`,
+        '--ease-settle': `cubic-bezier(${consoleProjection.ease.join(',')})`,
+      } as React.CSSProperties}>
       <div className="console-scene" aria-hidden="true">
         {enabledSections.map(item => <div key={item.id} data-section={item.id} className="console-ambient" data-current={item.id === ambient} />)}
         <div className="console-rays" />
@@ -149,15 +192,21 @@ export default function ConsoleViewportSpike() {
         </div>
       </header>
       <main className="console-main" data-home={home}>
-        {!home && <header className="console-hub-heading">
-          <button type="button" className="console-utility" aria-label="Back to Home" onClick={() => setClosing(true)}>
-            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m14 5-7 7 7 7" /></svg>
-          </button>
-          <h1 ref={hubHeading} tabIndex={-1}>{hubTitles[view]}</h1>
-        </header>}
-        <div className={home ? 'console-home-slot' : 'console-hub'} data-closing={closing}>
-          <Outlet context={{ home, active, select, restoreFocus } satisfies ConsoleOutlet} />
-        </div>
+        <LayoutGroup id="console-hub-entry">
+          <AnimatePresence initial={false}>
+            <ConsoleRouteLayer key={home ? 'home' : view} reduced={reduce}>
+              {!home && !designed && <header className="console-hub-heading" data-initial-hero={expandedHubs.includes(view) ? 'expanded' : 'compact'}>
+                <button type="button" className="console-utility" aria-label="Back to Home" onClick={() => setClosing(true)}>
+                  <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m14 5-7 7 7 7" /></svg>
+                </button>
+                <h1 ref={hubHeading} tabIndex={-1}>{hubTitles[view]}</h1>
+              </header>}
+              <div className={home ? 'console-home-slot' : designed ? 'console-designed-hub' : 'console-hub'} data-closing={closing}>
+                {outlet}
+              </div>
+            </ConsoleRouteLayer>
+          </AnimatePresence>
+        </LayoutGroup>
       </main>
       <dialog ref={centre} className="console-centre" aria-labelledby="console-centre-title" onClose={() => setCentreOpen(false)}
         onClick={event => { if (event.target === event.currentTarget) centre.current?.close() }}>
@@ -168,17 +217,29 @@ export default function ConsoleViewportSpike() {
               <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18" /></svg>
             </button>
           </div>
-          <div className="console-centre-actions">
-            {actions.map(item => {
-              const count = item.id === 'ledger' ? portfolio.data?.attention_count : item.id === 'transfers' ? portfolio.data?.transfer_leg_count : undefined
-              return <button key={item.id} type="button" onClick={() => openAction(item.id)}>
-                <svg aria-hidden="true" viewBox="0 0 24 24"><path d={item.icon} /></svg>
-                <span>{item.title}</span>
-                {count !== undefined && <small>{count} to review</small>}
-              </button>
-            })}
+          <div className="console-centre-attention">
+            <h3>Needs attention</h3>
+            <div className="console-centre-cards">
+              {actions.slice(0, 2).map(item => {
+                const count = item.id === 'ledger' ? portfolio.data?.attention_count : portfolio.data?.transfer_leg_count
+                return <button key={item.id} type="button" onClick={() => openAction(item.id)}>
+                  <svg aria-hidden="true" viewBox="0 0 24 24"><path d={item.icon} /></svg>
+                  <span>{item.title}</span>
+                  <strong className="tabular-nums">{count === undefined ? 'Unavailable' : count === 0 ? 'All caught up' : `${count} to review`}</strong>
+                </button>
+              })}
+            </div>
           </div>
-          <button type="button" onClick={() => void leave()} className="console-signout">Sign out</button>
+          <div className="console-centre-actions" aria-label="Quick actions">
+            {actions.map(item => <button key={item.id} type="button" aria-label={item.title} onClick={() => openAction(item.id)}>
+              <svg aria-hidden="true" viewBox="0 0 24 24"><path d={item.icon} /></svg>
+              <span>{item.title}</span>
+            </button>)}
+            <button type="button" aria-label="Sign out" onClick={() => void leave()}>
+              <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M10 5H4v14h6m4-12 5 5-5 5m-6-5h11" /></svg>
+              <span>Sign out</span>
+            </button>
+          </div>
         </div>
       </dialog>
     </div>

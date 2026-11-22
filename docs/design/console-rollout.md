@@ -27,7 +27,7 @@ Use a standalone fictional-data demo following the existing Vite concept-entry p
 | --- | --- | --- |
 | 2a · Dashboard feel spike | Runtime appearance flag, rough Dashboard section row, ambient background and keyed previews using existing reads | Capture a local Chrome DevTools trace. Stop for owner review before hardening. Automated coverage begins with hardening after the feel review. |
 | 2b · Console viewport spike | Full-screen Home, existing-route Overview and Income hubs, and rough Control Centre | Capture Home Overview, Home Income, Overview hub and Control Centre at 1440×900 and 390×844. Include a 10–15s recording, warm-palette comparison and Chrome trace. Stop for owner feel review. |
-| 2c · review, then implement | Compare two static Income hub directions. After owner selection, apply the selected language to Income and Overview and make the Home corrections. | First review four static captures and the Ledger and Budget notes. After implementation, capture Income hub, Overview hub and Home Accounts at both sizes, a 15-second walkthrough and a Chrome trace. Stop again for owner review. |
+| 2c · review, then implement | Compare two static Income hub directions. After owner selection, apply the selected language to Income and Overview and make the Home corrections. | First review four static captures and the Ledger and Budget notes. After implementation, capture Income hub, Overview hub and Home Accounts at both sizes, a 20-second walkthrough and a Chrome trace. Stop again for owner review. |
 | 2 · appearance and token foundation | Live switch and effective preferences | Check Console first visit, reload, blocked storage and switching with unsaved input. Classic gets a render, navigation and browser-console smoke check. |
 | 2 · one commit per primitive | Motion presets, FocusRing, FocusRow, GlassSurface, AmbientBackground, SoundEngine, then ControlCentre | Each commit names the demo state, keyboard/touch path and reduced-effects result. Include a local Chrome DevTools trace. |
 | 3 · Dashboard | Harden Home and the Overview hub as separate surfaces | Test rapid browsing, open during dwell, Back to the same tile, screen reader order, redaction, empty/error results and recent-transaction editing. Compare report requests before/after focus movement. |
@@ -109,6 +109,18 @@ A compact header and filters lead directly to the cash-flow chart. The headline 
 - **Ledger.** Put the table in the main work area and move review counts and data scope to compact companion modules. On phone, put filters above the table and move secondary summaries after it. Keep table scanning, selections and pagination together.
 - **Budget.** Put the active form in the main work area, with totals and the effect of changes in an adjacent summary. On phone, place a compact funding readout before the form and keep its fields, validation and save action together.
 
-### Approval and next review
+### Selected implementation and review
 
-Choose A or B before app edits. Then implement the chosen direction for Income and Overview, plus the Home corrections in the spec. The next review includes desktop and phone captures of Income hub, Overview hub and Home Accounts, a 15-second Home → Income → scroll → Back → Accounts walkthrough, and a local Chrome trace. Return for review before hardening.
+The owner chose A’s game-hub entry and B’s compact header and body. Income and Overview share the entry morph and sticky scroll collapse. Home adds cumulative art, Holdings cards from the existing account directory, unclipped selection glow, and whole-dollar headline figures. Control Centre places review cards above round quick actions.
+
+The implementation review captures Income expanded and compact, Overview expanded, Home Accounts and Control Centre in both sizes. The 20-second sequence starts on Home with Income focused, enters the hub, scrolls down and back up, returns Home, then browses Accounts before opening Overview. Pause for review before hardening.
+
+| State | 1440 × 900 | 390 × 844 |
+| --- | --- | --- |
+| Income hub · expanded | [Desktop](captures/console-phase-2c/implementation/1440-income-expanded.jpg) | [Phone](captures/console-phase-2c/implementation/390-income-expanded.jpg) |
+| Income hub · compact | [Desktop](captures/console-phase-2c/implementation/1440-income-compact.jpg) | [Phone](captures/console-phase-2c/implementation/390-income-compact.jpg) |
+| Overview hub · expanded | [Desktop](captures/console-phase-2c/implementation/1440-overview-expanded.jpg) | [Phone](captures/console-phase-2c/implementation/390-overview-expanded.jpg) |
+| Home · Accounts | [Desktop](captures/console-phase-2c/implementation/1440-home-accounts.jpg) | [Phone](captures/console-phase-2c/implementation/390-home-accounts.jpg) |
+| Control Centre | [Desktop](captures/console-phase-2c/implementation/1440-control-centre.jpg) | [Phone](captures/console-phase-2c/implementation/390-control-centre.jpg) |
+
+The implementation captures and recording use fictional account and report data in local Chrome. [20-second walkthrough](captures/console-phase-2c/implementation/walkthrough.webm) · [Chrome DevTools Performance trace](traces/console-phase-2c-chrome.json.gz)

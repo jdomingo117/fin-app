@@ -1,7 +1,7 @@
 import anime from 'animejs'
 import Donut from './charts/Donut'
 import type { AllocationSlice } from '../data'
-import { fmt, glowColor } from '../data'
+import { fmt, fmtCents, glowColor } from '../data'
 import { useChartReveal, CHART_EASE } from '../hooks/useChartReveal'
 
 const STEP = 230 // ms between segments — segment N's legend row lands at N*STEP + 260
@@ -11,17 +11,23 @@ export default function AllocationDonut({
   totalLabel = 'Gross Assets',
   selectedLabel,
   onSelect,
+  consoleStyle = false,
+  showTotal = true,
 }: {
   data: AllocationSlice[]
   totalLabel?: string
   selectedLabel?: string | null
   onSelect?: (slice: AllocationSlice) => void
+  consoleStyle?: boolean
+  showTotal?: boolean
 }) {
   const total = data.reduce((a, d) => a + d.value, 0)
   // `data[].value` is in CENTS, like every other amount in the app (see the
   // comment on fmt()/fmtCents() in data.ts) — convert to dollars before the
   // K-scaling, which otherwise divides cents by 1000 instead of 100,000.
-  const centerFmt = (n: number) => '$' + Math.round(n / 100 / 1000) + 'K'
+  const centerFmt = (n: number) => consoleStyle ? fmtCents(n) : '$' + Math.round(n / 100 / 1000) + 'K'
+  const consoleColors = ['var(--console-chart-ink)', 'var(--console-chart-tint)', 'var(--console-chart-net)']
+  const color = (slice: AllocationSlice, index: number) => consoleStyle ? consoleColors[index % consoleColors.length] : glowColor[slice.glow]
   const selectedIndex = selectedLabel ? data.findIndex((slice) => slice.label === selectedLabel) : undefined
 
   const ref = useChartReveal<HTMLDivElement>(
@@ -71,22 +77,22 @@ export default function AllocationDonut({
         <div className="allocation-donut__visual flex-shrink-0">
           <Donut
             size={165}
-            data={data.map((d) => ({ value: d.value, color: glowColor[d.glow], label: d.label }))}
-            centerLabel="TOTAL"
-            centerValue={centerFmt(total)}
+            data={data.map((d, i) => ({ value: d.value, color: color(d, i), label: d.label }))}
+            centerLabel={showTotal ? (consoleStyle ? 'Total' : 'TOTAL') : undefined}
+            centerValue={showTotal ? centerFmt(total) : undefined}
             selectedIndex={selectedIndex === -1 ? undefined : selectedIndex}
             onSelectIndex={onSelect ? (index) => onSelect(data[index]) : undefined}
           />
         </div>
         <div className="allocation-donut__legend flex-1 min-w-0">
           <ul className="grid gap-2">
-            {data.map((d) => {
+            {data.map((d, i) => {
               const pct = (total === 0 ? 0 : (d.value / total) * 100).toFixed(1)
               const row = <>
                 {/* Label and Percentage */}
                 <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.06em]">
                   <div className="flex items-center gap-2 min-w-0">
-                    <span className="h-2 w-2 flex-shrink-0 rounded-full" style={{ background: glowColor[d.glow] }} />
+                    <span className="h-2 w-2 flex-shrink-0 rounded-full" style={{ background: color(d, i) }} />
                     <span className="truncate text-ink2">{d.label}</span>
                   </div>
                   <span className="text-muted text-[10px] tabular-nums">{pct}%</span>
@@ -94,9 +100,9 @@ export default function AllocationDonut({
                 {/* Progress Bar and Value */}
                 <div className="flex items-center gap-2.5">
                   <div className="h-1 flex-1 rounded bg-[var(--track)] overflow-hidden">
-                    <div className="h-full rounded" style={{ width: `${pct}%`, background: glowColor[d.glow] }} />
+                    <div className="h-full rounded" style={{ width: `${pct}%`, background: color(d, i) }} />
                   </div>
-                  <span className="text-[12.5px] font-bold tabular-nums text-ink">{fmt(d.value)}</span>
+                  <span className="text-[12.5px] font-bold tabular-nums text-ink">{consoleStyle ? fmtCents(d.value) : fmt(d.value)}</span>
                 </div>
               </>
               return (
@@ -121,11 +127,13 @@ export default function AllocationDonut({
               )
             })}
           </ul>
-          <div className="border-t border-[var(--hair-soft)] my-2" />
-          <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.08em]">
-            <span className="text-muted">{totalLabel}</span>
-            <span className="text-[13px] font-extrabold text-ink tabular-nums">{fmt(total)}</span>
-          </div>
+          {showTotal && <>
+            <div className="border-t border-[var(--hair-soft)] my-2" />
+            <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.08em]">
+              <span className="text-muted">{totalLabel}</span>
+              <span className="text-[13px] font-extrabold text-ink tabular-nums">{consoleStyle ? fmtCents(total) : fmt(total)}</span>
+            </div>
+          </>}
         </div>
       </div>
     </div>

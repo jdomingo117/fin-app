@@ -82,7 +82,7 @@ hand to find the transfer-linker gap.
 
 ## Recent changes
 
-- 2026-11-22 — Console Phase 2b gives Home the viewport, adds route-based hubs and a rough Control Centre, and aligns Income preview activity with its report window.
+- 2026-11-22 — Console Phase 2c spikes the shared hero transition, collapsing Income and Overview hubs, Accounts preview and Control Centre review cards.
 
 - 2026-11-21 — Wave 3C.4 scopes taxonomy, identifiers, planning and recurrence; DataContext boots profile/account directories only, with tenant-safe targeted invalidation and guarded detected-bill Undo.
 

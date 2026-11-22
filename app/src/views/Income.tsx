@@ -1,5 +1,6 @@
 import {reportParent} from '../lib/reportParent'
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState, useEffect, type ReactNode } from 'react'
+import { useOutletContext } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Screen, ViewHeader } from '../components/Screen'
 import Tile from '../components/Tile'
@@ -11,16 +12,19 @@ import HeroMetric from '../components/HeroMetric'
 import AnalyzerFilters from '../components/AnalyzerFilters'
 import { usePeriodRange } from '../hooks/usePeriodRange'
 import { useResponsiveChartSize } from '../hooks/useResponsiveChartSize'
-import { dayLabel, monthLabel } from '../lib/period'
+import { addDays, dayLabel, iso, MAX_DATE, MIN_DATE, monthLabel, PRESETS } from '../lib/period'
 import { cashFlowGranularity } from '../lib/cashFlowSeries'
 import {cashFlow, latestLines} from '../lib/reports'
 import {useReport} from '../hooks/useReport'
 import ReportStatus from '../components/ReportStatus'
-import { fmt, type Txn } from '../data'
+import { fmt, fmtCents, type Txn } from '../data'
 import { useData } from '../contexts/DataContext'
 import StrategicProjections from '../components/StrategicProjections'
 import { ease, gridStagger } from '../components/motion'
 import { useView } from '../router'
+import { DateRangePicker, MultiSelect } from '../components/Controls'
+import ConsoleHubSpike, { ConsoleChartValues, ConsoleModule, consoleRowKeys, type ConsoleEntry } from '../components/console/ConsoleHubSpike'
+import type { ConsoleOutlet } from '../components/console/ConsoleViewportSpike'
 import TransactionCategoryDrawer from '../components/TransactionCategoryDrawer'
 
 const TABS = [
@@ -30,7 +34,11 @@ const TABS = [
 
 export default function Income() {
   const [view, setView] = useState('analyzer')
-  const { preset, from, to, applyPreset, changeFrom, changeTo } = usePeriodRange()
+  const { theme } = useView()
+  const consoleRoute = useOutletContext<ConsoleOutlet | null>()
+  const today = new Date()
+  const { preset, from, to, applyPreset, changeFrom, changeTo } = usePeriodRange(undefined,
+    theme === 'console' ? { from: iso(addDays(today, -29)), to: iso(today) } : undefined)
   
   const { accounts: dbAccounts } = useData()
 
@@ -45,13 +53,30 @@ export default function Income() {
     hint: '',
   })), [INFLOW_ACCOUNTS])
 
-  const [accounts, setAccounts] = useState<string[]>([])
+  const [accounts, setAccounts] = useState<string[]>(() => theme === 'console' ? dbAccounts.map(account => account.id) : [])
   
   useEffect(() => {
     if (dbAccounts.length > 0 && accounts.length === 0) {
       setAccounts(dbAccounts.map(a => a.id))
     }
   }, [dbAccounts])
+
+  if (theme === 'console' && consoleRoute) return (
+    <IncomeAnalyzer from={from} to={to} accounts={accounts} dbAccountsLength={dbAccounts.length}
+      consoleHub={{
+        back: consoleRoute.back,
+        entry: consoleRoute.entry?.id === 'income' ? consoleRoute.entry : undefined,
+        tabs: <SegmentedTabs tabs={TABS} active={view} onChange={setView} layoutId="income-hub-tabs" />,
+        filters: view === 'analyzer' ? <>
+          <DateRangePicker from={from} to={to} min={MIN_DATE} max={MAX_DATE} presets={PRESETS}
+            activePreset={preset} onPreset={applyPreset} onFrom={changeFrom} onTo={changeTo} ariaLabel="Income date range" />
+          <MultiSelect options={ACCOUNT_OPTIONS} selected={accounts} onChange={setAccounts}
+            ariaLabel="Linked financial accounts" allLabel="All accounts" emptyLabel="No accounts" noun="accounts" />
+        </> : undefined,
+        projections: view === 'projections',
+      }}
+    />
+  )
 
   return (
     <Screen>
@@ -108,7 +133,10 @@ export default function Income() {
 
 
 
-function IncomeAnalyzer({ from, to, accounts, dbAccountsLength }: { from: string; to: string; accounts: string[]; dbAccountsLength: number }) {
+function IncomeAnalyzer({ from, to, accounts, dbAccountsLength, consoleHub }: {
+  from: string; to: string; accounts: string[]; dbAccountsLength: number
+  consoleHub?: { back: () => void; tabs: ReactNode; filters?: ReactNode; projections: boolean; entry?: ConsoleEntry }
+}) {
   const { accounts: accountList, refreshData } = useData()
   const { go, toast } = useView()
   const [selectedSource, setSelectedSource] = useState<string | null>(null)
@@ -135,12 +163,14 @@ function IncomeAnalyzer({ from, to, accounts, dbAccountsLength }: { from: string
     .map(([label,source],i)=>({label,value:source.value,glow:colors[i%colors.length]}))
   const activeSource = selectedSource && sources.has(selectedSource) ? selectedSource : sourceSlices[0]?.label
   const examples = useReport([scope,activeSource],tenant=>latestLines(tenant,3,{...scope,source:activeSource}),!!activeSource)
-  if (!report.data) return <ReportStatus report={report} label="Income report" />
-  const {earned_cents:totalInflow, expense_cents:totalOutflow} = report.data.periods.current
-  const inc = report.data.buckets.map(b=>b.earned_cents)
-  const exp = report.data.buckets.map(b=>b.expense_cents)
+  if (!report.data && !consoleHub) return <ReportStatus report={report} label="Income report" />
+  const totalInflow = report.data?.periods.current.earned_cents ?? 0
+  const totalOutflow = report.data?.periods.current.expense_cents ?? 0
+  const buckets = report.data?.buckets ?? []
+  const inc = buckets.map(b=>b.earned_cents)
+  const exp = buckets.map(b=>b.expense_cents)
   const net = inc.map((v,i)=>v-exp[i])
-  const labels = report.data.buckets.map(b=>granularity === 'month' ? monthLabel(b.bucket) : dayLabel(b.bucket))
+  const labels = buckets.map(b=>granularity === 'month' ? monthLabel(b.bucket) : dayLabel(b.bucket))
   const n = inc.length || 1
   const peakVal = Math.max(0,...inc)
   const surplus = totalInflow-totalOutflow
@@ -170,6 +200,82 @@ function IncomeAnalyzer({ from, to, accounts, dbAccountsLength }: { from: string
   const refreshAfterTransactionEdit = async () => {
     await refreshData()
     toast({ title: 'Transaction updated', sub: 'Income analytics have been refreshed.' })
+  }
+
+  const sourcesContent = m.totalInflow > 0 ? <>
+    <AllocationDonut consoleStyle={!!consoleHub} showTotal={!consoleHub} data={m.sourceSlices} totalLabel="Period inflow" selectedLabel={activeSource}
+      onSelect={slice => setSelectedSource(slice.label)} />
+    {activeSource && <><ReportStatus report={examples} label="Source deposits" /><IncomeSourceActivity
+      category={activeSource}
+      total={m.sourceSlices.find(slice => slice.label === activeSource)?.value ?? 0}
+      periodTotal={m.totalInflow}
+      transactions={examples.data ?? []}
+      source={sources.get(activeSource)!}
+      onEdit={transaction => setSelectedTransactionId(transaction.parentTransactionId ?? transaction.id)}
+      onViewAll={() => go('ledger', { state: { source: 'income-source', category: activeSource, accountIds: accounts, from, to, incomeOnly: true } })}
+    /></>}
+  </> : <div className="grid place-items-center py-12 text-center text-[12.5px] text-muted">No inflow for the current filters.</div>
+  const depositsContent = <>
+    <ReportStatus report={deposits} label="Recent deposits" />
+    {deposits.data && (m.deposits.length ? (
+      <Ledger consoleStyle={!!consoleHub} rows={m.deposits} onEdit={transaction => setSelectedTransactionId(transaction.parentTransactionId ?? transaction.id)} />
+    ) : <div className="grid place-items-center py-10 text-center text-[12.5px] text-muted">No deposits in the selected range.</div>)}
+  </>
+  const drawer = <>
+    {selectedTransactionId && <ReportStatus report={parent} label="Transaction details" />}
+    <TransactionCategoryDrawer transaction={parent.data} onClose={() => setSelectedTransactionId(null)} onChanged={refreshAfterTransactionEdit} />
+  </>
+
+  if (consoleHub) {
+    const period = `${dayLabel(from)} – ${dayLabel(to)} ${to.slice(0, 4)}`
+    const series = [
+      { label: 'Inflow', data: m.cumInflow, color: 'var(--console-chart-ink)' },
+      { label: 'Net after spending', data: m.cumNet, color: 'var(--console-chart-net)', fill: false },
+    ]
+    return <ConsoleHubSpike id="income" title="Income" period={period} onBack={consoleHub.back}
+      tabs={consoleHub.tabs} filters={consoleHub.filters} entry={consoleHub.entry}
+      figure={{ label: 'Total inflow', cents: report.data ? m.totalInflow : report.pending ? consoleHub.entry?.headline?.cents : undefined }}
+      strip={report.data ? [
+        { label: 'Spending', cents: totalOutflow },
+        { label: 'Net after spending', cents: m.surplus, signed: true },
+        { label: `Average ${periodCadenceLabel} inflow`, cents: Math.round(m.prorated) },
+      ] : []}
+      art={report.data ? (totalInflow > 0 ? { label: 'Retained', percent: Math.round(m.savingsRate * 100) } : undefined) : consoleHub.entry?.art}>
+      {consoleHub.projections ? <StrategicProjections /> : <>
+        <ReportStatus report={report} label="Income report" />
+        {report.data && <>
+          <div className="console-module-grid" onKeyDown={consoleRowKeys}>
+            <ConsoleModule title="Cash flow pacing" kind="chart" tools={<div className="console-chart-legend">
+              <span>Inflow</span><span>Net after spending</span>
+            </div>}>
+              {labels.length > 0 && <>
+                <Area consoleStyle series={series} labels={labels} height={265} ariaLabel="Cumulative inflow and net cash flow" />
+                <ConsoleChartValues labels={labels} series={series} />
+              </>}
+            </ConsoleModule>
+            <div className="console-module-companions">
+              <ConsoleModule title="Period balance" order={1}>
+                <dl className="console-module-readouts">
+                  <div><dt>Inflow / outflow coverage</dt><dd>{totalOutflow ? `${m.coverage.toFixed(2)}×` : 'No outflow'}</dd></div>
+                  <div><dt>Prior-period inflow</dt><dd className="tabular-nums">{fmtCents(report.data.periods.prior.earned_cents)}</dd></div>
+                </dl>
+              </ConsoleModule>
+              <ConsoleModule title="Recent deposits" kind="flat" order={2}>{depositsContent}</ConsoleModule>
+            </div>
+          </div>
+          <div className="console-module-secondary" onKeyDown={consoleRowKeys}>
+            <ConsoleModule title="Income sources" kind="flat" order={3}>{sourcesContent}</ConsoleModule>
+            <ConsoleModule title={`Inflow by ${periodUnit}`} kind="flat" order={4}>
+              <dl className="console-module-readouts">
+                <div><dt>Highest inflow · {m.peakPeriod}</dt><dd className="tabular-nums">{fmtCents(m.peakVal)}</dd></div>
+                <div><dt>{periodUnit === 'day' ? 'Days in range' : `${periodUnit === 'week' ? 'Weeks' : 'Months'} in range`}</dt><dd>{labels.length}</dd></div>
+              </dl>
+            </ConsoleModule>
+          </div>
+        </>}
+        {drawer}
+      </>}
+    </ConsoleHubSpike>
   }
 
   return (
@@ -226,50 +332,12 @@ function IncomeAnalyzer({ from, to, accounts, dbAccountsLength }: { from: string
 
       {/* Row 3 — inflow categories + recent deposits */}
       <Tile title="Inflow categories" tag="share of inflow" span={2} className="flex h-full flex-col xl:col-span-1">
-        {m.totalInflow > 0 ? (
-          <>
-            <AllocationDonut
-              data={m.sourceSlices}
-              totalLabel="Period inflow"
-              selectedLabel={activeSource}
-              onSelect={(slice) => setSelectedSource(slice.label)}
-            />
-            {activeSource && (
-              <><ReportStatus report={examples} label="Source deposits" /><IncomeSourceActivity
-                category={activeSource}
-                total={m.sourceSlices.find((slice) => slice.label === activeSource)?.value ?? 0}
-                periodTotal={m.totalInflow}
-                transactions={examples.data ?? []}
-                source={sources.get(activeSource)!}
-                onEdit={(transaction) => setSelectedTransactionId(transaction.parentTransactionId ?? transaction.id)}
-                onViewAll={() => go('ledger', {
-                  state: { source: 'income-source', category: activeSource, accountIds: accounts, from, to, incomeOnly: true },
-                })}
-              /></>
-            )}
-          </>
-        ) : (
-          <div className="grid place-items-center py-12 text-center text-[12.5px] text-muted">
-            No inflow for the current filters.
-          </div>
-        )}
+        {sourcesContent}
       </Tile>
       <Tile title="Recent deposits" tag={m.deposits.length ? `${m.deposits.length} shown` : 'none'}>
-        <ReportStatus report={deposits} label="Recent deposits" />
-        {deposits.data && (m.deposits.length ? (
-          <Ledger rows={m.deposits} onEdit={(transaction) => setSelectedTransactionId(transaction.parentTransactionId ?? transaction.id)} />
-        ) : (
-          <div className="grid place-items-center py-10 text-center text-[12.5px] text-muted">
-            No deposits in the selected range.
-          </div>
-        ))}
+        {depositsContent}
       </Tile>
-      {selectedTransactionId && <ReportStatus report={parent} label="Transaction details" />}
-      <TransactionCategoryDrawer
-        transaction={parent.data}
-        onClose={() => setSelectedTransactionId(null)}
-        onChanged={refreshAfterTransactionEdit}
-      />
+      {drawer}
     </motion.div>
   )
 }
@@ -291,6 +359,8 @@ function IncomeSourceActivity({
   onEdit: (transaction: Txn) => void
   onViewAll: () => void
 }) {
+  const { theme } = useView()
+  const money = theme === 'console' ? fmtCents : fmt
   const share = periodTotal > 0 ? Math.round((total / periodTotal) * 1000) / 10 : 0
 
   return (
@@ -298,13 +368,13 @@ function IncomeSourceActivity({
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <div>
           <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-muted">Income activity · {category}</p>
-          <p className="mt-1 text-[17px] font-bold tabular-nums text-ink">{fmt(total)} <span className="text-[13px] font-semibold text-muted">· {share}% of inflow</span></p>
+          <p className="mt-1 text-[17px] font-bold tabular-nums text-ink">{money(total)} <span className="text-[13px] font-semibold text-muted">· {share}% of inflow</span></p>
         </div>
         <span className="text-[12.5px] font-semibold text-accent-ink">{source.count} deposit{source.count === 1 ? '' : 's'}</span>
       </div>
 
       <p className="mt-2 text-[12.5px] leading-5 text-muted">
-        Largest deposit {fmt(source.largest)} · latest {dayLabel(source.latest)}.
+        Largest deposit {money(source.largest)} · latest {dayLabel(source.latest)}.
       </p>
 
       <div className="mt-3 divide-y divide-[var(--hair-soft)] border-y border-[var(--hair-soft)]">
@@ -320,7 +390,7 @@ function IncomeSourceActivity({
               <p className="truncate text-[13px] font-semibold text-ink">{transaction.merchant}</p>
               <p className="mt-0.5 text-[12px] text-muted">{dayLabel(transaction.date)}{transaction.subcat ? ` · ${transaction.subcat}` : ''}</p>
             </div>
-            <span className="flex items-center gap-2 text-[13px] font-bold tabular-nums text-pos"><span>{fmt(transaction.amount)}</span><span className="text-[12px] font-semibold text-accent-ink">Edit →</span></span>
+            <span className="flex items-center gap-2 text-[13px] font-bold tabular-nums text-pos"><span>{money(transaction.amount)}</span><span className="text-[12px] font-semibold text-accent-ink">Edit →</span></span>
           </button>
         ))}
       </div>

@@ -1,4 +1,5 @@
 import anime from 'animejs'
+import { fmtCents } from '../../data'
 import { useEffect, useId, useRef, useState } from 'react'
 import { useChartReveal, CHART_EASE } from '../../hooks/useChartReveal'
 import { useResponsiveChartSize } from '../../hooks/useResponsiveChartSize'
@@ -38,6 +39,7 @@ export default function Area({
   selectedIndex = null,
   onClickDataPoint,
   ariaLabel = 'Financial trend line chart',
+  consoleStyle = false,
 }: {
   series: Series[]
   labels?: string[]
@@ -45,6 +47,7 @@ export default function Area({
   selectedIndex?: number | null
   onClickDataPoint?: (idx: number) => void
   ariaLabel?: string
+  consoleStyle?: boolean
 }) {
   const { ref: containerRef, width: W, height: H, ready } = useResponsiveChartSize({
     // Preserve each existing call site's intended desktop proportion while
@@ -54,7 +57,7 @@ export default function Area({
   })
   const padL = 52
   const padR = 16
-  const padT = 16
+  const padT = consoleStyle ? 27 : 16
   const padB = 30
   const innerW = W - padL - padR
   const innerH = H - padT - padB
@@ -184,7 +187,7 @@ export default function Area({
       })}
       {/* X-axis labels are constrained by usable chart width, not data count. */}
       {xTickIndices.map((i) => (
-        <text key={i} x={xOf(i)} y={H - 8} fill="var(--color-muted)" fontSize={12} textAnchor="middle">
+        <text key={i} x={xOf(i)} y={H - 8} fill="var(--color-muted)" fontSize={12} textAnchor={consoleStyle && i === 0 ? "start" : consoleStyle && i === labels.length - 1 ? "end" : "middle"}>
           {labels[i]}
         </text>
       ))}
@@ -197,24 +200,29 @@ export default function Area({
               <>
                 <defs>
                   <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={s.color} stopOpacity={0.16} />
-                    <stop offset="100%" stopColor={s.color} stopOpacity={0} />
+                    <stop offset="0%" stopColor={consoleStyle ? 'var(--console-chart-tint)' : s.color} stopOpacity={consoleStyle ? 0.20 : 0.16} />
+                    <stop offset="100%" stopColor={consoleStyle ? 'var(--console-chart-tint)' : s.color} stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <path className="area-fill" d={s.fillPath} fill={`url(#${gid})`} style={{ opacity: 1 }} />
+                <path className={consoleStyle ? undefined : 'area-fill'} d={s.fillPath} fill={`url(#${gid})`} style={{ opacity: 1 }} />
               </>
             )}
             <path
-              className="area-line"
+              className={consoleStyle ? 'console-area-line' : 'area-line'}
               d={s.line}
-              pathLength={1}
+              pathLength={consoleStyle ? undefined : 1}
               fill="none"
               stroke={s.color}
               strokeWidth={2.2}
               strokeLinejoin="round"
-              style={{ strokeDasharray: 1, strokeDashoffset: 0 }}
+              strokeDasharray={consoleStyle && si > 0 ? '5 5' : undefined}
+              style={consoleStyle ? undefined : { strokeDasharray: 1, strokeDashoffset: 0 }}
             />
-            <g className="area-dot-travel">
+            {consoleStyle ? <>
+              <circle cx={s.last[0]} cy={s.last[1]} r={3} fill={s.color} />
+              {si === 0 && <text className="console-chart-end tabular-nums" x={s.last[0]} y={s.last[1] - 10}
+                textAnchor="end" fill={s.color}>{fmtCents(s.data[s.data.length - 1])}</text>}
+            </> : <g className="area-dot-travel">
               <circle
                 className="area-dot"
                 cx={0}
@@ -223,7 +231,7 @@ export default function Area({
                 fill={s.color}
                 style={{ opacity: 1, transformBox: 'fill-box', transformOrigin: 'center' }}
               />
-            </g>
+            </g>}
           </g>
         )
       })}
@@ -287,7 +295,7 @@ export default function Area({
             items={series.map((s, index) => ({
               color: s.color,
               label: s.label ?? (series.length === 1 ? 'Value' : `Series ${index + 1}`),
-              value: formatChartVal(s.data[hoveredIdx]),
+              value: consoleStyle ? fmtCents(s.data[hoveredIdx]) : formatChartVal(s.data[hoveredIdx]),
             }))}
             anchorX={xOf(hoveredIdx)}
             pointYs={series.map((s) => yOf(s.data[hoveredIdx]))}

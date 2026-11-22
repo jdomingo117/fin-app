@@ -599,8 +599,10 @@ implemented but the remaining M6 verification gates are still open.
 
 ### `app/` (Frontend)
 - `src/components/console/ConsoleDashboardSpike.tsx` / `console-dashboard.css` — Phase 2a
-  and 2b Dashboard feel review. `ConsoleViewportSpike.tsx` owns Home, the persistent scene,
-  route-based hubs and the rough Control Centre. The tile row previews existing Dashboard reads,
+  through 2c Dashboard feel review. `ConsoleViewportSpike.tsx` owns Home, the persistent scene,
+  route-based hubs and the rough Control Centre. `ConsoleHubSpike.tsx` and `console-hub.css`
+  provide the shared-entry hero, sticky collapse and modules for Income and Overview.
+  The tile row previews existing Dashboard reads,
   with a separate ambient dwell. The scope and later
   verification gates are in [the console rollout](docs/design/console-rollout.md).
 - `budget-concept.html` / `src/budget-concept-main.tsx` / `src/concept/budget/` — Standalone,

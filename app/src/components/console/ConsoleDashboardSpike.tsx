@@ -1,6 +1,7 @@
 import { motion, useReducedMotion } from 'framer-motion'
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type PointerEvent } from 'react'
-import { fmtCents, type Txn } from '../../data'
+import type { Account, Txn } from '../../data'
+import { ConsoleFigureStrip, ConsoleHeadline, ConsoleHeroArt, consoleMoney, consoleRowKeys, type ConsoleArt, type ConsoleFigure } from './ConsoleHubSpike'
 import { BUDGET_ENABLED } from '../../lib/budgetWorkspace'
 import './console-dashboard.css'
 
@@ -13,13 +14,13 @@ const sections = [
 ] as const
 
 export type SectionId = (typeof sections)[number]['id']
-type Figure = { label: string; cents?: number; signed?: boolean }
 type Props = {
-  figures: Partial<Record<SectionId, Figure[]>>
+  figures: Partial<Record<SectionId, ConsoleFigure[]>>
   activity?: Txn[]
+  accounts: Account[]
   period: string
   latestDate?: string
-  trends: Partial<Record<SectionId, { label: string; values: number[] }>>
+  trends: Partial<Record<SectionId, ConsoleArt>>
   activeId: SectionId
   selectSection: (section: SectionId) => void
   restoreFocus: boolean
@@ -31,13 +32,8 @@ type Props = {
 type Ease = [number, number, number, number]
 export const enabledSections = sections.filter(({ id }) => id !== 'budget' || BUDGET_ENABLED)
 
-function signedAmount(cents: number, signed: boolean) {
-  const amount = fmtCents(cents)
-  return signed && cents > 0 ? '+' + amount : amount.replace(/^-/, '−')
-}
-
 export default function ConsoleDashboardSpike({
-  figures, activity, period, latestDate, trends, activeId, selectSection, restoreFocus,
+  figures, activity, accounts, period, latestDate, trends, activeId, selectSection, restoreFocus,
   motionOn, covered, open, openTransaction,
 }: Props) {
   const active = Math.max(0, enabledSections.findIndex(section => section.id === activeId))
@@ -114,6 +110,7 @@ export default function ConsoleDashboardSpike({
   return (
     <section ref={root} className="console-home" aria-label="Dashboard section previews" data-paused={covered}>
         <div className="console-switcher">
+          <div className="console-focus-glow" key={section.id} aria-hidden="true" />
           <div className="console-aperture" onClick={event => {
             // The tile can slide away before a user clicks a stationary pointer.
             if (event.detail && !event.defaultPrevented && !(event.target as Element).closest('button')
@@ -183,35 +180,35 @@ export default function ConsoleDashboardSpike({
           >
             <div className="console-hero">
               <div className="console-summary">
-                <p className="console-hero-label">{section.name}{headline ? ` · ${headline.label}` : ''}</p>
-                {isFlow && <p className="console-period">{period}</p>}
-                <h1 className={headline?.cents === undefined ? 'console-unavailable' : 'tabular-nums'}>
-                  {headline?.cents === undefined ? (section.id === 'budget' ? section.name : 'Unavailable') : signedAmount(headline.cents, !!headline.signed)}
-                </h1>
-                {secondary.length > 0 && <dl className="console-figures">
-                  {secondary.map(({ label, cents, signed }) => (
-                    <div key={label}>
-                      <dt>{label}</dt>
-                      <dd className="tabular-nums" data-sign={signed && cents ? (cents > 0 ? 'positive' : 'negative') : undefined}>
-                        {cents === undefined ? 'Unavailable' : signedAmount(cents, !!signed)}
-                      </dd>
-                    </div>
-                  ))}
-                </dl>}
+                <ConsoleHeadline id={section.id} label={`${section.name}${headline ? ` · ${headline.label}` : ''}`}
+                  figure={headline} reduced={!!reduce} period={isFlow ? period : undefined} />
+                {secondary.length > 0 && <ConsoleFigureStrip figures={secondary} />}
                 {isFlow && latestDate && <p className="console-asof">Latest transaction · {latestDate}</p>}
               </div>
-              <TrendOrb trend={trends[section.id]} />
+              <ConsoleHeroArt id={section.id} art={trends[section.id]} reduced={!!reduce} />
             </div>
+            {section.id === 'accounts' && <div className="console-activity">
+              <h2>Accounts</h2>
+              {accounts.length ? <div className="console-activity-row" onKeyDown={consoleRowKeys}>
+                {accounts.map(account => <button key={account.id} type="button" className="console-activity-card"
+                  data-console-row-item onClick={() => open('accounts')}>
+                  <span className="console-card-emblem"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 6h18v12H3zM3 10h18M7 15h4" /></svg></span>
+                  <span className="console-card-category">{account.type}{account.institution ? ` · ${account.institution}` : ''}</span>
+                  <strong className="tabular-nums" data-sign={account.balance < 0 ? 'negative' : undefined}>{consoleMoney(account.balance)}</strong>
+                  <span className="console-card-title">{account.name}</span>
+                </button>)}
+              </div> : <p className="console-empty">No accounts to show.</p>}
+            </div>}
             {(cards?.length || isFlow) ? <div className="console-activity">
               <h2>{isFlow ? 'Activity in this period' : 'Recent activity'}</h2>
-              {cards?.length ? <div className="console-activity-row">
+              {cards?.length ? <div className="console-activity-row" onKeyDown={consoleRowKeys}>
                 {cards.map(transaction => {
                   const category = transaction.cat || 'Transaction'
                   const merchant = transaction.merchant || 'Transaction details'
-                  const amount = signedAmount(transaction.amount, true)
+                  const amount = consoleMoney(transaction.amount, true)
                   return (
                     <button type="button" className="console-activity-card" key={transaction.id}
-                      aria-label={`${merchant}, ${category}, ${amount}`} onClick={() => openTransaction(transaction)}>
+                      data-console-row-item aria-label={`${merchant}, ${category}, ${amount}`} onClick={() => openTransaction(transaction)}>
                       <span className="console-card-emblem"><ActivityIcon transaction={transaction} /></span>
                       <span className="console-card-category">{category}</span>
                       <strong className="tabular-nums" data-sign={transaction.amount > 0 ? 'positive' : transaction.amount < 0 ? 'negative' : undefined}>{amount}</strong>
@@ -224,34 +221,6 @@ export default function ConsoleDashboardSpike({
           </motion.div>
         )}
     </section>
-  )
-}
-
-function TrendOrb({ trend }: { trend?: { label: string; values: number[] } }) {
-  const values = trend?.values ?? []
-  const low = Math.min(...values)
-  const span = Math.max(...values) - low
-  const points = values.length > 1 ? values.map((value, i) => {
-    const x = 15 + i * 130 / (values.length - 1)
-    const y = span ? 96 - (value - low) * 38 / span : 79
-    return `${x},${y}`
-  }).join(' ') : undefined
-  return (
-    <figure className="console-orb" aria-hidden={!points}>
-      <div className="console-orb-core" aria-hidden="true" />
-      <svg aria-hidden="true" viewBox="0 0 160 160" fill="none">
-        <circle cx="80" cy="80" r="75" stroke="currentColor" strokeOpacity=".45" strokeDasharray="1 4" />
-        <circle cx="80" cy="80" r="68" stroke="currentColor" strokeOpacity=".25" />
-        <circle cx="80" cy="80" r="63" stroke="currentColor" strokeOpacity=".6" strokeWidth="2" />
-        {points && <>
-          <path className="console-orb-area" d={`M15,110 L${points.replaceAll(' ', ' L')} L145,110 Z`} />
-          <polyline className="console-orb-line" points={points} />
-        </>}
-      </svg>
-      {points && <figcaption className="sr-only">
-        {trend?.label}. First value {fmtCents(values[0])}. Last value {fmtCents(values[values.length - 1])}.
-      </figcaption>}
-    </figure>
   )
 }
 

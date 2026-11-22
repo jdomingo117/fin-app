@@ -48,7 +48,7 @@ A row has one active item and one tab stop. Use genuine buttons or links, a labe
 | --- | --- |
 | `--font-display / --font-body` | Retain Archivo for display and Hanken Grotesk for body and figures. Load real 200/300 weights for their console roles alongside the current weights. |
 | `type.hero / hub / tab / sectionName` | Hero clamp(48px, 6.4vw, 96px), 200, line height .98, tracking −.025em. Hub 46px/200/−.02em. Tabs 30px/300, active weight 400. Section name 28px/300. |
-| `type.figure.{preview,hub,activity}` | 28/30/34px, all weight 200, tracking −.015em for readouts and −.02em for cards. Large display figures may use −.035em. All figures tabular. Preserve integer cents and format once using the existing formatter for the surface. |
+| `type.figure.{preview,hub,activity}` | 28/30/34px, all weight 200, tracking −.015em for readouts and −.02em for cards. Large display figures may use −.035em. All figures tabular. Show whole dollars at hero scale on Home and in expanded hubs, with the exact amount in accessible text. Keep cents in compact headers, strips, cards and modules. Preserve integer cents and format with the existing formatter for the surface. |
 | `type.body / label` | 16px body, 18px introductory copy, weight 300, intro leading 1.55. Labels 13px, white alpha .75 (metric), .78 (subtitle), .85 (activity), .88 (section label). Intro copy white/.84. |
 | `section.hue` | Reference equivalents are Overview 255°, Accounts 200°, Expenses/Spending 35°, Budget 295°. Income uses 85°. Other routes can inherit the neutral shell until assigned a hub. The section palette is independent of chart and category hues. |
 | `paint.tile(h)` | 145° linear gradient at 0/55/100%, L .66/.46/.30, **C .15 at every stop**, hues h/h+18/h+30. |
@@ -158,11 +158,11 @@ Restyle shared components in place for Console. The implementation may replace t
 | Surface | Console treatment |
 | --- | --- |
 | Hub modules | Individual 16px-radius surfaces. Reveal ambient light in the gaps. Give each dense table, long list or form an opaque surface sized around that content and its own existing controls. |
-| Figures and labels | Display figures use weights 200–300 with tabular numerals. Keep 13px labels in sentence case by default. Keep cents in hubs and activity cards. |
+| Figures and labels | Display figures use weights 200–300 with tabular numerals. Keep 13px labels in sentence case by default. Use whole dollars in expanded hub and Home heroes, with exact cents in accessible text. Show cents in compact headers, secondary strips, activity cards and module values. |
 | Charts | Use white or near-white strokes with a soft section-hued glow. Keep gridlines at or below 8% white. Tint areas softly with the section hue. Keep data, chart semantics, tooltip interaction and keyboard alternatives. Use stroke style and labels to distinguish series. |
 | Controls and focus | Restyle tabs, filters and date pickers as pills or rounded rectangles with a white-on-glass selection state. Reuse the tile focus ring. Arrow keys traverse card rows and Tab moves between rows and into workflow controls. Tables and forms retain their native keys and focus order. |
 
-### Home follow-up after direction approval
+### Home follow-up in the implementation spike
 
 - Move the focused tile glow outside the track’s clipping and fade layers.
 - Plot cumulative inflow and cumulative gross outflow from the existing daily buckets for the monotonic Home key art. Label gross outflow as such when the headline is net spending, so refunds and reimbursements cannot make one read as the other.
@@ -170,4 +170,17 @@ Restyle shared components in place for Console. The implementation may replace t
 - Reserve space for the hero number and art from 320px up. Stack or reduce the art on narrow displays. Display whole dollars in the Home hero and expose the exact cents in its accessible name.
 - Place a horizontal row of real attention cards over a bottom bar of round Control Centre actions. Reveal action labels on focus.
 
-No primitive hardening or automated coverage is part of the two Phase 2c spikes.
+### Selected hub composition
+
+Use the game-hub entry with the analysis workspace body. Home and the expanded hub share Framer Motion layout IDs for the amount, label and artwork. The spike projects their captured Home bounds with Framer Motion when the destination introduces its own scroll container. Opening a hub preserves the ambient scene and begins the module rise and stagger. Income opens on the Home preview’s 30-day window. The hero ring gives the retained share of inflow. Its inline strip shows spending, net after spending and average daily inflow for the initial 30-day period. For a wider date range the average follows the existing report aggregation. The chart shows cumulative inflow as a solid near-white stroke and cumulative net as a dashed stroke. Period balance and Recent deposits sit alongside. Income sources and Inflow by day follow below.
+
+Overview keeps net worth and 30-day movement portfolio-wide. Its ring uses monthly net-worth history. The main chart, allocation and holdings lead, followed by spending insights and recent activity. Overview’s date and account controls explicitly scope spending insights since the net-worth valuation history is portfolio-wide.
+
+The hub scroll container drives opacity and transform for the expanded and compact silhouettes. The sticky control row stays mounted while the header changes. Reduced motion snaps at the collapse threshold. Phone reading order is hero, strip, chart, companions, secondary modules.
+
+| Initial hero | Hubs |
+| --- | --- |
+| Expanded | Overview, Income, Expenses, Accounts |
+| Compact | Ledger, Budget, Ingestion, Transfers, Settings |
+
+Phase 2c implements the selected composition in Overview and Income. The remaining routes declare their mode for rollout. This is a spike with a review gate before primitive hardening or automated coverage.

@@ -103,7 +103,19 @@ export async function signInForConsole(page: Page, controlledClock = true) {
     }
     return route.fulfill({headers:cors,json:fixtures[key] ?? []})
   })
-  if (controlledClock) await page.clock.install({ time: new Date('2026-11-22T08:04:00Z') })
+  if (controlledClock) await page.addInitScript(anchor => {
+    // Shift calendar time while retaining the browser’s own frame and timer scheduler.
+    const NativeDate = window.Date
+    const delta = anchor - NativeDate.now()
+    const now = () => NativeDate.now() + delta
+    window.Date = new Proxy(NativeDate, {
+      get(target, key, receiver) { return key === 'now' ? now : Reflect.get(target, key, receiver) },
+      apply: () => new NativeDate(now()).toString(),
+      construct(target, args, newTarget) {
+        return Reflect.construct(target, args.length ? args : [now()], newTarget)
+      },
+    })
+  }, Date.parse('2026-11-22T08:04:00Z'))
   await page.goto(dashboard)
   await page.locator('input[type="email"]').fill(fixtureEmail)
   await page.locator('input[type="password"]').fill(fixturePassword)

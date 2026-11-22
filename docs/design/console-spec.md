@@ -59,6 +59,8 @@ A row has one active item and one tab stop. Use genuine buttons or links, a labe
 
 Console links, selected states and highlights use white or the current section hue. Reserve green and red for signed monetary figures and keep the sign visible. Write insight sentences in neutral text, including sentences with unsigned ratios or review counts. Use sentence case for labels. A compact header uses an opaque material beneath its text across the full width, with the fade starting below the reading area.
 
+Date labels use the shared calendar formatter. Range controls show day before month, with years when the endpoints cross a year. Monthly axes add the year at the first plotted month after a calendar-year boundary. Requests and native date inputs retain their ISO values.
+
 ## §4.6 · Material stack
 
 The production CSS supplies glass, hairlines, a wash and a canvas. These six slots describe console paint order. Each ambient surface is decorative, pointer-transparent and hidden from the accessibility tree.

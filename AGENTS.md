@@ -82,6 +82,8 @@ hand to find the transfer-linker gap.
 
 ## Recent changes
 
+- 2026-11-22 — Console Phase 2 adds the full ambient scene, opt-in sound and music, and the optional start screen.
+
 - 2026-11-22 — Console Phase 2 foundation shares appearance tokens, motion presets, FocusRing, FocusRow and GlassSurface, with signed-in browser checks.
 
 - 2026-11-22 — Console Phase 2c spikes the shared hero transition, collapsing Income and Overview hubs, Accounts preview and Control Centre review cards.
@@ -99,5 +101,3 @@ hand to find the transfer-linker gap.
 - 2026-11-20 — Provider sync preserves manual edits on read failure and reconciles provider anchors atomically across the full ledger.
 
 - 2026-11-20 — Strategic projection readouts and calculation breakdown now live in components/projections/.
-
-- 2026-11-20 — Transfer review panels and cards now live beside the OskoLinker controller in components/transfers/.

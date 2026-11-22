@@ -602,7 +602,11 @@ implemented but the remaining M6 verification gates are still open.
   the persistent scene and the rough Control Centre. `ConsoleHome.tsx` previews existing Dashboard
   reports. `ConsoleHub.tsx` provides the shared-entry hero, sticky compact header and modules for
   Income and Overview. The Phase 2 foundation shares appearance preferences, CSS/Framer Motion
-  presets, `FocusRing`, `FocusRow` and `GlassSurface` across those views. The signed-in
+  presets, `FocusRing`, `FocusRow` and `GlassSurface` across those views.
+  `AmbientBackground.tsx` owns the six-material scene and its suspension rules.
+  `SoundEngine.ts` synthesizes cues and music from user gestures. `ConsolePreferences.tsx`
+  owns the local controls, and `ConsoleStartScreen.tsx` is the optional Home entry.
+  The signed-in
   `/dashboard?demo=foundation` route shows the foundation states in development.
   See [the console rollout](docs/design/console-rollout.md) for gate fixtures and checks.
 - `budget-concept.html` / `src/budget-concept-main.tsx` / `src/concept/budget/` — Standalone,

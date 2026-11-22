@@ -5,6 +5,7 @@ import { enabledSections, type SectionId } from './sections'
 import { FocusRow, SectionFocusRow } from './FocusRow'
 import { consoleRise, useConsoleReducedMotion } from './motion'
 import { FocusRing } from './FocusRing'
+import { useConsolePreferences } from './ConsolePreferences'
 import { GlassSurface } from './GlassSurface'
 import './console-dashboard.css'
 
@@ -28,6 +29,7 @@ export default function ConsoleHome({
   covered, open, openTransaction,
 }: Props) {
   const reduce = useConsoleReducedMotion()
+  const audio = useConsolePreferences()
   const section = enabledSections.find(item => item.id === activeId) ?? enabledSections[0]
   const [headline, ...secondary] = figures[section.id] ?? []
   const cards = activity?.slice(0, 4)
@@ -74,7 +76,7 @@ export default function ConsoleHome({
               const amount = consoleMoney(transaction.amount, true)
               return (
                 <GlassSurface as="button" material="activity" className="console-activity-card" key={transaction.id}
-                  data-console-row-item onClick={() => openTransaction(transaction)}>
+                  data-console-row-item onClick={() => { audio?.play('select'); openTransaction(transaction) }}>
                   <FocusRing layer="sweep" />
                   <span className="console-card-emblem"><ActivityIcon transaction={transaction} /></span>
                   <span className="console-card-category">{category}</span>

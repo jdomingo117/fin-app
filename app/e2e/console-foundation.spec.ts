@@ -145,14 +145,16 @@ test('appearance switch confirms before discarding a reported edit', async ({ pa
   await enterConsole(page)
   await page.getByRole('button', { name: 'Settings', exact: true }).click()
   await page.getByRole('button', { name: 'Edit callsign' }).click()
-  const callsign = page.locator('input').filter({ visible: true }).first()
+  const callsign = page.getByRole('textbox', { name: 'Callsign' })
   await callsign.fill('Unsubmitted review edit')
   const appearance = page.getByRole('button', { name: 'Console', exact: true })
+  let confirmation = ''
   page.once('dialog', async dialog => {
-    expect(dialog.message()).toMatch(/discard unsaved changes/i)
+    confirmation = dialog.message()
     await dialog.dismiss()
   })
   await appearance.click()
+  expect(confirmation).toMatch(/discard unsaved changes/i)
   await expect(callsign).toHaveValue('Unsubmitted review edit')
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'console')
   page.once('dialog', dialog => dialog.accept())

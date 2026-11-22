@@ -1,5 +1,7 @@
-import { useSyncExternalStore, type CSSProperties } from 'react'
+import { type CSSProperties } from 'react'
 import { useView } from '../../router'
+import { useSystemReducedMotion } from './systemMotion'
+import { useConsolePreferences } from './ConsolePreferences'
 
 const ease = {
   settle: [.16, .9, .2, 1],
@@ -25,6 +27,10 @@ export const consoleDuration = {
   beam: 9000,
   hub: 600,
   stagger: 70,
+  start: 1100,
+  'start-wordmark': 2200,
+  'start-prompt': 2400,
+  'start-prompt-delay': 1200,
 } as const
 
 const rise = 26
@@ -52,20 +58,9 @@ export function consoleRise(reduced: boolean) {
   }
 }
 
-const reducedMotionQuery = '(prefers-reduced-motion: reduce)'
-
-function subscribeToMotionPreference(callback: () => void) {
-  const media = window.matchMedia(reducedMotionQuery)
-  media.addEventListener('change', callback)
-  return () => media.removeEventListener('change', callback)
-}
-
-function readMotionPreference() {
-  return window.matchMedia(reducedMotionQuery).matches
-}
-
 export function useConsoleReducedMotion() {
   const { motionOn } = useView()
-  const prefersReduced = useSyncExternalStore(subscribeToMotionPreference, readMotionPreference)
-  return prefersReduced || !motionOn
+  const preferences = useConsolePreferences()
+  const prefersReduced = useSystemReducedMotion()
+  return prefersReduced || !motionOn || !!preferences?.preferences.reduceEffects
 }

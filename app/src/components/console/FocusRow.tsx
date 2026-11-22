@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, type CSSProperties, type KeyboardEvent, type MouseEvent, type PointerEvent, type ReactNode } from 'react'
+import { useConsolePreferences } from './ConsolePreferences'
 import { FocusRing } from './FocusRing'
 
 function arrowStep(key: string) {
@@ -14,6 +15,7 @@ export function FocusRow({ label, className, children }: {
   children: ReactNode
 }) {
   const row = useRef<HTMLDivElement>(null)
+  const audio = useConsolePreferences()
   const selected = useRef<HTMLElement>()
   const items = () => Array.from(row.current?.querySelectorAll<HTMLElement>(
     '[data-console-row-item]:not(:disabled):not([aria-disabled="true"])',
@@ -44,7 +46,10 @@ export function FocusRow({ label, className, children }: {
     const index = nodes.findIndex(item => item === event.target)
     if (index < 0) return
     event.preventDefault()
-    nodes[index + step]?.focus({ preventScroll: true })
+    const next = nodes[index + step]
+    if (!next) return
+    audio?.play('move', index + step)
+    next.focus({ preventScroll: true })
   }
 
   return <div ref={row} className={className} role="group" aria-label={label} data-console-row

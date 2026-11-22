@@ -23,6 +23,7 @@ import { useData } from '../contexts/DataContext'
 import StrategicProjections from '../components/StrategicProjections'
 import { ease, gridStagger } from '../components/motion'
 import { useView } from '../router'
+import { useConsolePreferences } from '../components/console/ConsolePreferences'
 import { DateRangePicker, MultiSelect } from '../components/Controls'
 import ConsoleHub, { ConsoleChartValues, ConsoleModule, consoleMoney, type ConsoleEntry } from '../components/console/ConsoleHub'
 import type { ConsoleOutlet } from '../components/console/ConsoleViewport'
@@ -36,6 +37,7 @@ const TABS = [
 export default function Income() {
   const [view, setView] = useState('analyzer')
   const { theme } = useView()
+  const audio = useConsolePreferences()
   const consoleRoute = useOutletContext<ConsoleOutlet | null>()
   const today = new Date()
   const { preset, from, to, applyPreset, changeFrom, changeTo } = usePeriodRange(undefined,
@@ -67,7 +69,7 @@ export default function Income() {
       consoleHub={{
         back: consoleRoute.back,
         entry: consoleRoute.entry?.id === 'income' ? consoleRoute.entry : undefined,
-        tabs: <SegmentedTabs tabs={TABS} active={view} onChange={setView} layoutId="income-hub-tabs" />,
+        tabs: <SegmentedTabs tabs={TABS} active={view} onChange={next => { if (next !== view) audio?.play('tab'); setView(next) }} layoutId="income-hub-tabs" />,
         filters: view === 'analyzer' ? <>
           <DateRangePicker from={from} to={to} min={MIN_DATE} max={MAX_DATE} presets={PRESETS}
             activePreset={preset} onPreset={applyPreset} onFrom={changeFrom} onTo={changeTo} />

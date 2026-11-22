@@ -349,3 +349,31 @@
 @keyframes console-sheet { from { opacity: 0; transform: translateY(60px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes console-fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes console-fade-out { from { opacity: 1; } to { opacity: 0; } }
+
+.console-volume {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) 4ch;
+  align-items: center;
+  gap: 14px;
+  padding-block: 12px;
+}
+.console-volume input { min-inline-size: 0; }
+.console-volume output { font-variant-numeric: tabular-nums; text-align: end; }
+.console-centre-actions button[aria-pressed="true"] {
+  background: rgb(255 255 255 / .2);
+}
+.console-centre-actions button[aria-pressed="true"] .console-music-icon { fill: currentColor; }
+.console-viewport[data-reduce-effects="true"] .console-centre::backdrop { backdrop-filter: none; }
+.console-viewport[data-reduce-effects="true"] :is(.console-orb-progress, .console-orb-line, .console-area-line, .console-tile-art svg) {
+  filter: none;
+}
+.redacted .console-viewport[data-reduce-effects="true"] .tabular-nums {
+  visibility: hidden;
+  filter: none;
+}
+@media (max-width: 380px) {
+  .console-clock { display: none; }
+}
+@media (max-width: 600px) {
+  .console-centre-actions button { width: min(60px, 12vw); min-inline-size: 44px; }
+}

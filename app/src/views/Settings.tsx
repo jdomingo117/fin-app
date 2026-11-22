@@ -11,6 +11,7 @@ import {
 } from '../components/AccountSecurity'
 import AuditLogCard from '../components/AuditLogCard'
 import { useUnsavedChanges } from '../hooks/useUnsavedChanges'
+import { ConsoleSettingsControls } from '../components/console/ConsolePreferences'
 
 const ACCENTS = [
   { name: 'Mint', accent: '#11b596', ink: '#0a7d67' },
@@ -20,7 +21,7 @@ const ACCENTS = [
 ]
 
 export default function Settings() {
-  const { motionOn, setMotionOn, dark, setDark, toast } = useView()
+  const { motionOn, setMotionOn, dark, setDark, toast, theme } = useView()
   const { profile, isAdmin, refreshProfile } = useData()
   const { user, signOut: doSignOut } = useAuth()
   const [redact, setRedact] = useState(false)
@@ -84,6 +85,8 @@ export default function Settings() {
           <Switch on={redact} onToggle={toggleRedact} label="Redact balances" />
         </Tile>
 
+        {theme === 'console' && <Tile title="Console effects and sound" span={2}><ConsoleSettingsControls /></Tile>}
+
         <Tile title="Accent">
           <div className="flex gap-3 pt-1">
             {ACCENTS.map((a) => (
@@ -110,6 +113,7 @@ export default function Settings() {
                   <div className="flex items-center gap-2">
                     <input
                       type="text"
+                      aria-label="Callsign"
                       value={newCallsign}
                       onChange={(e) => setNewCallsign(e.target.value)}
                       className="bg-[var(--input-bg)] border border-[var(--hair)] rounded px-2 py-1 text-[16px] font-semibold text-ink outline-none focus:border-accent flex-1"

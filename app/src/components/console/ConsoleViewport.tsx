@@ -1,6 +1,8 @@
+import { ConsolePreferencesProvider, useConsolePreferences } from './ConsolePreferences'
+import { useCoveringOverlay, useDocumentVisible } from './useScenePause'
 import { AmbientBackground } from './AmbientBackground'
 import { AnimatePresence, LayoutGroup, motion, PresenceContext, useIsPresent } from 'framer-motion'
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { useOutlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { useData } from '../../contexts/DataContext'
@@ -9,6 +11,7 @@ import { useView, type View } from '../../router'
 import { enabledSections, type SectionId } from './sections'
 import { captureConsoleOrigin, type ConsoleEntry } from './ConsoleHub'
 import { GlassSurface } from './GlassSurface'
+import { ConsoleStartScreen } from './ConsoleStartScreen'
 import FoundationDemo from './FoundationDemo'
 import { consoleDuration, consoleMotionStyle, consoleTransition, useConsoleReducedMotion } from './motion'
 
@@ -55,6 +58,13 @@ function ConsoleRouteLayer({ children, reduced }: { children: ReactNode; reduced
 }
 
 export default function ConsoleViewport() {
+  const visible = useDocumentVisible()
+  return <ConsolePreferencesProvider visible={visible}>
+    <ConsoleViewportContent visible={visible} />
+  </ConsolePreferencesProvider>
+}
+
+function ConsoleViewportContent({ visible }: { visible: boolean }) {
   const { go, view, setTheme, toast } = useView()
   const { profile } = useData()
   const { signOut } = useAuth()
@@ -70,7 +80,13 @@ export default function ConsoleViewport() {
   const [ambient, setAmbient] = useState(active)
   const [closing, setClosing] = useState(false)
   const [centreOpen, setCentreOpen] = useState(false)
-  const [visible, setVisible] = useState(() => !document.hidden)
+  const overlay = useCoveringOverlay()
+  const audio = useConsolePreferences()!
+  const [showStart] = useState(() => home && !demo && audio.preferences.startScreen)
+  const [finishedStart, setFinishedStart] = useState(false)
+  const startupVisible = showStart && !finishedStart && home
+  const paused = !visible || centreOpen || overlay || startupVisible
+  const reduceEffects = audio.preferences.reduceEffects
   const [clock, setClock] = useState(() => new Date())
   const [restoreFocus, setRestoreFocus] = useState(false)
   const root = useRef<HTMLDivElement>(null)
@@ -79,14 +95,21 @@ export default function ConsoleViewport() {
   const wasHome = useRef(home)
   const reduce = useConsoleReducedMotion()
   const designed = !home && (view === 'dashboard' || view === 'income')
-  const outlet = useOutlet({ home, active, select, restoreFocus, entry, begin, back: () => setClosing(true) } satisfies ConsoleOutlet)
+  const outlet = useOutlet({ home, active, select, restoreFocus, entry, begin, back: requestBack } satisfies ConsoleOutlet)
+
+  const finishStartup = useCallback(() => {
+    setFinishedStart(true)
+    setRestoreFocus(true)
+  }, [])
 
   function select(id: SectionId) {
+    if (id !== active) audio.play('move', enabledSections.findIndex(section => section.id === id))
     setSnapHue(false)
     setActive(id)
   }
 
   function begin(next: ConsoleEntry) {
+    audio.playFromGesture('select')
     setEntry({ ...next, origin: home && next.id === active ? captureConsoleOrigin(root.current) : undefined })
     setActive(next.id)
     if (ambient !== next.id) {
@@ -96,24 +119,20 @@ export default function ConsoleViewport() {
   }
 
   useEffect(() => {
-    const onVisibility = () => setVisible(!document.hidden)
-    document.addEventListener('visibilitychange', onVisibility)
     const clockTimer = window.setInterval(() => setClock(new Date()), 15000)
-    return () => {
-      document.removeEventListener('visibilitychange', onVisibility)
-      window.clearInterval(clockTimer)
-    }
+    return () => window.clearInterval(clockTimer)
   }, [])
 
   useEffect(() => {
-    if (!home || active === ambient || !visible || centreOpen) return
+    if (!home || active === ambient || paused) return
     const timer = window.setTimeout(() => setAmbient(active), consoleDuration.dwell)
     return () => window.clearTimeout(timer)
-  }, [active, ambient, visible, centreOpen, home])
+  }, [active, ambient, paused, home])
 
   useLayoutEffect(() => {
     if (home) {
       if (!wasHome.current) {
+        if (!closing) audio.play('back')
         setRestoreFocus(true)
         setEntry(undefined)
       }
@@ -134,10 +153,17 @@ export default function ConsoleViewport() {
     return () => window.clearTimeout(timer)
   }, [closing, navigate, reduce])
 
+  function requestBack() {
+    if (closing) return
+    audio.play('back')
+    setClosing(true)
+  }
+
   function openCentre() {
     if (centre.current?.open || document.querySelector('[role="dialog"][aria-modal="true"], dialog[open]')) return
     centre.current?.showModal()
     setCentreOpen(true)
+    audio.playFromGesture('open')
   }
 
   useEffect(() => {
@@ -150,14 +176,15 @@ export default function ConsoleViewport() {
         return
       }
       if (event.key === 'Escape' && !home && !document.querySelector('[role="dialog"][aria-modal="true"], dialog[open], [aria-expanded="true"]:focus')) {
-        setClosing(true)
+        requestBack()
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [home])
+  }, [home, closing, audio.play, audio.playFromGesture])
 
   function openAction(id: (typeof actions)[number]['id']) {
+    audio.play('select')
     centre.current?.close()
     go(id, id === 'ledger' ? { state: { source: 'dashboard-insight', review: 'needs-review' } } : undefined)
   }
@@ -171,15 +198,29 @@ export default function ConsoleViewport() {
   const initials = profile.callsign?.trim().split(/\s+/).map(name => name.charAt(0)).slice(0, 2).join('').toUpperCase() || 'H'
 
   return (
-    <div ref={root} className="console-viewport" data-reduced={reduce} data-paused={!visible || centreOpen} data-snap-hue={snapHue}
-      style={consoleMotionStyle}>
-      <AmbientBackground section={ambient} paused={!visible || centreOpen} reduced={reduce} reduceEffects={false} />
+    <div ref={root} className="console-viewport" data-reduced={reduce} data-reduce-effects={reduceEffects} data-paused={paused} data-snap-hue={snapHue}
+      style={consoleMotionStyle}
+      onClickCapture={event => { if (event.isTrusted && navigator.userActivation.isActive) audio.unlock() }}
+      onKeyDownCapture={event => { if (event.isTrusted && navigator.userActivation.isActive && !event.repeat && !event.metaKey && !event.ctrlKey && !event.altKey) audio.unlock() }}
+      onPointerOver={event => {
+        if (event.pointerType !== 'mouse' || !(event.target instanceof Element)) return
+        const control = event.target.closest('button:not(:disabled), a[href], summary')
+        if (!control || control.classList.contains('console-section')) return
+        if (event.relatedTarget instanceof Node && control.contains(event.relatedTarget)) return
+        audio.play('hover')
+      }}>
+      <AmbientBackground section={ambient} paused={paused} reduced={reduce} reduceEffects={reduceEffects} />
       <header className="console-topbar">
-        <button type="button" className="console-brand" aria-label="Halcyon Home" onClick={() => { if (!home) setClosing(true) }}>
+        <button type="button" className="console-brand" aria-label="Halcyon Home" onClick={() => { if (!home) requestBack() }}>
           <span aria-hidden="true" className="console-brand-letter" /><strong>HALCYON</strong>
         </button>
         <div className="console-utilities">
           <button type="button" className="console-toggle" aria-pressed="true" onClick={() => setTheme('classic')}>Console</button>
+          <button type="button" className="console-utility console-sound"
+            aria-label={!audio.soundAllowed ? 'Enable Console sound' : audio.preferences.muted ? 'Unmute Console sound' : 'Mute Console sound'}
+            onClick={audio.toggleTopbarSound}>
+            <VolumeIcon on={audio.soundAllowed && !audio.preferences.muted} />
+          </button>
           <button type="button" className="console-utility" aria-label="Control Centre" aria-haspopup="dialog" onClick={openCentre}>
             <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16M9 3v6m6 0v6m-5 0v6" /></svg>
           </button>
@@ -195,7 +236,7 @@ export default function ConsoleViewport() {
           <AnimatePresence initial={false}>
             <ConsoleRouteLayer key={home ? 'home' : view} reduced={reduce}>
               {!home && !designed && <header className="console-hub-heading" data-initial-hero={expandedHubs.includes(view) ? 'expanded' : 'compact'}>
-                <button type="button" className="console-utility" aria-label="Back to Home" onClick={() => setClosing(true)}>
+                <button type="button" className="console-utility" aria-label="Back to Home" onClick={requestBack}>
                   <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m14 5-7 7 7 7" /></svg>
                 </button>
                 <h1 ref={hubHeading} tabIndex={-1}>{hubTitles[view]}</h1>
@@ -207,7 +248,10 @@ export default function ConsoleViewport() {
           </AnimatePresence>
         </LayoutGroup>
       </main>
-      <dialog ref={centre} className="console-centre" aria-labelledby="console-centre-title" onClose={() => setCentreOpen(false)}
+      <dialog ref={centre} className="console-centre" aria-labelledby="console-centre-title" onClose={() => {
+        setCentreOpen(false)
+        audio.play('close')
+      }}
         onClick={event => { if (event.target === event.currentTarget) centre.current?.close() }}>
         <GlassSurface as="div" material="sheet" className="console-centre-sheet">
           <div className="console-centre-heading">
@@ -234,6 +278,12 @@ export default function ConsoleViewport() {
               <svg aria-hidden="true" viewBox="0 0 24 24"><path d={item.icon} /></svg>
               <span>{item.title}</span>
             </button>)}
+            <button type="button" aria-label="Ambient music" aria-pressed={audio.preferences.music} onClick={() => audio.toggle('music')}>
+              <svg aria-hidden="true" viewBox="0 0 24 24" className="console-music-icon">
+                <path d="M9 18V5l11-2v13M9 18a3 2-12 1 1-6 0 3 2-12 0 1 6 0Zm11-2a3 2-12 1 1-6 0 3 2-12 0 1 6 0Z" />
+              </svg>
+              <span>Music</span>
+            </button>
             <button type="button" aria-label="Sign out" onClick={() => void leave()}>
               <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M10 5H4v14h6m4-12 5 5-5 5m-6-5h11" /></svg>
               <span>Sign out</span>
@@ -241,6 +291,14 @@ export default function ConsoleViewport() {
           </div>
         </GlassSurface>
       </dialog>
+      {startupVisible && <ConsoleStartScreen reduced={reduce} onFinish={finishStartup} onStart={() => audio.playFromGesture('start')} />}
     </div>
   )
+}
+
+function VolumeIcon({ on }: { on: boolean }) {
+  return <svg aria-hidden="true" viewBox="0 0 24 24">
+    <path d="M11 5 6 9H3v6h3l5 4V5Z" />
+    {on ? <path d="M15 9a4 4 0 0 1 0 6m2-9a8 8 0 0 1 0 12" /> : <path d="m16 10 5 5m0-5-5 5" />}
+  </svg>
 }

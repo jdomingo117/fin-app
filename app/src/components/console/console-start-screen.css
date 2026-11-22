@@ -1,0 +1,77 @@
+.console-start-screen {
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  max-inline-size: none;
+  max-block-size: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: linear-gradient(160deg, rgb(5 11 23 / .8), rgb(7 9 22 / .94));
+  color: var(--console-ink);
+}
+.console-start-screen::backdrop { background: transparent; }
+.console-start-body {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: clamp(20px, 5dvh, 50px);
+  block-size: 100%;
+  overflow: hidden;
+  padding-inline: var(--console-gutter);
+}
+.console-start-wordmark {
+  display: grid;
+  place-items: center;
+  margin: 0;
+  font: 200 clamp(21px, 5vw, 64px)/1.3 var(--font-display);
+  text-transform: uppercase;
+}
+.console-start-wide,
+.console-start-settled {
+  grid-area: 1 / 1;
+  margin-inline-end: -.42em;
+}
+.console-start-wide {
+  margin-inline-end: -.9em;
+  letter-spacing: .9em;
+  animation: console-start-track-out var(--dur-start-wordmark) var(--ease-glide) both;
+}
+.console-start-settled {
+  letter-spacing: .42em;
+  animation: console-start-track-in var(--dur-start-wordmark) var(--ease-glide) both;
+}
+.console-start-body button {
+  min-block-size: var(--console-control-size);
+  padding-inline: 16px;
+  border-radius: var(--console-button-radius);
+  cursor: pointer;
+  color: var(--console-label);
+  font-size: 14px;
+  animation: console-start-pulse var(--dur-start-prompt) ease-in-out var(--dur-start-prompt-delay) infinite;
+}
+.console-start-body button:focus-visible { color: var(--console-ink); }
+.console-start-screen[data-leaving="true"] {
+  animation: console-start-dissolve var(--dur-start) var(--ease-fade) both;
+}
+.console-viewport[data-reduced="true"] :is(.console-start-wide, .console-start-body button, .console-start-settled) {
+  animation: none;
+}
+.console-viewport[data-reduced="true"] .console-start-wide { opacity: 0; }
+.console-viewport[data-reduced="true"] .console-start-screen[data-leaving="true"] {
+  animation: console-start-fade var(--dur-reduced) var(--ease-fade) both;
+}
+@keyframes console-start-track-out {
+  from { opacity: .74; filter: blur(10px); }
+  to { opacity: 0; filter: none; }
+}
+@keyframes console-start-track-in {
+  from { opacity: 0; filter: blur(10px); }
+  to { opacity: 1; filter: none; }
+}
+@keyframes console-start-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+@keyframes console-start-dissolve {
+  from { opacity: 1; filter: none; }
+  to { opacity: 0; filter: blur(14px) brightness(2); }
+}
+@keyframes console-start-fade { to { opacity: 0; } }

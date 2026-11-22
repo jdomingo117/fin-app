@@ -61,6 +61,8 @@ Console links, selected states and highlights use white or the current section h
 
 Date labels use the shared calendar formatter. Range controls show day before month, with years when the endpoints cross a year. Monthly axes add the year at the first plotted month after a calendar-year boundary. Requests and native date inputs retain their ISO values.
 
+Keep the tile’s opaque base gradient under its changing focused silhouette. The focused layer can appear or fade without exposing the scene through the tile.
+
 ## §4.6 · Material stack
 
 The production CSS supplies glass, hairlines, a wash and a canvas. These six slots describe console paint order. Each ambient surface is decorative, pointer-transparent and hidden from the accessibility tree.
@@ -87,7 +89,7 @@ One scene owns pointer sampling. Coalesce writes into one animation frame, centr
 | Open Control Centre | Signed-in shell button or C opens a labelled modal with `role="dialog"`, `aria-modal="true"`, inert background, focus trap and initial focus inside. Open cue, dim gradient black/.25→.70 with 14px backdrop blur and brightness .8, then sheet/bar entrances. Focused icons reveal their labels 14px above. Notifications use existing review counts and provider status. |
 | Close Control Centre | Escape, C, dismiss button or backdrop closes the top sheet with reverse whoosh. Restore focus to the opener or a surviving shell control. Ignore repeats, modifier shortcuts, composition and editable targets for C; offer a disable-shortcut setting. Prevent click-through while closing. |
 | Toggle | Show the new filled icon plus accessible pressed/checked state. Play rising/falling pair when audio is permitted. Muting takes effect immediately and always has visible feedback. |
-| Optional start screen | Off by default. Show once per signed-in home entry session when enabled. Halcyon wordmark tracking .9em→.42em via two fixed renderings, blur 10→0px over 2200ms glide. Prompt pulses opacity .35↔1 over 2400ms after 1200ms. Real button accepts click or Enter. Unlock opted-in audio from the gesture, play startup, dissolve for 1100ms to opacity 0, blur 14px and brightness 2. In reduced mode show a stable prompt and use the reduced fade. Deep links, login, recovery and onboarding retain direct entry. |
+| Optional start screen | Off by default. Show once per signed-in home entry session when enabled. Halcyon wordmark tracking .9em→.42em via two fixed renderings, blur 10→0px over 2200ms glide. Prompt pulses opacity .35↔1 over 2400ms after 1200ms. Real button accepts click or Enter. Unlock opted-in audio from the gesture, play startup, dissolve for 1100ms to opacity 0, blur 14px and brightness 2. Use an opaque background and mount Home only after the dissolve completes. In reduced mode show a stable prompt and fade for 150ms. Deep links, login, recovery and onboarding retain direct entry. |
 
 Keep focus ownership separate from financial state. Re-key only copy, summary and activity presentation. The report hooks, transaction parent lookup, chart controls and drawers keep their existing owners. Overspending and loss copy keeps its period and sign even if a neighbouring section uses a similar hue.
 
@@ -124,9 +126,13 @@ First visit is silent. The top-bar mute affects all buses including reverb tails
 
 ## §4.9 · Effects and verification
 
+Settings offers Automatic, Full, Balanced and Reduce effects. Explicit selection overrides device detection. Automatic follows the primary pointer and supported device capabilities. The system motion preference still controls motion independently. The master-volume slider controls the final gain, with a 55% initial level and individually fixed cue gains.
+
 | Condition | Expected presentation |
 | --- | --- |
 | OS reduced motion or existing app motion off | No ambient loops, parallax, sweep, breathing, scale interpolation, blur reveal or row travel animation. Layout immediately settles at its destination. Entrances use opacity only for 150ms, without stagger. Keep a static focus ring. Add a scoped reduced fade rule that takes precedence over the current universal 0.001ms CSS duration. |
+| Balanced | Default if the primary pointer is coarse, device memory is 4 GB or less, logical cores are four or fewer, or the browser reports Save-Data. Keep at most 20 particles, static ribbons and circles, moving rays and beam and an opaque glass fallback. |
+| Full | Default on other devices. Keep the full stack, including 55 particles and backdrop blur. |
 | In-app Reduce effects | Same motion policy, plus zero particles and zero decorative blur, including backdrop and sheet blur. Use opaque surfaces and preserve redacted balances with an explicit masked display if blur would be removed. Respond to toggles while mounted. |
 | Hidden tab or covered scene | Zero scheduled scene frames or running ambient animations. Resume from the committed section when visible. |
 | Keyboard, touch and contrast | Native controls have a visible or accessible name. Verify both ends of every row, touch scrolling, focus restoration, 200% zoom, editable C, forced colours, meaningful loading/error states and signed figures. For each section, check both signed-figure colours against its own backdrop at gradient extrema and intermediate transitions. Inspect Expenses/Spending (35°) with the negative figure hue (25°), and verify that signs stay identifiable in monochrome. Record any required glow cap or local gradient. |

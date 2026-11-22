@@ -11,16 +11,24 @@ export function useDocumentVisible() {
   return useSyncExternalStore(subscribe, readVisibility, () => true)
 }
 
+export function hasCoveringOverlay(except?: Element | null) {
+  const selector = 'dialog[open], [role="dialog"][aria-modal="true"]'
+  return Array.from(document.querySelectorAll(selector)).some(overlay =>
+    overlay !== except && !overlay.closest('dialog:not([open]), [inert], [hidden], [aria-hidden="true"]')
+    && overlay.getClientRects().length > 0,
+  )
+}
+
+export function isEditableShortcutTarget(event: KeyboardEvent) {
+  const editable = 'input, textarea, select, [role="textbox"], [role="searchbox"], [role="combobox"], [role="spinbutton"]'
+  return event.composedPath().some(target => target instanceof HTMLElement &&
+    (target.isContentEditable || !!target.closest(editable)))
+}
+
 export function useCoveringOverlay() {
   const [covered, setCovered] = useState(false)
   useEffect(() => {
-    const selector = 'dialog[open], [role="dialog"][aria-modal="true"]'
-    function check() {
-      const overlays = document.querySelectorAll(selector)
-      setCovered(Array.from(overlays).some(overlay =>
-        !overlay.closest('[inert], [hidden], [aria-hidden="true"]') && overlay.getClientRects().length > 0,
-      ))
-    }
+    const check = () => setCovered(hasCoveringOverlay())
     const observer = new MutationObserver(check)
     observer.observe(document.body, {
       childList: true, subtree: true, attributes: true,

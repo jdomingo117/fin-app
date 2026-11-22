@@ -1,16 +1,14 @@
 import { ConsolePreferencesProvider, useConsolePreferences } from './ConsolePreferences'
-import { useCoveringOverlay, useDocumentVisible } from './useScenePause'
+import { hasCoveringOverlay, isEditableShortcutTarget, useCoveringOverlay, useDocumentVisible } from './useScenePause'
 import { AmbientBackground } from './AmbientBackground'
 import { AnimatePresence, LayoutGroup, motion, PresenceContext, useIsPresent } from 'framer-motion'
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { useOutlet, useLocation, useNavigate } from 'react-router-dom'
-import { useAuth } from '../../contexts/AuthContext'
 import { useData } from '../../contexts/DataContext'
-import { usePortfolio } from '../../hooks/usePortfolio'
 import { useView, type View } from '../../router'
 import { enabledSections, type SectionId } from './sections'
 import { captureConsoleOrigin, type ConsoleEntry } from './ConsoleHub'
-import { GlassSurface } from './GlassSurface'
+import { ControlCentre } from './ControlCentre'
 import { ConsoleStartScreen } from './ConsoleStartScreen'
 import FoundationDemo from './FoundationDemo'
 import { consoleDuration, consoleMotionStyle, consoleTransition, useConsoleReducedMotion } from './motion'
@@ -31,13 +29,6 @@ const hubTitles: Partial<Record<View, string>> = {
 }
 
 const expandedHubs: View[] = ['dashboard', 'income', 'expenses', 'accounts']
-
-const actions = [
-  { id: 'ledger', title: 'Ledger review', icon: 'M5 4h14v16H5zM8 9h8M8 13h8M8 17h4' },
-  { id: 'transfers', title: 'Transfers', icon: 'M4 8h15l-4-4M20 16H5l4 4' },
-  { id: 'ingestion', title: 'Ingestion', icon: 'M12 3v12m-4-4 4 4 4-4M5 16v4h14v-4' },
-  { id: 'settings', title: 'Settings', icon: 'M4 7h16M4 17h16M9 4v6m6 4v6' },
-] as const
 
 function sceneSection(view: View): SectionId {
   return enabledSections.find(section => section.id === view)?.id ?? 'dashboard'
@@ -65,10 +56,8 @@ export default function ConsoleViewport() {
 }
 
 function ConsoleViewportContent({ visible }: { visible: boolean }) {
-  const { go, view, setTheme, toast } = useView()
+  const { go, view, setTheme } = useView()
   const { profile } = useData()
-  const { signOut } = useAuth()
-  const portfolio = usePortfolio()
   const location = useLocation()
   const navigate = useNavigate()
   const query = new URLSearchParams(location.search)
@@ -91,7 +80,6 @@ function ConsoleViewportContent({ visible }: { visible: boolean }) {
   const [restoreFocus, setRestoreFocus] = useState(false)
   const root = useRef<HTMLDivElement>(null)
   const hubHeading = useRef<HTMLHeadingElement>(null)
-  const centre = useRef<HTMLDialogElement>(null)
   const wasHome = useRef(home)
   const reduce = useConsoleReducedMotion()
   const designed = !home && (view === 'dashboard' || view === 'income')
@@ -165,41 +153,16 @@ function ConsoleViewportContent({ visible }: { visible: boolean }) {
     setClosing(true)
   }
 
-  function openCentre() {
-    if (centre.current?.open || document.querySelector('[role="dialog"][aria-modal="true"], dialog[open]')) return
-    centre.current?.showModal()
-    setCentreOpen(true)
-    audio.playFromGesture('open')
-  }
-
   useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey || event.isComposing || event.repeat) return
-      if (event.target instanceof Element && event.target.closest('input, textarea, select, [contenteditable="true"], [role="textbox"]')) return
-      if (event.key.toLowerCase() === 'c') {
-        if (centre.current?.open) centre.current.close()
-        else openCentre()
-        return
-      }
-      if (event.key === 'Escape' && !home && !document.querySelector('[role="dialog"][aria-modal="true"], dialog[open], [aria-expanded="true"]:focus')) {
-        requestBack()
-      }
+    function onKey(event: KeyboardEvent) {
+      if (event.key !== 'Escape' || home || event.defaultPrevented || event.isComposing
+        || isEditableShortcutTarget(event) || hasCoveringOverlay()
+        || document.querySelector('[aria-expanded="true"]:focus')) return
+      requestBack()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [home, closing, audio.play, audio.playFromGesture])
-
-  function openAction(id: (typeof actions)[number]['id']) {
-    audio.play('select')
-    centre.current?.close()
-    go(id, id === 'ledger' ? { state: { source: 'dashboard-insight', review: 'needs-review' } } : undefined)
-  }
-
-  async function leave() {
-    centre.current?.close()
-    try { await signOut() }
-    catch { toast({ title: 'Sign out failed', sub: 'Try again from the Control Centre.' }) }
-  }
+  }, [home, closing, audio.play])
 
   const initials = profile.callsign?.trim().split(/\s+/).map(name => name.charAt(0)).slice(0, 2).join('').toUpperCase() || 'H'
 
@@ -227,9 +190,7 @@ function ConsoleViewportContent({ visible }: { visible: boolean }) {
             onClick={audio.toggleTopbarSound}>
             <VolumeIcon on={audio.soundAllowed && !audio.preferences.muted} />
           </button>
-          <button type="button" className="console-utility" aria-label="Control Centre" aria-haspopup="dialog" onClick={openCentre}>
-            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16M9 3v6m6 0v6m-5 0v6" /></svg>
-          </button>
+          <ControlCentre onOpenChange={setCentreOpen} />
           <button type="button" className="console-utility" aria-label="Settings" onClick={() => go('settings')}>
             <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm0-5v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.2 2.2m8.4 8.4 2.2 2.2m0-12.8-2.2 2.2m-8.4 8.4-2.2 2.2" /></svg>
           </button>
@@ -254,49 +215,6 @@ function ConsoleViewportContent({ visible }: { visible: boolean }) {
           </AnimatePresence>
         </LayoutGroup>}
       </main>
-      <dialog ref={centre} className="console-centre" aria-labelledby="console-centre-title" onClose={() => {
-        setCentreOpen(false)
-        audio.play('close')
-      }}
-        onClick={event => { if (event.target === event.currentTarget) centre.current?.close() }}>
-        <GlassSurface as="div" material="sheet" className="console-centre-sheet">
-          <div className="console-centre-heading">
-            <h2 id="console-centre-title">Control Centre</h2>
-            <button type="button" className="console-utility" autoFocus aria-label="Close Control Centre" onClick={() => centre.current?.close()}>
-              <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18" /></svg>
-            </button>
-          </div>
-          <div className="console-centre-attention">
-            <h3>Needs attention</h3>
-            <div className="console-centre-cards">
-              {actions.slice(0, 2).map(item => {
-                const count = item.id === 'ledger' ? portfolio.data?.attention_count : portfolio.data?.transfer_leg_count
-                return <button key={item.id} type="button" onClick={() => openAction(item.id)}>
-                  <svg aria-hidden="true" viewBox="0 0 24 24"><path d={item.icon} /></svg>
-                  <span>{item.title}</span>
-                  <strong className="tabular-nums">{count === undefined ? 'Unavailable' : count === 0 ? 'All caught up' : `${count} to review`}</strong>
-                </button>
-              })}
-            </div>
-          </div>
-          <div className="console-centre-actions" aria-label="Quick actions">
-            {actions.map(item => <button key={item.id} type="button" aria-label={item.title} onClick={() => openAction(item.id)}>
-              <svg aria-hidden="true" viewBox="0 0 24 24"><path d={item.icon} /></svg>
-              <span>{item.title}</span>
-            </button>)}
-            <button type="button" aria-label="Ambient music" aria-pressed={audio.preferences.music} onClick={() => audio.toggle('music')}>
-              <svg aria-hidden="true" viewBox="0 0 24 24" className="console-music-icon">
-                <path d="M9 18V5l11-2v13M9 18a3 2-12 1 1-6 0 3 2-12 0 1 6 0Zm11-2a3 2-12 1 1-6 0 3 2-12 0 1 6 0Z" />
-              </svg>
-              <span>Music</span>
-            </button>
-            <button type="button" aria-label="Sign out" onClick={() => void leave()}>
-              <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M10 5H4v14h6m4-12 5 5-5 5m-6-5h11" /></svg>
-              <span>Sign out</span>
-            </button>
-          </div>
-        </GlassSurface>
-      </dialog>
       {startupVisible && <ConsoleStartScreen reduced={reduce} onFinish={finishStartup} onStart={() => audio.playFromGesture('start')} />}
     </div>
   )

@@ -82,6 +82,8 @@ hand to find the transfer-linker gap.
 
 ## Recent changes
 
+- 2026-11-23 — Console Phase 2 adds automatic effects tiers, an opaque start screen and a keyboard-qualified Control Centre.
+
 - 2026-11-22 — Console Phase 2 adds the full ambient scene, opt-in sound and music, and the optional start screen.
 
 - 2026-11-22 — Console Phase 2 foundation shares appearance tokens, motion presets, FocusRing, FocusRow and GlassSurface, with signed-in browser checks.
@@ -99,5 +101,3 @@ hand to find the transfer-linker gap.
 - 2026-11-20 — DataProvider clears session data on identity changes and drops superseded refresh and sync results.
 
 - 2026-11-20 — Provider sync preserves manual edits on read failure and reconciles provider anchors atomically across the full ledger.
-
-- 2026-11-20 — Strategic projection readouts and calculation breakdown now live in components/projections/.

@@ -1,0 +1,139 @@
+.console-centre {
+  --centre-safe-bottom: max(20px, env(safe-area-inset-bottom));
+  --centre-backdrop: rgb(2 4 11 / .65);
+  --centre-blur: blur(14px);
+  --centre-radius: 24px;
+  --centre-action-size: 60px;
+  --centre-attention-paint: linear-gradient(155deg, #273349, #1a2234);
+  position: fixed;
+  inset: 0;
+  margin: 0;
+  inline-size: 100%;
+  max-inline-size: none;
+  block-size: 100%;
+  max-block-size: none;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--console-ink);
+  overflow: hidden;
+}
+.console-centre[open] { display: grid; align-items: end; }
+.console-centre::backdrop { background: var(--centre-backdrop); backdrop-filter: var(--centre-blur); }
+.console-viewport:is([data-effects-tier="balanced"], [data-effects-tier="reduce"]) .console-centre::backdrop {
+  backdrop-filter: none;
+}
+.console-centre-sheet {
+  inline-size: 100%;
+  max-block-size: 85dvh;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 20px 0 var(--centre-safe-bottom);
+  border-radius: var(--centre-radius) var(--centre-radius) 0 0;
+}
+.console-centre-inner {
+  max-inline-size: 1200px;
+  margin-inline: auto;
+  padding-inline: var(--console-gutter);
+}
+.console-centre[open] .console-centre-sheet { animation: console-centre-in var(--dur-track) var(--ease-settle) both; }
+.console-centre[open][data-closing="true"] .console-centre-sheet { animation: console-centre-out var(--dur-centre-close) var(--ease-glide) both; }
+.console-centre-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.console-centre-heading h2 { font: 200 clamp(28px, 4vw, 46px)/1 var(--font-display); }
+.console-centre h3 { margin: 0 0 10px; font-size: 15px; color: var(--console-label); }
+.console-centre-cards { display: flex; gap: 14px; overflow-x: auto; scrollbar-width: none; padding: 8px; margin: -8px -8px 12px; }
+.console-centre-cards button {
+  flex: 0 0 min(258px, 83%);
+  display: grid;
+  min-height: 118px;
+  padding: 15px;
+  align-content: center;
+  justify-items: start;
+  gap: 4px;
+  background: var(--centre-attention-paint);
+  border: 1px solid var(--console-line);
+  border-radius: var(--console-card-radius);
+  text-align: start;
+  cursor: pointer;
+}
+.console-centre :is(.console-centre-cards, .console-centre-actions) svg {
+  width: 21px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.console-centre-cards span { font-size: 13px; color: var(--console-label); }
+.console-centre-cards strong { font: 200 25px/1.1 var(--font-display); }
+.console-centre-actions {
+  display: grid;
+  grid-template-columns: repeat(6, var(--centre-action-size));
+  justify-content: center;
+  gap: clamp(4px, 1.5vw, 18px);
+  padding: 26px 0 4px;
+  border-top: 1px solid var(--console-line);
+}
+.console-centre-actions button {
+  display: grid;
+  position: relative;
+  place-items: center;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 1px solid var(--console-line);
+  background: var(--console-fill);
+  cursor: pointer;
+}
+.console-centre[open] .console-centre-actions button {
+  animation: console-centre-action-in var(--dur-centre-actions) var(--ease-settle) both;
+  animation-delay: calc(var(--action-index, 0) * var(--dur-centre-icon-stagger));
+}
+.console-centre-actions button:nth-child(2) { --action-index: 1; }
+.console-centre-actions button:nth-child(3) { --action-index: 2; }
+.console-centre-actions button:nth-child(4) { --action-index: 3; }
+.console-centre-actions button:nth-child(5) { --action-index: 4; }
+.console-centre-actions button:nth-child(6) { --action-index: 5; }
+.console-centre-actions button span {
+  position: absolute;
+  inset-block-end: calc(100% + 5px);
+  inset-inline-start: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  opacity: 0;
+  font-size: 13px;
+  pointer-events: none;
+}
+.console-centre-actions button:is(:hover, :focus-visible) { background: rgb(255 255 255 / .14); }
+.console-centre-actions button:is(:hover, :focus-visible) span { opacity: 1; }
+.console-centre-actions button[aria-pressed="true"] { background: rgb(255 255 255 / .20); }
+.console-centre-actions button[aria-pressed="true"] .console-music-icon { fill: currentColor; }
+
+@media (hover: none), (pointer: coarse), (any-pointer: coarse) {
+  .console-centre-actions { padding: 16px 0 40px; }
+  .console-centre-actions button span {
+    inset-block: calc(100% + 7px) auto;
+    width: calc(100% + 3px);
+    opacity: 1;
+    white-space: normal;
+    text-align: center;
+    font-size: 12px;
+    line-height: 1.15;
+  }
+}
+@media (max-width: 600px) {
+  .console-centre { --centre-action-size: clamp(44px, 12vw, 60px); }
+  .console-centre-actions button span { font-size: 11px; }
+}
+@keyframes console-centre-in { from { transform: translateY(60px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes console-centre-out { to { transform: translateY(60px); opacity: 0; } }
+@keyframes console-centre-action-in { from { transform: translateY(24px) scale(.8); opacity: 0; } }
+@keyframes console-centre-fade-in { from { opacity: 0; } }
+@keyframes console-centre-fade-out { to { opacity: 0; } }
+.console-viewport[data-reduced="true"] .console-centre[open] .console-centre-sheet {
+  animation: console-centre-fade-in var(--dur-reduced) var(--ease-fade) both;
+  animation-duration: var(--dur-reduced) !important;
+}
+.console-viewport[data-reduced="true"] .console-centre[open][data-closing="true"] .console-centre-sheet {
+  animation-name: console-centre-fade-out;
+}
+.console-viewport[data-reduced="true"] .console-centre[open] .console-centre-actions button { animation: none; }

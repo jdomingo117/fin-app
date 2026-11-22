@@ -14,7 +14,24 @@ export function wrappedFocusIndex(currentIndex: number, count: number, backwards
 
 function focusableElements(dialog: HTMLElement) {
   return [...dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)]
-    .filter((element) => !element.matches(':disabled') && element.getClientRects().length > 0 && element.getAttribute('aria-hidden') !== 'true')
+    .filter((element) => element.tabIndex >= 0 && !element.matches(':disabled') && element.getClientRects().length > 0 && element.getAttribute('aria-hidden') !== 'true')
+}
+
+export function keepDialogTabFocus(event: Pick<KeyboardEvent, 'key' | 'shiftKey' | 'preventDefault'>, dialog: HTMLElement) {
+  if (event.key !== 'Tab') return
+  const focusable = focusableElements(dialog)
+  if (focusable.length === 0) {
+    event.preventDefault()
+    dialog.focus({ preventScroll: true })
+    return
+  }
+  const currentIndex = focusable.indexOf(document.activeElement as HTMLElement)
+  const isBoundary = currentIndex < 0
+    || (!event.shiftKey && currentIndex === focusable.length - 1)
+    || (event.shiftKey && currentIndex === 0)
+  if (!isBoundary) return
+  event.preventDefault()
+  focusable[wrappedFocusIndex(currentIndex, focusable.length, event.shiftKey)]?.focus({ preventScroll: true })
 }
 
 /**
@@ -41,22 +58,7 @@ export function useDialogFocus({
       ? document.activeElement : null
     dialog.focus({ preventScroll: true })
 
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Tab') return
-      const focusable = focusableElements(dialog)
-      if (focusable.length === 0) {
-        event.preventDefault()
-        dialog.focus({ preventScroll: true })
-        return
-      }
-      const currentIndex = focusable.indexOf(document.activeElement as HTMLElement)
-      const isBoundary = currentIndex < 0
-        || (!event.shiftKey && currentIndex === focusable.length - 1)
-        || (event.shiftKey && currentIndex === 0)
-      if (!isBoundary) return
-      event.preventDefault()
-      focusable[wrappedFocusIndex(currentIndex, focusable.length, event.shiftKey)]?.focus({ preventScroll: true })
-    }
+    const onKeyDown = (event: KeyboardEvent) => keepDialogTabFocus(event, dialog)
 
     document.addEventListener('keydown', onKeyDown)
     return () => {

@@ -194,7 +194,8 @@ test('the foundation demo shows disabled, full and reduced states', async ({ pag
   await page.keyboard.press('ArrowRight')
   const hub = page.getByRole('region', { name: 'Tinted hub surface' })
   await expect(hub).toBeFocused()
-  await expect(hub).toHaveCSS('backdrop-filter', 'blur(24px) saturate(1.5)')
+  await expect(hub).toHaveCSS('backdrop-filter', await page.locator('.console-viewport').getAttribute('data-effects-tier') === 'full'
+    ? 'blur(24px) saturate(1.5)' : 'none')
   await expect(page.getByRole('button', { name: 'Disabled activity card' })).toBeDisabled()
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await expect(page.getByText('Motion: 150 ms fades')).toBeVisible()

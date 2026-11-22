@@ -178,7 +178,7 @@
   cursor: pointer;
 }
 .console-card-emblem { display: grid; place-items: center; align-self: start; inline-size: 40px; block-size: 40px; border-radius: 50%; background: var(--console-fill); }
-.console-card-emblem svg, .console-utility svg, .console-centre-actions svg { width: 21px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.console-card-emblem svg, .console-utility svg { width: 21px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 .console-card-category { color: var(--console-label); font-size: 13px; }
 .console-card-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .console-activity-card strong { font-size: 34px; font-weight: 200; letter-spacing: -.02em; line-height: 1.08; }
@@ -226,88 +226,6 @@
 .console-hub-scroll { position: absolute; inset: 0; overflow: auto; overscroll-behavior: contain; padding: clamp(14px, 2.5vw, 36px); }
 .console-hub-scroll .glass { backdrop-filter: none; background: var(--color-surface); box-shadow: none; }
 
-.console-centre {
-  position: fixed;
-  inset: 0;
-  margin: 0;
-  inline-size: 100%;
-  max-inline-size: none;
-  block-size: 100%;
-  max-block-size: none;
-  background: transparent;
-  color: var(--console-ink);
-  overflow: hidden;
-}
-.console-centre[open] { display: grid; align-items: end; }
-.console-centre::backdrop { background: rgb(2 4 11 / .65); backdrop-filter: blur(14px); }
-.console-centre-sheet {
-  justify-self: center;
-  inline-size: min(100%, 960px);
-  max-block-size: 85dvh;
-  overflow: auto;
-  padding: 22px var(--console-gutter) max(28px, env(safe-area-inset-bottom));
-  border-radius: 24px 24px 0 0;
-  animation: console-sheet var(--dur-track) var(--ease-settle) both;
-}
-.console-centre-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-.console-centre-heading h2 { font: 200 clamp(28px, 4vw, 46px)/1 var(--font-display); }
-.console-centre-attention h3 { margin: 0 0 10px; font-size: 15px; color: var(--console-label); }
-.console-centre-cards { display: flex; gap: 14px; overflow-x: auto; scrollbar-width: none; padding: 6px; margin: -6px -6px 12px; }
-.console-centre-cards button {
-  flex: 0 0 min(258px, 83%);
-  display: grid;
-  min-height: 118px;
-  padding: 15px;
-  align-content: center;
-  justify-items: start;
-  gap: 4px;
-  background: linear-gradient(155deg, #273349, #1a2234);
-  border: 1px solid var(--console-line);
-  border-radius: var(--console-card-radius);
-  text-align: start;
-  cursor: pointer;
-}
-.console-centre-cards svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 1.5; }
-.console-centre-cards span { font-size: 13px; color: var(--console-label); }
-.console-centre-cards strong { font: 200 25px/1.1 var(--font-display); }
-.console-centre-actions { display: flex; justify-content: center; flex-wrap: wrap; gap: clamp(7px, 2vw, 18px); padding: 22px 0 4px; }
-.console-centre-actions button {
-  display: grid;
-  position: relative;
-  place-items: center;
-  width: min(60px, 14vw);
-  aspect-ratio: 1;
-  border-radius: 50%;
-  border: 1px solid var(--console-line);
-  background: var(--console-fill);
-  cursor: pointer;
-}
-.console-centre-actions button span {
-  position: absolute;
-  inset-block-end: calc(100% + 5px);
-  inset-inline-start: 50%;
-  transform: translateX(-50%);
-  white-space: nowrap;
-  opacity: 0;
-  font-size: 13px;
-  pointer-events: none;
-}
-.console-centre-actions button:is(:hover,:focus-visible) { background: rgb(255 255 255 / .14); }
-.console-centre-actions button:is(:hover,:focus-visible) span { opacity: 1; }
-
-@media (hover: none), (pointer: coarse) {
-  .console-centre-actions { padding-bottom: 40px; }
-  .console-centre-actions button span {
-    inset-block: calc(100% + 7px) auto;
-    width: calc(100% + 6px);
-    opacity: 1;
-    white-space: normal;
-    text-align: center;
-    font-size: 12px;
-    line-height: 1.15;
-  }
-}
-
 @media (max-width: 959px) {
   .console-section[data-after="true"] { --advance: calc(var(--console-tile-active) - var(--console-tile)); }
   .console-selection { position: static; margin: -7px 0 8px; }
@@ -337,7 +255,7 @@
 }
 .console-viewport[data-reduced="true"] .console-caption { animation: none; }
 .console-viewport[data-reduced="true"] :is(.console-section, .console-tile-art, .console-tile-rest, .console-tile-active) { transition: none; }
-.console-viewport[data-reduced="true"] :is(.console-centre-sheet,.console-hub) {
+.console-viewport[data-reduced="true"] .console-hub {
   animation: console-fade-in var(--dur-reduced) var(--ease-fade) both !important;
 }
 .console-viewport[data-reduced="true"] .console-hub[data-closing="true"] {
@@ -346,7 +264,6 @@
 @keyframes console-label { from { opacity: 0; transform: translateX(-14px); } to { opacity: 1; transform: translateX(0); } }
 @keyframes console-hub-in { from { opacity: 0; transform: scale(1.08); filter: blur(10px); } to { opacity: 1; transform: scale(1); filter: none; } }
 @keyframes console-hub-out { from { opacity: 1; transform: scale(1); filter: none; } to { opacity: 0; transform: scale(1.08); filter: blur(10px); } }
-@keyframes console-sheet { from { opacity: 0; transform: translateY(60px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes console-fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes console-fade-out { from { opacity: 1; } to { opacity: 0; } }
 
@@ -359,11 +276,6 @@
 }
 .console-volume input { min-inline-size: 0; }
 .console-volume output { font-variant-numeric: tabular-nums; text-align: end; }
-.console-centre-actions button[aria-pressed="true"] {
-  background: rgb(255 255 255 / .2);
-}
-.console-centre-actions button[aria-pressed="true"] .console-music-icon { fill: currentColor; }
-.console-viewport[data-reduce-effects="true"] .console-centre::backdrop { backdrop-filter: none; }
 .console-viewport[data-reduce-effects="true"] :is(.console-orb-progress, .console-orb-line, .console-area-line, .console-tile-art svg) {
   filter: none;
 }
@@ -373,9 +285,6 @@
 }
 @media (max-width: 380px) {
   .console-clock { display: none; }
-}
-@media (max-width: 600px) {
-  .console-centre-actions button { width: min(60px, 12vw); min-inline-size: 44px; }
 }
 
 .console-effects-setting {
@@ -394,4 +303,3 @@
   border-radius: var(--console-button-radius);
   color: var(--console-ink);
 }
-.console-viewport[data-effects-tier="balanced"] .console-centre::backdrop { backdrop-filter: none; }

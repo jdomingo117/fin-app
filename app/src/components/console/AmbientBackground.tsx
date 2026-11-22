@@ -11,6 +11,8 @@ const driftX = 60
 const driftY = 360
 const settling = 1200
 const tau = Math.PI * 2
+const particleSampleInterval = 1000 / 30
+const particleRasterScale = .75
 
 // Stable coordinates keep the same scene mounted through section and route changes.
 function scatter(index: number, salt: number) {
@@ -26,13 +28,15 @@ function makeParticles(count: number): Particle[] {
   }))
 }
 
-const circles = Array.from({ length: 9 }, (_, index) => ({
-  '--light-x': `${scatter(index, 5) * 100}%`,
-  '--light-y': `${15 + scatter(index, 6) * 85}%`,
-  '--light-size': `${68 + scatter(index, 7) * 154}px`,
-  '--light-cycle': `${18 + scatter(index, 8) * 17}s`,
-  '--light-delay': `${-scatter(index, 9) * 24}s`,
-}) as CSSProperties)
+const circleCount = 9
+const circlePaint = Array.from({ length: circleCount }, (_, index) => {
+  const x = scatter(index, 5) * 100
+  const y = 15 + scatter(index, 6) * 85
+  const radius = 34 + scatter(index, 7) * 77
+  return `radial-gradient(circle ${radius}px at ${x}% ${y}%, var(--ambient-circle-ink), transparent 100%)`
+}).join(', ')
+
+const depths = { background: [-10, -8], ribbons: [-26, -18], particles: [-48, -30] } as const
 
 const ribbons = [18, 23, 29, 35].map((duration, index) => ({
   '--ribbon-cycle': `${duration}s`,
@@ -63,15 +67,17 @@ export function AmbientBackground({ section, paused, reduced, reduceEffects, cou
 
   useEffect(() => {
     if (!scene.current || paused || reduced) return
-    const layer = scene.current
+    const planes = Array.from(scene.current.querySelectorAll<HTMLElement>('[data-depth]'))
+      .map(node => ({ node, distance: depths[node.dataset.depth as keyof typeof depths] }))
     const pointer = window.matchMedia('(any-pointer: fine)')
     let frame = 0
     let x = 0, y = 0
     function paint() {
       frame = 0
       if (profile) performance.mark('console.ambient.pointer.start')
-      layer.style.setProperty('--ambient-pointer-x', String(x))
-      layer.style.setProperty('--ambient-pointer-y', String(y))
+      for (const { node, distance: [dx, dy] } of planes) {
+        node.style.transform = `translate3d(${x * dx}px, ${y * dy}px, 0)`
+      }
       if (profile) performance.measure('console.ambient.pointer', 'console.ambient.pointer.start')
     }
     function queue(nextX: number, nextY: number) {
@@ -114,7 +120,7 @@ export function AmbientBackground({ section, paused, reduced, reduceEffects, cou
     ink.fillStyle = halo
     ink.fillRect(0, 0, 16, 16)
 
-    let width = 1, height = 1, previous = 0, frame = 0
+    let width = 1, height = 1, previous = 0, lastDraw = -Infinity, frame = 0
     function draw() {
       if (profile) performance.mark('console.ambient.particles.start')
       context!.clearRect(0, 0, width, height)
@@ -131,13 +137,21 @@ export function AmbientBackground({ section, paused, reduced, reduceEffects, cou
     function tick(time: number) {
       if (previous) elapsed.current += time - previous
       previous = time
-      draw()
+      // Particle drift is subpixel between these samples. The surrounding
+      // parallax and material transitions still composite at display rate.
+      if (time - lastDraw >= particleSampleInterval - 1) {
+        draw()
+        lastDraw = time
+      }
       frame = requestAnimationFrame(tick)
     }
     const observer = new ResizeObserver(([entry]) => {
-      width = canvas.width = Math.max(1, Math.round(entry.contentRect.width))
-      height = canvas.height = Math.max(1, Math.round(entry.contentRect.height))
-      if (paused || reduced) draw()
+      width = Math.max(1, entry.contentRect.width)
+      height = Math.max(1, entry.contentRect.height)
+      canvas.width = Math.ceil(width * particleRasterScale)
+      canvas.height = Math.ceil(height * particleRasterScale)
+      context.setTransform(canvas.width / width, 0, 0, canvas.height / height, 0, 0)
+      draw()
     })
     observer.observe(canvas)
     if (!paused && !reduced) frame = requestAnimationFrame(tick)
@@ -159,7 +173,7 @@ export function AmbientBackground({ section, paused, reduced, reduceEffects, cou
     </div>
     {(!reduceEffects && !reduced) && <div className="console-ambient-plane console-ribbon-plane" data-depth="ribbons">
       {ribbons.map((style, i) => <i key={i} className="console-ribbon" style={style} />)}
-      {circles.map((style, i) => <i key={i} className="console-light-circle" style={style} />)}
+      <div className="console-light-circles" data-light-count={circleCount} style={{ backgroundImage: circlePaint }} />
     </div>}
     {!reduceEffects && <div className="console-ambient-plane" data-depth="particles">
       <canvas ref={field} className="console-particles" data-particle-count={particles.length} />

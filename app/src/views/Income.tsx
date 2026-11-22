@@ -1,4 +1,5 @@
 import {reportParent} from '../lib/reportParent'
+import { FocusRow } from '../components/console/FocusRow'
 import { useMemo, useState, useEffect, type ReactNode } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -23,7 +24,7 @@ import StrategicProjections from '../components/StrategicProjections'
 import { ease, gridStagger } from '../components/motion'
 import { useView } from '../router'
 import { DateRangePicker, MultiSelect } from '../components/Controls'
-import ConsoleHubSpike, { ConsoleChartValues, ConsoleModule, consoleMoney, consoleRowKeys, type ConsoleEntry } from '../components/console/ConsoleHubSpike'
+import ConsoleHubSpike, { ConsoleChartValues, ConsoleModule, consoleMoney, type ConsoleEntry } from '../components/console/ConsoleHubSpike'
 import type { ConsoleOutlet } from '../components/console/ConsoleViewportSpike'
 import TransactionCategoryDrawer from '../components/TransactionCategoryDrawer'
 
@@ -244,7 +245,7 @@ function IncomeAnalyzer({ from, to, accounts, dbAccountsLength, consoleHub }: {
       {consoleHub.projections ? <StrategicProjections /> : <>
         <ReportStatus report={report} label="Income report" />
         {report.data && <>
-          <div className="console-module-grid" onKeyDown={consoleRowKeys}>
+          <FocusRow label="Primary modules" className="console-module-grid">
             <ConsoleModule title="Cash flow pacing" kind="chart" tools={<div className="console-chart-legend">
               <span>Inflow</span><span>Net after spending</span>
             </div>}>
@@ -262,8 +263,8 @@ function IncomeAnalyzer({ from, to, accounts, dbAccountsLength, consoleHub }: {
               </ConsoleModule>
               <ConsoleModule title="Recent deposits" kind="flat" order={2}>{depositsContent}</ConsoleModule>
             </div>
-          </div>
-          <div className="console-module-secondary" onKeyDown={consoleRowKeys}>
+          </FocusRow>
+          <FocusRow label="Secondary modules" className="console-module-secondary">
             <ConsoleModule title="Income sources" kind="flat" order={3}>{sourcesContent}</ConsoleModule>
             <ConsoleModule title={`Inflow by ${periodUnit}`} kind="flat" order={4}>
               <dl className="console-module-readouts">
@@ -271,7 +272,7 @@ function IncomeAnalyzer({ from, to, accounts, dbAccountsLength, consoleHub }: {
                 <div><dt>{periodUnit === 'day' ? 'Days in range' : `${periodUnit === 'week' ? 'Weeks' : 'Months'} in range`}</dt><dd>{labels.length}</dd></div>
               </dl>
             </ConsoleModule>
-          </div>
+          </FocusRow>
         </>}
         {drawer}
       </>}

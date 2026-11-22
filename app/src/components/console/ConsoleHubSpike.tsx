@@ -1,8 +1,8 @@
 import { animate, motion, useMotionValue, useMotionValueEvent, useScroll, useTransform } from 'framer-motion'
-import { useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
+import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { fmt, fmtCents } from '../../data'
 import { consoleProjection, useConsoleReducedMotion } from './motion'
-import type { SectionId } from './ConsoleDashboardSpike'
+import type { SectionId } from './sections'
 import './console-hub.css'
 
 export type ConsoleFigure = { label: string; cents?: number; signed?: boolean }
@@ -138,19 +138,6 @@ export function ConsoleHeroArt({ id, art, reduced, origin }: {
     </motion.figure>
     </ConsoleHandoff>
   )
-}
-
-export function consoleRowKeys(event: KeyboardEvent<HTMLElement>) {
-  if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
-  const current = event.target instanceof HTMLElement ? event.target.closest<HTMLElement>('[data-console-row-item]') : null
-  if (!current) return
-  const items = Array.from(event.currentTarget.querySelectorAll<HTMLElement>('[data-console-row-item]'))
-  const index = items.indexOf(current)
-  const next = items[index + (event.key === 'ArrowRight' ? 1 : -1)]
-  if (next) {
-    event.preventDefault()
-    next.focus()
-  }
 }
 
 export function ConsoleModule({ title, tools, children, kind, order = 0 }: {

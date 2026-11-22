@@ -1,8 +1,9 @@
 import {reportParent} from '../lib/reportParent'
+import { FocusRow } from '../components/console/FocusRow'
 import { useEffect, useState, type ReactNode } from 'react'
 import { useNavigate, useOutletContext } from 'react-router-dom'
-import ConsoleDashboardSpike from '../components/console/ConsoleDashboardSpike'
-import ConsoleHubSpike, { ConsoleChartValues, ConsoleModule, consoleRowKeys, cumulativeValues, type ConsoleArt, type ConsoleFigure } from '../components/console/ConsoleHubSpike'
+import ConsoleHome from '../components/console/ConsoleHome'
+import ConsoleHubSpike, { ConsoleChartValues, ConsoleModule, cumulativeValues, type ConsoleArt, type ConsoleFigure } from '../components/console/ConsoleHubSpike'
 import { DateRangePicker, MultiSelect } from '../components/Controls'
 import { usePeriodRange } from '../hooks/usePeriodRange'
 import type { ConsoleOutlet } from '../components/console/ConsoleViewportSpike'
@@ -146,7 +147,7 @@ export default function Dashboard() {
       return active === 'income' ? isEarnedIncome(transaction) : expenseEffectCents(transaction) !== 0
     })
     return <>
-      <ConsoleDashboardSpike
+      <ConsoleHome
         activeId={active}
         selectSection={select}
         restoreFocus={restoreFocus}
@@ -258,7 +259,7 @@ export default function Dashboard() {
       art={netWorthTrend.length ? { label: 'Monthly net worth', values: netWorthTrend } : consoleRoute.entry?.id === 'dashboard' ? consoleRoute.entry.art : undefined}
       onBack={consoleRoute.back}>
       <ReportStatus report={summary} label="Portfolio" />
-      <div className="console-module-grid" onKeyDown={consoleRowKeys}>
+      <FocusRow label="Primary modules" className="console-module-grid">
         <ConsoleModule title="Cumulative net worth" kind="chart" tools={<div className="console-chart-switch">
           <button type="button" aria-pressed={chartType === 'line'} onClick={() => setChartType('line')}>Line</button>
           <button type="button" aria-pressed={chartType === 'bar'} onClick={() => setChartType('bar')}>Bar</button>
@@ -284,8 +285,8 @@ export default function Dashboard() {
             </ul>
           </ConsoleModule>
         </div>
-      </div>
-      <div className="console-module-secondary" onKeyDown={consoleRowKeys}>
+      </FocusRow>
+      <FocusRow label="Secondary modules" className="console-module-secondary">
         <ConsoleModule title="Spending insights" kind="flat" order={3}
           tools={topCategory && <button type="button" className="console-chart-values"
             onClick={() => go('expenses', { state: { source: 'dashboard-insight', from: flowFrom, to: flowTo } })}>
@@ -302,7 +303,7 @@ export default function Dashboard() {
           {flow.data && spendingInsights}
         </ConsoleModule>
         <ConsoleModule title="Recent activity" kind="flat" order={4}>{recent}</ConsoleModule>
-      </div>
+      </FocusRow>
       {drawer}
     </ConsoleHubSpike>
   }

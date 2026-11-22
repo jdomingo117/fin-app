@@ -5,7 +5,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useData } from '../../contexts/DataContext'
 import { usePortfolio } from '../../hooks/usePortfolio'
 import { useView, type View } from '../../router'
-import { enabledSections, type SectionId } from './ConsoleDashboardSpike'
+import { enabledSections, type SectionId } from './sections'
 import { captureConsoleOrigin, type ConsoleEntry } from './ConsoleHubSpike'
 import { consoleDuration, consoleMotionStyle, consoleTransition, useConsoleReducedMotion } from './motion'
 

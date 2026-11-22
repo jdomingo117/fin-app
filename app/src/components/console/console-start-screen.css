@@ -42,19 +42,30 @@
   animation: console-start-track-in var(--dur-start-wordmark) var(--ease-glide) both;
 }
 .console-start-body button {
+  position: relative;
   min-block-size: var(--console-control-size);
   padding-inline: 16px;
   border-radius: var(--console-button-radius);
   cursor: pointer;
   color: var(--console-label);
   font-size: 14px;
+}
+.console-start-body button::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: var(--console-glow-low);
+  opacity: 0;
+  pointer-events: none;
   animation: console-start-pulse var(--dur-start-prompt) ease-in-out var(--dur-start-prompt-delay) infinite;
 }
 .console-start-body button:focus-visible { color: var(--console-ink); }
 .console-start-screen[data-leaving="true"] {
   animation: console-start-dissolve var(--dur-start) var(--ease-fade) both;
 }
-.console-viewport[data-reduced="true"] :is(.console-start-wide, .console-start-body button, .console-start-settled) {
+.console-viewport[data-reduced="true"] :is(.console-start-wide, .console-start-settled),
+.console-viewport[data-reduced="true"] .console-start-body button::before {
   animation: none;
 }
 .console-viewport[data-reduced="true"] .console-start-wide { opacity: 0; }

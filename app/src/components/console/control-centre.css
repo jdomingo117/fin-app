@@ -124,6 +124,9 @@
   .console-centre { --centre-action-size: clamp(44px, 12vw, 60px); }
   .console-centre-actions button span { font-size: 11px; }
 }
+@media (max-width: 360px) {
+  .console-centre-inner { padding-inline: max(14px, env(safe-area-inset-left), env(safe-area-inset-right)); }
+}
 @keyframes console-centre-in { from { transform: translateY(60px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 @keyframes console-centre-out { to { transform: translateY(60px); opacity: 0; } }
 @keyframes console-centre-action-in { from { transform: translateY(24px) scale(.8); opacity: 0; } }

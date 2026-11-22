@@ -3,13 +3,14 @@ import { AnimatePresence } from 'framer-motion'
 import {
   BrowserRouter, Navigate, Outlet, Route, Routes, useLocation, useNavigate,
 } from 'react-router-dom'
-import { ViewContext, VIEW_PATHS, pathToView, navNumber, type Appearance, type View } from './router'
+import { ViewContext, VIEW_PATHS, pathToView, navNumber, useView, type Appearance, type View } from './router'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { DataProvider } from './contexts/DataContext'
 import { BudgetProvider } from './contexts/BudgetContext'
 import { RequireAnon, RequireAuth, RequireOnboarded } from './components/Guards'
 import ViewDataBoundary, { ViewLoadingState } from './components/ViewDataBoundary'
 import SceneBackground from './three/SceneBackground'
+import ConsoleViewportSpike from './components/console/ConsoleViewportSpike'
 import Shell from './components/Shell'
 import ThemeToggle from './components/ThemeToggle'
 import Boot from './components/Boot'
@@ -42,6 +43,8 @@ function LazyDataRoute({ index, title, sub, children }: { index: string; title: 
 
 /** Chrome shared by the signed-in views. */
 function ShellLayout() {
+  const { theme } = useView()
+  if (theme === 'console') return <ConsoleViewportSpike />
   return (
     <Shell>
       <Outlet />
@@ -94,25 +97,26 @@ function AppFrame({
   const location = useLocation()
   const view = pathToView(location.pathname)
   const { session, recoveryError, retryAccountRecovery } = useAuth()
-  // During the feel review, only Dashboard renders the opted-in appearance.
-  const consoleDashboard = theme === 'console' && view === 'dashboard' && !!session
-  const effectiveDark = consoleDashboard || dark
+  const consoleViewport = theme === 'console' && !!session
+    && view !== 'login' && view !== 'onboarding' && view !== 'operation-status'
+    && !location.pathname.startsWith('/auth/') && !recoveryError
+  const effectiveDark = consoleViewport || dark
 
   useLayoutEffect(() => {
     const root = document.documentElement
-    if (consoleDashboard) root.dataset.theme = 'console'
+    if (consoleViewport) root.dataset.theme = 'console'
     else delete root.dataset.theme
     root.classList.toggle('dark', effectiveDark)
-  }, [consoleDashboard, effectiveDark])
+  }, [consoleViewport, effectiveDark])
 
   return (
     <ViewBridge
-      theme={consoleDashboard ? 'console' : 'classic'} setTheme={setTheme}
+      theme={consoleViewport ? 'console' : 'classic'} setTheme={setTheme}
       dark={effectiveDark} setDark={setDark}
       motionOn={motionOn} setMotionOn={setMotionOn}
       fireToast={fireToast}
     >
-      {!consoleDashboard && <SceneBackground view={view} motionOn={motionOn} dark={dark} />}
+      {!consoleViewport && <SceneBackground view={view} motionOn={motionOn} dark={dark} />}
 
       <AnimatePresence>
         {!booted && <Boot key="boot" onDone={() => setBooted(true)} />}
@@ -129,7 +133,7 @@ function AppFrame({
           </div>
         </div>
       ) : booted && (
-        <Routes location={location} key={location.pathname}>
+        <Routes location={location} key={consoleViewport ? 'console-viewport' : location.pathname}>
           {/* Pre-auth */}
           <Route element={<BareLayout />}>
             <Route path="/login" element={<RequireAnon><Login /></RequireAnon>} />
@@ -151,7 +155,7 @@ function AppFrame({
               </RequireAuth>
             }
           >
-            <Route path="/" element={<Landing />} />
+            <Route path="/" element={consoleViewport ? <Navigate to="/dashboard" replace /> : <Landing />} />
             <Route path="/dashboard" element={<DataRoute index="01 — Command" title="Dashboard" sub="Your finances at a glance"><Dashboard /></DataRoute>} />
             <Route path="/accounts" element={<LazyDataRoute index="02 — Accounts" title="Accounts" sub="Balances, activity & connections"><Accounts /></LazyDataRoute>} />
             <Route path="/income" element={<LazyDataRoute index="03 — Income" title="Income" sub="Inflow analysis & patterns"><Income /></LazyDataRoute>} />
@@ -169,7 +173,9 @@ function AppFrame({
         </Routes>
       )}
 
-      {booted && view!=='budget' && !consoleDashboard && <ThemeToggle />}
+      {booted && view!=='budget' && !consoleViewport && (
+        <ThemeToggle onConsole={view === 'dashboard' && session ? () => setTheme('console') : undefined} />
+      )}
       {booted && session && <ProviderSyncNotice />}
       <MilestoneToast toast={toast} />
     </ViewBridge>

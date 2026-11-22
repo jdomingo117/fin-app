@@ -131,8 +131,19 @@ First visit is silent. The top-bar mute affects all buses including reverb tails
 After the Phase 2a feel review, run the applicable checks against a deterministic fictional-data fixture with classic light, classic dark and console. Check runtime switching without reload, tokens in CSS and Framer Motion targets, keyboard reachability, both effect reductions, and fresh/persisted/muted sound. Record screen and device evidence with each commit. Phase 5 adds matched Playwright captures, axe, manual interaction and the end-to-end sound matrix. The component demos provide coverage before Dashboard integration. [Screen and verification plan](console-rollout.md)
 
 
-## Approved Phase 2a review gate
+## Phase 2a review gate
 
 Build a Dashboard-only spike behind the appearance flag with the rough section row, ambient colour handoff and keyed previews using the current Dashboard data. Leave native navigation available. Capture a local Chrome DevTools trace and stop for the owner to judge the feel. Automated test coverage and primitive hardening begin after that review.
 
 Use fixed-layer cross-fades for title tracking and tile silhouettes. Draw the ring outside the clipped artwork. Compare the committed export with matched fictional Dashboard states during qualification. [Reference export](../../prototypes/Home%20%E2%80%94%20console%20UI-html/Main.dc.html)
+
+
+## Phase 2b viewport spike
+
+Home fills 100dvh with horizontal activity overflow and a full-bleed ambient scene behind the transparent header. The header holds the Halcyon home action, Console toggle, Control Centre button, Settings, avatar and clock. Sections and Control Centre provide navigation in Console. Classic owns its numbered rail.
+
+Opening a section enters its existing route in the persistent viewport frame. Overview uses `/dashboard?hub=overview`, Income uses `/income`, and the other destinations use their existing routes. The full-screen composition has an ambient backdrop and an opaque, independently scrollable reading surface. Back or Escape reverses the zoom and restores the initiating tile on Home. The rough modal Control Centre provides Ledger review, Transfers, Ingestion, Settings and Sign out. Review counts come from the portfolio report.
+
+The hero displays the headline amount in tabular 200-weight type at clamp(48px, 6.4vw, 96px). The label names the figure and the period. Secondary values use 28px. The orb uses existing monthly net worth or daily flow buckets, with the graph marked decorative and a text equivalent for available series. Cards use the existing 300px width, a category icon and visually truncated titles with accessible full names. Mask and fade tiles as they pass the anchor. The row omits step buttons.
+
+Income and Expenses retain the inclusive 30-day reporting window and show its dates and latest available transaction date. Activity comes from the bounded recent list filtered to matching dates and reporting classifications. The zero state names the empty period. Income stays at 85° and Spending at 35°. For Income, tile L is .74/.60/.42 and C .17. For Spending, L is .73/.57/.39 and C .17. Compensated card and ambient tokens also lift the warm palettes. Review the signed figure contrast against each adjusted section in hardening.

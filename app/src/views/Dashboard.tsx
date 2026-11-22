@@ -1,6 +1,9 @@
 import {reportParent} from '../lib/reportParent'
-import { useRef, useState } from 'react'
+import { useState } from 'react'
+import { useNavigate, useOutletContext } from 'react-router-dom'
 import ConsoleDashboardSpike from '../components/console/ConsoleDashboardSpike'
+import type { ConsoleOutlet } from '../components/console/ConsoleViewportSpike'
+import { expenseEffectCents, isEarnedIncome } from '../lib/classification'
 import HeroCard from '../components/HeroCard'
 import { Screen, ViewHeader, Grid } from '../components/Screen'
 import Tile from '../components/Tile'
@@ -16,7 +19,7 @@ import { usePortfolio } from '../hooks/usePortfolio'
 import { useReport } from '../hooks/useReport'
 import ReportStatus from '../components/ReportStatus'
 import { useView } from '../router'
-import { addDays, iso } from '../lib/period'
+import { addDays, dayLabel, iso } from '../lib/period'
 
 // Single source of truth for the Recent Activity tile, so its row count and
 // its "last N" tag text can't drift apart the way they used to (tag said 5,
@@ -71,7 +74,8 @@ function getAccountIcon(type: string, name: string) {
 export default function Dashboard() {
   const { accounts, refreshData } = useData()
   const { go, toast, theme, motionOn } = useView()
-  const details = useRef<HTMLDivElement>(null)
+  const consoleRoute = useOutletContext<ConsoleOutlet | null>()
+  const navigate = useNavigate()
   const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null)
   const parent = useReport(selectedTransactionId,tenant=>reportParent(tenant,selectedTransactionId!,accounts),!!selectedTransactionId)
 
@@ -88,39 +92,70 @@ export default function Dashboard() {
   const activity = useReport('recent', tenant => latestLines(tenant,RECENT_ACTIVITY_COUNT))
   const history = useReport('monthly',monthlyWorth)
   const [chartType, setChartType] = useState<'line' | 'bar'>('line')
-  const consolePreview = theme === 'console' && (
-    <ConsoleDashboardSpike
-      motionOn={motionOn}
-      covered={!!selectedTransactionId}
-      activity={activity.data ?? undefined}
-      openTransaction={transaction => setSelectedTransactionId(transaction.parentTransactionId ?? transaction.id)}
-      figures={{
-        dashboard: [
-          { label: 'Net worth', cents: summary.data?.net_worth_cents },
-          { label: '30-day net movement', cents: summary.data?.net_movement_30d_cents, signed: true },
-        ],
-        accounts: [
-          { label: 'Cash assets', cents: summary.data?.cash_asset_cents },
-          { label: 'Investment assets', cents: summary.data?.investment_asset_cents },
-        ],
-        income: [{ label: '30-day inflow', cents: flow.data?.periods.current.earned_cents }],
-        expenses: [{ label: '30-day spending', cents: flow.data?.periods.current.expense_cents }],
-      }}
-      open={section => {
-        if (section === 'dashboard') {
-          details.current?.scrollIntoView({ block: 'start' })
-          details.current?.focus({ preventScroll: true })
-        } else if (section === 'expenses') {
-          go(section, { state: { source: 'dashboard-insight', from: thirtyDaysAgoIso, to: today } })
-        } else {
-          go(section)
-        }
-      }}
+  const drawer = <>
+    {selectedTransactionId && <ReportStatus report={parent} label="Transaction details" />}
+    <TransactionCategoryDrawer
+      transaction={parent.data}
+      onClose={() => setSelectedTransactionId(null)}
+      onChanged={refreshAfterTransactionEdit}
     />
-  )
-  const dashboardTitle = <ViewHeader index="01 — Command" title="Dashboard" sub="Your finances at a glance" />
-  const header = consolePreview ? <div ref={details} tabIndex={-1}>{dashboardTitle}</div> : dashboardTitle
-  if (!summary.data || !flow.data) return <Screen>{consolePreview}{header}
+  </>
+  if (theme === 'console' && consoleRoute?.home) {
+    const { active, select, restoreFocus } = consoleRoute
+    const flowPeriod = active === 'income' || active === 'expenses'
+    const latestDate = activity.data?.[0]?.date
+    const fromYear = thirtyDaysAgoIso.slice(0, 4)
+    const todayYear = today.slice(0, 4)
+    const fromLabel = fromYear === todayYear ? dayLabel(thirtyDaysAgoIso) : `${dayLabel(thirtyDaysAgoIso)} ${fromYear}`
+    const cards = activity.data?.filter(transaction => {
+      if (!flowPeriod) return active === 'dashboard'
+      if (transaction.date < thirtyDaysAgoIso || transaction.date > today || transaction.isTransfer) return false
+      return active === 'income' ? isEarnedIncome(transaction) : expenseEffectCents(transaction) !== 0
+    })
+    return <>
+      <ConsoleDashboardSpike
+        activeId={active}
+        selectSection={select}
+        restoreFocus={restoreFocus}
+        motionOn={motionOn}
+        covered={!!selectedTransactionId}
+        activity={cards}
+        period={`${fromLabel} – ${dayLabel(today)} ${todayYear}`}
+        latestDate={latestDate ? `${dayLabel(latestDate)} ${latestDate.slice(0, 4)}` : undefined}
+        openTransaction={transaction => setSelectedTransactionId(transaction.parentTransactionId ?? transaction.id)}
+        figures={{
+          dashboard: [
+            { label: 'Net worth', cents: summary.data?.net_worth_cents },
+            { label: '30-day net movement', cents: summary.data?.net_movement_30d_cents, signed: true },
+          ],
+          accounts: [
+            { label: 'Cash assets', cents: summary.data?.cash_asset_cents },
+            { label: 'Investment assets', cents: summary.data?.investment_asset_cents },
+          ],
+          income: [{ label: 'Inflow', cents: flow.data?.periods.current.earned_cents }],
+          expenses: [{ label: 'Net spending', cents: flow.data?.periods.current.expense_cents }],
+        }}
+        trends={{
+          dashboard: { label: 'Monthly net worth', values: history.data?.map(point => point.value) ?? [] },
+          income: { label: 'Daily inflow for this period', values: flow.data?.buckets.map(point => point.earned_cents) ?? [] },
+          expenses: { label: 'Daily net spending for this period', values: flow.data?.buckets.map(point => point.expense_cents) ?? [] },
+        }}
+        open={section => {
+          select(section)
+          if (section === 'dashboard') {
+            navigate('/dashboard?hub=overview')
+          } else if (section === 'expenses') {
+            go(section, { state: { source: 'dashboard-insight', from: thirtyDaysAgoIso, to: today } })
+          } else {
+            go(section)
+          }
+        }}
+      />
+      {drawer}
+    </>
+  }
+  const header = <ViewHeader index="01 — Command" title="Dashboard" sub="Your finances at a glance" />
+  if (!summary.data || !flow.data) return <Screen>{header}
     <ReportStatus report={summary} label="Portfolio" /><ReportStatus report={flow} label="Cash flow" /></Screen>
   const inc = flow.data.periods.current.earned_cents
   const spend = flow.data.periods.current.expense_cents
@@ -175,7 +210,6 @@ export default function Dashboard() {
 
   return (
     <Screen>
-      {consolePreview}
       {header}
       {/* 
         GRID LAYOUT GUIDE:
@@ -329,12 +363,7 @@ export default function Dashboard() {
           ))}
         </Tile>
       </Grid>
-      {selectedTransactionId && <ReportStatus report={parent} label="Transaction details" />}
-      <TransactionCategoryDrawer
-        transaction={parent.data}
-        onClose={() => setSelectedTransactionId(null)}
-        onChanged={refreshAfterTransactionEdit}
-      />
+      {drawer}
     </Screen>
   )
 }

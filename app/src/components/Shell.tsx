@@ -24,7 +24,7 @@ function Icon({ d, onClick, label }: { d: string; onClick?: () => void; label: s
   )
 }
 
-function RailItem({ item, badge, badgeLabel, compact }: { item: (typeof NAV)[number]; badge?: number; badgeLabel?: string; compact?: boolean }) {
+function RailItem({ item, badge, badgeLabel }: { item: (typeof NAV)[number]; badge?: number; badgeLabel?: string }) {
   const { view, go } = useView()
   const [hover, setHover] = useState(false)
   const active = view === item.id
@@ -53,7 +53,7 @@ function RailItem({ item, badge, badgeLabel, compact }: { item: (typeof NAV)[num
       </span>
       <span
         className={`relative ml-1.5 h-[1.5px] flex-shrink-0 bg-faint transition-[width] duration-300 ${
-          show && !compact ? 'w-[34px]' : 'w-[14px]'
+          show ? 'w-[34px]' : 'w-[14px]'
         }`}
       >
         {active && (
@@ -64,13 +64,13 @@ function RailItem({ item, badge, badgeLabel, compact }: { item: (typeof NAV)[num
           />
         )}
       </span>
-      {!compact && <span
+      <span
         className={`ml-3 hidden overflow-hidden whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.16em] text-ink transition-all duration-300 md:inline ${
           show ? 'md:max-w-[160px] md:opacity-100' : 'md:max-w-0 md:opacity-0'
         }`}
       >
         {label}
-      </span>}
+      </span>
     </button>
   )
 }
@@ -85,7 +85,7 @@ function timeAgo(iso: string, now = Date.now()): string {
 }
 
 export default function Shell({ children }: { children: ReactNode }) {
-  const { view, go, toast, theme, setTheme } = useView()
+  const { view, go, toast } = useView()
   const { profile, accounts } = useData()
   // Real sync status only: the latest bank-provider sync. Imported accounts have no sync to report.
   const lastSync = accounts.map((a) => (a.accountConnectionId ? a.lastSyncedAt : undefined)).filter((d): d is string => !!d).sort().at(-1)
@@ -126,17 +126,6 @@ export default function Shell({ children }: { children: ReactNode }) {
           <span className="hidden border-l border-white/15 pl-3 text-[12px] text-white/45 sm:inline">Private Wealth</span>
         </button>
         <div className="flex items-center gap-2">
-          {view === 'dashboard' && (
-            <button
-              type="button"
-              aria-pressed={theme === 'console'}
-              title="Toggle the Console preview"
-              className="min-h-11 cursor-pointer rounded-lg px-2 text-sm text-white hover:bg-white/10 sm:px-3"
-              onClick={() => setTheme(theme === 'console' ? 'classic' : 'console')}
-            >
-              Console
-            </button>
-          )}
           <Icon
             label="Settings"
             onClick={() => go('settings')}
@@ -151,9 +140,7 @@ export default function Shell({ children }: { children: ReactNode }) {
       </motion.header>
 
       {/* body: rail + screen */}
-      <div className={theme === 'console'
-        ? 'grid min-h-0 min-w-0 grid-cols-[40px_minmax(0,1fr)] gap-2 pl-3 sm:pl-5'
-        : 'grid min-h-0 min-w-0 grid-cols-[52px_minmax(0,1fr)] gap-2 px-4 py-4 md:grid-cols-[188px_minmax(0,1fr)] md:px-8'}>
+      <div className="grid min-h-0 min-w-0 grid-cols-[52px_minmax(0,1fr)] gap-2 px-4 py-4 md:grid-cols-[188px_minmax(0,1fr)] md:px-8">
         <motion.nav
           className="flex flex-col justify-center gap-5"
           animate={{ y: view === 'landing' ? -26 : 0 }}
@@ -163,7 +150,6 @@ export default function Shell({ children }: { children: ReactNode }) {
             <RailItem
               key={item.id}
               item={item}
-              compact={theme === 'console'}
               badge={item.id === 'transfers' ? pendingTransferReview : item.id === 'ledger' ? pendingCategoryReview : undefined}
               badgeLabel={item.id === 'transfers'
                 ? `${pendingTransferReview} transactions need transfer review`

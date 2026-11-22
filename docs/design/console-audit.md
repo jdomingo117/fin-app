@@ -67,3 +67,10 @@ Sources include the [font request and first-paint theme bootstrap](../../app/ind
 ## Phase 2a evidence boundary
 
 Evidence includes source, historical Budget captures and the local Chromium prototype geometry/activation check above. The Dashboard spike is for a feel review, with a local Chrome trace. Physical-device traces gate the ends of Phases 3 and 5. Check both signed-figure colours on each section background during hardening, including Expenses/Spending at 35° against the negative figure at 25°. Reposition or cap glows before considering a soft local gradient. Existing Playwright, axe, fictional-data concept pages and the responsive review checklist provide the verification tools. Pin a deterministic fixture and still frame for snapshots. Use live motion for traces. [Review checklist](../plans/DESIGN_REVIEW_CHECKLIST.md) · [Frontend inventory](../../INDEX.md)
+
+
+## Phase 2b review findings
+
+The Phase 2a band retained the classic frame, header and scrollable Dashboard below the preview. The Console viewport now owns Home, the ambient backdrop, and route-based hubs. The classic rail stays in Classic. Its existing 9+ badge can overlap the “06” index. Track that separately as a classic rail defect.
+
+The Income mismatch was a date-scope presentation bug. The 30-day report queried the browser’s current local date minus 29 calendar days through today, 24 October to 22 November 2026 in the reported session. The Dashboard activity read sorted all available transaction dates. A read-only local check verified that the example salary posted on 30 September, the latest ledger date. The report correctly excluded it. In Console, Income and Spending cards now apply the same date bounds and reporting classifications. The preview names that date range and the latest transaction date. [Dashboard data owner](../../app/src/views/Dashboard.tsx) · [Scoped cash-flow contract](../../supabase/migrations/20261120010000_reporting_read_contracts.sql)

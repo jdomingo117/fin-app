@@ -25,17 +25,18 @@ Use a standalone fictional-data demo following the existing Vite concept-entry p
 
 | Phase and commit unit | Visible result | Evidence in the commit note |
 | --- | --- | --- |
-| 2a · Dashboard feel spike | Runtime appearance flag, rough Dashboard section row, ambient background and keyed previews using existing reads | Capture a local Chrome DevTools trace. Stop for owner review before hardening. Automated tests start after this spike. |
+| 2a · Dashboard feel spike | Runtime appearance flag, rough Dashboard section row, ambient background and keyed previews using existing reads | Capture a local Chrome DevTools trace. Stop for owner review before hardening. Automated coverage begins with hardening after the feel review. |
+| 2b · Console viewport spike | Full-screen Home, existing-route Overview and Income hubs, and rough Control Centre | Capture Home Overview, Home Income, Overview hub and Control Centre at 1440×900 and 390×844. Include a 10–15s recording, warm-palette comparison and Chrome trace. Stop for owner feel review. |
 | 2 · appearance and token foundation | Live switch and effective preferences | First visit, reload, blocked storage, light → console → light and dark → console → dark, including a form with unsaved state. |
 | 2 · one commit per primitive | Motion presets, FocusRing, FocusRow, GlassSurface, AmbientBackground, SoundEngine, then ControlCentre | Each commit names the demo state, keyboard/touch path and reduced-effects result. Include a local Chrome DevTools trace. |
-| 3 · Dashboard | Section row, keyed figures and activity cards above the existing detail affordances | Test rapid browsing, open during dwell, Back to the same tile, screen reader order, redaction, empty/error results and recent-transaction editing. Compare report requests before/after focus movement. |
+| 3 · Dashboard | Harden Home and the Overview hub as separate surfaces | Test rapid browsing, open during dwell, Back to the same tile, screen reader order, redaction, empty/error results and recent-transaction editing. Compare report requests before/after focus movement. |
 | 4.1 · Accounts | Balances and holdings hub | Account selection, balance history, activity, add/edit and provider connection dialogs. Restore the initiating control after a dialog closes. |
 | 4.2 · Income | Income summary and projection entry | Date/account filters, analyzer/projections tabs, keyboard chart alternatives and saved planning edits retain their state while appearance changes. |
 | 4.3 · Expenses | Spending summary and recurring entry | Category and time filters, recurring directory, calendar and drill-through still agree. Escape dismisses a picker before any hub navigation. |
-| 4.4 · Budget | Console shell around its existing task workspace | Verify flag-off and owner/member access, draft and interrupted-save recovery, native modal focus and its docked appearance control. |
-| 4.5 · Ledger | Console chrome around the transaction workspace | Type C in search, select multiple rows, page, open a full-parent drawer, close and restore focus. Keep a visible ring around the active control within the table. |
-| 4.6 · Ingestion | Quiet console chrome around statement import | Operate file input, mapping, staging and error recovery. Keep progress text, native inputs and the current staged work visible during appearance changes. |
-| 4.7 · Transfers | Quiet console chrome around review queues | Preserve group selection, queue position, batch confirmation and keyboard operation. |
+| 4.4 · Budget | Budget hub with its existing task workspace on an opaque scrollable surface | Verify flag-off and owner/member access, draft and interrupted-save recovery, native modal focus and its docked appearance control. |
+| 4.5 · Ledger | Ledger hub with its transaction workspace on an opaque scrollable surface | Type C in search, select multiple rows, page, open a full-parent drawer, close and restore focus. Keep a visible ring around the active control within the table. |
+| 4.6 · Ingestion | Ingestion hub with its statement-import workspace | Operate file input, mapping, staging and error recovery. Keep progress text, native inputs and the current staged work visible during appearance changes. |
+| 4.7 · Transfers | Transfers hub with its review queues | Preserve group selection, queue position, batch confirmation and keyboard operation. |
 | 4.8 · Settings | Appearance, sound/volume, reduce effects and shortcut controls in the existing form | Connect final settings presentation to the Phase 2 preference owner. Test native interaction, independent music/mute, OS preference changes and persistence. |
 | 4.9 · Landing | Coordinate the existing hero transition with optional signed-in start entry at signed-in home entry | Verify Enter, click, first audio gesture, return home, deep link, sign-out and reduced motion. |
 | 5 · cross-screen qualification | Reference comparison, accessibility and performance evidence | Use the matrix below. |
@@ -55,6 +56,29 @@ Anime.js v4 dependency and chart parity work are tracked as a separate follow-up
 
 ## Phase 2a review
 
-In a signed-in Halcyon session, open Dashboard and press **Console** in the top bar. Hover a section and click once to open it. Use the arrow keys in the section row and Enter to open, or tap a tile twice on touch. The header control returns to the saved classic appearance. This slice includes the section tiles, Overview, Income and Expenses activity, existing Dashboard totals, and directional ambient light. The full material stack, sound, Control Centre and primitive demos come after the feel review.
+In the Phase 2a spike, the signed-in Dashboard offered **Console** in the top bar. Hover a section and click once to open it. Use the arrow keys in the section row and Enter to open, or tap a tile twice on touch. The header control returns to the saved classic appearance. This slice includes the section tiles, Overview, Income and Expenses activity, existing Dashboard totals, and directional ambient light. The full material stack, sound, Control Centre and primitive demos come after the feel review.
 
 The Chrome DevTools Performance trace uses a fictional signed-in Dashboard on a 1440×900 viewport in local Chrome 157. It records pointer movement, rapid keyboard changes, the background dwell and colour cross-fade. Load the compressed recording in Chrome’s Performance panel. Physical-device traces and contrast qualification are phase gates. [Phase 2a Chrome trace](traces/console-phase-2a-chrome.json.gz)
+
+
+Phase 4 extends the route-based hub model to each screen. Existing charts, forms and tables occupy the opaque reading surface and keep their controls. The ambient scene and global actions belong to the same viewport as Home.
+
+### Phase 2b review artifacts
+
+Open Dashboard in the signed-in app and select **Console** beside the appearance control. In Console, select a tile to enter its hub, then use **Back to Home** or Escape. Press **C** or the top-bar Control Centre button for the review and utility routes. The short recording follows Overview, Accounts, Income, the Income hub, Back and the Control Centre.
+
+The captures use matching fictional data. The palette comparison holds geometry and data constant and replaces just the warm paint values with Phase 2a values for the before panels.
+
+
+| State | 1440 × 900 | 390 × 844 |
+| --- | --- | --- |
+| Home · Overview | [Desktop](captures/console-phase-2b/1440-home-overview.jpg) | [Phone](captures/console-phase-2b/390-home-overview.jpg) |
+| Home · Income | [Desktop](captures/console-phase-2b/1440-home-income.jpg) | [Phone](captures/console-phase-2b/390-home-income.jpg) |
+| Overview hub | [Desktop](captures/console-phase-2b/1440-overview-hub.jpg) | [Phone](captures/console-phase-2b/390-overview-hub.jpg) |
+| Control Centre open | [Desktop](captures/console-phase-2b/1440-control-centre.jpg) | [Phone](captures/console-phase-2b/390-control-centre.jpg) |
+
+![Income palette before and after](captures/console-phase-2b/palette-income.jpg)
+
+![Spending palette before and after](captures/console-phase-2b/palette-expenses.jpg)
+
+[13-second walkthrough](captures/console-phase-2b/walkthrough.webm) · [Local Chrome DevTools Performance trace](traces/console-phase-2b-chrome.json.gz)

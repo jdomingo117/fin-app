@@ -6,10 +6,16 @@ import { useView } from '../router'
  * Shares the same `dark`/`setDark` context as Settings → Dark mode, so the two
  * stay in sync. Glass pill + a sun/moon icon that rotates-and-fades on swap.
  */
-export default function ThemeToggle({docked=false}:{docked?:boolean}={}) {
+export default function ThemeToggle({docked=false, onConsole}:{docked?:boolean; onConsole?:()=>void}={}) {
   const { dark, setDark } = useView()
 
   return (
+    <>
+    {onConsole && <button
+      type="button"
+      onClick={onConsole}
+      className="glass fixed bottom-[60px] right-[78px] z-20 h-[46px] cursor-pointer px-4 text-sm text-ink md:bottom-[64px] md:right-[86px]"
+    >Console</button>}
     <motion.button
       onClick={() => setDark(!dark)}
       aria-label="Toggle dark mode"
@@ -54,5 +60,6 @@ export default function ThemeToggle({docked=false}:{docked?:boolean}={}) {
         )}
       </AnimatePresence>
     </motion.button>
+    </>
   )
 }

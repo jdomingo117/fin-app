@@ -4,6 +4,7 @@ import type { Account, Txn } from '../../data'
 import { ConsoleFigureStrip, ConsoleHeadline, ConsoleHeroArt, consoleMoney, consoleRowKeys, type ConsoleArt, type ConsoleFigure } from './ConsoleHubSpike'
 import { BUDGET_ENABLED } from '../../lib/budgetWorkspace'
 import { consoleRise, useConsoleReducedMotion } from './motion'
+import { FocusRing } from './FocusRing'
 import './console-dashboard.css'
 
 const sections = [
@@ -96,7 +97,7 @@ export default function ConsoleDashboardSpike({
   return (
     <section ref={root} className="console-home" aria-label="Dashboard section previews" data-paused={covered}>
         <div className="console-switcher">
-          <div className="console-focus-glow" key={section.id} aria-hidden="true" />
+          <FocusRing layer="glow" />
           <div className="console-aperture" onClick={event => {
             // The tile can slide away before a user clicks a stationary pointer.
             if (event.detail && !event.defaultPrevented && !(event.target as Element).closest('button')
@@ -140,7 +141,8 @@ export default function ConsoleDashboardSpike({
                   <span className="console-tile-art">
                     <span className="console-tile-rest" />
                     <span className="console-tile-active" />
-                    <span className="console-tile-ring" />
+                    <FocusRing layer="edge" />
+                    <FocusRing layer="sweep" />
                     <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d={item.icon} /></svg>
                   </span>
                 </button>
@@ -175,6 +177,7 @@ export default function ConsoleDashboardSpike({
               {accounts.length ? <div className="console-activity-row" onKeyDown={consoleRowKeys}>
                 {accounts.map(account => <button key={account.id} type="button" className="console-activity-card"
                   data-console-row-item onClick={() => open('accounts')}>
+                  <FocusRing layer="sweep" />
                   <span className="console-card-emblem"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 6h18v12H3zM3 10h18M7 15h4" /></svg></span>
                   <span className="console-card-category">{account.type}{account.institution ? ` · ${account.institution}` : ''}</span>
                   <strong className="tabular-nums" data-sign={account.balance < 0 ? 'negative' : undefined}>{consoleMoney(account.balance)}</strong>
@@ -192,7 +195,8 @@ export default function ConsoleDashboardSpike({
                   return (
                     <button type="button" className="console-activity-card" key={transaction.id}
                       data-console-row-item aria-label={`${merchant}, ${category}, ${amount}`} onClick={() => openTransaction(transaction)}>
-                      <span className="console-card-emblem"><ActivityIcon transaction={transaction} /></span>
+                      <FocusRing layer="sweep" />
+                  <span className="console-card-emblem"><ActivityIcon transaction={transaction} /></span>
                       <span className="console-card-category">{category}</span>
                       <strong className="tabular-nums" data-sign={transaction.amount > 0 ? 'positive' : transaction.amount < 0 ? 'negative' : undefined}>{amount}</strong>
                       <span className="console-card-title">{merchant}</span>

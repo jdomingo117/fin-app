@@ -156,7 +156,7 @@ export function consoleRowKeys(event: KeyboardEvent<HTMLElement>) {
 export function ConsoleModule({ title, tools, children, kind, order = 0 }: {
   title: string; tools?: ReactNode; children: ReactNode; kind?: 'flat' | 'chart'; order?: number
 }) {
-  return <section className="console-module" data-kind={kind} data-console-row-item tabIndex={0}
+  return <section className="console-module" data-kind={kind} data-focus-ring data-console-row-item tabIndex={0}
     aria-label={title} style={{ '--console-module-order': order } as React.CSSProperties}>
     <header><h2>{title}</h2>{tools}</header>
     {children}

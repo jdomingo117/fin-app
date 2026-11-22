@@ -70,11 +70,6 @@
 .console-designed-scroll [role="tab"] { color: var(--console-label); font-size: 13px; font-weight: 500; white-space: nowrap; }
 .console-designed-scroll [role="tab"][aria-selected="true"] { color: white; }
 .console-designed-scroll [role="tab"] > .absolute { border-color: var(--console-line); border-radius: 99px; background: rgb(255 255 255 / .15); }
-.console-designed-scroll :is(button,summary,[data-console-row-item]):focus-visible {
-  outline: 2px solid white;
-  outline-offset: 3px;
-  box-shadow: 0 0 0 3px rgb(6 8 16 / .85), 0 0 19px 3px rgb(255 255 255 / .17);
-}
 .console-expanded-hero {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(144px, 30%);

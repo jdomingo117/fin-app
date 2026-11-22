@@ -43,7 +43,12 @@ html[data-theme="console"] {
   --console-label: rgb(255 255 255 / .85);
   --console-fill: rgb(255 255 255 / .075);
   --console-line: rgb(255 255 255 / .14);
-  --console-ring: 0 0 0 3px rgb(6 8 16 / .85), 0 0 0 6px var(--console-ink);
+  --console-ring-gap: 3px;
+  --console-ring-edge: 6px;
+  --console-ring-gap-ink: rgb(6 8 16 / .85);
+  --console-ring: 0 0 0 var(--console-ring-gap) var(--console-ring-gap-ink), 0 0 0 var(--console-ring-edge) var(--console-ink);
+  --console-card-focus-scale: 1.06;
+  --console-sweep-paint: linear-gradient(110deg, transparent 38%, rgb(255 255 255 / .55) 50%, transparent 62%);
   --console-glow-low: 0 0 26px 6px rgb(255 255 255 / .28);
   --console-glow-high: 0 0 46px 14px rgb(255 255 255 / .42);
 }

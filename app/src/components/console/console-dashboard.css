@@ -53,24 +53,6 @@
   padding: 0 var(--console-gutter) var(--console-section-gap);
 }
 .console-switcher { position: relative; }
-.console-focus-glow {
-  position: absolute;
-  inset: 20px auto auto 0;
-  inline-size: var(--console-tile-active);
-  block-size: var(--console-tile-active);
-  border-radius: var(--console-active-radius);
-  pointer-events: none;
-  box-shadow: var(--console-glow-low);
-}
-.console-focus-glow::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  opacity: 0;
-  box-shadow: var(--console-glow-high);
-  animation: console-glow var(--dur-breathe) ease-in-out infinite;
-}
 .console-aperture {
   overflow-x: clip;
   margin-inline: calc(-1 * var(--console-gutter));
@@ -109,13 +91,14 @@
   position: relative;
   display: grid;
   place-items: center;
+  border-radius: var(--console-tile-radius);
   inline-size: var(--console-tile);
   block-size: var(--console-tile);
   transform-origin: left center;
   opacity: .78;
   transition: transform var(--dur-focus) var(--ease-settle), opacity var(--dur-focus) var(--ease-fade);
 }
-.console-tile-rest, .console-tile-active, .console-tile-ring { position: absolute; inset: 0; }
+.console-tile-rest, .console-tile-active { position: absolute; inset: 0; }
 .console-tile-rest, .console-tile-active {
   background: linear-gradient(145deg, oklch(var(--tile-l-high) var(--tile-chroma) var(--section-hue)), oklch(var(--tile-l-mid) var(--tile-chroma) calc(var(--section-hue) + 18)) 55%, oklch(var(--tile-l-low) var(--tile-chroma) calc(var(--section-hue) + 30)));
   border-radius: var(--console-tile-radius);
@@ -125,12 +108,6 @@
   border-radius: calc(var(--console-active-radius) / var(--console-tile-scale));
   opacity: 0;
 }
-.console-tile-ring {
-  border-radius: calc(var(--console-active-radius) / var(--console-tile-scale));
-  box-shadow: 0 0 0 calc(3px / var(--console-tile-scale)) rgb(6 8 16 / .85), 0 0 0 calc(6px / var(--console-tile-scale)) var(--console-ink);
-  opacity: 0;
-  transition: opacity var(--dur-focus) var(--ease-fade);
-}
 .console-tile-art svg {
   position: relative;
   inline-size: 40px;
@@ -139,7 +116,7 @@
 }
 .console-section[data-active="true"] .console-tile-art { transform: scale(var(--console-tile-scale)); opacity: 1; }
 .console-section[data-active="true"] .console-tile-rest { opacity: 0; }
-.console-section[data-active="true"] :is(.console-tile-active, .console-tile-ring) { opacity: 1; }
+.console-section[data-active="true"] .console-tile-active { opacity: 1; }
 
 
 
@@ -242,7 +219,6 @@
 .console-card-category { color: var(--console-label); font-size: 13px; }
 .console-card-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .console-activity-card strong { font-size: 34px; font-weight: 200; letter-spacing: -.02em; line-height: 1.08; }
-.console-activity-card:is(:hover, :focus-visible) { box-shadow: var(--console-ring); }
 .console-empty { margin-top: 10px; color: var(--console-label); }
 
 .console-topbar {
@@ -356,7 +332,6 @@
 }
 .console-centre-actions button:is(:hover,:focus-visible) { background: rgb(255 255 255 / .14); }
 .console-centre-actions button:is(:hover,:focus-visible) span { opacity: 1; }
-.console-centre-actions button:focus-visible, .console-centre-cards button:focus-visible { box-shadow: var(--console-ring); outline: none; }
 
 @media (hover: none), (pointer: coarse) {
   .console-centre-actions { padding-bottom: 40px; }
@@ -398,22 +373,17 @@
   .console-home .console-orb { inline-size: 66px; }
   .console-home .console-orb-stat strong { font-size: 20px; }
 }
-.console-viewport[data-paused="true"] :is(.console-rays, .console-beam, .console-focus-glow::after),
-.console-home[data-paused="true"] .console-focus-glow::after { animation-play-state: paused; }
-.console-viewport[data-reduced="true"] :is(.console-rays, .console-beam, .console-focus-glow::after, .console-caption) { animation: none; }
-.console-viewport[data-reduced="true"] :is(.console-ambient, .console-section, .console-tile-art, .console-tile-rest, .console-tile-active, .console-tile-ring) { transition: none; }
+.console-viewport[data-paused="true"] :is(.console-rays, .console-beam) { animation-play-state: paused; }
+.console-viewport[data-reduced="true"] :is(.console-rays, .console-beam, .console-caption) { animation: none; }
+.console-viewport[data-reduced="true"] :is(.console-ambient, .console-section, .console-tile-art, .console-tile-rest, .console-tile-active) { transition: none; }
 .console-viewport[data-reduced="true"] :is(.console-centre-sheet,.console-hub) {
   animation: console-fade-in var(--dur-reduced) var(--ease-fade) both !important;
 }
 .console-viewport[data-reduced="true"] .console-hub[data-closing="true"] {
   animation: console-fade-out var(--dur-reduced) var(--ease-fade) both !important;
 }
-@media (forced-colors: active) {
-  .console-section[data-active="true"] .console-tile-ring { border: 2px solid Highlight; }
-}
 @keyframes console-rays { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg); } }
 @keyframes console-beam { 0%, 100% { opacity: .55; } 50% { opacity: .95; } }
-@keyframes console-glow { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
 @keyframes console-label { from { opacity: 0; transform: translateX(-14px); } to { opacity: 1; transform: translateX(0); } }
 @keyframes console-hub-in { from { opacity: 0; transform: scale(1.08); filter: blur(10px); } to { opacity: 1; transform: scale(1); filter: none; } }
 @keyframes console-hub-out { from { opacity: 1; transform: scale(1); filter: none; } to { opacity: 0; transform: scale(1.08); filter: blur(10px); } }

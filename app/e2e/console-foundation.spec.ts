@@ -204,3 +204,87 @@ test('the foundation demo shows disabled, full and reduced states', async ({ pag
   await expect(page.locator('.console-viewport')).toHaveCSS('--dur-reduced', '150ms')
   await expect(page.locator('.console-focus-decoration[data-layer="glow"]')).toHaveCSS('box-shadow', /26px/)
 })
+
+test('Home reserves its hero and returns warm with zero layout shift or text overlap', async ({ page }) => {
+  const reportNames = new Set(['portfolio_summary', 'cash_flow_report', 'net_worth_monthly', 'reporting_transaction_lines'])
+  let count = 0
+  let unblock!: () => void
+  const cold = new Promise<void>(resolve => { unblock = resolve })
+  await signInForConsole(page, true, resource => {
+    if (!reportNames.has(resource)) return
+    count++
+    return cold
+  })
+  try {
+    await page.getByRole('button', { name: 'Console', exact: true }).click()
+    const home = page.locator('.console-home')
+    const hero = home.locator('.console-hero-amount')
+    await expect(hero).toHaveText('Unavailable')
+    await expect(home.locator('.console-preview')).toHaveCSS('opacity', '1')
+    const top = () => hero.evaluate(element => element.getBoundingClientRect().top)
+    const coldTop = await top()
+    unblock()
+    await expect(hero.getByText('$184,320', { exact: true })).toBeVisible()
+    await expect(home.getByRole('group', { name: 'Transaction cards' })).toBeVisible()
+    expect(await top()).toBeCloseTo(coldTop, 0)
+
+    const openingTile = page.getByRole('toolbar', { name: 'Sections' }).getByRole('button', { name: 'Overview' })
+    await openingTile.focus()
+    await page.keyboard.press('Enter')
+    await page.waitForURL('**/dashboard?hub=overview')
+    await expect(page.getByRole('region', { name: 'Cumulative net worth' })).toBeVisible()
+    await expect(page.locator('.console-route-layer')).toHaveCount(1)
+    const requestsBeforeBack = count
+
+    await page.evaluate(() => {
+      const shifts: number[] = []
+      const overlaps: number[] = []
+      let homeFrames = 0
+      const observer = new PerformanceObserver(list => {
+        for (const entry of list.getEntries()) {
+          // Include input-triggered shifts. CLS would ordinarily exclude these.
+          shifts.push((entry as PerformanceEntry & { value: number }).value)
+        }
+      })
+      observer.observe({ type: 'layout-shift' })
+      let frame = 0
+      function sample() {
+        const home = document.querySelector('.console-route-layer:not([inert]) .console-home')
+        const headline = home?.querySelector('[data-console-shared="figure"]')
+        const strip = home?.querySelector('.console-figures')
+        if (headline && strip) {
+          homeFrames++
+          const amount = headline.getBoundingClientRect()
+          for (const text of strip.querySelectorAll('dt, dd')) {
+            const box = text.getBoundingClientRect()
+            if (amount.left < box.right && amount.right > box.left && amount.top < box.bottom && amount.bottom > box.top) {
+              overlaps.push(homeFrames)
+            }
+          }
+        }
+        frame = requestAnimationFrame(sample)
+      }
+      frame = requestAnimationFrame(sample)
+      Reflect.set(window, '__consoleReturn', () => {
+        cancelAnimationFrame(frame)
+        observer.disconnect()
+        return { shifts, overlaps, homeFrames }
+      })
+    })
+    await page.getByRole('button', { name: 'Back to Home' }).click()
+    await page.waitForURL('**/dashboard')
+    await expect(hero.getByText('$184,320', { exact: true })).toBeVisible()
+    await expect(home.locator('.console-preview')).toHaveCSS('opacity', '1')
+    await expect(page.locator('.console-route-layer')).toHaveCount(1)
+    const observed = await page.evaluate(() => Reflect.get(window, '__consoleReturn')() as {
+      shifts: number[]; overlaps: number[]; homeFrames: number
+    })
+    expect(observed.homeFrames).toBeGreaterThan(2)
+    expect(observed.shifts).toEqual([])
+    expect(observed.overlaps).toEqual([])
+    expect(count).toBe(requestsBeforeBack)
+    expect(await top()).toBeCloseTo(coldTop, 0)
+  } finally {
+    unblock()
+  }
+})

@@ -63,24 +63,24 @@ function ConsoleHandoff({ box, children }: { box?: ProjectionBox; children: Reac
   return box ? <div ref={ref} className="console-handoff">{children}</div> : <>{children}</>
 }
 
-export function ConsoleHeadline({ id, label, figure, reduced, title, period, origin }: {
-  id: SectionId; label: string; figure?: ConsoleFigure; reduced?: boolean; title?: string; period?: string; origin?: ConsoleEntry['origin']
+export function ConsoleHeadline({ id, label, figure, reduced, title, period, origin, home }: {
+  id: SectionId; label: string; figure?: ConsoleFigure; reduced?: boolean; title?: string; period?: string; origin?: ConsoleEntry['origin']; home?: boolean
 }) {
   return <>
     {title && <h1 className="console-hub-title">{title}</h1>}
     <ConsoleHandoff box={reduced ? undefined : origin?.label}>
-      <motion.p layoutId={reduced ? undefined : `console-${id}-label`} transition={{ layout: consoleProjection }}
+      <motion.p layoutId={reduced || home ? undefined : `console-${id}-label`} transition={{ layout: consoleProjection }}
         className="console-hero-label" data-console-shared="label">{label}</motion.p>
     </ConsoleHandoff>
     {period && <p className="console-period">{period}</p>}
     <ConsoleHandoff box={reduced ? undefined : origin?.figure}>
       <motion.p
-        layoutId={reduced ? undefined : `console-${id}-figure`}
+        layoutId={reduced || home ? undefined : `console-${id}-figure`}
         transition={{ layout: consoleProjection }}
         className={`console-hero-amount tabular-nums ${figure?.cents === undefined ? 'console-unavailable' : ''}`}
         data-console-shared="figure"
       >
-        {figure?.cents === undefined ? (id === 'budget' ? 'Budget' : 'Unavailable') : <>
+        {figure?.cents === undefined ? <span className="console-hero-placeholder">{id === 'budget' ? 'Budget' : 'Unavailable'}</span> : <>
           <span aria-hidden="true">{consoleMoney(figure.cents, figure.signed, true)}</span>
           <span className="sr-only">{consoleMoney(figure.cents, figure.signed)}</span>
         </>}
@@ -100,8 +100,8 @@ export function ConsoleFigureStrip({ figures }: { figures: ConsoleFigure[] }) {
   </dl>
 }
 
-export function ConsoleHeroArt({ id, art, reduced, origin }: {
-  id: SectionId; art?: ConsoleArt; reduced?: boolean; origin?: ProjectionBox
+export function ConsoleHeroArt({ id, art, reduced, origin, home }: {
+  id: SectionId; art?: ConsoleArt; reduced?: boolean; origin?: ProjectionBox; home?: boolean
 }) {
   const values = art?.values ?? []
   const low = Math.min(...values)
@@ -117,7 +117,7 @@ export function ConsoleHeroArt({ id, art, reduced, origin }: {
   ) : null
   return (
     <ConsoleHandoff box={reduced ? undefined : origin}>
-    <motion.figure layoutId={reduced ? undefined : `console-${id}-art`} transition={{ layout: consoleProjection }}
+    <motion.figure layoutId={reduced || home ? undefined : `console-${id}-art`} transition={{ layout: consoleProjection }}
       className="console-orb" data-console-shared="art">
       <div className="console-orb-core" aria-hidden="true" />
       <svg aria-hidden="true" viewBox="0 0 160 160" fill="none">

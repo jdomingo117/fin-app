@@ -1,0 +1,40 @@
+name: Console browser
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  console-browser:
+    name: Console Playwright and Classic smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: app
+    env:
+      VITE_SUPABASE_URL: http://127.0.0.1:54321
+      VITE_SUPABASE_ANON_KEY: fictional-console-ci-key
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - run: npm ci
+      - run: npx playwright install --with-deps chrome
+      - run: npm run test:browser:typecheck
+      - run: npx playwright test --config playwright.console.config.ts --workers=2
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: console-browser-failure
+          path: app/test-results/console
+          if-no-files-found: ignore

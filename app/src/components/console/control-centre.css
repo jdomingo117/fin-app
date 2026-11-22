@@ -108,6 +108,9 @@
 .console-centre-actions button[aria-pressed="true"] { background: rgb(255 255 255 / .20); }
 .console-centre-actions button[aria-pressed="true"] .console-music-icon { fill: currentColor; }
 
+@media (min-width: 768px) and (pointer: fine) {
+  .console-centre-actions { justify-content: start; }
+}
 @media (hover: none), (pointer: coarse), (any-pointer: coarse) {
   .console-centre-actions { padding: 16px 0 40px; }
   .console-centre-actions button span {

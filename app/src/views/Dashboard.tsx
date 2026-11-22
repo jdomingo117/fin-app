@@ -1,3 +1,4 @@
+import { RECENT_ACTIVITY_COUNT, dashboardWindow, useCachedDashboardReports, useDashboardReports } from '../components/console/DashboardReports'
 import {reportParent} from '../lib/reportParent'
 import { FocusRow } from '../components/console/FocusRow'
 import { useEffect, useState, type ReactNode } from 'react'
@@ -18,17 +19,10 @@ import Area from '../components/charts/Area'
 import Bar from '../components/charts/Bar'
 import { fmt, fmtCents, glowColor, type Glow } from '../data'
 import { useData } from '../contexts/DataContext'
-import { cashFlow, latestLines, monthlyWorth } from '../lib/reports'
-import { usePortfolio } from '../hooks/usePortfolio'
 import { useReport } from '../hooks/useReport'
 import ReportStatus from '../components/ReportStatus'
 import { useView } from '../router'
-import { addDays, dateRangeLabel, fullDayLabel, iso, MAX_DATE, MIN_DATE, monthAxisLabels, monthLabel, PRESETS } from '../lib/period'
-
-// Single source of truth for the Recent Activity tile, so its row count and
-// its "last N" tag text can't drift apart the way they used to (tag said 5,
-// body sliced 10).
-const RECENT_ACTIVITY_COUNT = 10
+import { dateRangeLabel, fullDayLabel, MAX_DATE, MIN_DATE, monthAxisLabels, monthLabel, PRESETS } from '../lib/period'
 
 function getAccountIcon(type: string, name: string) {
   const t = type.toLowerCase()
@@ -89,22 +83,21 @@ export default function Dashboard() {
     toast({ title: 'Transaction updated', sub: 'Dashboard activity has been refreshed.' })
   }
   
-  const today = iso(new Date())
-  const thirtyDaysAgoIso = iso(addDays(new Date(), -29))
+  const { today, from: thirtyDaysAgoIso } = dashboardWindow()
   const consoleOverview = theme === 'console' && !!consoleRoute && !consoleRoute.home
   const overviewRange = usePeriodRange(undefined, { from: thirtyDaysAgoIso, to: today })
   const [insightAccounts, setInsightAccounts] = useState<string[] | null>(null)
   const flowFrom = consoleOverview ? overviewRange.from : thirtyDaysAgoIso
   const flowTo = consoleOverview ? overviewRange.to : today
   const accountScope = consoleOverview ? insightAccounts ?? undefined : undefined
-  const summary = usePortfolio()
-  const flow = useReport([flowFrom, flowTo, accountScope], tenant =>
-    cashFlow(tenant, { p_from: flowFrom, p_to: flowTo, p_account_ids: accountScope }))
+  const cached = useCachedDashboardReports()
+  const scopedFlow = flowFrom !== thirtyDaysAgoIso || flowTo !== today || accountScope !== undefined
+  const local = useDashboardReports(flowFrom, flowTo, accountScope, !cached, !cached || scopedFlow)
+  const { summary, activity, history } = cached ?? local
+  const flow = cached && !scopedFlow ? cached.flow : local.flow
   useEffect(() => {
     if (consoleRoute?.home) void import('./Income')
   }, [consoleRoute?.home])
-  const activity = useReport('recent', tenant => latestLines(tenant,RECENT_ACTIVITY_COUNT))
-  const history = useReport('monthly',monthlyWorth)
   const [chartType, setChartType] = useState<'line' | 'bar'>('line')
   const drawer = <>
     {selectedTransactionId && <ReportStatus report={parent} label="Transaction details" />}

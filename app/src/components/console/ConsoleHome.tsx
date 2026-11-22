@@ -47,14 +47,14 @@ export default function ConsoleHome({
       >
         <div className="console-hero">
           <div className="console-summary">
-            <ConsoleHeadline id={section.id} label={`${section.name}${headline ? ` · ${headline.label}` : ''}`}
+            <ConsoleHeadline home id={section.id} label={`${section.name}${headline ? ` · ${headline.label}` : ''}`}
               figure={headline} reduced={!!reduce} period={isFlow ? period : undefined} />
             {secondary.length > 0 && <ConsoleFigureStrip figures={secondary} />}
-            {isFlow && latestDate && <p className="console-asof">Latest transaction · {latestDate}</p>}
+            {isFlow && <p className="console-asof">{latestDate ? `Latest transaction · ${latestDate}` : '\u00a0'}</p>}
           </div>
-          <ConsoleHeroArt id={section.id} art={trends[section.id]} reduced={!!reduce} />
+          <ConsoleHeroArt home id={section.id} art={trends[section.id]} reduced={!!reduce} />
         </div>
-        {section.id === 'accounts' && <div className="console-activity">
+        {section.id === 'accounts' && <div className="console-activity console-home-activity">
           <h2>Accounts</h2>
           {accounts.length ? <FocusRow label="Account cards" className="console-activity-row">
             {accounts.map(account => <GlassSurface as="button" material="activity" key={account.id} className="console-activity-card"
@@ -65,9 +65,9 @@ export default function ConsoleHome({
               <strong className="tabular-nums" data-sign={account.balance < 0 ? 'negative' : undefined}>{consoleMoney(account.balance)}</strong>
               <span className="console-card-title">{account.name}</span>
             </GlassSurface>)}
-          </FocusRow> : <p className="console-empty">No accounts to show.</p>}
+          </FocusRow> : <p className="console-empty console-activity-placeholder">No accounts to show.</p>}
         </div>}
-        {(cards?.length || isFlow) ? <div className="console-activity">
+        {(section.id === 'dashboard' || isFlow) ? <div className="console-activity console-home-activity">
           <h2>{isFlow ? 'Activity in this period' : 'Recent activity'}</h2>
           {cards?.length ? <FocusRow label="Transaction cards" className="console-activity-row">
             {cards.map(transaction => {
@@ -85,7 +85,7 @@ export default function ConsoleHome({
                 </GlassSurface>
               )
             })}
-          </FocusRow> : <p className="console-empty">{activity ? 'No matching transactions in the recent preview.' : 'Activity is unavailable.'}</p>}
+          </FocusRow> : <p className="console-empty console-activity-placeholder">{activity ? 'No matching transactions in the recent preview.' : 'Activity is unavailable.'}</p>}
         </div> : null}
       </motion.div>
     </section>

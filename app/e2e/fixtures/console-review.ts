@@ -47,7 +47,7 @@ const periods = {
   current:{earned_cents:absoluteSum(recent,'income'),gross_cents:expenses,expense_cents:expenses,expense_attention_count:0},
   prior:{earned_cents:684000,gross_cents:349420,expense_cents:349420,expense_attention_count:0},
 }
-const fixtureExpiry = Date.parse('2026-11-24T00:00:00Z') / 1000
+const fixtureExpiry = Date.parse('2099-01-01T00:00:00Z') / 1000
 const session = {
   access_token:[{alg:'HS256',typ:'JWT'},{sub:userId,role:'authenticated',exp:fixtureExpiry}].map(value=>Buffer.from(JSON.stringify(value)).toString('base64url')).join('.')+'.fictional', refresh_token:'console-fixture-refresh', token_type:'bearer', expires_in:3600,
   expires_at: fixtureExpiry, user:{ id:userId, aud:'authenticated', role:'authenticated', email:'console-review@example.invalid', app_metadata:{}, user_metadata:{} },
@@ -75,7 +75,7 @@ const cors = {
 const fixtureEmail = 'console-review@example.invalid'
 const fixturePassword = 'fictional-password-not-a-credential'
 
-export async function signInForConsole(page: Page, controlledClock = true) {
+export async function signInForConsole(page: Page, controlledClock = true, beforeRead?: (resource: string) => void | Promise<void>) {
   const context = page.context()
   await context.route('**/*', async route => {
     const request = route.request()
@@ -96,6 +96,7 @@ export async function signInForConsole(page: Page, controlledClock = true) {
       return route.fulfill({ headers:cors, json:session })
     }
     const key = url.pathname.split('/').at(-1) ?? ''
+    await beforeRead?.(key)
     if (key === 'reporting_transaction_lines') {
       const category = url.searchParams.get('category')?.slice(3)
       const rows = url.searchParams.get('amount') === 'gt.0' ? recent.filter(row=>row.amount>0) : recent

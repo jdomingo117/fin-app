@@ -110,7 +110,8 @@
   overflow-wrap: anywhere;
   margin-block: 7px 16px;
 }
-.console-hero-amount.console-unavailable { font-size: clamp(36px, 5vw, 64px); }
+.console-hero-amount { min-block-size: 1lh; }
+.console-hero-placeholder { font-size: .65em; }
 .console-hero-label { width: fit-content; color: var(--console-label); font-size: 16px; }
 .console-period, .console-asof { color: var(--console-label); font-size: 13px; }
 .console-figures { display: flex; flex-wrap: wrap; gap: 14px 40px; }
@@ -183,6 +184,9 @@
 .console-card-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .console-activity-card strong { font-size: 34px; font-weight: 200; letter-spacing: -.02em; line-height: 1.08; }
 .console-empty { margin-top: 10px; color: var(--console-label); }
+.console-home-activity { --console-home-card-height: calc(var(--console-card-width) * 10 / 16 + 28px); }
+.console-activity-placeholder { box-sizing: border-box; margin: 0; min-block-size: var(--console-home-card-height); padding-block: 14px; }
+@media (max-height: 720px) { .console-home-activity { --console-home-card-height: 161px; } }
 
 .console-topbar {
   position: relative;

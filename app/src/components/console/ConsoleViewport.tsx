@@ -1,3 +1,4 @@
+import { DashboardReportsProvider } from './DashboardReports'
 import { ConsolePreferencesProvider, useConsolePreferences } from './ConsolePreferences'
 import { hasCoveringOverlay, isEditableShortcutTarget, useCoveringOverlay, useDocumentVisible } from './useScenePause'
 import { AmbientBackground } from './AmbientBackground'
@@ -51,7 +52,7 @@ function ConsoleRouteLayer({ children, reduced }: { children: ReactNode; reduced
 export default function ConsoleViewport() {
   const visible = useDocumentVisible()
   return <ConsolePreferencesProvider visible={visible}>
-    <ConsoleViewportContent visible={visible} />
+    <DashboardReportsProvider><ConsoleViewportContent visible={visible} /></DashboardReportsProvider>
   </ConsolePreferencesProvider>
 }
 

@@ -14,6 +14,10 @@ export default defineConfig({
     serviceWorkers: 'block',
     trace: 'retain-on-failure',
   },
+  webServer: process.env.CI ? {
+    command: 'npm run dev -- --host 127.0.0.1 --port 5320 --strictPort',
+    url: 'http://127.0.0.1:5320/dashboard',
+  } : undefined,
   projects: [
     { name: 'Desktop', use: { viewport: { width: 1440, height: 900 } } },
     { name: 'Phone', use: { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 1 } },

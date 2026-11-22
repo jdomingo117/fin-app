@@ -1,3 +1,4 @@
+import { useConsoleDayLabel } from '../../hooks/useConsoleDayLabel'
 import { useMemo, useState } from 'react'
 import type { StagedRow } from '../../lib/csv/pipeline'
 import { CATEGORY_TAXONOMY, FULL_TAXONOMY, ALL_CATEGORIES, UNCATEGORIZED, type CustomSubcategory } from '../../data'
@@ -43,6 +44,7 @@ export default function StagingTable({
   categorizing: boolean
   customSubcategories: CustomSubcategory[]
 }) {
+  const formatDay = useConsoleDayLabel()
   const [filter, setFilter] = useState<'all' | 'review' | 'issues'>('all')
   const [selected, setSelected] = useState<Set<string>>(new Set())
 
@@ -163,7 +165,7 @@ export default function StagingTable({
                     </label>
                   </td>
                   <td className="whitespace-nowrap px-2 py-1.5 tabular-nums">
-                    {r.date ?? <span className="text-[var(--color-neg)]">unparseable</span>}
+                    {formatDay(r.date) ?? <span className="text-[var(--color-neg)]">unparseable</span>}
                   </td>
                   <td className="px-2 py-1.5">
                     <div className="flex items-center gap-1.5">

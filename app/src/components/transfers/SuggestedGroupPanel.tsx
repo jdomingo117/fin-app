@@ -1,3 +1,4 @@
+import { useConsoleDayLabel } from '../../hooks/useConsoleDayLabel'
 import { useReport } from '../../hooks/useReport'
 import { transferBatch } from '../../lib/ledgerPage'
 import ReportStatus from '../ReportStatus'
@@ -132,6 +133,7 @@ function GroupItemRow({
   deferred: boolean
   onToggle: () => void
 }) {
+  const formatDay = useConsoleDayLabel()
   const from = link.from_txn
   return (
     <label className={`flex min-h-11 items-center gap-3 rounded-[10px] border border-[var(--hair)] px-3 py-2 text-[13px] transition ${deferred ? 'cursor-not-allowed opacity-55' : 'cursor-pointer hover:bg-black/[0.02]'}`}>
@@ -144,7 +146,7 @@ function GroupItemRow({
         className="h-[15px] w-[15px] flex-shrink-0 accent-[var(--color-accent)]"
       />
       <span className="min-w-0 flex-1 truncate text-muted">
-        {from?.date}
+        {formatDay(from?.date)}
         {' · '}
         <span className={from && from.amount < 0 ? 'text-[var(--color-neg)]' : 'text-[var(--color-pos)]'}>
           {from ? fmtCents(from.amount) : ''}

@@ -1,3 +1,4 @@
+import { useConsoleDayLabel } from '../../hooks/useConsoleDayLabel'
 import { useReport } from '../../hooks/useReport'
 import { transferBatch } from '../../lib/ledgerPage'
 import ReportStatus from '../ReportStatus'
@@ -33,6 +34,7 @@ export function UnmatchedGroupPanel({
   onSingleDecide: (txnId: string, verdict: 'rejected' | 'external') => void
   singleBusy: string | null
 }) {
+  const formatDay = useConsoleDayLabel()
   const batch = useReport(['transfer batch','unmatched',group.key,[...deselected]], tenant =>
     transferBatch(tenant,'unmatched',group.key,[...deselected]))
   if (!batch.data || batch.pending || batch.error) return <ReportStatus report={batch} label="Group selection" />
@@ -52,7 +54,7 @@ export function UnmatchedGroupPanel({
         <div className="min-w-0">
           <div className="flex items-baseline gap-2 text-[12.5px]">
             <span className="font-semibold text-ink">{accountName(u.account_id)}</span>
-            <span className="text-muted">{u.date}</span>
+            <span className="text-muted">{formatDay(u.date)}</span>
           </div>
           <div className="mt-0.5 flex items-baseline gap-2">
             <span className="min-w-0 truncate text-[12.5px] text-muted">{u.original_description || '—'}</span>
@@ -136,7 +138,7 @@ export function UnmatchedGroupPanel({
                   <span className="min-w-0 flex-1 truncate text-muted">
                     {accountName(u.account_id)}
                     {' · '}
-                    {u.date}
+                    {formatDay(u.date)}
                     {' · '}
                     <span className={u.amount < 0 ? 'text-[var(--color-neg)]' : 'text-[var(--color-pos)]'}>
                       {fmtCents(u.amount)}

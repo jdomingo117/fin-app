@@ -1,3 +1,4 @@
+import { useConsoleDayLabel } from '../hooks/useConsoleDayLabel'
 import BudgetMonths from './budget/BudgetMonths'
 import {useEffect,useRef,useState} from 'react'
 import {useBudget} from '../contexts/BudgetContext'
@@ -9,6 +10,7 @@ import {nextBudgetDraft,nextBudgetSummary} from '../lib/budgetLifecycle'
 import BudgetHistory from './budget/BudgetHistory'
 
 export default function BudgetLifecycle({active=true,onOpen}:{active?:boolean;onOpen?:()=>void}){
+ const formatDay=useConsoleDayLabel()
  const b=useBudget(),s=b.snapshot!,l=s.details?.lifecycle
  const [reviewing,setReviewing]=useState(false),[carry,setCarry]=useState<'fresh'|'carry'>('fresh'),[accepted,setAccepted]=useState(false),[advance,setAdvance]=useState(false)
  useEffect(()=>{setReviewing(false);setAdvance(false);setAccepted(false);setCarry(l?.carry_mode??'fresh')},[s.period?.id])
@@ -27,7 +29,7 @@ export default function BudgetLifecycle({active=true,onOpen}:{active?:boolean;on
  return <>
   {!active&&<section className="budget-history-entry"><p>{l.state==='past'?(l.changed_since_review?'Changed since review · recorded results need another look.':'A saved budget is available to look back on.'):'Review saved periods, carry choices and the next budget in Look back.'}</p><Button variant="ghost" onClick={onOpen}>Look back at this budget</Button></section>}
   <section hidden={!active} className="budget-history space-y-5" aria-label="Budget periods and review">
-  <header><p className="budget-eyebrow">{s.period.start_date} – {addDays(s.period.end_date,-1)} · {s.period.timezone}</p><h3 className="font-display text-2xl font-bold">{l.state==='past'?'Review this budget':l.state==='future'?'A future plan, not completed results':'Your budget is still unfolding'}</h3></header>
+  <header><p className="budget-eyebrow">{formatDay(s.period.start_date)} – {formatDay(addDays(s.period.end_date,-1))} · {s.period.timezone}</p><h3 className="font-display text-2xl font-bold">{l.state==='past'?'Review this budget':l.state==='future'?'A future plan, not completed results':'Your budget is still unfolding'}</h3></header>
   {b.error&&<p className="body-copy text-neg">{b.error} Your local preview is retained; no replacement request is submitted automatically.</p>}
   <p className="body-copy">{l.state==='past'?'Completed budget · recorded activity can still change.':l.state==='future'?'Future plan · provisional, not completed actuals.':'In progress · this budget cannot be marked reviewed before its end date.'}</p>
   <p className="body-copy">{s.details?.rollover?.enabled?'Everyday amount carried across categories':'Everyday amount carried over from last budget'}: <strong>{facts.opening_carry_cents===null?'Unavailable':fmtCents(facts.opening_carry_cents)}</strong>. {l.provisional_carry?'This may change, because last budget’s history isn’t complete or reviewed yet.':'Based on what you chose when you reviewed last budget.'} It’s room in your plan, not extra money in your bank.</p>
@@ -54,6 +56,7 @@ export default function BudgetLifecycle({active=true,onOpen}:{active?:boolean;on
 }
 
 function NextBudget({close}:{close:()=>void}){
+ const formatDay=useConsoleDayLabel()
  const b=useBudget(),s=b.snapshot!,form=useRef<HTMLFormElement>(null)
  const [draft]=useState(()=>{try{return nextBudgetDraft(s)}catch{return null}})
  const [income,setIncome]=useState(moneyEntry(draft?.income_cents??0)),[lines,setLines]=useState(draft?.lines??[]),[review,setReview]=useState(false),[accepted,setAccepted]=useState(false)
@@ -63,7 +66,7 @@ function NextBudget({close}:{close:()=>void}){
  try{if(validIncome!==null)summary=nextBudgetSummary(validIncome,lines)}catch{error='These amounts are too large to total safely. Reduce an amount before reviewing.'}
  if(!draft)return <div className="outcome-panel"><p className="text-neg">The saved dates or scheduled amounts cannot be previewed safely. Your plan has not changed.</p><Button variant="ghost" onClick={close}>Close next-budget preview</Button></div>
  return <form ref={form} className="outcome-panel space-y-4" onSubmit={async e=>{e.preventDefault();if(!review||validIncome===null)return;const result=await b.run({action:'open_next_period',plan_id:s.plan!.id,period_id:s.period!.id,expected_plan:s.plan!.version,income_cents:validIncome,accept_gap:accepted,lines:lines.map(({line_id,amount_cents})=>({line_id,amount_cents}))});if(result)b.selectPeriod(result.result.period_id as string)}}>
-  <h4 className="font-semibold">Check the next budget before opening it</h4><p className="body-copy">{draft.start} – {addDays(draft.end,-1)} · {s.period!.timezone}. Start from your saved future allowances; review actual bill dates before confirming. Existing-cash top-ups do not repeat. Goal reserves and source matches retain their identity.</p>
+  <h4 className="font-semibold">Check the next budget before opening it</h4><p className="body-copy">{formatDay(draft.start)} – {formatDay(addDays(draft.end,-1))} · {s.period!.timezone}. Start from your saved future allowances; review actual bill dates before confirming. Existing-cash top-ups do not repeat. Goal reserves and source matches retain their identity.</p>
   <fieldset disabled={!b.canWrite||s.details?.controls?.paused} className="space-y-4"><label className="grid gap-2"><span className="field-label">Expected income next budget (AUD)</span><input aria-label="Expected income next budget (AUD)" className="budget-input" inputMode="decimal" required value={income} pattern="[0-9]+(\.[0-9]{1,2})?" onChange={e=>{setIncome(e.target.value);setReview(false);setAccepted(false)}}/></label>
    {lines.map(line=><div key={line.line_id} className="space-y-2"><label className="grid gap-2"><span className="field-label">{line.name}</span><input disabled={s.details?.controls?.archives.some(a=>a.line_id===line.line_id)} aria-label={`Next budget for ${line.name} (AUD)`} className="budget-input" inputMode="decimal" required defaultValue={moneyEntry(line.amount_cents)} pattern="[0-9]+(\.[0-9]{1,2})?" onChange={e=>{const amount=parseBudgetMoney(e.target.value);e.target.setCustomValidity(amount===null?'Enter a non-negative amount with up to two decimal places.':'');if(amount!==null)setLines(lines.map(l=>l.line_id===line.line_id?{...l,amount_cents:amount}:l));setReview(false);setAccepted(false)}}/></label>{line.dated_cents!==null&&<p className="detail-copy text-muted">The saved schedule has {fmtCents(line.dated_cents)} of dated payments/contributions in this exact window. This does not silently replace your allowance.</p>}</div>)}
    {summary&&<p className="body-copy">New allocations {fmtCents(summary.allocated)} · {summary.fundingGap?'Funding gap':'Still to plan'} {fmtCents(summary.fundingGap||summary.unallocated)}. Carry remains separate from these new resources.</p>}

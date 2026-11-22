@@ -1,3 +1,4 @@
+import { useUnsavedChanges } from '../hooks/useUnsavedChanges'
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { changeEmail, changePassword, passwordProblems } from '../lib/auth'
@@ -17,6 +18,7 @@ export function PasswordCard() {
   const [current, setCurrent] = useState('')
   const [next, setNext] = useState('')
   const [confirm, setConfirm] = useState('')
+  useUnsavedChanges(!!(current || next || confirm))
   const [saving, setSaving] = useState(false)
 
   // OAuth-only accounts have no password to rotate.
@@ -92,6 +94,7 @@ export function EmailCard() {
   const { user } = useAuth()
   const { toast } = useView()
   const [email, setEmail] = useState('')
+  useUnsavedChanges(!!email.trim())
   const [saving, setSaving] = useState(false)
 
   const submit = async (e: React.FormEvent) => {
@@ -204,6 +207,7 @@ export function DangerZoneCard() {
   const { user, signOut } = useAuth()
   const { toast } = useView()
   const [confirmText, setConfirmText] = useState('')
+  useUnsavedChanges(!!confirmText)
   const [busy, setBusy] = useState(false)
 
   const exportData = async () => {

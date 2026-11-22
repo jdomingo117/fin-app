@@ -1,3 +1,4 @@
+import { useConsoleDayLabel } from '../hooks/useConsoleDayLabel'
 import {useEffect,useRef,useState} from 'react'
 import {useBudget} from '../contexts/BudgetContext'
 import {Button} from './Controls'
@@ -8,6 +9,7 @@ import {moneyEntry,parseBudgetMoney} from '../lib/budgetWorkspace'
 import {useBudgetInlineFocus} from '../hooks/useBudgetInlineFocus'
 
 export default function BudgetFrequency({open,setOpen}:{open:boolean;setOpen:(value:boolean)=>void}){
+ const formatDay=useConsoleDayLabel()
  const b=useBudget(),s=b.snapshot!,l=s.details?.lifecycle,c=s.details?.frequency_change
  const region=useBudgetInlineFocus(open)
  const write=(action:string)=>b.run({action,plan_id:s.plan!.id,period_id:c?.state==='pending'?c.period_id:s.period!.id,expected_plan:s.plan!.version})
@@ -16,7 +18,7 @@ export default function BudgetFrequency({open,setOpen}:{open:boolean;setOpen:(va
   <h3 className="font-semibold">How often you budget</h3>
   <p className="body-copy">This saved budget: {s.period.frequency==='monthly'?'Monthly':'Every two weeks (14 days)'}. Changing frequency keeps its dates and amounts unchanged.</p>
   {c?.state==='pending'?<div className="outcome-panel space-y-3">
-   <p className="body-copy">Saved change to {c.frequency==='monthly'?'monthly':'every two weeks'} · starts {c.effective_date}. First budget ends {addDays(c.initial_end,-1)}; the next full budget is {c.initial_end} – {addDays(c.continuing_end,-1)}.</p>
+   <p className="body-copy">Saved change to {c.frequency==='monthly'?'monthly':'every two weeks'} · starts {formatDay(c.effective_date)}. First budget ends {formatDay(addDays(c.initial_end,-1))}; the next full budget is {formatDay(c.initial_end)} – {formatDay(addDays(c.continuing_end,-1))}.</p>
    <p className="body-copy">{c.needs_review?'Your plan or activity changed since this preview. Cancel it and review a fresh change before applying.':'Your current budget has not changed. When this start date arrives, apply the saved change to open its first budget.'}</p>
    <details><summary className="min-h-11 py-3 cursor-pointer">Inspect saved amounts</summary>{(['initial','continuing'] as const).map(key=><div key={key} className="space-y-2 py-3"><h4 className="font-semibold">{key==='initial'?'First budget':'Continuing full budgets'}</h4><dl className="budget-totals"><dt>Expected income</dt><dd>{fmtCents(c.payload[key].income_cents)}</dd>{c.payload[key].lines.map(line=><div key={line.line_id} className="contents"><dt>{s.details?.items.find(i=>i.line_id===line.line_id)?.name??s.lines?.find(i=>i.id===line.line_id)?.name??'Saved allowance'}</dt><dd>{fmtCents(line.amount_cents)}</dd></div>)}</dl></div>)}</details>
    <div className="flex flex-wrap gap-3"><Button disabled={!b.canWrite||s.details?.controls?.paused||c.needs_review||l.as_of<c.effective_date} onClick={async()=>{if(!window.confirm('Apply this saved change and open its first budget? Earlier periods stay intact. The opened period cannot be deleted with Undo.'))return;const result=await write('apply_frequency');if(result)b.selectPeriod(result.result.period_id as string)}}>Apply saved frequency change</Button><Button variant="ghost" disabled={!b.canWrite} onClick={()=>{if(window.confirm('Cancel this saved frequency change? Your current budget and continuing plan will stay unchanged.'))void write('cancel_frequency')}}>Cancel saved frequency change</Button></div>
@@ -29,6 +31,7 @@ export default function BudgetFrequency({open,setOpen}:{open:boolean;setOpen:(va
 }
 
 function FrequencyForm({close}:{close:()=>void}){
+ const formatDay=useConsoleDayLabel()
  const b=useBudget(),s=b.snapshot!,form=useRef<HTMLFormElement>(null)
  const [draft]=useState(()=>{try{return frequencyDraft(s)}catch{return null}})
  const [initial,setInitial]=useState(draft?.initial),[continuing,setContinuing]=useState(draft?.continuing)
@@ -56,7 +59,7 @@ function FrequencyForm({close}:{close:()=>void}){
      {index===2&&!template.lines.some(line=>groupFor(line.line_id)===group)&&<p className="detail-copy text-muted">No separate savings or goal allowances in this plan.</p>}
     </fieldset>)}
     {preview?<><p className={`body-copy ${preview.summary.fundingGap?'text-warn':''}`}>New allocations {fmtCents(preview.summary.allocated)} · {preview.summary.fundingGap?'Funding gap':'Still to plan'} {fmtCents(preview.summary.fundingGap||preview.summary.unallocated)}. Carry and existing reserves are not new income.</p>{!preview.limitsFit&&<p role="alert" className="body-copy text-neg">Your saved category allowances exceed this everyday amount. Increase it, or leave this preview and adjust category allowances first.</p>}
-     <details><summary className="min-h-11 py-3 cursor-pointer">Check scheduled dates, overrides and goals</summary>{preview.schedules.map(item=><div key={item.line_id} className="py-3 space-y-2 border-t border-hair"><p className="body-copy font-semibold">{item.name}</p><p className="detail-copy">{item.dated_cents===null?'No dated schedule saved. Check your expected dates manually.':`Saved schedule: ${fmtCents(item.dated_cents)} on ${item.dates.join(', ')||'no dates in this window'}.`}</p>{item.dated_cents!==null&&item.dated_cents!==template.lines.find(l=>l.line_id===item.line_id)?.amount_cents&&<p className="detail-copy text-warn">Your allowance differs from the saved schedule. This is a manual override; it does not change payment dates or goal contribution schedules.</p>}{item.reserve_cents!==null&&<p className="detail-copy">Reserve at the end of the displayed budget: {fmtCents(item.reserve_cents)} (not a future bank balance). {item.due_date?`Target date ${item.due_date}; ${item.deadline_dates.length} saved contribution dates from this window's start through that deadline. No new completion date is promised.`:'No target date saved.'}</p>}</div>)}</details>
+     <details><summary className="min-h-11 py-3 cursor-pointer">Check scheduled dates, overrides and goals</summary>{preview.schedules.map(item=><div key={item.line_id} className="py-3 space-y-2 border-t border-hair"><p className="body-copy font-semibold">{item.name}</p><p className="detail-copy">{item.dated_cents===null?'No dated schedule saved. Check your expected dates manually.':`Saved schedule: ${fmtCents(item.dated_cents)} on ${item.dates.map(formatDay).join(', ')||'no dates in this window'}.`}</p>{item.dated_cents!==null&&item.dated_cents!==template.lines.find(l=>l.line_id===item.line_id)?.amount_cents&&<p className="detail-copy text-warn">Your allowance differs from the saved schedule. This is a manual override; it does not change payment dates or goal contribution schedules.</p>}{item.reserve_cents!==null&&<p className="detail-copy">Reserve at the end of the displayed budget: {fmtCents(item.reserve_cents)} (not a future bank balance). {item.due_date?`Target date ${formatDay(item.due_date)}; ${item.deadline_dates.length} saved contribution dates from this window's start through that deadline. No new completion date is promised.`:'No target date saved.'}</p>}</div>)}</details>
     </>:<p role="alert" className="body-copy text-neg">These totals or dates cannot be previewed safely. Reduce an amount or review the saved schedule.</p>}
    </section>)}</div>
    <details className="budget-settings-help"><summary>How carry and reserves are kept</summary><p className="detail-copy">Everyday carry remains governed by the previous budget’s saved review choice; no new carry policy is enabled. Reserves, original plans, source matches and reviews retain their identity.</p></details>

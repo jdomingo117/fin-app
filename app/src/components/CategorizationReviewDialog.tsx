@@ -1,3 +1,4 @@
+import { useConsoleDayLabel } from '../hooks/useConsoleDayLabel'
 import ReportStatus from './ReportStatus'
 import { useTaxonomy } from '../hooks/useTaxonomy'
 import { useAuth } from '../contexts/AuthContext'
@@ -52,6 +53,7 @@ export default function CategorizationReviewDialog({
   onClose: (clearSelection?: boolean) => void
   onChanged: () => Promise<void>
 }) {
+  const formatDay = useConsoleDayLabel()
   const taxonomy = useTaxonomy()
   const { customSubcategories } = taxonomy
   const [response, setResponse] = useState<CategorizationReviewResponse | null>(null)
@@ -306,12 +308,12 @@ export default function CategorizationReviewDialog({
               const subcategories = [...(FULL_TAXONOMY[draftCategory] ?? []), ...customSubcategories.filter((item) => item.category === draftCategory).map((item) => item.displayName)].filter((item) => !(draftCategory === 'Transfer' && item === 'Reconciliation'))
               return <article key={row.transaction_id} className="p-4 sm:p-5">
                 <div className="flex items-start gap-2">
-                  <label className={`grid min-h-11 min-w-11 place-items-center ${selectable ? 'cursor-pointer' : 'opacity-40'}`} aria-label={`Select change for ${row.merchant}, ${row.date}, ${transaction?.account ?? 'unknown account'}`}>
+                  <label className={`grid min-h-11 min-w-11 place-items-center ${selectable ? 'cursor-pointer' : 'opacity-40'}`} aria-label={`Select change for ${row.merchant}, ${formatDay(row.date)}, ${transaction?.account ?? 'unknown account'}`}>
                     <input type="checkbox" disabled={!selectable} checked={acceptedIds.has(row.transaction_id) && !excluded} onChange={() => toggle(row.transaction_id)} className="h-4 w-4 accent-[var(--color-accent)]" />
                   </label>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-baseline justify-between gap-2"><h3 className="text-[15px] font-semibold text-ink">{row.merchant}</h3><strong className="text-[15px] tabular-nums text-ink">{transaction ? fmtCents(transaction.amount) : 'Amount unavailable'}</strong></div>
-                    <p className="mt-1 detail-copy">{transaction?.account ?? 'Unknown account'} · {row.date}</p>
+                    <p className="mt-1 detail-copy">{transaction?.account ?? 'Unknown account'} · {formatDay(row.date)}</p>
                     {transaction?.originalDescription && transaction.originalDescription !== row.merchant && <p className="mt-1 break-words detail-copy">{transaction.originalDescription}</p>}
                     <p className="mt-2 text-[13px] font-semibold text-ink2">{excluded ? 'Opened in Ledger — excluded from this preview' : statusLabel(row)}</p>
                     <div className="mt-3 grid gap-2 sm:grid-cols-2">
@@ -328,7 +330,7 @@ export default function CategorizationReviewDialog({
                     <div className="mt-3 flex flex-wrap gap-x-4">
                       {canEdit && <button type="button" onClick={() => { const initial = choice ?? row.proposed ?? row.current; setDraftCategory(initial.category); setDraftSubcategory(initial.subcategory ?? ''); setEditingId(row.transaction_id) }} className="min-h-11 text-[13px] font-semibold text-accent-ink">Change category</button>}
                       {choice && canEdit && <button type="button" onClick={() => { setChoices((current) => { const next = new Map(current); next.delete(row.transaction_id); return next }); if (row.status !== 'suggested') setAcceptedIds((current) => { const next = new Set(current); next.delete(row.transaction_id); return next }) }} className="min-h-11 text-[13px] font-semibold text-muted">{row.status === 'suggested' && row.proposed ? 'Use engine suggestion' : 'Remove your choice'}</button>}
-                      {transaction && <button type="button" aria-label={`Open ${row.merchant} on ${row.date} in Ledger`} onClick={() => openTransaction(row.transaction_id)} className="min-h-11 text-[13px] font-semibold text-ink2">Open in Ledger</button>}
+                      {transaction && <button type="button" aria-label={`Open ${row.merchant} on ${formatDay(row.date)} in Ledger`} onClick={() => openTransaction(row.transaction_id)} className="min-h-11 text-[13px] font-semibold text-ink2">Open in Ledger</button>}
                     </div>
                   </div>
                 </div>

@@ -1,3 +1,4 @@
+import { useConsoleDayLabel } from '../hooks/useConsoleDayLabel'
 import {forecastReadProblem} from '../lib/budgetForecast'
 import {useEffect,useRef,useState} from 'react'
 import {useBudget} from '../contexts/BudgetContext'
@@ -7,6 +8,7 @@ import {fromSnapshot} from '../lib/budgetWorkspace'
 import {attentionMessage,attentionToken,defaultAttentionDate,validAttentionDate,type AttentionIssue} from '../lib/budgetAttention'
 
 export default function BudgetAttention(){
+  const formatDay = useConsoleDayLabel()
  const b=useBudget(),s=b.snapshot!,a=s.details?.attention,root=useRef<HTMLElement>(null)
  const [selected,setSelected]=useState<string|null>(null),[choice,setChoice]=useState<'acknowledged'|'snoozed'>('acknowledged'),[date,setDate]=useState(''),[accepted,setAccepted]=useState(false),[token,setToken]=useState('')
  const [all,setAll]=useState(false),heading=useRef<HTMLHeadingElement>(null),lastKey=useRef<string|null>(null)
@@ -41,9 +43,9 @@ export default function BudgetAttention(){
   <p className="budget-checks-count">{a.active_count} to check{a.total-active.length>0?` · ${a.total-active.length} done or snoozed`:''}.</p>
   {s.details?.controls?.paused&&<p className="detail-copy">Your budget is paused, but real bills and recorded spending can still need attention.</p>}
   {active.length===0&&<p className="outcome-panel">{!a.forecast_available||forecastReadProblem(s,b.readState,!!b.pending)?'A complete spending estimate is unavailable. Review the estimate’s history and evidence in the overview; no overall Within plan conclusion is available.':a.total?'Nothing new to review right now. Earlier checks remain available below.':'No issues detected in the available information. This is not a guarantee that every payment is recorded or that money is available to spend.'}</p>}
-  {money.length>0&&<div className="space-y-2"><h4 className="font-semibold">These gaps still remain</h4><p className="detail-copy">Reviewed or snoozed does not mean resolved. Parent and category amounts can overlap—do not add these together.</p><ul className="space-y-2 body-copy">{money.map(i=><li key={i.key} className="flex flex-wrap justify-between gap-2"><span>{i.label} · {i.state==='snoozed'?`show again ${i.until}`:'reviewed'}</span><strong className="tabular-nums">{fmtCents(-i.gap_cents!)}</strong></li>)}</ul></div>}
+  {money.length>0&&<div className="space-y-2"><h4 className="font-semibold">These gaps still remain</h4><p className="detail-copy">Reviewed or snoozed does not mean resolved. Parent and category amounts can overlap—do not add these together.</p><ul className="space-y-2 body-copy">{money.map(i=><li key={i.key} className="flex flex-wrap justify-between gap-2"><span>{i.label} · {i.state==='snoozed'?`show again ${formatDay(i.until)}`:'reviewed'}</span><strong className="tabular-nums">{fmtCents(-i.gap_cents!)}</strong></li>)}</ul></div>}
   <ul className="budget-check-list">{shown.map(i=><li key={i.key} className="budget-check-row" aria-label={`Budget check: ${i.label}`}>
-   <div className="flex flex-wrap justify-between gap-2"><h4 className="font-semibold">{i.label}</h4><span className="detail-copy">{i.state==='active'?'Needs a look':i.state==='snoozed'?`Snoozed until ${i.until}`:'Reviewed'}{i.due_date?` · ${i.kind==='bill_unmatched'?'Payment date':'Target date'} ${i.due_date}`:''}</span></div>
+   <div className="flex flex-wrap justify-between gap-2"><h4 className="font-semibold">{i.label}</h4><span className="detail-copy">{i.state==='active'?'Needs a look':i.state==='snoozed'?`Snoozed until ${formatDay(i.until)}`:'Reviewed'}{i.due_date?` · ${i.kind==='bill_unmatched'?'Payment date':'Target date'} ${formatDay(i.due_date)}`:''}</span></div>
    <p className="body-copy">{i.kind==='projected_overspend'?'Recorded spending and your recent spending history suggest this could go over plan by the end of the period.':attentionMessage(i)}</p>
    {i.gap_cents!==null&&(i.kind==='pending_overage'?<p className="body-copy">Pending charges could put you <strong className="tabular-nums">{fmtCents(i.gap_cents)}</strong> over your allowance.</p>:<p className="body-copy">{i.kind==='bill_unmatched'?'Still to match':['projected_overspend','fixed_projected_overspend'].includes(i.kind)?'Projected overage':'Plan shortfall'}: <strong className="tabular-nums">{fmtCents(-i.gap_cents)}</strong></p>)}
    {i.reopened&&<p className="detail-copy text-warn">{i.reopen_reason==='expired'?'Time to check again.':i.reopen_reason==='gap_worsened'?'This shortfall has grown enough to need another look.':i.reopen_reason==='due_date_changed'?'The date changed, so this needs another look.':'The relevant evidence changed, so this needs another look.'}</p>}

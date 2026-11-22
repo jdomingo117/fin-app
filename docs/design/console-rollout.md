@@ -47,6 +47,8 @@ Login, onboarding, callback, password reset and the internal concept route get d
 
 ## Review reproduction
 
+[Phase 2 Gate 1 review and captures](console-phase-2-gate-1.md).
+
 Start each review note with the **branch, commit, worktree path, exact dev-server command and URL**, followed by a capture of that URL.
 
 Record every capture and walkthrough on the signed-in route of the actual dev server named in the note. Use either a seeded local account or a data-source switch at the API boundary on that same route for fictional values. The review browser and personal browser load the same app entry, route, appearance flag and shell.

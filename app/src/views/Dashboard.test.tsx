@@ -1,4 +1,5 @@
 import {renderToStaticMarkup} from 'react-dom/server'
+import {StaticRouter} from 'react-router-dom'
 import {expect,it,vi} from 'vitest'
 import Dashboard from './Dashboard'
 
@@ -13,7 +14,7 @@ vi.mock('../components/charts/Area',()=>({default:()=> <p>Monthly series plotted
 vi.mock('../components/TransactionCategoryDrawer',()=>({default:()=>null}))
 vi.mock('../components/HeroCard',()=>({default:()=>null}))
 it('renders retry instead of reconstructing a monthly chart from available transactions',()=>{
-  const html=renderToStaticMarkup(<Dashboard/>)
+  const html=renderToStaticMarkup(<StaticRouter location="/dashboard"><Dashboard/></StaticRouter>)
   expect(html).toContain('Net worth history unavailable')
   expect(html).toContain('Retry')
   expect(html).not.toContain('Monthly series plotted')

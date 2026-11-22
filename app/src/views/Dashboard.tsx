@@ -274,7 +274,7 @@ export default function Dashboard() {
         </ConsoleModule>
         <div className="console-module-companions">
           <ConsoleModule title="Asset allocation" order={1}>
-            {summary.data && (liquidSum || investSum ? <AllocationDonut consoleStyle data={allocation} /> : <p>No cash or investment assets to allocate.</p>)}
+            {summary.data && (liquidSum || investSum ? <AllocationDonut consoleStyle totalLabel="Gross assets" data={allocation} /> : <p>No cash or investment assets to allocate.</p>)}
           </ConsoleModule>
           <ConsoleModule title="Holdings" kind="flat" order={2}>
             <ul className="console-holdings">
@@ -516,7 +516,7 @@ function SpendingInsights({
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-accent-ink">Largest outflow</p>
               <p className="mt-1.5 max-w-xl text-[17px] font-semibold leading-6 tracking-tight text-ink">
-                <span className="text-accent-ink">{topCategory.category}</span> was your largest outflow: {money(topCategory.amount)} ({topCategoryShare}% of spending).
+                <span className={consoleStyle ? undefined : 'text-accent-ink'}>{topCategory.category}</span> was your largest outflow: {money(topCategory.amount)} ({topCategoryShare}% of spending).
               </p>
               <p className="mt-2 body-copy">Explore this category in the Expenses analysis <span className="font-semibold text-accent-ink group-hover:underline">→</span></p>
             </div>
@@ -532,7 +532,7 @@ function SpendingInsights({
             <InsightAction
               eyebrow="Period change"
               sentence={`${largestCategoryChange.category} ${changeDirection} by ${money(Math.abs(largestCategoryChange.delta))} versus ${period ? "the preceding period" : "the prior 30 days"}.`}
-              tone={changeTone}
+              tone={consoleStyle ? 'text-ink' : changeTone}
               action="Explore category →"
               onClick={() => onExploreCategory(largestCategoryChange.category)}
             />
@@ -543,7 +543,7 @@ function SpendingInsights({
             <InsightAction
               eyebrow="Needs attention"
               sentence={`${reviewCount} transaction${reviewCount === 1 ? '' : 's'} need${reviewCount === 1 ? 's' : ''} review before this period is fully classified.`}
-              tone="text-warn"
+              tone={consoleStyle ? 'text-ink' : 'text-warn'}
               action="Review transactions →"
               onClick={onReviewLedger}
             />
@@ -551,7 +551,7 @@ function SpendingInsights({
             <InsightAction
               eyebrow="Cash flow"
               sentence={income > 0 ? `You saved ${savings}% of settled inflow after spending this period.` : 'A savings insight will appear once settled inflow is recorded.'}
-              tone={income > 0 ? (savings >= 0 ? 'text-pos' : 'text-neg') : 'text-muted'}
+              tone={!consoleStyle && income > 0 ? (savings >= 0 ? 'text-pos' : 'text-neg') : 'text-muted'}
               action="Explore income →"
               onClick={onExploreIncome}
             />

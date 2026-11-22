@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { lazy, Suspense, useCallback, useRef, useState, type ReactNode } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import {
   BrowserRouter, Navigate, Outlet, Route, Routes, useLocation, useNavigate,
@@ -11,6 +11,7 @@ import { RequireAnon, RequireAuth, RequireOnboarded } from './components/Guards'
 import ViewDataBoundary, { ViewLoadingState } from './components/ViewDataBoundary'
 import SceneBackground from './three/SceneBackground'
 import ConsoleViewportSpike from './components/console/ConsoleViewportSpike'
+import { useAppearanceDocument, useAppearancePreferences } from './components/console/appearance'
 import Shell from './components/Shell'
 import ThemeToggle from './components/ThemeToggle'
 import Boot from './components/Boot'
@@ -102,12 +103,7 @@ function AppFrame({
     && !location.pathname.startsWith('/auth/') && !recoveryError
   const effectiveDark = consoleViewport || dark
 
-  useLayoutEffect(() => {
-    const root = document.documentElement
-    if (consoleViewport) root.dataset.theme = 'console'
-    else delete root.dataset.theme
-    root.classList.toggle('dark', effectiveDark)
-  }, [consoleViewport, effectiveDark])
+  useAppearanceDocument(consoleViewport ? 'console' : 'classic', effectiveDark)
 
   return (
     <ViewBridge
@@ -185,41 +181,10 @@ function AppFrame({
 export default function App() {
   const [booted, setBooted] = useState(false)
   const [motionOn, setMotionOn] = useState(true)
-  const [dark, setDarkState] = useState(() => {
-    try {
-      return localStorage.getItem('halcyon-theme') === 'dark'
-    } catch {
-      return false
-    }
-  })
-  const [theme, setThemeState] = useState<Appearance>(() => {
-    try {
-      return localStorage.getItem('halcyon-appearance') === 'console' ? 'console' : 'classic'
-    } catch {
-      return 'classic'
-    }
-  })
+  const { theme, setTheme, dark, setDark } = useAppearancePreferences()
   const [toast, setToast] = useState<ToastData | null>(null)
   const toastId = useRef(0)
   const timer = useRef<number | undefined>(undefined)
-
-  const setDark = useCallback((on: boolean) => {
-    setDarkState(on)
-    try {
-      localStorage.setItem('halcyon-theme', on ? 'dark' : 'light')
-    } catch {
-      // localStorage unavailable (private mode, blocked) — theme just won't persist
-    }
-  }, [])
-
-  const setTheme = useCallback((appearance: Appearance) => {
-    setThemeState(appearance)
-    try {
-      localStorage.setItem('halcyon-appearance', appearance)
-    } catch {
-      // The current tab still uses the selected appearance.
-    }
-  }, [])
 
   const fireToast = useCallback((a: { title: string; sub: string }) => {
     toastId.current += 1

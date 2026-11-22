@@ -1,3 +1,4 @@
+import type { Appearance } from './components/console/appearance'
 import { createContext, useContext } from 'react'
 import { BUDGET_ENABLED } from './lib/budgetWorkspace'
 
@@ -52,7 +53,7 @@ export const VIEW_PATHS: Record<View, string> = {
   'operation-status': '/concept/operation-status',
 }
 
-export type Appearance = 'classic' | 'console'
+export type { Appearance } from './components/console/appearance'
 
 const PATH_VIEWS: Record<string, View> = Object.fromEntries(
   Object.entries(VIEW_PATHS).map(([view, path]) => [path, view as View]),

@@ -9,6 +9,8 @@
   overflow: auto;
   overscroll-behavior: contain;
   scrollbar-width: none;
+  --console-dock-ink: oklch(.185 .03 var(--section-hue));
+  --console-dock-fade: 28px;
   --console-chart-ink: oklch(.98 .014 var(--section-hue));
   --console-chart-net: oklch(.88 .057 var(--section-hue));
   --console-chart-tint: oklch(.67 .14 var(--section-hue));
@@ -26,12 +28,12 @@
 }
 .console-dock-material {
   position: absolute;
-  inset: 0 0 -28px;
+  inset: 0 0 calc(-1 * var(--console-dock-fade));
   z-index: -1;
   pointer-events: none;
   background: linear-gradient(
     to bottom,
-    oklch(.185 .03 var(--section-hue) / .97) calc(100% - 28px),
+    var(--console-dock-ink) calc(100% - var(--console-dock-fade)),
     oklch(.185 .03 var(--section-hue) / 0)
   );
 }

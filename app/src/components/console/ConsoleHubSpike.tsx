@@ -225,7 +225,7 @@ export default function ConsoleHubSpike({ id, title, period, figure, strip, art,
   return (
     <motion.div ref={scroll} layoutScroll className="console-designed-scroll" data-section={id} data-hero-state={compact ? 'compact' : 'expanded'}>
       <header className="console-hub-dock">
-        <motion.div className="console-dock-material" style={{ opacity: headerOpacity }} aria-hidden="true" />
+        <motion.div className="console-dock-material" style={{ opacity: compact ? 1 : headerOpacity }} aria-hidden="true" />
         <div className="console-dock-top">
           <button type="button" className="console-hub-back" onClick={onBack} aria-label="Back to Home">
             <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M19 12H5m7-7-7 7 7 7" /></svg><span>Home</span>

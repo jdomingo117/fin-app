@@ -1,0 +1,67 @@
+/* Semantic appearance tokens are scoped to the signed-in Console appearance,
+   including shared controls portalled outside the viewport. */
+html[data-theme="console"] {
+  --console-ink: #fff;
+  --color-console-pos: oklch(.87 .14 150);
+  --color-console-neg: oklch(.82 .12 25);
+  /* Classic accent preferences may be authored as inline root declarations. */
+  --color-accent: var(--console-ink) !important;
+  --color-accent-ink: var(--console-ink) !important;
+  --accent-wash: rgb(255 255 255 / .10);
+}
+
+.console-viewport {
+  --console-gutter: clamp(20px, 4vw, 72px);
+  --console-section-gap: 34px;
+  --console-tile: 96px;
+  --console-tile-active: 152px;
+  --console-tile-scale: 1.583333;
+  --console-tile-gap: 18px;
+  --console-tile-radius: 13px;
+  --console-active-radius: 18px;
+  --console-card-radius: 16px;
+  --console-card-width: 300px;
+  --tile-l-high: .66;
+  --tile-l-mid: .46;
+  --tile-l-low: .30;
+  --tile-chroma: .15;
+  --card-l-glow: .48;
+  --card-l-top: .36;
+  --card-l-base: .22;
+  --card-chroma: .12;
+  --scene-l-key: .52;
+  --scene-c-key: .16;
+  --scene-l-edge: .36;
+  --scene-c-edge: .14;
+  --scene-l-base: .24;
+  --scene-l-floor: .11;
+  --console-control-size: 46px;
+  --console-button-radius: 12px;
+  --console-button-height: 56px;
+
+  --console-base: #0a0d16;
+  --console-label: rgb(255 255 255 / .85);
+  --console-fill: rgb(255 255 255 / .075);
+  --console-line: rgb(255 255 255 / .14);
+  --console-ring: 0 0 0 3px rgb(6 8 16 / .85), 0 0 0 6px var(--console-ink);
+  --console-glow-low: 0 0 26px 6px rgb(255 255 255 / .28);
+  --console-glow-high: 0 0 46px 14px rgb(255 255 255 / .42);
+}
+
+.console-viewport [data-section="dashboard"] { --section-hue: 255; }
+.console-viewport [data-section="accounts"] { --section-hue: 200; }
+.console-viewport [data-section="income"] { --section-hue: 85; }
+.console-viewport [data-section="expenses"] { --section-hue: 35; }
+.console-viewport [data-section="budget"] { --section-hue: 295; }
+.console-viewport [data-section="income"] {
+  --tile-l-high: .74; --tile-l-mid: .60; --tile-l-low: .42; --tile-chroma: .17;
+  --card-l-glow: .59; --card-l-top: .44; --card-l-base: .28; --card-chroma: .15;
+  --scene-l-key: .60; --scene-c-key: .18; --scene-l-edge: .42; --scene-c-edge: .16;
+  --scene-l-base: .28; --scene-l-floor: .15;
+}
+.console-viewport [data-section="expenses"] {
+  --tile-l-high: .73; --tile-l-mid: .57; --tile-l-low: .39; --tile-chroma: .17;
+  --card-l-glow: .58; --card-l-top: .43; --card-l-base: .26; --card-chroma: .15;
+  --scene-l-key: .58; --scene-c-key: .18; --scene-l-edge: .41; --scene-c-edge: .16;
+  --scene-l-base: .27; --scene-l-floor: .14;
+}

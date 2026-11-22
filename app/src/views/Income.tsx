@@ -23,7 +23,7 @@ import StrategicProjections from '../components/StrategicProjections'
 import { ease, gridStagger } from '../components/motion'
 import { useView } from '../router'
 import { DateRangePicker, MultiSelect } from '../components/Controls'
-import ConsoleHubSpike, { ConsoleChartValues, ConsoleModule, consoleRowKeys, type ConsoleEntry } from '../components/console/ConsoleHubSpike'
+import ConsoleHubSpike, { ConsoleChartValues, ConsoleModule, consoleMoney, consoleRowKeys, type ConsoleEntry } from '../components/console/ConsoleHubSpike'
 import type { ConsoleOutlet } from '../components/console/ConsoleViewportSpike'
 import TransactionCategoryDrawer from '../components/TransactionCategoryDrawer'
 
@@ -383,14 +383,14 @@ function IncomeSourceActivity({
             key={transaction.id}
             type="button"
             onClick={() => onEdit(transaction)}
-            aria-label={`Edit ${transaction.merchant} on ${transaction.date}`}
+            aria-label={`Edit ${transaction.merchant} on ${dayLabel(transaction.date)}`}
             className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 py-2.5 text-left transition hover:bg-[var(--hair-soft)] focus-visible:bg-[var(--accent-wash)]"
           >
             <div className="min-w-0">
               <p className="truncate text-[13px] font-semibold text-ink">{transaction.merchant}</p>
               <p className="mt-0.5 text-[12px] text-muted">{dayLabel(transaction.date)}{transaction.subcat ? ` · ${transaction.subcat}` : ''}</p>
             </div>
-            <span className="flex items-center gap-2 text-[13px] font-bold tabular-nums text-pos"><span>{money(transaction.amount)}</span><span className="text-[12px] font-semibold text-accent-ink">Edit →</span></span>
+            <span className="flex items-center gap-2 text-[13px] font-bold tabular-nums"><span className={theme === 'console' ? undefined : 'text-pos'} data-sign={theme === 'console' && transaction.amount > 0 ? 'positive' : undefined}>{theme === 'console' ? consoleMoney(transaction.amount, true) : money(transaction.amount)}</span><span className="text-[12px] font-semibold text-accent-ink">Edit →</span></span>
           </button>
         ))}
       </div>

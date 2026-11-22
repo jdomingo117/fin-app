@@ -3,10 +3,10 @@ import { FocusRow } from '../components/console/FocusRow'
 import { useEffect, useState, type ReactNode } from 'react'
 import { useNavigate, useOutletContext } from 'react-router-dom'
 import ConsoleHome from '../components/console/ConsoleHome'
-import ConsoleHubSpike, { ConsoleChartValues, ConsoleModule, cumulativeValues, type ConsoleArt, type ConsoleFigure } from '../components/console/ConsoleHubSpike'
+import ConsoleHub, { ConsoleChartValues, ConsoleModule, cumulativeValues, type ConsoleArt, type ConsoleFigure } from '../components/console/ConsoleHub'
 import { DateRangePicker, MultiSelect } from '../components/Controls'
 import { usePeriodRange } from '../hooks/usePeriodRange'
-import type { ConsoleOutlet } from '../components/console/ConsoleViewportSpike'
+import type { ConsoleOutlet } from '../components/console/ConsoleViewport'
 import { expenseEffectCents, isEarnedIncome } from '../lib/classification'
 import HeroCard from '../components/HeroCard'
 import { Screen, ViewHeader, Grid } from '../components/Screen'
@@ -252,7 +252,7 @@ export default function Dashboard() {
   if (consoleOverview && consoleRoute) {
     const chartSeries = [{ label: 'Net worth', data: netWorthTrend, color: 'var(--console-chart-ink)' }]
     const activeAccounts = insightAccounts ?? accounts.map(account => account.id)
-    return <ConsoleHubSpike id="dashboard" title="Overview" entry={consoleRoute.entry?.id === 'dashboard' ? consoleRoute.entry : undefined}
+    return <ConsoleHub id="dashboard" title="Overview" entry={consoleRoute.entry?.id === 'dashboard' ? consoleRoute.entry : undefined}
       period={`Balances as of ${dayLabel(today)} ${today.slice(0, 4)}`}
       figure={{ label: 'Net worth', cents: currentNetWorth }}
       strip={[{ label: '30-day net movement', cents: summary.data?.net_movement_30d_cents, signed: true }]}
@@ -305,7 +305,7 @@ export default function Dashboard() {
         <ConsoleModule title="Recent activity" kind="flat" order={4}>{recent}</ConsoleModule>
       </FocusRow>
       {drawer}
-    </ConsoleHubSpike>
+    </ConsoleHub>
   }
 
   return (

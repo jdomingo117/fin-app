@@ -206,10 +206,6 @@
   gap: 4px;
   aspect-ratio: 16 / 10;
   padding: 18px 20px;
-  border-radius: var(--console-card-radius);
-  background:
-    radial-gradient(75% 80% at 100% 0%, oklch(var(--card-l-glow) var(--card-chroma) var(--section-hue) / .66), transparent 65%),
-    linear-gradient(160deg, oklch(var(--card-l-top) var(--card-chroma) var(--section-hue)), oklch(var(--card-l-base) .07 calc(var(--section-hue) + 30)));
   text-align: start;
   scroll-snap-align: start;
   cursor: pointer;
@@ -282,9 +278,7 @@
   max-block-size: 85dvh;
   overflow: auto;
   padding: 22px var(--console-gutter) max(28px, env(safe-area-inset-bottom));
-  border: 1px solid var(--console-line);
   border-radius: 24px 24px 0 0;
-  background: #111824;
   animation: console-sheet var(--dur-track) var(--ease-settle) both;
 }
 .console-centre-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }

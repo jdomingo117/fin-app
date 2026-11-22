@@ -3,6 +3,7 @@ import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { fmt, fmtCents } from '../../data'
 import { consoleProjection, useConsoleReducedMotion } from './motion'
 import type { SectionId } from './sections'
+import { GlassSurface } from './GlassSurface'
 import './console-hub.css'
 
 export type ConsoleFigure = { label: string; cents?: number; signed?: boolean }
@@ -143,11 +144,11 @@ export function ConsoleHeroArt({ id, art, reduced, origin }: {
 export function ConsoleModule({ title, tools, children, kind, order = 0 }: {
   title: string; tools?: ReactNode; children: ReactNode; kind?: 'flat' | 'chart'; order?: number
 }) {
-  return <section className="console-module" data-kind={kind} data-focus-ring data-console-row-item tabIndex={0}
+  return <GlassSurface as="section" material={kind === 'flat' ? 'opaque' : 'hub'} className="console-module" data-focus-ring data-console-row-item tabIndex={0}
     aria-label={title} style={{ '--console-module-order': order } as React.CSSProperties}>
     <header><h2>{title}</h2>{tools}</header>
     {children}
-  </section>
+  </GlassSurface>
 }
 
 export function ConsoleChartValues({ labels, series }: { labels: string[]; series: { label: string; data: number[] }[] }) {
@@ -161,7 +162,7 @@ export function ConsoleChartValues({ labels, series }: { labels: string[]; serie
   </details>
 }
 
-export default function ConsoleHubSpike({ id, title, period, figure, strip, art, filters, tabs, entry, onBack, children }: {
+export default function ConsoleHub({ id, title, period, figure, strip, art, filters, tabs, entry, onBack, children }: {
   id: 'income' | 'dashboard'
   title: string
   period: string

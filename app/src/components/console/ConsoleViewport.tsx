@@ -6,7 +6,8 @@ import { useData } from '../../contexts/DataContext'
 import { usePortfolio } from '../../hooks/usePortfolio'
 import { useView, type View } from '../../router'
 import { enabledSections, type SectionId } from './sections'
-import { captureConsoleOrigin, type ConsoleEntry } from './ConsoleHubSpike'
+import { captureConsoleOrigin, type ConsoleEntry } from './ConsoleHub'
+import { GlassSurface } from './GlassSurface'
 import { consoleDuration, consoleMotionStyle, consoleTransition, useConsoleReducedMotion } from './motion'
 
 export type ConsoleOutlet = {
@@ -49,7 +50,7 @@ function ConsoleRouteLayer({ children, reduced }: { children: ReactNode; reduced
   </motion.div>
 }
 
-export default function ConsoleViewportSpike() {
+export default function ConsoleViewport() {
   const { go, view, setTheme, toast } = useView()
   const { profile } = useData()
   const { signOut } = useAuth()
@@ -207,7 +208,7 @@ export default function ConsoleViewportSpike() {
       </main>
       <dialog ref={centre} className="console-centre" aria-labelledby="console-centre-title" onClose={() => setCentreOpen(false)}
         onClick={event => { if (event.target === event.currentTarget) centre.current?.close() }}>
-        <div className="console-centre-sheet">
+        <GlassSurface as="div" material="sheet" className="console-centre-sheet">
           <div className="console-centre-heading">
             <h2 id="console-centre-title">Control Centre</h2>
             <button type="button" className="console-utility" autoFocus aria-label="Close Control Centre" onClick={() => centre.current?.close()}>
@@ -237,7 +238,7 @@ export default function ConsoleViewportSpike() {
               <span>Sign out</span>
             </button>
           </div>
-        </div>
+        </GlassSurface>
       </dialog>
     </div>
   )

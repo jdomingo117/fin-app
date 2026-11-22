@@ -24,8 +24,8 @@ import StrategicProjections from '../components/StrategicProjections'
 import { ease, gridStagger } from '../components/motion'
 import { useView } from '../router'
 import { DateRangePicker, MultiSelect } from '../components/Controls'
-import ConsoleHubSpike, { ConsoleChartValues, ConsoleModule, consoleMoney, type ConsoleEntry } from '../components/console/ConsoleHubSpike'
-import type { ConsoleOutlet } from '../components/console/ConsoleViewportSpike'
+import ConsoleHub, { ConsoleChartValues, ConsoleModule, consoleMoney, type ConsoleEntry } from '../components/console/ConsoleHub'
+import type { ConsoleOutlet } from '../components/console/ConsoleViewport'
 import TransactionCategoryDrawer from '../components/TransactionCategoryDrawer'
 
 const TABS = [
@@ -233,7 +233,7 @@ function IncomeAnalyzer({ from, to, accounts, dbAccountsLength, consoleHub }: {
       { label: 'Inflow', data: m.cumInflow, color: 'var(--console-chart-ink)' },
       { label: 'Net after spending', data: m.cumNet, color: 'var(--console-chart-net)', fill: false },
     ]
-    return <ConsoleHubSpike id="income" title="Income" period={period} onBack={consoleHub.back}
+    return <ConsoleHub id="income" title="Income" period={period} onBack={consoleHub.back}
       tabs={consoleHub.tabs} filters={consoleHub.filters} entry={consoleHub.entry}
       figure={{ label: 'Total inflow', cents: report.data ? m.totalInflow : report.pending ? consoleHub.entry?.headline?.cents : undefined }}
       strip={report.data ? [
@@ -276,7 +276,7 @@ function IncomeAnalyzer({ from, to, accounts, dbAccountsLength, consoleHub }: {
         </>}
         {drawer}
       </>}
-    </ConsoleHubSpike>
+    </ConsoleHub>
   }
 
   return (

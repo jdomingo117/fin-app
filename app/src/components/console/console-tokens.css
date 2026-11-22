@@ -20,6 +20,8 @@ html[data-theme="console"] {
   --console-tile-radius: 13px;
   --console-active-radius: 18px;
   --console-card-radius: 16px;
+  --console-glass-filter: blur(24px) saturate(150%);
+  --console-sheet-fill: #111824;
   --console-card-width: 300px;
   --tile-l-high: .66;
   --tile-l-mid: .46;

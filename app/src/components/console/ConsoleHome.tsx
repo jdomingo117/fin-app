@@ -1,10 +1,11 @@
 import { motion } from 'framer-motion'
 import type { Account, Txn } from '../../data'
-import { ConsoleFigureStrip, ConsoleHeadline, ConsoleHeroArt, consoleMoney, type ConsoleArt, type ConsoleFigure } from './ConsoleHubSpike'
+import { ConsoleFigureStrip, ConsoleHeadline, ConsoleHeroArt, consoleMoney, type ConsoleArt, type ConsoleFigure } from './ConsoleHub'
 import { enabledSections, type SectionId } from './sections'
 import { FocusRow, SectionFocusRow } from './FocusRow'
 import { consoleRise, useConsoleReducedMotion } from './motion'
 import { FocusRing } from './FocusRing'
+import { GlassSurface } from './GlassSurface'
 import './console-dashboard.css'
 
 type Props = {
@@ -54,14 +55,14 @@ export default function ConsoleHome({
         {section.id === 'accounts' && <div className="console-activity">
           <h2>Accounts</h2>
           {accounts.length ? <FocusRow label="Account cards" className="console-activity-row">
-            {accounts.map(account => <button key={account.id} type="button" className="console-activity-card"
+            {accounts.map(account => <GlassSurface as="button" material="activity" key={account.id} className="console-activity-card"
               data-console-row-item onClick={() => open('accounts')}>
               <FocusRing layer="sweep" />
               <span className="console-card-emblem"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 6h18v12H3zM3 10h18M7 15h4" /></svg></span>
               <span className="console-card-category">{account.type}{account.institution ? ` · ${account.institution}` : ''}</span>
               <strong className="tabular-nums" data-sign={account.balance < 0 ? 'negative' : undefined}>{consoleMoney(account.balance)}</strong>
               <span className="console-card-title">{account.name}</span>
-            </button>)}
+            </GlassSurface>)}
           </FocusRow> : <p className="console-empty">No accounts to show.</p>}
         </div>}
         {(cards?.length || isFlow) ? <div className="console-activity">
@@ -72,14 +73,14 @@ export default function ConsoleHome({
               const merchant = transaction.merchant || 'Transaction details'
               const amount = consoleMoney(transaction.amount, true)
               return (
-                <button type="button" className="console-activity-card" key={transaction.id}
+                <GlassSurface as="button" material="activity" className="console-activity-card" key={transaction.id}
                   data-console-row-item aria-label={`${merchant}, ${category}, ${amount}`} onClick={() => openTransaction(transaction)}>
                   <FocusRing layer="sweep" />
                   <span className="console-card-emblem"><ActivityIcon transaction={transaction} /></span>
                   <span className="console-card-category">{category}</span>
                   <strong className="tabular-nums" data-sign={transaction.amount > 0 ? 'positive' : transaction.amount < 0 ? 'negative' : undefined}>{amount}</strong>
                   <span className="console-card-title">{merchant}</span>
-                </button>
+                </GlassSurface>
               )
             })}
           </FocusRow> : <p className="console-empty">{activity ? 'No matching transactions in the recent preview.' : 'Activity is unavailable.'}</p>}

@@ -10,7 +10,7 @@ import { BudgetProvider } from './contexts/BudgetContext'
 import { RequireAnon, RequireAuth, RequireOnboarded } from './components/Guards'
 import ViewDataBoundary, { ViewLoadingState } from './components/ViewDataBoundary'
 import SceneBackground from './three/SceneBackground'
-import ConsoleViewportSpike from './components/console/ConsoleViewportSpike'
+import ConsoleViewport from './components/console/ConsoleViewport'
 import { useAppearanceDocument, useAppearancePreferences } from './components/console/appearance'
 import Shell from './components/Shell'
 import ThemeToggle from './components/ThemeToggle'
@@ -45,7 +45,7 @@ function LazyDataRoute({ index, title, sub, children }: { index: string; title: 
 /** Chrome shared by the signed-in views. */
 function ShellLayout() {
   const { theme } = useView()
-  if (theme === 'console') return <ConsoleViewportSpike />
+  if (theme === 'console') return <ConsoleViewport />
   return (
     <Shell>
       <Outlet />

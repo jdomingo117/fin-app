@@ -1,0 +1,34 @@
+[data-console-surface] {
+  --console-module-tint: oklch(.26 .035 var(--section-hue, 255) / .85);
+  --console-module-flat: oklch(.215 .022 var(--section-hue, 255));
+  min-inline-size: 0;
+  color: var(--console-ink);
+  border-radius: var(--console-card-radius);
+}
+
+[data-console-surface="hub"],
+[data-console-surface="opaque"] {
+  border: 1px solid var(--console-line);
+}
+
+[data-console-surface="hub"] {
+  background: var(--console-module-tint);
+  backdrop-filter: var(--console-glass-filter);
+}
+
+[data-console-surface="opaque"],
+.console-viewport[data-reduced="true"] [data-console-surface="hub"] {
+  background: var(--console-module-flat);
+  backdrop-filter: none;
+}
+
+[data-console-surface="activity"] {
+  background:
+    radial-gradient(75% 80% at 100% 0%, oklch(var(--card-l-glow) var(--card-chroma) var(--section-hue) / .66), transparent 65%),
+    linear-gradient(160deg, oklch(var(--card-l-top) var(--card-chroma) var(--section-hue)), oklch(var(--card-l-base) .07 calc(var(--section-hue) + 30)));
+}
+
+[data-console-surface="sheet"] {
+  background: var(--console-sheet-fill);
+  border: 1px solid var(--console-line);
+}

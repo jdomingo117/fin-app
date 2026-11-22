@@ -14,8 +14,6 @@
   --console-chart-ink: oklch(.98 .014 var(--section-hue));
   --console-chart-net: oklch(.88 .057 var(--section-hue));
   --console-chart-tint: oklch(.67 .14 var(--section-hue));
-  --console-module-tint: oklch(.26 .035 var(--section-hue) / .85);
-  --console-module-flat: oklch(.215 .022 var(--section-hue));
   --hair-soft: rgb(255 255 255 / .08);
 }
 .console-hub-dock {
@@ -97,18 +95,12 @@
 .console-module-secondary { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: clamp(14px, 1.6vw, 24px); }
 .console-module-companions { display: grid; gap: clamp(14px, 1.6vw, 24px); min-width: 0; }
 .console-module {
-  min-width: 0;
-  background: var(--console-module-tint);
-  color: var(--console-ink);
-  border: 1px solid var(--console-line);
-  border-radius: var(--console-card-radius);
   padding: clamp(15px, 2vw, 26px);
 }
 .console-module, .console-module-grid + .console-module-secondary {
   animation: console-module-rise var(--dur-enter) var(--ease-settle) both;
   animation-delay: calc(var(--console-module-order, 0) * var(--dur-stagger));
 }
-.console-module[data-kind="flat"] { background: var(--console-module-flat); }
 .console-module > header { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 6px 14px; margin-bottom: 14px; }
 .console-module h2 { font: 400 19px/1.2 var(--font-display); letter-spacing: -.012em; }
 .console-module-readouts { display: flex; flex-wrap: wrap; gap: 14px 22px; }

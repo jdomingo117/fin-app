@@ -62,5 +62,5 @@ export function useConsoleReducedMotion() {
   const { motionOn } = useView()
   const preferences = useConsolePreferences()
   const prefersReduced = useSystemReducedMotion()
-  return prefersReduced || !motionOn || !!preferences?.preferences.reduceEffects
+  return prefersReduced || !motionOn || preferences?.effectsTier === 'reduce'
 }

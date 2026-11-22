@@ -131,9 +131,9 @@ export default function FiltersPopover({
             aria-label="Transaction filters"
             className="absolute right-0 z-50 mt-1.5 w-[320px] rounded-[12px] border border-[var(--hair)] p-3"
             style={{
-              background: 'var(--toast-bg)',
-              backdropFilter: 'blur(22px) saturate(1.2)',
-              WebkitBackdropFilter: 'blur(22px) saturate(1.2)',
+              background: 'var(--console-popover-paint, var(--toast-bg))',
+              backdropFilter: 'var(--console-popover-filter, blur(22px) saturate(1.2))',
+              WebkitBackdropFilter: 'var(--console-popover-filter, blur(22px) saturate(1.2))',
               boxShadow: 'var(--shadow-glass)',
             }}
           >

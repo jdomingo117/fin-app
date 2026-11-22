@@ -80,3 +80,8 @@
   from { opacity: .25; transform: translate3d(0, 0, 0); }
   to { opacity: .60; transform: translate3d(30px, -46px, 0); }
 }
+.console-scene[data-tier="balanced"] :is(.console-ribbon, .console-light-circles) { animation: none; }
+.console-scene[data-tier="balanced"] .console-ribbon { opacity: .62; }
+.console-scene[data-tier="balanced"] .console-light-circles { opacity: .42; }
+
+.console-scene[data-tier="balanced"] .console-ribbon-plane { transform: none !important; transition: none; }

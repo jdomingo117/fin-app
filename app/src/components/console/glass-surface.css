@@ -17,7 +17,8 @@
 }
 
 [data-console-surface="opaque"],
-.console-viewport[data-reduced="true"] [data-console-surface="hub"] {
+.console-viewport[data-reduced="true"] [data-console-surface="hub"],
+.console-viewport[data-effects-tier="balanced"] [data-console-surface="hub"] {
   background: var(--console-module-flat);
   backdrop-filter: none;
 }

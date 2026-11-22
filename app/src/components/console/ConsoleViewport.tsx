@@ -86,7 +86,7 @@ function ConsoleViewportContent({ visible }: { visible: boolean }) {
   const [finishedStart, setFinishedStart] = useState(false)
   const startupVisible = showStart && !finishedStart && home
   const paused = !visible || centreOpen || overlay || startupVisible
-  const reduceEffects = audio.preferences.reduceEffects
+  const effectsTier = audio.effectsTier
   const [clock, setClock] = useState(() => new Date())
   const [restoreFocus, setRestoreFocus] = useState(false)
   const root = useRef<HTMLDivElement>(null)
@@ -96,6 +96,12 @@ function ConsoleViewportContent({ visible }: { visible: boolean }) {
   const reduce = useConsoleReducedMotion()
   const designed = !home && (view === 'dashboard' || view === 'income')
   const outlet = useOutlet({ home, active, select, restoreFocus, entry, begin, back: requestBack } satisfies ConsoleOutlet)
+
+  useLayoutEffect(() => {
+    const root = document.documentElement
+    root.dataset.consoleEffects = effectsTier
+    return () => { delete root.dataset.consoleEffects }
+  }, [effectsTier])
 
   const finishStartup = useCallback(() => {
     setFinishedStart(true)
@@ -198,7 +204,7 @@ function ConsoleViewportContent({ visible }: { visible: boolean }) {
   const initials = profile.callsign?.trim().split(/\s+/).map(name => name.charAt(0)).slice(0, 2).join('').toUpperCase() || 'H'
 
   return (
-    <div ref={root} className="console-viewport" data-reduced={reduce} data-reduce-effects={reduceEffects} data-paused={paused} data-snap-hue={snapHue}
+    <div ref={root} className="console-viewport" data-reduced={reduce} data-reduce-effects={effectsTier === 'reduce'} data-effects-tier={effectsTier} data-paused={paused} data-snap-hue={snapHue}
       style={consoleMotionStyle}
       onClickCapture={event => { if (event.isTrusted && navigator.userActivation.isActive) audio.unlock() }}
       onKeyDownCapture={event => { if (event.isTrusted && navigator.userActivation.isActive && !event.repeat && !event.metaKey && !event.ctrlKey && !event.altKey) audio.unlock() }}
@@ -209,7 +215,7 @@ function ConsoleViewportContent({ visible }: { visible: boolean }) {
         if (event.relatedTarget instanceof Node && control.contains(event.relatedTarget)) return
         audio.play('hover')
       }}>
-      <AmbientBackground section={ambient} paused={paused} reduced={reduce} reduceEffects={reduceEffects} />
+      <AmbientBackground section={ambient} paused={paused} reduced={reduce} tier={effectsTier} />
       <header className="console-topbar" style={startupVisible ? { visibility: 'hidden' } : undefined}>
         <button type="button" className="console-brand" aria-label="Halcyon Home" onClick={() => { if (!home) requestBack() }}>
           <span aria-hidden="true" className="console-brand-letter" /><strong>HALCYON</strong>

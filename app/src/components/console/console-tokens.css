@@ -74,3 +74,16 @@ html[data-theme="console"] {
   --scene-l-key: .58; --scene-c-key: .18; --scene-l-edge: .41; --scene-c-edge: .16;
   --scene-l-base: .27; --scene-l-floor: .14;
 }
+
+:root:is([data-console-effects="balanced"], [data-console-effects="reduce"]) {
+  --console-popover-filter: none;
+  --console-popover-paint: var(--color-surface);
+}
+:root:is([data-console-effects="balanced"], [data-console-effects="reduce"]) :is(.backdrop-blur-xl, .backdrop-blur-sm, .workflow-surface, .glass) {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+:root:is([data-console-effects="balanced"], [data-console-effects="reduce"]) :is(.workflow-surface, .glass) {
+  background: var(--color-surface);
+}

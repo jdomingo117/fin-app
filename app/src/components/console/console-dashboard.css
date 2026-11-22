@@ -377,3 +377,21 @@
 @media (max-width: 600px) {
   .console-centre-actions button { width: min(60px, 12vw); min-inline-size: 44px; }
 }
+
+.console-effects-setting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-block: 10px;
+}
+.console-effects-setting select {
+  min-block-size: var(--console-control-size);
+  padding-inline: 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--console-line);
+  border-radius: var(--console-button-radius);
+  color: var(--console-ink);
+}
+.console-viewport[data-effects-tier="balanced"] .console-centre::backdrop { backdrop-filter: none; }

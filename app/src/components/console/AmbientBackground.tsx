@@ -1,8 +1,10 @@
+import type { EffectsTier } from './effectsTier'
 import { useEffect, useMemo, useRef, type CSSProperties } from 'react'
 import { enabledSections, type SectionId } from './sections'
 import './ambient-background.css'
 
 const particleCount = 55
+const balancedParticleLimit = 20
 const particleLimit = 120
 const driftBase = 11000
 const driftStep = 2600
@@ -45,17 +47,19 @@ const ribbons = [18, 23, 29, 35].map((duration, index) => ({
   '--ribbon-angle': `${-21 + index * 11}deg`,
 }) as CSSProperties)
 
-export function AmbientBackground({ section, paused, reduced, reduceEffects, count = particleCount }: {
+export function AmbientBackground({ section, paused, reduced, tier, count = particleCount }: {
   section: SectionId
   paused: boolean
   reduced: boolean
-  reduceEffects: boolean
+  tier: EffectsTier
   count?: number
 }) {
   const scene = useRef<HTMLDivElement>(null)
   const field = useRef<HTMLCanvasElement>(null)
   const elapsed = useRef(0)
-  const particles = useMemo(() => makeParticles(count), [count])
+  const reduceEffects = tier === 'reduce'
+  const budget = tier === 'balanced' ? Math.min(balancedParticleLimit, count) : count
+  const particles = useMemo(() => makeParticles(budget), [budget])
   const profile = import.meta.env.DEV && new URLSearchParams(location.search).has('profileAmbient')
 
   useEffect(() => {
@@ -101,7 +105,7 @@ export function AmbientBackground({ section, paused, reduced, reduceEffects, cou
       window.removeEventListener('pointermove', move)
       document.documentElement.removeEventListener('pointerleave', centre)
     }
-  }, [paused, reduced, profile])
+  }, [paused, reduced, profile, tier])
 
   useEffect(() => {
     const canvas = field.current
@@ -161,7 +165,7 @@ export function AmbientBackground({ section, paused, reduced, reduceEffects, cou
     }
   }, [particles, paused, reduced, reduceEffects, profile])
 
-  return <div ref={scene} className="console-scene" data-paused={paused} data-static={reduced} data-section={section}
+  return <div ref={scene} className="console-scene" data-paused={paused} data-static={reduced} data-tier={tier} data-section={section}
     aria-hidden="true" style={{ '--ambient-settle': `${settling}ms` } as CSSProperties}>
     <div className="console-ambient-plane" data-depth="background">
       {enabledSections.map(item => <div key={item.id} data-section={item.id} className="console-ambient"
@@ -171,7 +175,7 @@ export function AmbientBackground({ section, paused, reduced, reduceEffects, cou
       <div className="console-rays" />
       <div className="console-beam" />
     </div>
-    {(!reduceEffects && !reduced) && <div className="console-ambient-plane console-ribbon-plane" data-depth="ribbons">
+    {(!reduceEffects && !reduced) && <div className="console-ambient-plane console-ribbon-plane" data-depth={tier === 'full' ? 'ribbons' : undefined}>
       {ribbons.map((style, i) => <i key={i} className="console-ribbon" style={style} />)}
       <div className="console-light-circles" data-light-count={circleCount} style={{ backgroundImage: circlePaint }} />
     </div>}

@@ -82,6 +82,8 @@ hand to find the transfer-linker gap.
 
 ## Recent changes
 
+- 2026-11-22 — Console Phase 2a adds an opt-in Dashboard feel spike and versions the design reference.
+
 - 2026-11-21 — Wave 3C.4 scopes taxonomy, identifiers, planning and recurrence; DataContext boots profile/account directories only, with tenant-safe targeted invalidation and guarded detected-bill Undo.
 
 - 2026-11-21 — Wave 3C.3 pages Ledger, Accounts, Expenses and transfer/investment queues with full-parent editing and group-wide transfer batches.
@@ -99,5 +101,3 @@ hand to find the transfer-linker gap.
 - 2026-11-20 — Transfer review panels and cards now live beside the OskoLinker controller in components/transfers/.
 
 - 2026-11-19 — Default unit tests run offline; live CSV ingestion uses a verified disposable project.
-
-- 2026-11-18 — Budget Look back shows up to 12 budgets month by month (migration 20261118000000, query-budget `months`).

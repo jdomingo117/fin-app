@@ -1,5 +1,6 @@
 import {reportParent} from '../lib/reportParent'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import ConsoleDashboardSpike from '../components/console/ConsoleDashboardSpike'
 import HeroCard from '../components/HeroCard'
 import { Screen, ViewHeader, Grid } from '../components/Screen'
 import Tile from '../components/Tile'
@@ -69,7 +70,8 @@ function getAccountIcon(type: string, name: string) {
 
 export default function Dashboard() {
   const { accounts, refreshData } = useData()
-  const { go, toast } = useView()
+  const { go, toast, theme, motionOn } = useView()
+  const details = useRef<HTMLDivElement>(null)
   const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null)
   const parent = useReport(selectedTransactionId,tenant=>reportParent(tenant,selectedTransactionId!,accounts),!!selectedTransactionId)
 
@@ -86,7 +88,39 @@ export default function Dashboard() {
   const activity = useReport('recent', tenant => latestLines(tenant,RECENT_ACTIVITY_COUNT))
   const history = useReport('monthly',monthlyWorth)
   const [chartType, setChartType] = useState<'line' | 'bar'>('line')
-  if (!summary.data || !flow.data) return <Screen><ViewHeader index="01 — Command" title="Dashboard" sub="Your finances at a glance" />
+  const consolePreview = theme === 'console' && (
+    <ConsoleDashboardSpike
+      motionOn={motionOn}
+      covered={!!selectedTransactionId}
+      activity={activity.data ?? undefined}
+      openTransaction={transaction => setSelectedTransactionId(transaction.parentTransactionId ?? transaction.id)}
+      figures={{
+        dashboard: [
+          { label: 'Net worth', cents: summary.data?.net_worth_cents },
+          { label: '30-day net movement', cents: summary.data?.net_movement_30d_cents, signed: true },
+        ],
+        accounts: [
+          { label: 'Cash assets', cents: summary.data?.cash_asset_cents },
+          { label: 'Investment assets', cents: summary.data?.investment_asset_cents },
+        ],
+        income: [{ label: '30-day inflow', cents: flow.data?.periods.current.earned_cents }],
+        expenses: [{ label: '30-day spending', cents: flow.data?.periods.current.expense_cents }],
+      }}
+      open={section => {
+        if (section === 'dashboard') {
+          details.current?.scrollIntoView({ block: 'start' })
+          details.current?.focus({ preventScroll: true })
+        } else if (section === 'expenses') {
+          go(section, { state: { source: 'dashboard-insight', from: thirtyDaysAgoIso, to: today } })
+        } else {
+          go(section)
+        }
+      }}
+    />
+  )
+  const dashboardTitle = <ViewHeader index="01 — Command" title="Dashboard" sub="Your finances at a glance" />
+  const header = consolePreview ? <div ref={details} tabIndex={-1}>{dashboardTitle}</div> : dashboardTitle
+  if (!summary.data || !flow.data) return <Screen>{consolePreview}{header}
     <ReportStatus report={summary} label="Portfolio" /><ReportStatus report={flow} label="Cash flow" /></Screen>
   const inc = flow.data.periods.current.earned_cents
   const spend = flow.data.periods.current.expense_cents
@@ -141,7 +175,8 @@ export default function Dashboard() {
 
   return (
     <Screen>
-      <ViewHeader index="01 — Command" title="Dashboard" sub="Your finances at a glance" />
+      {consolePreview}
+      {header}
       {/* 
         GRID LAYOUT GUIDE:
         - The <Grid> wrapper is defined in 'app/src/components/Screen.tsx'.

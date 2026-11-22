@@ -1,9 +1,9 @@
-import { lazy, Suspense, useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import { lazy, Suspense, useCallback, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import {
   BrowserRouter, Navigate, Outlet, Route, Routes, useLocation, useNavigate,
 } from 'react-router-dom'
-import { ViewContext, VIEW_PATHS, pathToView, navNumber, type View } from './router'
+import { ViewContext, VIEW_PATHS, pathToView, navNumber, type Appearance, type View } from './router'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { DataProvider } from './contexts/DataContext'
 import { BudgetProvider } from './contexts/BudgetContext'
@@ -59,9 +59,10 @@ function BareLayout() {
  * and Onboarding keep calling `go('dashboard')` without modification.
  */
 function ViewBridge({
-  children, dark, setDark, motionOn, setMotionOn, fireToast,
+  children, theme, setTheme, dark, setDark, motionOn, setMotionOn, fireToast,
 }: {
   children: React.ReactNode
+  theme: Appearance; setTheme: (theme: Appearance) => void
   dark: boolean; setDark: (on: boolean) => void
   motionOn: boolean; setMotionOn: (on: boolean) => void
   fireToast: (a: { title: string; sub: string }) => void
@@ -73,7 +74,7 @@ function ViewBridge({
 
   return (
     <ViewContext.Provider
-      value={{ view, go, toast: fireToast, motionOn, setMotionOn, dark, setDark }}
+      value={{ view, go, toast: fireToast, motionOn, setMotionOn, theme, setTheme, dark, setDark }}
     >
       {children}
     </ViewContext.Provider>
@@ -81,9 +82,10 @@ function ViewBridge({
 }
 
 function AppFrame({
-  booted, setBooted, dark, setDark, motionOn, setMotionOn, toast, fireToast,
+  booted, setBooted, theme, setTheme, dark, setDark, motionOn, setMotionOn, toast, fireToast,
 }: {
   booted: boolean; setBooted: (b: boolean) => void
+  theme: Appearance; setTheme: (theme: Appearance) => void
   dark: boolean; setDark: (on: boolean) => void
   motionOn: boolean; setMotionOn: (on: boolean) => void
   toast: ToastData | null
@@ -92,14 +94,25 @@ function AppFrame({
   const location = useLocation()
   const view = pathToView(location.pathname)
   const { session, recoveryError, retryAccountRecovery } = useAuth()
+  // During the feel review, only Dashboard renders the opted-in appearance.
+  const consoleDashboard = theme === 'console' && view === 'dashboard' && !!session
+  const effectiveDark = consoleDashboard || dark
+
+  useLayoutEffect(() => {
+    const root = document.documentElement
+    if (consoleDashboard) root.dataset.theme = 'console'
+    else delete root.dataset.theme
+    root.classList.toggle('dark', effectiveDark)
+  }, [consoleDashboard, effectiveDark])
 
   return (
     <ViewBridge
-      dark={dark} setDark={setDark}
+      theme={consoleDashboard ? 'console' : 'classic'} setTheme={setTheme}
+      dark={effectiveDark} setDark={setDark}
       motionOn={motionOn} setMotionOn={setMotionOn}
       fireToast={fireToast}
     >
-      <SceneBackground view={view} motionOn={motionOn} dark={dark} />
+      {!consoleDashboard && <SceneBackground view={view} motionOn={motionOn} dark={dark} />}
 
       <AnimatePresence>
         {!booted && <Boot key="boot" onDone={() => setBooted(true)} />}
@@ -156,7 +169,7 @@ function AppFrame({
         </Routes>
       )}
 
-      {booted && view!=='budget' && <ThemeToggle />}
+      {booted && view!=='budget' && !consoleDashboard && <ThemeToggle />}
       {booted && session && <ProviderSyncNotice />}
       <MilestoneToast toast={toast} />
     </ViewBridge>
@@ -173,21 +186,32 @@ export default function App() {
       return false
     }
   })
+  const [theme, setThemeState] = useState<Appearance>(() => {
+    try {
+      return localStorage.getItem('halcyon-appearance') === 'console' ? 'console' : 'classic'
+    } catch {
+      return 'classic'
+    }
+  })
   const [toast, setToast] = useState<ToastData | null>(null)
   const toastId = useRef(0)
   const timer = useRef<number | undefined>(undefined)
 
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', dark)
-  }, [dark])
-
   const setDark = useCallback((on: boolean) => {
     setDarkState(on)
-    document.documentElement.classList.toggle('dark', on)
     try {
       localStorage.setItem('halcyon-theme', on ? 'dark' : 'light')
     } catch {
       // localStorage unavailable (private mode, blocked) — theme just won't persist
+    }
+  }, [])
+
+  const setTheme = useCallback((appearance: Appearance) => {
+    setThemeState(appearance)
+    try {
+      localStorage.setItem('halcyon-appearance', appearance)
+    } catch {
+      // The current tab still uses the selected appearance.
     }
   }, [])
 
@@ -205,6 +229,7 @@ export default function App() {
           <BudgetProvider>
             <AppFrame
               booted={booted} setBooted={setBooted}
+              theme={theme} setTheme={setTheme}
               dark={dark} setDark={setDark}
               motionOn={motionOn} setMotionOn={setMotionOn}
               toast={toast} fireToast={fireToast}

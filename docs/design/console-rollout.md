@@ -51,3 +51,10 @@ Login, onboarding, callback, password reset and the internal concept route get d
 - **Regression scope.** Inspect both CSS animations and JS targets for layout properties, animated shadows and tracking. Log the screen or primitive, what changed, fixture, checks run, artifacts and any unverified targets in each commit. New product components and views also trigger the repository's index update rule.
 
 Anime.js v4 dependency and chart parity work are tracked as a separate follow-up. Framer Motion 11 and CSS consume the same console motion tokens while the chart adapter stays on v3.
+
+
+## Phase 2a review
+
+In a signed-in Halcyon session, open Dashboard and press **Console** in the top bar. Hover a section and click once to open it. Use the arrow keys in the section row and Enter to open, or tap a tile twice on touch. The header control returns to the saved classic appearance. This slice includes the section tiles, Overview, Income and Expenses activity, existing Dashboard totals, and directional ambient light. The full material stack, sound, Control Centre and primitive demos come after the feel review.
+
+The Chrome DevTools Performance trace uses a fictional signed-in Dashboard on a 1440×900 viewport in local Chrome 157. It records pointer movement, rapid keyboard changes, the background dwell and colour cross-fade. Load the compressed recording in Chrome’s Performance panel. Physical-device traces and contrast qualification are phase gates. [Phase 2a Chrome trace](traces/console-phase-2a-chrome.json.gz)

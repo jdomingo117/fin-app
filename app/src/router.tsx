@@ -52,6 +52,8 @@ export const VIEW_PATHS: Record<View, string> = {
   'operation-status': '/concept/operation-status',
 }
 
+export type Appearance = 'classic' | 'console'
+
 const PATH_VIEWS: Record<string, View> = Object.fromEntries(
   Object.entries(VIEW_PATHS).map(([view, path]) => [path, view as View]),
 ) as Record<string, View>
@@ -68,6 +70,8 @@ interface Ctx {
   toast: (a: { title: string; sub: string }) => void
   motionOn: boolean
   setMotionOn: (on: boolean) => void
+  theme: Appearance
+  setTheme: (theme: Appearance) => void
   dark: boolean
   setDark: (on: boolean) => void
 }
@@ -77,6 +81,8 @@ export const ViewContext = createContext<Ctx>({
   toast: () => {},
   motionOn: true,
   setMotionOn: () => {},
+  theme: 'classic',
+  setTheme: () => {},
   dark: false,
   setDark: () => {},
 })

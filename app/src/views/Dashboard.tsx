@@ -76,7 +76,7 @@ function getAccountIcon(type: string, name: string) {
 
 export default function Dashboard() {
   const { accounts, refreshData } = useData()
-  const { go, toast, theme, motionOn } = useView()
+  const { go, toast, theme } = useView()
   const consoleRoute = useOutletContext<ConsoleOutlet | null>()
   const navigate = useNavigate()
   const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null)
@@ -150,7 +150,6 @@ export default function Dashboard() {
         activeId={active}
         selectSection={select}
         restoreFocus={restoreFocus}
-        motionOn={motionOn}
         covered={!!selectedTransactionId}
         activity={cards}
         accounts={accounts}

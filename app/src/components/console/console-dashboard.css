@@ -1,23 +1,6 @@
 @import "./console-tokens.css";
 
 .console-viewport {
-  --ease-glide: cubic-bezier(.2,.8,.2,1);
-  --ease-fade: cubic-bezier(.4,0,.2,1);
-  --dur-micro: 250ms;
-  --dur-focus: 420ms;
-  --dur-track: 550ms;
-  --dur-enter: 800ms;
-  --dur-label: 500ms;
-  --dur-bg: 1400ms;
-  --dur-dwell: 380ms;
-  --dur-reduced: 150ms;
-  --dur-breathe: 2800ms;
-  --dur-rays: 70s;
-  --dur-beam: 9s;
-  --console-rise: 26px;
-}
-
-.console-viewport {
   position: relative;
   isolation: isolate;
   block-size: 100dvh;
@@ -420,10 +403,10 @@
 .console-viewport[data-reduced="true"] :is(.console-rays, .console-beam, .console-focus-glow::after, .console-caption) { animation: none; }
 .console-viewport[data-reduced="true"] :is(.console-ambient, .console-section, .console-tile-art, .console-tile-rest, .console-tile-active, .console-tile-ring) { transition: none; }
 .console-viewport[data-reduced="true"] :is(.console-centre-sheet,.console-hub) {
-  animation: console-fade-in var(--dur-reduced) ease both !important;
+  animation: console-fade-in var(--dur-reduced) var(--ease-fade) both !important;
 }
 .console-viewport[data-reduced="true"] .console-hub[data-closing="true"] {
-  animation: console-fade-out var(--dur-reduced) ease both !important;
+  animation: console-fade-out var(--dur-reduced) var(--ease-fade) both !important;
 }
 @media (forced-colors: active) {
   .console-section[data-active="true"] .console-tile-ring { border: 2px solid Highlight; }

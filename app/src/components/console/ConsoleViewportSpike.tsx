@@ -1,4 +1,4 @@
-import { AnimatePresence, LayoutGroup, motion, useIsPresent, useReducedMotion } from 'framer-motion'
+import { AnimatePresence, LayoutGroup, motion, useIsPresent } from 'framer-motion'
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { useOutlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
@@ -6,7 +6,8 @@ import { useData } from '../../contexts/DataContext'
 import { usePortfolio } from '../../hooks/usePortfolio'
 import { useView, type View } from '../../router'
 import { enabledSections, type SectionId } from './ConsoleDashboardSpike'
-import { captureConsoleOrigin, consoleProjection, type ConsoleEntry } from './ConsoleHubSpike'
+import { captureConsoleOrigin, type ConsoleEntry } from './ConsoleHubSpike'
+import { consoleDuration, consoleMotionStyle, consoleTransition, useConsoleReducedMotion } from './motion'
 
 export type ConsoleOutlet = {
   home: boolean
@@ -43,13 +44,13 @@ function ConsoleRouteLayer({ children, reduced }: { children: ReactNode; reduced
     if (layer.current) layer.current.inert = !present
   }, [present])
   return <motion.div ref={layer} className="console-route-layer" aria-hidden={!present}
-    exit={{ opacity: 0 }} transition={{ duration: reduced ? .15 : consoleProjection.duration }}>
+    exit={{ opacity: 0 }} transition={consoleTransition('hub', reduced)}>
     {children}
   </motion.div>
 }
 
 export default function ConsoleViewportSpike() {
-  const { go, view, setTheme, motionOn, toast } = useView()
+  const { go, view, setTheme, toast } = useView()
   const { profile } = useData()
   const { signOut } = useAuth()
   const portfolio = usePortfolio()
@@ -69,7 +70,7 @@ export default function ConsoleViewportSpike() {
   const hubHeading = useRef<HTMLHeadingElement>(null)
   const centre = useRef<HTMLDialogElement>(null)
   const wasHome = useRef(home)
-  const reduce = !!useReducedMotion() || !motionOn
+  const reduce = useConsoleReducedMotion()
   const designed = !home && (view === 'dashboard' || view === 'income')
   const outlet = useOutlet({ home, active, select, restoreFocus, entry, begin, back: () => setClosing(true) } satisfies ConsoleOutlet)
 
@@ -98,9 +99,8 @@ export default function ConsoleViewportSpike() {
   }, [])
 
   useEffect(() => {
-    if (!home || active === ambient || !visible || centreOpen || !root.current) return
-    const dwell = parseFloat(getComputedStyle(root.current).getPropertyValue('--dur-dwell'))
-    const timer = window.setTimeout(() => setAmbient(active), dwell)
+    if (!home || active === ambient || !visible || centreOpen) return
+    const timer = window.setTimeout(() => setAmbient(active), consoleDuration.dwell)
     return () => window.clearTimeout(timer)
   }, [active, ambient, visible, centreOpen, home])
 
@@ -119,8 +119,8 @@ export default function ConsoleViewportSpike() {
   }, [home, location.pathname])
 
   useEffect(() => {
-    if (!closing || !root.current) return
-    const duration = parseFloat(getComputedStyle(root.current).getPropertyValue(reduce ? '--dur-reduced' : '--dur-hub'))
+    if (!closing) return
+    const duration = consoleDuration[reduce ? 'reduced' : 'hub']
     const timer = window.setTimeout(() => {
       navigate('/dashboard', { replace: true })
     }, duration)
@@ -165,10 +165,7 @@ export default function ConsoleViewportSpike() {
 
   return (
     <div ref={root} className="console-viewport" data-reduced={reduce} data-paused={!visible || centreOpen} data-snap-hue={snapHue}
-      style={{
-        '--dur-hub': `${consoleProjection.duration * 1000}ms`,
-        '--ease-settle': `cubic-bezier(${consoleProjection.ease.join(',')})`,
-      } as React.CSSProperties}>
+      style={consoleMotionStyle}>
       <div className="console-scene" aria-hidden="true">
         {enabledSections.map(item => <div key={item.id} data-section={item.id} className="console-ambient" data-current={item.id === ambient} />)}
         <div className="console-rays" />

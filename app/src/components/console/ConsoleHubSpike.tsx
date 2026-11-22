@@ -1,7 +1,7 @@
-import { animate, motion, useMotionValue, useMotionValueEvent, useReducedMotion, useScroll, useTransform } from 'framer-motion'
+import { animate, motion, useMotionValue, useMotionValueEvent, useScroll, useTransform } from 'framer-motion'
 import { useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { fmt, fmtCents } from '../../data'
-import { useView } from '../../router'
+import { consoleProjection, useConsoleReducedMotion } from './motion'
 import type { SectionId } from './ConsoleDashboardSpike'
 import './console-hub.css'
 
@@ -38,8 +38,6 @@ export function cumulativeValues(values: number[]) {
   let total = 0
   return values.map(value => (total += value))
 }
-
-export const consoleProjection = { duration: .6, ease: [.16, .9, .2, 1] as const }
 
 function ConsoleHandoff({ box, children }: { box?: ProjectionBox; children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null)
@@ -189,8 +187,7 @@ export default function ConsoleHubSpike({ id, title, period, figure, strip, art,
   onBack: () => void
   children: ReactNode
 }) {
-  const { motionOn } = useView()
-  const reduce = !!useReducedMotion() || !motionOn
+  const reduce = useConsoleReducedMotion()
   const scroll = useRef<HTMLDivElement>(null)
   const hero = useRef<HTMLElement>(null)
   const heading = useRef<HTMLHeadingElement>(null)

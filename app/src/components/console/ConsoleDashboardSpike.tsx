@@ -1,8 +1,9 @@
-import { motion, useReducedMotion } from 'framer-motion'
-import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type PointerEvent } from 'react'
+import { motion } from 'framer-motion'
+import { useEffect, useRef, type KeyboardEvent, type MouseEvent, type PointerEvent } from 'react'
 import type { Account, Txn } from '../../data'
 import { ConsoleFigureStrip, ConsoleHeadline, ConsoleHeroArt, consoleMoney, consoleRowKeys, type ConsoleArt, type ConsoleFigure } from './ConsoleHubSpike'
 import { BUDGET_ENABLED } from '../../lib/budgetWorkspace'
+import { consoleRise, useConsoleReducedMotion } from './motion'
 import './console-dashboard.css'
 
 const sections = [
@@ -24,43 +25,28 @@ type Props = {
   activeId: SectionId
   selectSection: (section: SectionId) => void
   restoreFocus: boolean
-  motionOn: boolean
   covered: boolean
   open: (section: SectionId) => void
   openTransaction: (transaction: Txn) => void
 }
-type Ease = [number, number, number, number]
 export const enabledSections = sections.filter(({ id }) => id !== 'budget' || BUDGET_ENABLED)
 
 export default function ConsoleDashboardSpike({
   figures, activity, accounts, period, latestDate, trends, activeId, selectSection, restoreFocus,
-  motionOn, covered, open, openTransaction,
+  covered, open, openTransaction,
 }: Props) {
   const active = Math.max(0, enabledSections.findIndex(section => section.id === activeId))
-  const [timing, setTiming] = useState<{ enter: number; reduced: number; rise: number; ease: Ease }>()
   const root = useRef<HTMLElement>(null)
   const buttons = useRef<Array<HTMLButtonElement | null>>([])
   const touchArmed = useRef<number | null>(null)
   const pointer = useRef<{ type: string; x: number; y: number } | null>(null)
   const swallowTouchClick = useRef(false)
   const lastHover = useRef<{ x: number; y: number } | null>(null)
-  const reduce = useReducedMotion() || !motionOn
+  const reduce = useConsoleReducedMotion()
   const section = enabledSections[active]
   const [headline, ...secondary] = figures[section.id] ?? []
   const cards = activity?.slice(0, 4)
   const isFlow = section.id === 'income' || section.id === 'expenses'
-
-  useLayoutEffect(() => {
-    if (!root.current) return
-    const styles = getComputedStyle(root.current)
-    const value = (name: string) => parseFloat(styles.getPropertyValue(name))
-    setTiming({
-      enter: value('--dur-enter') / 1000,
-      reduced: value('--dur-reduced') / 1000,
-      rise: value('--console-rise'),
-      ease: styles.getPropertyValue('--ease-settle').match(/[\d.]+/g)!.map(Number) as Ease,
-    })
-  }, [])
 
   useEffect(() => {
     if (restoreFocus) root.current?.querySelector<HTMLButtonElement>('.console-section[data-active="true"]')?.focus({ preventScroll: true })
@@ -169,14 +155,11 @@ export default function ConsoleDashboardSpike({
           </div>
         </div>
 
-        {timing && (
           <motion.div
             key={section.id}
             className="console-preview"
             data-section={section.id}
-            initial={{ opacity: 0, y: reduce ? 0 : timing.rise }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: reduce ? timing.reduced : timing.enter, ease: timing.ease }}
+            {...consoleRise(reduce)}
           >
             <div className="console-hero">
               <div className="console-summary">
@@ -219,7 +202,6 @@ export default function ConsoleDashboardSpike({
               </div> : <p className="console-empty">{activity ? 'No matching transactions in the recent preview.' : 'Activity is unavailable.'}</p>}
             </div> : null}
           </motion.div>
-        )}
     </section>
   )
 }

@@ -210,7 +210,7 @@ function ConsoleViewportContent({ visible }: { visible: boolean }) {
         audio.play('hover')
       }}>
       <AmbientBackground section={ambient} paused={paused} reduced={reduce} reduceEffects={reduceEffects} />
-      <header className="console-topbar">
+      <header className="console-topbar" style={startupVisible ? { visibility: 'hidden' } : undefined}>
         <button type="button" className="console-brand" aria-label="Halcyon Home" onClick={() => { if (!home) requestBack() }}>
           <span aria-hidden="true" className="console-brand-letter" /><strong>HALCYON</strong>
         </button>
@@ -232,7 +232,7 @@ function ConsoleViewportContent({ visible }: { visible: boolean }) {
         </div>
       </header>
       <main className="console-main" data-home={home}>
-        <LayoutGroup id="console-hub-entry">
+        {!startupVisible && <LayoutGroup id="console-hub-entry">
           <AnimatePresence initial={false}>
             <ConsoleRouteLayer key={home ? 'home' : view} reduced={reduce}>
               {!home && !designed && <header className="console-hub-heading" data-initial-hero={expandedHubs.includes(view) ? 'expanded' : 'compact'}>
@@ -246,7 +246,7 @@ function ConsoleViewportContent({ visible }: { visible: boolean }) {
               </div>
             </ConsoleRouteLayer>
           </AnimatePresence>
-        </LayoutGroup>
+        </LayoutGroup>}
       </main>
       <dialog ref={centre} className="console-centre" aria-labelledby="console-centre-title" onClose={() => {
         setCentreOpen(false)

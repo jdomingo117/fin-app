@@ -7,7 +7,7 @@
   margin: 0;
   padding: 0;
   border: 0;
-  background: linear-gradient(160deg, rgb(5 11 23 / .8), rgb(7 9 22 / .94));
+  background: linear-gradient(160deg, var(--console-start-top), var(--console-start-bottom));
   color: var(--console-ink);
 }
 .console-start-screen::backdrop { background: transparent; }
@@ -60,6 +60,7 @@
 .console-viewport[data-reduced="true"] .console-start-wide { opacity: 0; }
 .console-viewport[data-reduced="true"] .console-start-screen[data-leaving="true"] {
   animation: console-start-fade var(--dur-reduced) var(--ease-fade) both;
+  animation-duration: var(--dur-reduced) !important;
 }
 @keyframes console-start-track-out {
   from { opacity: .74; filter: blur(10px); }

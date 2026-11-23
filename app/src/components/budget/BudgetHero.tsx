@@ -6,6 +6,7 @@ import { fmtCents } from '../../data'
 import type { BudgetPresentation } from '../../lib/budgetPresentation'
 import { Link } from 'react-router-dom'
 import { useBehindAccounts } from './useBehindAccounts'
+import { useView } from '../../router'
 import type { BehindAccount } from '../../lib/budgetFreshness'
 
 const dayFmt=new Intl.DateTimeFormat('en-AU',{day:'numeric',month:'short',timeZone:'UTC'})
@@ -45,6 +46,7 @@ export default function BudgetHero({presentation:p,onEdit,canEdit,onFigures,onGu
   presentation:BudgetPresentation;onEdit:()=>void;canEdit:boolean;onFigures:()=>void;onGuide:()=>void;onUnplanned?:()=>void
 }){
   const {planned,spent,remaining,carry,rightsMoved}=p.everyday
+  const consoleStyle = useView().theme === 'console'
   const behind=useBehindAccounts(p.phase==='current',p.period?.asOf)
   const over=remaining.availability==='known'&&remaining.cents<0
   const gap=p.income.unallocated.availability==='known'&&p.income.unallocated.cents<0
@@ -61,7 +63,7 @@ export default function BudgetHero({presentation:p,onEdit,canEdit,onFigures,onGu
     p.coverage==='partial'?'Known activity only · some account history is missing, so this may change.':
     remaining.provisional?'Provisional budget balance · earlier activity and carry can still change.':'Based on your selected-account history.'
   return <>
-    <section className="budget-hero" aria-label="Budget overview">
+    <section data-budget-module={consoleStyle ? '' : undefined} className="budget-hero" aria-label="Budget overview">
       <div className="budget-hero-main">{behind.length>0&&<MissingActivityNotice behind={behind}/>}{gap&&<p className="budget-phone-funding-notice">{p.income.unallocated.freshness==='stale'?'Previously loaded funding gap':p.phase==='future'?'Future plan funding gap':'Plan funding gap'}: <BudgetValue name="phone-funding-gap" value={p.income.unallocated}/></p>}<h3 className="budget-balance-title">{over?'Over the everyday plan':behind.length?'Left for everyday spending, before missing activity':'Left for everyday spending'}</h3>
         <div className={`budget-hero-amount ${over?'text-neg':''} ${behind.length?'budget-hero-amount--uncertain':''}`}><BudgetValue name="hero-remaining" value={remaining}/></div>
         <p className="budget-spent-line">{spent.availability==='known'&&behind.length?<>Recorded so far: <strong><BudgetValue name="hero-spent" value={spent}/></strong> of your <strong><BudgetValue name="hero-planned" value={planned}/></strong> plan.</>:spent.availability==='known'?<>You’ve spent <strong><BudgetValue name="hero-spent" value={spent}/></strong> of your <strong><BudgetValue name="hero-planned" value={planned}/></strong> plan.</>:<>Your everyday plan is <strong><BudgetValue name="hero-planned" value={planned}/></strong>. Recorded spending is unavailable.</>}</p>
@@ -75,8 +77,8 @@ export default function BudgetHero({presentation:p,onEdit,canEdit,onFigures,onGu
       <BudgetAttention/>
       <div className="budget-hero-forecast"><BudgetForecast/></div>
     </section>
-    <details className="budget-income-disclosure"><summary>Income & allocations{gap&&<> · <span className="text-warn">Funding gap <BudgetValue name="overview-funding-gap" value={p.income.unallocated}/></span></>}{p.income.futureUnallocated.availability==='known'&&p.income.futureUnallocated.cents<0&&<> · Continuing plan needs funding</>}</summary>
-      <div className="budget-income"><h3 className="budget-eyebrow">Your income plan</h3><dl className="budget-income-totals"><div><dt>Expected this budget</dt><dd><BudgetValue name="hero-expected" value={p.income.expected}/></dd></div><div><dt>Received so far</dt><dd><BudgetValue name="hero-received" value={p.income.received}/></dd></div>{p.income.cashOnce.availability==='known'&&p.income.cashOnce.cents!==0&&<div><dt>Existing cash planned once</dt><dd><BudgetValue name="hero-cash" value={p.income.cashOnce}/></dd></div>}</dl>
+    <details data-budget-module={consoleStyle ? '' : undefined} className="budget-income-disclosure"><summary>Income & allocations{gap&&<> · <span className="text-warn">Funding gap <BudgetValue name="overview-funding-gap" value={p.income.unallocated}/></span></>}{p.income.futureUnallocated.availability==='known'&&p.income.futureUnallocated.cents<0&&<> · Continuing plan needs funding</>}</summary>
+      <div className="budget-income"><h3 data-module-title className={consoleStyle ? 'console-module-title' : 'budget-eyebrow'}>Your income plan</h3><dl className="budget-income-totals"><div><dt>Expected this budget</dt><dd><BudgetValue name="hero-expected" value={p.income.expected}/></dd></div><div><dt>Received so far</dt><dd><BudgetValue name="hero-received" value={p.income.received}/></dd></div>{p.income.cashOnce.availability==='known'&&p.income.cashOnce.cents!==0&&<div><dt>Existing cash planned once</dt><dd><BudgetValue name="hero-cash" value={p.income.cashOnce}/></dd></div>}</dl>
         <div className={`budget-unallocated ${gap?'budget-funding-gap':''}`}><span>{gap?'Funding gap':'Still to plan'}</span><strong><BudgetValue name="hero-unallocated" value={p.income.unallocated}/></strong></div>
         <p className="budget-income-meaning">{gap?'Your allocations exceed expected resources by this amount. Review your plan to address the gap.':'Expected resources without an allocation yet. This is separate from everyday remaining; some income may not have arrived.'}</p>
         {p.income.futureUnallocated.availability==='known'&&p.income.futureUnallocated.cents<0&&<p className="budget-future-gap">Continuing plan gap: <strong><BudgetValue name="hero-future-gap" value={p.income.futureUnallocated}/></strong>. This is separate from this period’s plan.</p>}

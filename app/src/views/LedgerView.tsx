@@ -375,6 +375,7 @@ function LedgerWorkspace({ tenant }: { tenant: string }) {
       </Tile>
 
       <TransactionCategoryDrawer transaction={selected} onClose={() => { setSelectedId(null); setReviewEditorId(null) }} onChanged={async () => {
+        if (reviewEditorId !== null) setReviewInvalidated(true)
         await refreshData()
       }} />
       {bulkOpen && bulk.data && <BulkCategoryDialog transactions={selectedTransactions} onClose={(clearSelection) => {

@@ -61,6 +61,9 @@ async function capture(page: Page, name: string) {
 
 async function checkAxe(page: Page) {
   await expect(routeLayer(page)).toHaveCSS('opacity', '1')
+  // The inner hub and its tiles also fade on entry. Axe tests the final paint.
+  await expect.poll(() => routeLayer(page).locator('.console-workflow-hub, .workflow-surface').evaluateAll(nodes =>
+    nodes.every(node => Number(getComputedStyle(node).opacity) >= 0.999))).toBe(true)
   const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()
   await test.info().attach('axe', { body: JSON.stringify(results.violations), contentType: 'application/json' })
   expect.soft(results.violations.map(({ id, nodes }) => ({ id, targets: nodes.map(node => node.target) }))).toEqual([])

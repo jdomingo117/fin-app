@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
-import { auditConsoleChrome } from './fixtures/console-leftovers'
+import { auditConsoleChrome, collectConsoleChrome } from './fixtures/console-leftovers'
 import { dashboard, signInForConsole } from './fixtures/console-review'
 
 const hubs = [
@@ -136,4 +136,10 @@ test('Expenses displays reconciled prior detail and nice-number money ticks', as
       expect([1, 2, 2.5, 5]).toContain(Math.abs(amount) / scale)
     }
   }
+})
+test('the leftovers audit detects casing applied only in the rendered view', async ({ page }) => {
+  await page.setContent(`<style>th::after { content: " status"; font-variant-caps: all-small-caps }</style>
+    <main><table><thead><tr><th style="text-transform: uppercase">Item</th></tr></thead></table>
+    <button><span style="font-variant-caps: small-caps">Planned</span></button></main>`)
+  expect((await collectConsoleChrome(page.locator('main'))).issues.casing).toEqual(['ITEM', 'STATUS', 'PLANNED'])
 })

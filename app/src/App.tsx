@@ -98,14 +98,17 @@ function AppFrame({
   const location = useLocation()
   const view = pathToView(location.pathname)
   const { session, recoveryError, retryAccountRecovery } = useAuth()
-  const consoleViewport = theme === 'console' && !!session
+  const consoleEntry = theme === 'console'
     && view !== 'login' && view !== 'onboarding' && view !== 'operation-status'
-    && !location.pathname.startsWith('/auth/') && !recoveryError
+    && !location.pathname.startsWith('/auth/')
+  const consoleViewport = consoleEntry && !!session && !recoveryError
   const effectiveDark = consoleViewport || dark
-  const ready = booted || theme === 'console'
+  // A signed-in Console reload can enter routing while the session resolves.
+  // The protected routes still wait to show their content inside RequireAuth.
+  const ready = booted || consoleEntry
   useLayoutEffect(() => {
-    if (theme === 'console' && !booted) setBooted(true)
-  }, [theme, booted, setBooted])
+    if (consoleViewport && !booted) setBooted(true)
+  }, [consoleViewport, booted, setBooted])
 
   useAppearanceDocument(consoleViewport ? 'console' : 'classic', effectiveDark)
 

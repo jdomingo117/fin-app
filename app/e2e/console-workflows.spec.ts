@@ -84,8 +84,11 @@ for (const route of routes) test(`Leftovers audit · ${route.path}`, async ({ pa
   await expect(routeLayer(page).getByRole('heading', { name: route.title, exact: true }).first()).toBeVisible()
   await expect(page.getByText('Session secured', { exact: true })).toHaveCount(0)
   await expect(routeLayer(page).getByRole('button', { name: 'Back to Home' })).toHaveText('Home')
-  await expect(workflowStatus(page)).toContainText({ budget: '$577.80', ledger: 'To review9', ingestion: 'Choose account', transfers: '1' }[route.path])
-  if (route.path === 'budget') await expect(page.locator('[data-budget-value="hero-remaining"] [data-budget-amount]')).toHaveText('$577.80')
+  await expect(workflowStatus(page)).toContainText({ budget: '$577.80', ledger: 'Category not assigned1', ingestion: 'Choose account', transfers: '1' }[route.path])
+  if (route.path === 'budget') {
+    await expect(page.locator('[data-budget-value="hero-remaining"] [data-budget-amount]')).toHaveText('$577.80')
+    await expect(page.getByRole('region', { name: 'Spending estimate unavailable' })).toBeVisible()
+  }
   if (route.path === 'ledger') await expect(page.getByRole('button', { name: /Market grocer/ }).first()).toBeVisible()
   if (route.path === 'ingestion') await expect(page.getByLabel('Import into')).toBeVisible()
   if (route.path === 'transfers') await expect(page.getByRole('button', { name: /^Confirm 1 internal transfer/ })).toBeVisible()
@@ -94,6 +97,19 @@ for (const route of routes) test(`Leftovers audit · ${route.path}`, async ({ pa
   await auditConsoleChrome(routeLayer(page), route.path)
   await capture(page, route.path)
   await checkAxe(page)
+  if (route.path === 'ledger') {
+    const unassigned = routeLayer(page).getByRole('button', { name: /Category not assigned.*1/ })
+    const attention = routeLayer(page).getByRole('button', { name: /Needs attention.*2/ })
+    await expect(attention).toBeVisible()
+    await expect(page.getByText('Category source: Bank').first()).toBeVisible()
+    await expect(page.getByText('Unknown', { exact: true })).toHaveCount(0)
+    await unassigned.click()
+    await expect(routeLayer(page).getByRole('list', { name: 'Ledger transactions' }).getByRole('listitem')).toHaveCount(1)
+    await attention.click()
+    await expect(routeLayer(page).getByRole('list', { name: 'Ledger transactions' }).getByRole('listitem')).toHaveCount(2)
+    await routeLayer(page).getByRole('button', { name: 'All', exact: true }).click()
+    await expect(page.getByRole('button', { name: /Market grocer/ }).first()).toBeVisible()
+  }
 })
 
 test('Ledger corrects a category and restores keyboard focus', async ({ page }) => {
@@ -231,6 +247,13 @@ test('Transfers cancels and then confirms a group through one write', async ({ p
   const group = page.getByRole('button', { name: /Everyday.*High-interest|High-interest.*Everyday/ })
   await group.click()
   await expect(group).toHaveAttribute('aria-expanded', 'true')
+  const regularActivity = page.getByRole('button', { name: /^Count 1 as regular activity/ })
+  await expect(regularActivity).toBeVisible()
+  expect(await regularActivity.evaluate(button => {
+    const bounds = button.getBoundingClientRect()
+    const group = button.closest('.overflow-hidden')!.getBoundingClientRect()
+    return bounds.left >= group.left && bounds.right <= group.right && bounds.right <= innerWidth
+  })).toBe(true)
   await auditConsoleChrome(routeLayer(page), 'transfers queue expanded')
   await capture(page, 'transfers-review')
   page.once('dialog', dialog => dialog.dismiss())

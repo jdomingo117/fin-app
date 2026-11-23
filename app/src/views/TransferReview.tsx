@@ -18,7 +18,7 @@ export default function TransferReview() {
         <ConsoleModule title="How decisions work" kind="flat">
           <div className="grid justify-items-start gap-3">
             <p className="text-muted">Confirm movements between your accounts as internal transfers. Halcyon excludes them from income and spending.</p>
-            <p className="text-muted">Count a payment or deposit as regular activity if it belongs in income or spending.</p>
+            <p className="text-muted">Choose “Count as regular activity” for payments or deposits that belong in income or spending.</p>
             <Button variant="ghost" onClick={() => go('ingestion')}>Import a statement</Button>
           </div>
         </ConsoleModule>

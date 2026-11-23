@@ -5,7 +5,7 @@ import '@xyflow/react/dist/style.css'
 import Tile from './Tile'
 import { catInScope, isActive, subInScope, type CatSelection } from '../lib/expenseSelection'
 import { catColor } from '../lib/categoryColor'
-import { fmt, fmtCents } from '../data'
+import { categoryDisplayName, fmt, fmtCents } from '../data'
 import { useView } from '../router'
 
 
@@ -147,7 +147,7 @@ export default function ExpenseFlowCard({
       // dimming is additive: with no focus it's always false, so the card renders
       // exactly as it did before cross-filtering existed
       const isDimmed = focusOn && !catInScope(c.name, selection)
-      nodes.push({ id: `cat:${c.name}`, type: 'flow', position: { x: FLOW_LAYOUT.categoryX, y }, data: { label: c.name, amount: money(c.total), pct: `${Math.round((c.total / total) * 100)}%`, color, kind: 'cat', selected: isExpanded, dimmed: isDimmed } })
+      nodes.push({ id: `cat:${c.name}`, type: 'flow', position: { x: FLOW_LAYOUT.categoryX, y }, data: { label: categoryDisplayName(c.name), amount: money(c.total), pct: `${Math.round((c.total / total) * 100)}%`, color, kind: 'cat', selected: isExpanded, dimmed: isDimmed } })
       // `animated` stays bound to expansion, not the focus — a multi-select would
       // otherwise animate every edge at once
       edges.push({ id: `e-t-${c.name}`, source: 'total', target: `cat:${c.name}`, animated: !consoleStyle && isExpanded, style: { stroke: color, strokeWidth: edgeW(c.total / total, 16, 13), opacity: (isExpanded ? 0.85 : 0.28) * (isDimmed ? 0.5 : 1) } })

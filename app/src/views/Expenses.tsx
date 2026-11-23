@@ -31,7 +31,7 @@ import {
   toggleSubcat,
   type CatSelection,
 } from '../lib/expenseSelection'
-import { fmt } from '../data'
+import { categoryDisplayName, fmt } from '../data'
 import {cashFlow, type FlowParams} from '../lib/reports'
 import {useReport} from '../hooks/useReport'
 import ReportStatus from '../components/ReportStatus'
@@ -284,7 +284,7 @@ function ExpenseAnalytics({
               <div className="console-module-companions">
                 <ConsoleModule title="Spending breakdown" order={1}>
                   <dl className="console-module-readouts">
-                    <div><dt>Largest category</dt><dd>{m.topCat.name}</dd></div>
+                    <div><dt>Largest category</dt><dd>{categoryDisplayName(m.topCat.name)}</dd></div>
                     <div><dt>Top vendor</dt><dd>{merchant?.merchant ? shortMerchant(merchant.merchant) : 'No vendor data'}</dd></div>
                   </dl>
                 </ConsoleModule>
@@ -325,7 +325,7 @@ function ExpenseAnalytics({
           </svg>
           <div className="font-display text-[16px] font-bold text-ink">No spending accounts selected</div>
           <p className="max-w-[440px] body-copy">
-            Please select at least one outflow account from the filter bar above to analyze transaction history, category changes, and category outflow.
+            Please select at least one outflow account from the filter bar above to analyse transaction history, category changes, and category outflow.
           </p>
         </div>
       </Grid>
@@ -373,7 +373,7 @@ function ExpenseAnalytics({
           <HeroMetric
             key="heavyweight"
             label="Heavyweight category"
-            value={m.topCat.name}
+            value={categoryDisplayName(m.topCat.name)}
             valueClass="truncate"
             sub={m.topCat.total > 0 ? `${fmt(m.topCat.total)} · ${Math.round(m.topCatShare * 100)}% of outflow` : 'no spending'}
           />

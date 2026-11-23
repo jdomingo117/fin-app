@@ -1,0 +1,1422 @@
+{
+  "baselineApplication": "a0e98c83564e7278d65d6d13f085456549716cea",
+  "application": "1c3a946fa3cc93df7c54de926223182640b7101c",
+  "before": [
+    {
+      "batch": "4A",
+      "state": "Accounts compact",
+      "viewport": "1440×900",
+      "checked": {
+        "labels": 20,
+        "moduleTitles": 3,
+        "controls": 11,
+        "accentControls": 0,
+        "focusedElements": 1,
+        "textNodes": 109
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [
+          "Accounts hub"
+        ],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4A",
+      "state": "Accounts compact",
+      "viewport": "390×844",
+      "checked": {
+        "labels": 20,
+        "moduleTitles": 3,
+        "controls": 11,
+        "accentControls": 0,
+        "focusedElements": 1,
+        "textNodes": 105
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [
+          "Accounts hub"
+        ],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4A",
+      "state": "Accounts expanded",
+      "viewport": "1440×900",
+      "checked": {
+        "labels": 21,
+        "moduleTitles": 3,
+        "controls": 11,
+        "accentControls": 0,
+        "focusedElements": 1,
+        "textNodes": 123
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [
+          "Accounts hub"
+        ],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4A",
+      "state": "Accounts expanded",
+      "viewport": "390×844",
+      "checked": {
+        "labels": 21,
+        "moduleTitles": 3,
+        "controls": 11,
+        "accentControls": 0,
+        "focusedElements": 1,
+        "textNodes": 119
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [
+          "Accounts hub"
+        ],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4A",
+      "state": "Expenses compact",
+      "viewport": "1440×900",
+      "checked": {
+        "labels": 29,
+        "moduleTitles": 6,
+        "controls": 2,
+        "accentControls": 0,
+        "focusedElements": 1,
+        "textNodes": 179
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [
+          "Expenses hub"
+        ],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4A",
+      "state": "Expenses compact",
+      "viewport": "390×844",
+      "checked": {
+        "labels": 29,
+        "moduleTitles": 6,
+        "controls": 2,
+        "accentControls": 0,
+        "focusedElements": 1,
+        "textNodes": 167
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [
+          "Expenses hub"
+        ],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4A",
+      "state": "Expenses expanded",
+      "viewport": "1440×900",
+      "checked": {
+        "labels": 30,
+        "moduleTitles": 6,
+        "controls": 2,
+        "accentControls": 0,
+        "focusedElements": 1,
+        "textNodes": 191
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [
+          "Expenses hub"
+        ],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4A",
+      "state": "Expenses expanded",
+      "viewport": "390×844",
+      "checked": {
+        "labels": 30,
+        "moduleTitles": 6,
+        "controls": 2,
+        "accentControls": 0,
+        "focusedElements": 1,
+        "textNodes": 179
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [
+          "Expenses hub"
+        ],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4A",
+      "state": "Income compact",
+      "viewport": "1440×900",
+      "checked": {
+        "labels": 16,
+        "moduleTitles": 5,
+        "controls": 0,
+        "accentControls": 0,
+        "focusedElements": 1,
+        "textNodes": 180
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [
+          "Income hub"
+        ],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4A",
+      "state": "Income compact",
+      "viewport": "390×844",
+      "checked": {
+        "labels": 16,
+        "moduleTitles": 5,
+        "controls": 0,
+        "accentControls": 0,
+        "focusedElements": 1,
+        "textNodes": 171
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [
+          "Income hub"
+        ],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4A",
+      "state": "Income expanded",
+      "viewport": "1440×900",
+      "checked": {
+        "labels": 17,
+        "moduleTitles": 5,
+        "controls": 0,
+        "accentControls": 0,
+        "focusedElements": 1,
+        "textNodes": 192
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [
+          "Income hub"
+        ],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4A",
+      "state": "Income expanded",
+      "viewport": "390×844",
+      "checked": {
+        "labels": 17,
+        "moduleTitles": 5,
+        "controls": 0,
+        "accentControls": 0,
+        "focusedElements": 1,
+        "textNodes": 183
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [
+          "Income hub"
+        ],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4B",
+      "state": "budget",
+      "viewport": "1440×900",
+      "checked": {
+        "labels": 47,
+        "moduleTitles": 7,
+        "controls": 1,
+        "accentControls": 1,
+        "focusedElements": 1,
+        "textNodes": 144
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [
+          "Everyday spending against the saved plan"
+        ],
+        "defaultOutlines": [],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4B",
+      "state": "budget",
+      "viewport": "390×844",
+      "checked": {
+        "labels": 47,
+        "moduleTitles": 7,
+        "controls": 1,
+        "accentControls": 1,
+        "focusedElements": 1,
+        "textNodes": 144
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [
+          "Everyday spending against the saved plan"
+        ],
+        "defaultOutlines": [],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4B",
+      "state": "budget review",
+      "viewport": "1440×900",
+      "checked": {
+        "labels": 27,
+        "moduleTitles": 5,
+        "controls": 4,
+        "accentControls": 2,
+        "focusedElements": 0,
+        "textNodes": 59
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4B",
+      "state": "budget review",
+      "viewport": "390×844",
+      "checked": {
+        "labels": 25,
+        "moduleTitles": 5,
+        "controls": 4,
+        "accentControls": 2,
+        "focusedElements": 0,
+        "textNodes": 57
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4B",
+      "state": "ingestion",
+      "viewport": "1440×900",
+      "checked": {
+        "labels": 5,
+        "moduleTitles": 2,
+        "controls": 1,
+        "accentControls": 0,
+        "focusedElements": 1,
+        "textNodes": 13
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [
+          "Native select: Choose an account…Everyday · Liquid · Up Bank · Bank connectedHigh-interest savings · Savings · No i"
+        ],
+        "defaultAccents": [],
+        "defaultOutlines": [],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4B",
+      "state": "ingestion",
+      "viewport": "390×844",
+      "checked": {
+        "labels": 5,
+        "moduleTitles": 2,
+        "controls": 1,
+        "accentControls": 0,
+        "focusedElements": 1,
+        "textNodes": 13
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [
+          "Native select: Choose an account…Everyday · Liquid · Up Bank · Bank connectedHigh-interest savings · Savings · No i"
+        ],
+        "defaultAccents": [],
+        "defaultOutlines": [],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4B",
+      "state": "ingestion staging",
+      "viewport": "1440×900",
+      "checked": {
+        "labels": 19,
+        "moduleTitles": 2,
+        "controls": 7,
+        "accentControls": 3,
+        "focusedElements": 1,
+        "textNodes": 65
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [
+          "Native select: Choose an account…Everyday · Liquid · Up Bank · Bank connectedHigh-interest savings · Savings · No i",
+          "Native select: Category for Corner market",
+          "Native select: Category for Bus fare",
+          "Native select: Subcategory for Bus fare"
+        ],
+        "defaultAccents": [],
+        "defaultOutlines": [],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4B",
+      "state": "ingestion staging",
+      "viewport": "390×844",
+      "checked": {
+        "labels": 19,
+        "moduleTitles": 2,
+        "controls": 7,
+        "accentControls": 3,
+        "focusedElements": 1,
+        "textNodes": 65
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [
+          "Native select: Choose an account…Everyday · Liquid · Up Bank · Bank connectedHigh-interest savings · Savings · No i",
+          "Native select: Category for Corner market",
+          "Native select: Category for Bus fare",
+          "Native select: Subcategory for Bus fare"
+        ],
+        "defaultAccents": [],
+        "defaultOutlines": [],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4B",
+      "state": "ledger",
+      "viewport": "1440×900",
+      "checked": {
+        "labels": 14,
+        "moduleTitles": 4,
+        "controls": 7,
+        "accentControls": 9,
+        "focusedElements": 1,
+        "textNodes": 115
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4B",
+      "state": "ledger",
+      "viewport": "390×844",
+      "checked": {
+        "labels": 14,
+        "moduleTitles": 4,
+        "controls": 7,
+        "accentControls": 9,
+        "focusedElements": 1,
+        "textNodes": 88
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4B",
+      "state": "ledger correction",
+      "viewport": "1440×900",
+      "checked": {
+        "labels": 20,
+        "moduleTitles": 4,
+        "controls": 4,
+        "accentControls": 2,
+        "focusedElements": 1,
+        "textNodes": 48
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [
+          "INPUT"
+        ],
+        "defaultOutlines": [
+          "Transaction detailMarket grocer21 Nov · Everyday×Amount-$315.00Original descriptionMarket grocerCate"
+        ],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4B",
+      "state": "ledger correction",
+      "viewport": "390×844",
+      "checked": {
+        "labels": 20,
+        "moduleTitles": 4,
+        "controls": 4,
+        "accentControls": 2,
+        "focusedElements": 1,
+        "textNodes": 48
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [
+          "INPUT"
+        ],
+        "defaultOutlines": [
+          "Transaction detailMarket grocer21 Nov · Everyday×Amount-$315.00Original descriptionMarket grocerCate"
+        ],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4B",
+      "state": "transfers",
+      "viewport": "1440×900",
+      "checked": {
+        "labels": 8,
+        "moduleTitles": 2,
+        "controls": 0,
+        "accentControls": 0,
+        "focusedElements": 1,
+        "textNodes": 35
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4B",
+      "state": "transfers",
+      "viewport": "390×844",
+      "checked": {
+        "labels": 8,
+        "moduleTitles": 2,
+        "controls": 0,
+        "accentControls": 0,
+        "focusedElements": 1,
+        "textNodes": 35
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4B",
+      "state": "transfers queue expanded",
+      "viewport": "1440×900",
+      "checked": {
+        "labels": 9,
+        "moduleTitles": 2,
+        "controls": 0,
+        "accentControls": 1,
+        "focusedElements": 1,
+        "textNodes": 40
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4B",
+      "state": "transfers queue expanded",
+      "viewport": "390×844",
+      "checked": {
+        "labels": 9,
+        "moduleTitles": 2,
+        "controls": 0,
+        "accentControls": 1,
+        "focusedElements": 1,
+        "textNodes": 40
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [],
+        "dates": []
+      }
+    }
+  ],
+  "after": [
+    {
+      "batch": "4A",
+      "state": "Accounts compact",
+      "viewport": "1440×900",
+      "checked": {
+        "labels": 20,
+        "moduleTitles": 3,
+        "controls": 11,
+        "accentControls": 0,
+        "focusedElements": 1,
+        "textNodes": 109
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4A",
+      "state": "Accounts compact",
+      "viewport": "390×844",
+      "checked": {
+        "labels": 20,
+        "moduleTitles": 3,
+        "controls": 11,
+        "accentControls": 0,
+        "focusedElements": 1,
+        "textNodes": 105
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4A",
+      "state": "Accounts expanded",
+      "viewport": "1440×900",
+      "checked": {
+        "labels": 21,
+        "moduleTitles": 3,
+        "controls": 11,
+        "accentControls": 0,
+        "focusedElements": 1,
+        "textNodes": 123
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4A",
+      "state": "Accounts expanded",
+      "viewport": "390×844",
+      "checked": {
+        "labels": 21,
+        "moduleTitles": 3,
+        "controls": 11,
+        "accentControls": 0,
+        "focusedElements": 1,
+        "textNodes": 119
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4A",
+      "state": "Expenses compact",
+      "viewport": "1440×900",
+      "checked": {
+        "labels": 29,
+        "moduleTitles": 6,
+        "controls": 2,
+        "accentControls": 0,
+        "focusedElements": 1,
+        "textNodes": 179
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4A",
+      "state": "Expenses compact",
+      "viewport": "390×844",
+      "checked": {
+        "labels": 29,
+        "moduleTitles": 6,
+        "controls": 2,
+        "accentControls": 0,
+        "focusedElements": 1,
+        "textNodes": 167
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4A",
+      "state": "Expenses expanded",
+      "viewport": "1440×900",
+      "checked": {
+        "labels": 30,
+        "moduleTitles": 6,
+        "controls": 2,
+        "accentControls": 0,
+        "focusedElements": 1,
+        "textNodes": 191
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4A",
+      "state": "Expenses expanded",
+      "viewport": "390×844",
+      "checked": {
+        "labels": 30,
+        "moduleTitles": 6,
+        "controls": 2,
+        "accentControls": 0,
+        "focusedElements": 1,
+        "textNodes": 179
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4A",
+      "state": "Income compact",
+      "viewport": "1440×900",
+      "checked": {
+        "labels": 16,
+        "moduleTitles": 5,
+        "controls": 0,
+        "accentControls": 0,
+        "focusedElements": 1,
+        "textNodes": 180
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4A",
+      "state": "Income compact",
+      "viewport": "390×844",
+      "checked": {
+        "labels": 16,
+        "moduleTitles": 5,
+        "controls": 0,
+        "accentControls": 0,
+        "focusedElements": 1,
+        "textNodes": 171
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4A",
+      "state": "Income expanded",
+      "viewport": "1440×900",
+      "checked": {
+        "labels": 17,
+        "moduleTitles": 5,
+        "controls": 0,
+        "accentControls": 0,
+        "focusedElements": 1,
+        "textNodes": 192
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4A",
+      "state": "Income expanded",
+      "viewport": "390×844",
+      "checked": {
+        "labels": 17,
+        "moduleTitles": 5,
+        "controls": 0,
+        "accentControls": 0,
+        "focusedElements": 1,
+        "textNodes": 183
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4B",
+      "state": "budget",
+      "viewport": "1440×900",
+      "checked": {
+        "labels": 48,
+        "moduleTitles": 8,
+        "controls": 1,
+        "accentControls": 1,
+        "focusedElements": 1,
+        "textNodes": 145
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4B",
+      "state": "budget",
+      "viewport": "390×844",
+      "checked": {
+        "labels": 48,
+        "moduleTitles": 8,
+        "controls": 1,
+        "accentControls": 1,
+        "focusedElements": 1,
+        "textNodes": 145
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4B",
+      "state": "budget review",
+      "viewport": "1440×900",
+      "checked": {
+        "labels": 27,
+        "moduleTitles": 5,
+        "controls": 4,
+        "accentControls": 2,
+        "focusedElements": 0,
+        "textNodes": 59
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4B",
+      "state": "budget review",
+      "viewport": "390×844",
+      "checked": {
+        "labels": 25,
+        "moduleTitles": 5,
+        "controls": 4,
+        "accentControls": 2,
+        "focusedElements": 0,
+        "textNodes": 57
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4B",
+      "state": "ingestion",
+      "viewport": "1440×900",
+      "checked": {
+        "labels": 5,
+        "moduleTitles": 2,
+        "controls": 1,
+        "accentControls": 0,
+        "focusedElements": 1,
+        "textNodes": 13
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4B",
+      "state": "ingestion",
+      "viewport": "390×844",
+      "checked": {
+        "labels": 5,
+        "moduleTitles": 2,
+        "controls": 1,
+        "accentControls": 0,
+        "focusedElements": 1,
+        "textNodes": 13
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4B",
+      "state": "ingestion staging",
+      "viewport": "1440×900",
+      "checked": {
+        "labels": 19,
+        "moduleTitles": 2,
+        "controls": 7,
+        "accentControls": 3,
+        "focusedElements": 1,
+        "textNodes": 65
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4B",
+      "state": "ingestion staging",
+      "viewport": "390×844",
+      "checked": {
+        "labels": 19,
+        "moduleTitles": 2,
+        "controls": 7,
+        "accentControls": 3,
+        "focusedElements": 1,
+        "textNodes": 65
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4B",
+      "state": "ledger",
+      "viewport": "1440×900",
+      "checked": {
+        "labels": 15,
+        "moduleTitles": 4,
+        "controls": 8,
+        "accentControls": 9,
+        "focusedElements": 1,
+        "textNodes": 129
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4B",
+      "state": "ledger",
+      "viewport": "390×844",
+      "checked": {
+        "labels": 15,
+        "moduleTitles": 4,
+        "controls": 8,
+        "accentControls": 9,
+        "focusedElements": 1,
+        "textNodes": 111
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4B",
+      "state": "ledger correction",
+      "viewport": "1440×900",
+      "checked": {
+        "labels": 20,
+        "moduleTitles": 4,
+        "controls": 4,
+        "accentControls": 2,
+        "focusedElements": 1,
+        "textNodes": 48
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4B",
+      "state": "ledger correction",
+      "viewport": "390×844",
+      "checked": {
+        "labels": 20,
+        "moduleTitles": 4,
+        "controls": 4,
+        "accentControls": 2,
+        "focusedElements": 1,
+        "textNodes": 48
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4B",
+      "state": "transfers",
+      "viewport": "1440×900",
+      "checked": {
+        "labels": 8,
+        "moduleTitles": 2,
+        "controls": 0,
+        "accentControls": 0,
+        "focusedElements": 1,
+        "textNodes": 33
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4B",
+      "state": "transfers",
+      "viewport": "390×844",
+      "checked": {
+        "labels": 8,
+        "moduleTitles": 2,
+        "controls": 0,
+        "accentControls": 0,
+        "focusedElements": 1,
+        "textNodes": 33
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4B",
+      "state": "transfers queue expanded",
+      "viewport": "1440×900",
+      "checked": {
+        "labels": 9,
+        "moduleTitles": 2,
+        "controls": 0,
+        "accentControls": 1,
+        "focusedElements": 1,
+        "textNodes": 38
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4B",
+      "state": "transfers queue expanded",
+      "viewport": "390×844",
+      "checked": {
+        "labels": 9,
+        "moduleTitles": 2,
+        "controls": 0,
+        "accentControls": 1,
+        "focusedElements": 1,
+        "textNodes": 38
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4C",
+      "state": "Landing start prompt",
+      "viewport": "1440×900",
+      "checked": {
+        "labels": 2,
+        "moduleTitles": 0,
+        "controls": 0,
+        "accentControls": 0,
+        "focusedElements": 1,
+        "textNodes": 2
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4C",
+      "state": "Landing start prompt",
+      "viewport": "390×844",
+      "checked": {
+        "labels": 2,
+        "moduleTitles": 0,
+        "controls": 0,
+        "accentControls": 0,
+        "focusedElements": 1,
+        "textNodes": 2
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4C",
+      "state": "Settings changed",
+      "viewport": "1440×900",
+      "checked": {
+        "labels": 28,
+        "moduleTitles": 8,
+        "controls": 5,
+        "accentControls": 1,
+        "focusedElements": 1,
+        "textNodes": 44
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4C",
+      "state": "Settings changed",
+      "viewport": "390×844",
+      "checked": {
+        "labels": 28,
+        "moduleTitles": 8,
+        "controls": 5,
+        "accentControls": 1,
+        "focusedElements": 1,
+        "textNodes": 44
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4C",
+      "state": "Settings opening",
+      "viewport": "1440×900",
+      "checked": {
+        "labels": 28,
+        "moduleTitles": 8,
+        "controls": 5,
+        "accentControls": 1,
+        "focusedElements": 1,
+        "textNodes": 44
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [],
+        "dates": []
+      }
+    },
+    {
+      "batch": "4C",
+      "state": "Settings opening",
+      "viewport": "390×844",
+      "checked": {
+        "labels": 28,
+        "moduleTitles": 8,
+        "controls": 5,
+        "accentControls": 1,
+        "focusedElements": 1,
+        "textNodes": 44
+      },
+      "issues": {
+        "casing": [],
+        "moduleTitles": [],
+        "accents": [],
+        "controls": [],
+        "defaultAccents": [],
+        "defaultOutlines": [],
+        "dates": []
+      }
+    }
+  ]
+}

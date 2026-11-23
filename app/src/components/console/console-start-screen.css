@@ -35,7 +35,9 @@
 .console-start-wide {
   margin-inline-end: -.9em;
   letter-spacing: .9em;
-  animation: console-start-track-out var(--dur-start-wordmark) var(--ease-glide) both;
+  visibility: hidden;
+  opacity: 0;
+  animation: console-start-track-out var(--dur-start-wordmark) var(--ease-glide);
 }
 .console-start-settled {
   letter-spacing: .42em;
@@ -68,14 +70,13 @@
 .console-viewport[data-reduced="true"] .console-start-body button::before {
   animation: none;
 }
-.console-viewport[data-reduced="true"] .console-start-wide { opacity: 0; }
 .console-viewport[data-reduced="true"] .console-start-screen[data-leaving="true"] {
   animation: console-start-fade var(--dur-reduced) var(--ease-fade) both;
   animation-duration: var(--dur-reduced) !important;
 }
 @keyframes console-start-track-out {
-  from { opacity: .74; filter: blur(10px); }
-  to { opacity: 0; filter: none; }
+  from { visibility: visible; opacity: .74; filter: blur(10px); }
+  to { visibility: hidden; opacity: 0; filter: none; }
 }
 @keyframes console-start-track-in {
   from { opacity: 0; filter: blur(10px); }

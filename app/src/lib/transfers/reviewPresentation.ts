@@ -63,7 +63,7 @@ export function untrackedTransferLabel(amountCents?: number) {
 export function groupActionDisclosure(selectedIds: string[], visibleIds: string[]) {
   const visible = new Set(visibleIds)
   const elsewhere = selectedIds.filter(id => !visible.has(id)).length
-  return ` (${elsewhere} off-page)`
+  return elsewhere > 0 ? ` (${elsewhere} on other pages)` : ''
 }
 
 export function toggleReviewExclusion(previous: ReadonlySet<string>, id: string) {

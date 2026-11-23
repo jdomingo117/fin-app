@@ -63,7 +63,7 @@ export function SuggestedGroupPanel({
             </span>
           </span>
         </button>
-        <div className="flex flex-shrink-0 flex-wrap gap-2">
+        <div className="console-transfer-actions flex flex-shrink-0 flex-wrap gap-2">
           {selectedIds.length > 0 ? <>
             <Button onClick={() => decide('confirmed')} disabled={busy}>
               Confirm {selectedIds.length} internal transfer{selectedIds.length === 1 ? '' : 's'}{disclosure}
@@ -87,7 +87,7 @@ export function SuggestedGroupPanel({
       )}
       {selection.deferredCount > 0 && (
         <div className="px-4 pb-2 text-[12px] text-muted" role="status">
-          The safe batch limit is 200. {selection.deferredCount} transfer{selection.deferredCount === 1 ? '' : 's'} will remain for the next action.
+          You can review up to 200 at a time. {selection.deferredCount} transfer{selection.deferredCount === 1 ? '' : 's'} will remain for the next action.
         </div>
       )}
 

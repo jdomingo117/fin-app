@@ -6,13 +6,16 @@ import { workflowReplies } from './fixtures/console-workflow-replies.ts'
 
 const output = process.argv[2]
 if (!output) throw new Error('Pass the output trace filename.')
-const targets = process.argv.slice(3)
+const desktop = process.argv.includes('--desktop')
+const targets = process.argv.slice(3).filter(name => name !== '--desktop')
 if (!targets.length) targets.push('Accounts', 'Income', 'Expenses')
-const quickActions = new Set(['Ledger review', 'Ingestion', 'Transfers'])
+const quickActions = new Set(['Ledger review', 'Ingestion', 'Transfers', 'Settings'])
 const workflows = targets.some(name => name === 'Budget' || quickActions.has(name))
+const traceStartup = targets.includes('Landing')
 const browser = await chromium.launch({ channel: 'chrome' })
 const context = await browser.newContext({
-  viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 1, serviceWorkers: 'block',
+  viewport: desktop ? { width: 1440, height: 900 } : { width: 390, height: 844 },
+  isMobile: !desktop, hasTouch: !desktop, deviceScaleFactor: 1, serviceWorkers: 'block',
   timezoneId: 'Australia/Sydney',
 })
 const page = await context.newPage()
@@ -21,6 +24,11 @@ const tile = name => page.getByRole('toolbar', { name: 'Sections' }).getByRole('
 const mark = name => page.evaluate(name => performance.mark(name), 'console.proxy.' + name)
 const events = []
 const viewport = page.locator('.console-viewport')
+const activeTier = desktop ? 'full' : 'balanced'
+const back = page.getByRole('button', { name: 'Back to Home' })
+const centre = page.getByRole('dialog', { name: 'Control Centre' })
+const centreButton = page.getByRole('button', { name: 'Control Centre', exact: true })
+const activate = locator => desktop ? locator.click() : locator.tap()
 async function home() {
   await page.waitForURL(dashboard)
   await page.waitForFunction(() => {
@@ -35,42 +43,27 @@ async function tier(tierName) {
   await home()
   if (await viewport.getAttribute('data-effects-tier') !== tierName) throw Error('Wrong effects tier.')
 }
-try {
-  await signInForConsole(page, true, undefined, workflows ? workflowReplies().reply : undefined)
-  await page.getByRole('button', { name: 'Console', exact: true }).click()
-  await home()
-  await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 })
-  cdp.on('Tracing.dataCollected', part => events.push(...part.value))
-  await cdp.send('Tracing.start', { categories:
-    'toplevel,devtools.timeline,disabled-by-default-devtools.timeline,disabled-by-default-devtools.timeline.frame,blink.user_timing,cc,viz,gpu' })
-  for (const name of ['reduce', 'balanced']) {
-    await tier(name)
-    await mark(name + '.start')
-    // Matched idle phone window. Touch devices keep the pointer parallax centred.
-    await page.waitForTimeout(5000)
-    await mark(name + '.end')
-  }
-
-  await mark('navigation.start')
-  const back = page.getByRole('button', { name: 'Back to Home' })
-  const centre = page.getByRole('dialog', { name: 'Control Centre' })
-  const centreButton = page.getByRole('button', { name: 'Control Centre', exact: true })
-  for (const name of targets) {
+async function navigate() {
+  for (const name of targets.filter(name => name !== 'Landing')) {
     if (quickActions.has(name)) {
-      await centreButton.tap()
-      await centre.getByRole('group', { name: 'Quick actions' }).getByRole('button', { name, exact: true }).tap()
+      await activate(centreButton)
+      await activate(centre.getByRole('group', { name: 'Quick actions' }).getByRole('button', { name, exact: true }))
+    } else if (desktop) {
+      await tile(name).focus()
+      await page.keyboard.press('Enter')
     } else {
-      // On touch, Budget enters the visible track after browsing its neighbours.
-      if (name === 'Budget') {
-        for (const section of ['Accounts', 'Income', 'Expenses']) {
-          await tile(section).tap()
-          await page.waitForTimeout(480)
-        }
-      }
+      const sections = ['Overview', 'Accounts', 'Income', 'Expenses', 'Budget']
       const target = tile(name)
-      await target.tap()
-      await page.waitForTimeout(480)
-      await target.tap()
+      const selected = await page.locator('.console-section[data-active="true"]').getAttribute('aria-label')
+      const from = sections.indexOf(selected)
+      const to = sections.indexOf(name)
+      if (from > to) {
+        await tile(selected).focus()
+        await page.keyboard.press('ArrowLeft')
+        for (let index = from - 1; index > to; index--) await page.keyboard.press('ArrowLeft')
+      }
+      for (let index = from + 1; index <= to; index++) await tile(sections[index]).tap()
+      await activate(target)
     }
     await back.waitFor()
     const scroll = page.locator('.console-route-layer:not([inert])').locator('.console-designed-scroll, .console-workflow-hub .console-hub-scroll')
@@ -79,11 +72,63 @@ try {
     await back.click()
     await home()
   }
-  await centreButton.click()
+  await activate(centreButton)
   await centre.waitFor()
   await page.keyboard.press('Escape')
   await centre.waitFor({ state: 'hidden' })
+}
+try {
+  await signInForConsole(page, true, undefined, workflows ? workflowReplies().reply : undefined)
+  await page.getByRole('button', { name: 'Console', exact: true }).click()
+  await home()
+  // Warm Vite imports and the interaction path before collecting either lane.
+  await navigate()
+  if (!desktop) await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 })
+  cdp.on('Tracing.dataCollected', part => events.push(...part.value))
+  await cdp.send('Tracing.start', { categories:
+    'toplevel,devtools.timeline,disabled-by-default-devtools.timeline,disabled-by-default-devtools.timeline.frame,blink.user_timing,cc,viz,gpu' })
+  for (const name of ['reduce', activeTier]) {
+    await tier(name)
+    await mark(name + '.start')
+    if (desktop) {
+      for (let step = 0; step < 40; step++) {
+        const angle = step / 40 * Math.PI * 2
+        await page.mouse.move(775 + Math.cos(angle) * 225, 360 + Math.sin(angle) * 90)
+        await page.waitForTimeout(125)
+      }
+    } else {
+      // Matched idle phone window. Touch keeps the pointer parallax centred.
+      await page.waitForTimeout(5000)
+    }
+    await mark(name + '.end')
+  }
+
+  await mark('navigation.start')
+  await tile('Overview').focus()
+  for (const key of ['ArrowRight', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowLeft']) await page.keyboard.press(key)
+  await page.waitForTimeout(420)
+  await navigate()
   await mark('navigation.end')
+  await mark('visibility.start')
+  const other = await context.newPage()
+  await other.bringToFront()
+  await page.waitForTimeout(1000)
+  const hiddenObserved = await page.evaluate(() => document.visibilityState === 'hidden')
+  const hiddenPaused = await page.locator('.console-scene').getAttribute('data-paused')
+  await page.bringToFront()
+  await other.close()
+  await mark('visibility.end')
+  if (traceStartup) {
+    await activate(page.getByRole('button', { name: 'Settings', exact: true }))
+    await activate(page.getByRole('switch', { name: 'Show start screen' }))
+    await page.goto(new URL('/', dashboard).href)
+    const start = page.getByRole('button', { name: 'Start Halcyon' })
+    await start.waitFor()
+    await mark('startup.start')
+    await activate(start)
+    await home()
+    await mark('startup.end')
+  }
   const complete = new Promise(resolve => cdp.once('Tracing.tracingComplete', resolve))
   await cdp.send('Tracing.end')
   await complete
@@ -131,13 +176,19 @@ try {
       hasWallTimeEstimate,
     }
   }
-  const balanced = perFrame('balanced')
+  const active = perFrame(activeTier)
   const reduce = perFrame('reduce')
   const navigation = windowEvents('navigation')
-  const longestNavigationMs = Math.max(0, ...navigation.tasks
-    .filter(task => task.pid === navigation.start.pid && task.tid === navigation.start.tid).map(task => task.dur / 1000))
+  function longestMainTask(window) {
+    return Math.max(0, ...window.tasks.filter(task => task.pid === window.start.pid && task.tid === window.start.tid)
+      .map(task => task.dur / 1000))
+  }
   console.log(JSON.stringify({
-    balanced, reduce, added: { mean: balanced.mean - reduce.mean, p95: balanced.p95 - reduce.p95 }, longestNavigationMs,
+    browser: browser.version(), desktop, [activeTier]: active, reduce,
+    added: { mean: active.mean - reduce.mean, p95: active.p95 - reduce.p95 },
+    longestNavigationMs: longestMainTask(navigation),
+    hiddenObserved, hiddenPaused,
+    ...(traceStartup ? { longestStartupMs: longestMainTask(windowEvents('startup')) } : {}),
   }, null, 2))
 } finally {
   await browser.close()

@@ -1,3 +1,5 @@
+import { Button } from '../Controls'
+import { useView } from '../../router'
 import { useConsoleDayLabel } from '../../hooks/useConsoleDayLabel'
 import {useBudget} from '../../contexts/BudgetContext'
 import {fmtCents} from '../../data'
@@ -7,19 +9,39 @@ import {forecastReadProblem,forecastReason,type ForecastStatus} from '../../lib/
 const labels:Record<ForecastStatus,string>={within_plan:'On track',likely_to_exceed:'Likely to go over',exceeded:'Over',check_data:'Needs checking',unavailable:'Not available'}
 const monthFmt=new Intl.DateTimeFormat('en-AU',{month:'long',year:'numeric',timeZone:'UTC'}),dayFmt=new Intl.DateTimeFormat('en-AU',{day:'numeric',month:'short',timeZone:'UTC'})
 const monthOf=(d:string)=>{try{return monthFmt.format(new Date(`${d}T00:00:00Z`))}catch{return d}},at=(d:string)=>{try{return dayFmt.format(new Date(`${d}T00:00:00Z`))}catch{return d}}
+function ForecastUnavailable({ reason, onRefresh }: { reason: string; onRefresh?: () => void }) {
+ return <section aria-labelledby="console-forecast-title" className="console-forecast-unavailable">
+  <span className="console-forecast-symbol" aria-hidden="true">
+   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M4 4v16h16M8 15l3-3 3 1 5-5" strokeDasharray="2.5 3"/></svg>
+  </span>
+  <div>
+   <h4 id="console-forecast-title" className="console-module-title" data-module-title>Spending estimate unavailable</h4>
+   <p className="detail-copy">{reason}</p>
+   {onRefresh&&<Button variant="ghost" onClick={onRefresh}>Refresh budget</Button>}
+  </div>
+ </section>
+}
 export default function BudgetForecast(){
   const formatDay = useConsoleDayLabel()
+ const consoleStyle=useView().theme==='console'
  const b=useBudget(),s=b.snapshot!,f=s.details?.forecast,problem=forecastReadProblem(s,b.readState,!!b.pending)
+ if(consoleStyle&&problem){
+  const reason=!f&&b.readState==='ready'&&!b.pending ? 'The saved budget didn’t include an estimate. Refresh to check again.' : problem
+  return <ForecastUnavailable reason={reason} onRefresh={b.pending||b.loading ? undefined : ()=>void b.refresh()}/>
+ }
  if(problem)return <section aria-label="Spending estimate" className="budget-forecast"><h4>Estimated everyday spending</h4><p className="detail-copy text-warn">{problem}</p></section>
  if(!f)return null
  const checked=new Intl.DateTimeFormat('en-AU',{dateStyle:'medium',timeStyle:'short',timeZone:s.plan!.timezone}).format(new Date(f.checked_at))
  const comparison=forecastComparison(f)
  const flex=f.flexible,money=(n:number|null)=>n===null?'Unavailable':fmtCents(n)
+ const showUnavailable=consoleStyle&&!flex.available
  return <section aria-label="Spending estimate" className="budget-forecast space-y-3">
+  {showUnavailable?<ForecastUnavailable reason={forecastReason(flex.reason)}/>:<>
   <div className="budget-forecast-heading"><h4>{f.phase==='future'?'Likely everyday spending (provisional)':'Likely everyday spending by the end'}</h4><strong className={`budget-forecast-amount ${flex.available?'':'budget-forecast-amount--none'}`} data-budget-forecast-value>{flex.available?money(flex.projected_cents):'Not available yet'}</strong></div>
   {flex.available&&flex.projected_cents!==null&&flex.allocation_cents!==null?<p className={`detail-copy budget-forecast-difference ${flex.status==='likely_to_exceed'||flex.status==='exceeded'?'text-warn':''}`}>
    By {at(addDays(s.period!.end_date,-1))} · {flex.projected_cents===flex.allocation_cents?'Right on your plan':`${money(Math.abs(flex.projected_cents-flex.allocation_cents))} ${flex.projected_cents>flex.allocation_cents?'over':'under'} your plan`}
   </p>:<p className="detail-copy">{forecastReason(flex.reason)}</p>}
+  </>}
   {flex.status==='exceeded'&&<p className="detail-copy text-warn">You’ve already spent more than this plan.</p>}
   {f.phase==='future'&&<p className="detail-copy">Future plan · provisional, with no observed activity for these dates.</p>}
   {comparison&&<div className="budget-forecast-comparison" role="img" aria-label={`${comparison.provisional?'Future plan; no recorded activity. Provisional estimate':`Recorded spending ${money(flex.settled_net_cents)}; estimated finish`} ${money(flex.projected_cents)}; allowance ${money(flex.allocation_cents)}. Pending charges are excluded.`}>

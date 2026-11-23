@@ -208,7 +208,6 @@
 .console-toggle { padding-inline: 9px; border-radius: var(--console-button-radius); }
 .console-utility { display: grid; place-items: center; inline-size: var(--console-control-size); flex: 0 0 auto; border-radius: 50%; }
 .console-toggle:is(:hover,:focus-visible), .console-utility:is(:hover,:focus-visible) { background: var(--console-fill); }
-.console-viewport :focus-visible { outline-color: var(--console-ink); }
 
 .console-main { position: relative; min-block-size: 0; min-inline-size: 0; display: flex; flex-direction: column; }
 .console-home-slot { flex: 1; min-block-size: 0; }
@@ -302,21 +301,4 @@
 }
 @media (max-width: 380px) {
   .console-clock { display: none; }
-}
-
-.console-effects-setting {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 10px;
-  padding-block: 10px;
-}
-.console-effects-setting select {
-  min-block-size: var(--console-control-size);
-  padding-inline: 12px;
-  background: var(--color-surface);
-  border: 1px solid var(--console-line);
-  border-radius: var(--console-button-radius);
-  color: var(--console-ink);
 }

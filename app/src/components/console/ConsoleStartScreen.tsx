@@ -34,7 +34,7 @@ export function ConsoleStartScreen({ reduced, onStart, onFinish }: {
         if (leaving) return
         onStart()
         setLeaving(true)
-      }}>Press Enter or click to start</button>
+      }}>Start Halcyon</button>
     </div>
   </dialog>
 }

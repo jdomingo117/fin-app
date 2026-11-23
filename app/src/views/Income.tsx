@@ -30,7 +30,7 @@ import type { ConsoleOutlet } from '../components/console/ConsoleViewport'
 import TransactionCategoryDrawer from '../components/TransactionCategoryDrawer'
 
 const TABS = [
-  { id: 'analyzer', label: 'Income analyzer' },
+  { id: 'analyzer', label: 'Income analyser' },
   { id: 'projections', label: 'Strategic projections' },
 ]
 

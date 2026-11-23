@@ -6,6 +6,7 @@ export type LedgerReviewFilter =
   | 'needs-attention'
   | 'needs-review'
   | 'uncategorized'
+  | 'unresolved'
   | 'missing-subcategory'
   | 'ai'
   | 'bank'
@@ -94,6 +95,7 @@ export function matchesLedgerReview(transaction: Txn, filter: LedgerReviewFilter
   switch (filter) {
     case 'needs-attention': return needsLedgerAttention(transaction)
     case 'needs-review': return transaction.needsReview === true
+    case 'unresolved': return transaction.cat === UNCATEGORIZED && transaction.categorySource == null
     case 'uncategorized': return transaction.cat === UNCATEGORIZED
     case 'missing-subcategory': return isMissingSubcategory(transaction)
     case 'ai': return transaction.categorySource === 'ai'

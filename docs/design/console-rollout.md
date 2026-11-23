@@ -39,23 +39,49 @@ Use the development-only foundation demo on the signed-in Dashboard at `/dashboa
 | 4B · 4.5 Ledger | Ledger hub with a dedicated opaque table module and companion controls | Type C in search, select multiple rows, page, open a full-parent drawer, close and restore focus. Keep a visible ring around the active control within the table. |
 | 4B · 4.6 Ingestion | Ingestion hub with its statement-import workspace | Operate file input, mapping, staging and error recovery. Keep progress text, native inputs and the current staged work visible during appearance changes. |
 | 4B · 4.7 Transfers | Transfers hub with its review queues | Preserve group selection, queue position, batch confirmation and keyboard operation. |
-| 4C · 4.8 Settings | Appearance, sound/volume, reduce effects and shortcut controls in the existing form | Connect final settings presentation to the Phase 2 preference owner. Test native interaction, independent music/mute, OS preference changes and persistence. |
-| 4C · 4.9 Landing | Coordinate the existing hero transition with optional signed-in start entry at signed-in home entry | Verify Enter, click, first audio gesture, return home, deep link, sign-out and reduced motion. |
+| 4C · 4.8 Settings | Appearance, effects and navigation, and sound in Console modules | Test native interaction, separate sound and music opt-ins, speaker mute, master volume, OS preference changes and persistence. |
+| 4C · 4.9 Landing | Use the optional start screen on signed-in Console Home entry and preserve direct links | Verify Enter, click, first audio gesture, return home, deep link, sign-out and reduced motion. |
 | 5 · cross-screen qualification | Reference comparison, accessibility and performance evidence | Use the matrix below. |
 
 Login, onboarding, callback, password reset and the internal concept route get direct-entry and keyboard regression checks. Their functional forms and recovery routes are unaffected by the home-screen treatment. A section without existing Dashboard data can expose a labelled route action. Hovering it must never query a specialist screen or display a fabricated zero.
 
 Each Phase 4 batch branches from current `main` and stops at its gate. Merge the approved batch before branching the next. Gate 4A covers expanded and compact captures at 1440 and 390, a walkthrough across all three analysis hubs, Playwright/axe and the throttled proxy. Gate 4B covers the full Ledger categorisation, Budget allocation, import staging and transfer confirmation workflows with existing and Console browser tests. After Gate 4B merges, Phase 4B-design branches from that merge for the shared compact header, Budget modules, Ledger reading surface and sheet, Ingestion stepper and Transfers queue. Capture each landing and worked state at desktop and phone widths. Replay all four workflows, rerun their isolated suites and attach the rendered Classic-leftover audit. Stop for owner review. Gate 4C covers Settings and Landing/start entry and stops before Phase 5.
 
-## Analysis hubs on phones
+## Decisions from 4A through Gate 4C
 
-- Batch 4A puts the analysis filters below the expanded hero on phone widths. The compact Income header carries Home, the section figure and analyzer/projections tabs.
+### 4A · Analysis
+
+- Accounts gives the selected account its own balance hero, history, category distribution and opaque activity surface. The Home card opens that account. Account dialogs return focus to their opener.
+- Accounts, Income and Expenses put phone filters below the expanded hero. Income’s compact header keeps Home, the figure and analyzer/projections tabs. Expenses keeps recurring costs, category comparisons and the keyboard period selector. Escape closes the open picker before leaving the hub.
+- Keep comparison totals reconciled with the visible category breakdown and disclose prior outflow that lacks category detail. The corrected fixture derives the prior total from its rows. Console line, bar and projection charts use nice-number exact-cent ticks. Key-art captions and exact values remain accessible. Empty vendor data is explicit.
+
+### 4B and 4B-design · Workflows
+
+- The compact dock holds Home, the route title and a workflow readout. Budget projects its Home preview into the dock, reuses a current-period cache when it can and resolves a cold entry from the Budget report. Protected Console routes skip Classic boot and show route skeletons while data loads.
+- Budget gives period controls, everyday spending, progress, attention, editing and funding separate reading areas. Amount fields show currency on blur and an editable decimal on focus. Review, discard and interrupted-save recovery stay in the existing Budget flow.
+- Ledger uses one opaque transaction list with filters, keyboard row movement and companion modules. The category sheet edits the full parent and returns focus to that row. Editing a transaction opened from a category preview invalidates the review before it can be applied again. Bank and manual categories retain their protections.
+- Ingestion follows account, upload, row review and import. The dock follows true readiness and the staged-row count. Account selection stays locked during staging. The row table owns horizontal scrolling. Cancelling departure preserves the staged file.
+- Transfers puts decisions and their effects alongside the existing queues. Group confirmation retains the selection and audited write boundary. Clearing the internal queue shows the all-reconciled ring with the scan action available.
+- Run the rendered audit against computed style and generated content. The 4B-design case showed CSS could uppercase otherwise sentence-case text in the Budget table. Approvals and isolated validation for 4B are recorded in the linked gate and triage notes. The owner approved 4B-design and PR #8 merged it as `a0e98c8`. [Pre-merge triage](console-phase-4b-triage.md). Classic is still the initial appearance.
+
+### 4C · Settings, Landing and workflow follow-up
+
+- Settings uses the compact Home dock and three Console preference modules. Appearance switches in place and retains the existing unsaved-change guard. The tier selector shows the effective Automatic tier. Reduce effects disables Ambient motion and explains why. The switch keeps its previous preference when a tier enables motion again. Sound offers Console sound, Ambient music and Master volume (55% initially). The top-bar speaker owns mute, and Settings shows its current state. Settings uses a single row-label size. The start screen is off by default, and the C shortcut can be turned off.
+- The opaque start screen can gate signed-in Console entry at `/` or `/dashboard`. A trusted start action unlocks opted-in audio. Home mounts after the dissolve and focuses Overview. A direct hub link and in-app returns enter their destination immediately. A completed start is remembered across appearance switches in the current app session. A fresh page load at Home can show it again if enabled. Classic keeps its Landing hero, and auth, recovery and onboarding keep direct entry.
+- Ledger’s dock and matching tab both say **Category not assigned** and use the tenant-wide count of uncategorised transactions without a source. **Needs attention** also includes flagged transactions. **Can be recategorised** describes rows eligible for suggestions. Review counts explains that these counts can overlap. Known category sources appear in row details. The old all-Unknown screenshot came from fixture omissions.
+- Ingestion account, mapping and category selects reuse the shared Console treatment. Native controls take a white accent. Keyboard focus uses the shared 3px gap and 6px outer edge, with a rounded, scale-compensated edge on Home tiles and a system-colour outline in forced colours. Transfers stacks group actions at narrow widths. Budget uses a dedicated spending-estimate unavailable state, with refresh when applicable. Its earlier screenshot came from a fixture without a forecast payload.
+- At rest the start screen paints one wordmark. The rendered audit checks the FocusRing signature on focused controls and scans interface copy for common US spellings. Authored labels use Australian English. API values and user-supplied record text retain their spelling. Check expanded and compact analysis hubs, workflow landings and mid-task states, Settings, the start prompt and keyboard focus on Home after entry.
+- The owner approved Gate 4C after these fixes. Classic is the default through Phase 5.
+
+### Ledger view labels awaiting owner decision
+
+Keep both queries and rename **Category not assigned** to **Uncategorised without a source** and **Uncategorised** to **All uncategorised**. The first view is the subset with no recorded category source. The second includes any entry in the Uncategorised category, including rows with a recorded source. Apply the same wording to the dock and review count if approved. If the owner prefers fewer tabs, use **All uncategorised** with a **No category source** filter and retain the narrower dock shortcut. Both options are proposals.
 
 ## Review reproduction
 
 [Phase 2 Gate 1 review and captures](console-phase-2-gate-1.md) · [Phase 2 Gate 2 walkthrough and trace](console-phase-2-gate-2.md) · [Phase 2 Gate 3 acceptance and Balanced trace](console-phase-2-gate-3.md) · [Phase 3 review and device gate](console-phase-3-review.md).
 
-[Gate 4A review and phone proxy](console-phase-4a-review.md) · [Gate 4B workflow review](console-phase-4b-review.md) · [Phase 4B-design review](console-phase-4b-design-review.md).
+[Gate 4A review and phone proxy](console-phase-4a-review.md) · [Gate 4B workflow review](console-phase-4b-review.md) · [Phase 4B-design review](console-phase-4b-design-review.md) · [Gate 4C Settings and Landing](console-phase-4c-review.md).
 
 Start each review note with the **branch, commit, worktree path, exact dev-server command and URL**, followed by a capture of that URL.
 
@@ -65,7 +91,7 @@ When reusing a preview port, verify the listener’s working directory and the s
 
 ## Acceptance evidence
 
-- **Classic leftovers.** Run the rendered Console audit at the start and end of each Phase 4 batch and record its output in the gate note. Check sentence-case interface labels, the Console module-title token, Classic accent colours, the Console variant of chips, selects and inputs, and house dates. Exempt proper nouns and record-supplied text from casing. Exercise the routes and key in-task states at desktop and phone widths in the normal signed-in app.
+- **Classic leftovers.** Run the rendered Console audit at the start and end of each Phase 4 batch and record its output in the gate note. Check sentence-case interface labels, the Console module-title token, Classic accent colours, the Console variant of chips, selects and inputs, native controls left at the browser accent, browser-default focus outlines and house dates. Exempt proper nouns and record-supplied text from casing. Exercise the routes and key in-task states at desktop and phone widths in the normal signed-in app.
 
 - **Appearance and layout.** Capture the same fictional state at 320, 390, 768, 1024 and 1440px. Compare Console against the supplied target. Include the first and last tile, long names, ring edges, an open overlay, and 200% zoom. Check focus-induced layout shift independently of the intended track transform.
 - **Classic fallback.** Smoke-check rendering, navigation and browser console errors while the frozen fallback remains available. Remove Classic after Phase 5.

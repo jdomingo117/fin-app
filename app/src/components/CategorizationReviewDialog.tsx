@@ -6,7 +6,7 @@ import { hydrateParents } from '../lib/ledgerPage'
 import { applyAfterContributorCheck } from '../lib/categorizationReview'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { ALL_CATEGORIES, FULL_TAXONOMY, fmtCents, type Txn } from '../data'
+import { ALL_CATEGORIES, FULL_TAXONOMY, categoryDisplayName, fmtCents, type Txn } from '../data'
 import { supabase } from '../lib/supabaseClient'
 import { useData } from '../contexts/DataContext'
 import {
@@ -19,7 +19,7 @@ import { Button } from './Controls'
 import { InlineActivity, OperationProgress, OperationStatusPanel, OperationSteps } from './OperationStatus'
 
 const pair = (category: string, subcategory: string | null) =>
-  subcategory ? `${category} · ${subcategory}` : category
+  subcategory ? `${categoryDisplayName(category)} · ${subcategory}` : categoryDisplayName(category)
 
 const confidence = (value: number | null) => value == null ? 'Not recorded' : `${Math.round(value * 100)}%`
 
@@ -323,7 +323,7 @@ export default function CategorizationReviewDialog({
                     {choice && <p className="mt-3 text-[13px] font-semibold text-ink">Your choice: {pair(choice.category, choice.subcategory)}</p>}
                     {row.status === 'protected' && <p className="mt-2 detail-copy">Protected from engine changes. For an intentional manual correction, open this transaction in the Ledger. System reconciliation entries remain locked.</p>}
                     {editingId === row.transaction_id && canEdit && <div className="mt-4 grid gap-3 rounded-lg border border-[var(--hair)] p-3 sm:grid-cols-2">
-                      <label className="text-[13px] font-semibold text-ink2">Category<select aria-label="Review category" value={draftCategory} onChange={(event) => { setDraftCategory(event.target.value); setDraftSubcategory('') }} className="mt-1.5 min-h-11 w-full rounded-lg border border-[var(--hair)] bg-[var(--input-bg)] px-3 text-[14px] text-ink">{ALL_CATEGORIES.map((category) => <option key={category}>{category}</option>)}</select></label>
+                      <label className="text-[13px] font-semibold text-ink2">Category<select aria-label="Review category" value={draftCategory} onChange={(event) => { setDraftCategory(event.target.value); setDraftSubcategory('') }} className="mt-1.5 min-h-11 w-full rounded-lg border border-[var(--hair)] bg-[var(--input-bg)] px-3 text-[14px] text-ink">{ALL_CATEGORIES.map((category) => <option key={category} value={category}>{categoryDisplayName(category)}</option>)}</select></label>
                       <label className="text-[13px] font-semibold text-ink2">Subcategory<select aria-label="Review subcategory" value={draftSubcategory} onChange={(event) => setDraftSubcategory(event.target.value)} className="mt-1.5 min-h-11 w-full rounded-lg border border-[var(--hair)] bg-[var(--input-bg)] px-3 text-[14px] text-ink"><option value="">No subcategory</option>{subcategories.map((subcategory) => <option key={subcategory}>{subcategory}</option>)}</select></label>
                       <div className="flex flex-wrap gap-2 sm:col-span-2"><button type="button" onClick={() => { setChoice(row, { category: draftCategory, subcategory: draftSubcategory || null }); setEditingId(null) }} className="min-h-11 rounded-lg bg-ink px-4 text-[13px] font-semibold text-surface">Use this category</button><button type="button" onClick={() => setEditingId(null)} className="min-h-11 px-3 text-[13px] font-semibold text-muted">Cancel</button></div>
                     </div>}

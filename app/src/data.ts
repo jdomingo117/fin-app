@@ -174,6 +174,11 @@ export const TRANSFER_CATEGORY = 'Transfer'
 export const INVESTING_CATEGORY = 'Investing'
 export const UNCATEGORIZED = 'Uncategorized'
 
+/** Localise the built-in label while preserving the persisted category value. */
+export function categoryDisplayName(category: string): string {
+  return category === UNCATEGORIZED ? 'Uncategorised' : category
+}
+
 /* The complete vocabulary an importer or the AI may write. Anything outside
    this set is rejected server-side and falls back to `Uncategorized`. */
 export const FULL_TAXONOMY: Record<string, readonly string[]> = {

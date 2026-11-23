@@ -8,3 +8,12 @@
 .console-transfer-cleared > p { max-inline-size: 56ch; }
 .console-transfer-cleared .console-orb { width: 145px; }
 .console-transfer-cleared .console-orb-stat { display: none; }
+
+@media (max-width: 560px) {
+  .console-workflow-hub .console-transfer-actions {
+    display: grid;
+    inline-size: 100%;
+    min-inline-size: 0;
+  }
+  .console-transfer-actions > button { white-space: normal; overflow-wrap: anywhere; }
+}

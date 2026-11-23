@@ -13,6 +13,7 @@ import AuditLogCard from '../components/AuditLogCard'
 import { useUnsavedChanges } from '../hooks/useUnsavedChanges'
 import { useRedactBalances } from '../hooks/useRedactBalances'
 import { ConsoleSettingsControls } from '../components/console/ConsolePreferences'
+import './console-settings.css'
 
 const ACCENTS = [
   { name: 'Mint', accent: '#11b596', ink: '#0a7d67' },
@@ -22,10 +23,11 @@ const ACCENTS = [
 ]
 
 export default function Settings() {
-  const { motionOn, setMotionOn, dark, setDark, toast, theme } = useView()
+  const { motionOn, setMotionOn, dark, setDark, toast, theme, setTheme } = useView()
   const { profile, isAdmin, refreshProfile } = useData()
   const { user, signOut: doSignOut } = useAuth()
   const redact = useRedactBalances()
+  const consoleStyle = theme === 'console'
   const [accent, setAccent] = useState('Mint')
   
   const [editingCallsign, setEditingCallsign] = useState(false)
@@ -74,17 +76,18 @@ export default function Settings() {
 
   return (
     <Screen>
-      <ViewHeader index="⚙ — Configuration" title="Settings" sub="Interface, identity & preferences" />
+      {!consoleStyle && <ViewHeader index="⚙ — Configuration" title="Settings" sub="Interface, identity & preferences" />}
+      {consoleStyle && <ConsoleSettingsControls redact={redact} toggleRedact={toggleRedact} />}
       <Grid>
+        {!consoleStyle && <>
         <Tile title="Interface" span={2}>
           <Switch on={dark} onToggle={() => setDark(!dark)} label="Dark mode" />
           <div className="border-t border-[var(--hair-soft)]" />
           <Switch on={motionOn} onToggle={() => setMotionOn(!motionOn)} label="Ambient motion & scene" />
           <div className="border-t border-[var(--hair-soft)]" />
           <Switch on={redact} onToggle={toggleRedact} label="Redact balances" />
+          <Button variant="ghost" onClick={() => setTheme('console')}>Switch to Console</Button>
         </Tile>
-
-        {theme === 'console' && <Tile title="Console effects and sound" span={2}><ConsoleSettingsControls /></Tile>}
 
         <Tile title="Accent">
           <div className="flex gap-3 pt-1">
@@ -101,13 +104,15 @@ export default function Settings() {
           <div className="mt-4 detail-copy">{accent}</div>
         </Tile>
 
+        </>}
+
         <Tile title="Profile" span={3}>
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <div className="grid h-14 w-14 flex-shrink-0 place-items-center rounded-2xl bg-ink text-lg font-semibold text-surface">
                 {initials}
               </div>
-              <div className="flex flex-col gap-1 min-w-[200px]">
+              <div className="flex min-w-0 flex-col gap-1">
                 {editingCallsign ? (
                   <div className="flex items-center gap-2">
                     <input
@@ -136,14 +141,14 @@ export default function Settings() {
                     <div className="text-[16px] font-semibold">{profile.callsign}</div>
                     <button 
                       onClick={() => { setNewCallsign(profile.callsign); setEditingCallsign(true); }}
-                      className="opacity-0 group-hover:opacity-100 transition text-muted hover:text-ink"
+                      className="min-h-11 min-w-11 grid place-items-center text-muted hover:text-ink"
                       aria-label="Edit callsign"
                     >
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
                     </button>
                   </div>
                 )}
-                <div className="detail-copy">
+                <div className="detail-copy break-all">
                   {user?.email ?? 'Private Wealth'} · {isAdmin ? <span className="font-medium text-accent">Admin</span> : 'Member tier'}
                 </div>
               </div>

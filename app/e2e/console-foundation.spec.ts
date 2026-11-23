@@ -161,7 +161,7 @@ test('appearance switch confirms before discarding a reported edit', async ({ pa
   await page.getByRole('button', { name: 'Edit callsign' }).click()
   const callsign = page.getByRole('textbox', { name: 'Callsign' })
   await callsign.fill('Unsubmitted review edit')
-  const appearance = page.getByRole('button', { name: 'Console', exact: true })
+  const appearance = page.getByRole('group', { name: 'Appearance' }).getByRole('button', { name: 'Classic', exact: true })
   let confirmation = ''
   page.once('dialog', async dialog => {
     confirmation = dialog.message()

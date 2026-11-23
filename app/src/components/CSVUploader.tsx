@@ -250,8 +250,11 @@ export default function CSVUploader({
             failedMerchantKeys.has(row.merchantKey) && row.needsReview
           )).length
           if (failedMerchantKeys.size > 0) {
+            const reviewMessage = unresolvedRows > 0
+              ? ` Review ${unresolvedRows} ${unresolvedRows === 1 ? 'row' : 'rows'} before importing.`
+              : ''
             setCategorizationWarning(
-              `Automated categorisation was unavailable for ${failedMerchantKeys.size} merchant${failedMerchantKeys.size === 1 ? '' : 's'}. Successful batches were kept; ${unresolvedRows} row${unresolvedRows === 1 ? '' : 's'} need review before importing.`,
+              `Halcyon couldn’t suggest categories for ${failedMerchantKeys.size} merchant${failedMerchantKeys.size === 1 ? '' : 's'}. Available suggestions were kept.${reviewMessage}`,
             )
           }
         } catch (error) {
@@ -435,8 +438,8 @@ export default function CSVUploader({
               )}
               {catStats && (
                 <span>
-                  {catStats.fromCache} from saved rules/cache, {catStats.fromBank} from the bank
-                  {catStats.fromAi > 0 && `, ${catStats.fromAi} via AI`}
+                  {catStats.fromCache} from saved categories, {catStats.fromBank} from the bank
+                  {catStats.fromAi > 0 && `, ${catStats.fromAi} from new suggestions`}
                 </span>
               )}
             </div>
@@ -453,8 +456,8 @@ export default function CSVUploader({
 
             {stageStats.unmappedBankCategories.length > 0 && (
               <p className="text-[13px] text-ink2">
-                Your bank used categories Halcyon has no direct equivalent for
-                ({stageStats.unmappedBankCategories.join(', ')}); those rows were sent to the AI instead.
+                Halcyon tried to suggest categories for rows with these bank categories:
+                {' '}{stageStats.unmappedBankCategories.join(', ')}.
               </p>
             )}
 

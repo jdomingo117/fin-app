@@ -1,7 +1,8 @@
+import { Select } from '../Controls'
 import { useConsoleDayLabel } from '../../hooks/useConsoleDayLabel'
 import { useMemo, useState } from 'react'
 import type { StagedRow } from '../../lib/csv/pipeline'
-import { CATEGORY_TAXONOMY, FULL_TAXONOMY, ALL_CATEGORIES, UNCATEGORIZED, type CustomSubcategory } from '../../data'
+import { CATEGORY_TAXONOMY, FULL_TAXONOMY, ALL_CATEGORIES, categoryDisplayName, UNCATEGORIZED, type CustomSubcategory } from '../../data'
 
 /**
  * The staging buffer (SRD §6.E).
@@ -105,14 +106,15 @@ export default function StagingTable({
         {selected.size > 0 && (
           <div className="flex items-center gap-2">
             <span className="text-[13px] text-ink2" aria-live="polite">{selected.size} selected →</span>
-            <select
-              onChange={(e) => { bulkCategory(e.target.value); e.currentTarget.selectedIndex = 0 }}
-              className="min-h-11 rounded-[8px] border border-[var(--hair)] bg-[var(--input-bg)] px-2 text-[13px]"
-              aria-label="Set category for selected rows"
+            <Select
+              value=""
+              onChange={bulkCategory}
+              inputClassName="min-h-11"
+              ariaLabel="Set category for selected rows"
             >
-              <option>Set category…</option>
-              {ALL_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
+              <option value="" disabled>Set category…</option>
+              {ALL_CATEGORIES.map((c) => <option key={c} value={c}>{categoryDisplayName(c)}</option>)}
+            </Select>
           </div>
         )}
       </div>
@@ -184,34 +186,34 @@ export default function StagingTable({
                       <span className="text-muted">…</span>
                     ) : (
                       <div className="flex items-center gap-1">
-                        <select
+                        <Select
                           value={r.category}
-                          onChange={(e) => setRow(r.id, {
-                            category: e.target.value, subcategory: null,
+                          onChange={(value) => setRow(r.id, {
+                            category: value, subcategory: null,
                             categorySource: 'user', needsReview: false,
                           })}
-                          className="min-h-[28px] rounded-[6px] border border-[var(--hair)] bg-[var(--input-bg)] px-1.5 text-[12px]"
-                          aria-label={`Category for ${r.merchantDisplay}`}
+                          className="min-w-36"
+                          ariaLabel={`Category for ${r.merchantDisplay}`}
                         >
-                          {[...ALL_CATEGORIES, UNCATEGORIZED].map((c) => (
-                            <option key={c} value={c}>{c}</option>
+                          {ALL_CATEGORIES.map((c) => (
+                            <option key={c} value={c}>{categoryDisplayName(c)}</option>
                           ))}
-                        </select>
+                        </Select>
                         {subcategoryOptions.length > 0 && (
-                          <select
+                          <Select
                             value={r.subcategory ?? ''}
-                            onChange={(e) => setRow(r.id, {
-                              subcategory: e.target.value || null,
+                            onChange={(value) => setRow(r.id, {
+                              subcategory: value || null,
                               categorySource: 'user', needsReview: false,
                             })}
-                            className="min-h-[28px] rounded-[6px] border border-[var(--hair)] bg-[var(--input-bg)] px-1.5 text-[12px]"
-                            aria-label={`Subcategory for ${r.merchantDisplay}`}
+                            className="min-w-36"
+                            ariaLabel={`Subcategory for ${r.merchantDisplay}`}
                           >
                             <option value="">—</option>
                             {subcategoryOptions.map((s) => (
                               <option key={s} value={s}>{s}</option>
                             ))}
-                          </select>
+                          </Select>
                         )}
                       </div>
                     )}

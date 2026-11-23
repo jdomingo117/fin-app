@@ -38,7 +38,7 @@ export function LinkCard({
           ))}
         </div>
       )}
-      <div className="mt-3.5 flex flex-wrap gap-2">
+      <div className="console-transfer-actions mt-3.5 flex flex-wrap gap-2">
         <Button onClick={() => onDecide('confirmed')} disabled={busy}>Confirm internal transfer</Button>
         <Button variant="ghost" onClick={() => onDecide('rejected')} disabled={busy}>Count as regular activity</Button>
       </div>

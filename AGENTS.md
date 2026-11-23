@@ -82,6 +82,10 @@ hand to find the transfer-linker gap.
 
 ## Recent changes
 
+- 2026-11-24 — Gate 4C restores Console keyboard focus, settles the start wordmark, and simplifies Settings.
+
+- 2026-11-24 — Console Batch 4C adds Settings and signed-in start entry, fixes the workflow controls and copy, and extends the rendered audit.
+
 - 2026-11-23 — Console workflow hubs share a status dock and use separate Budget, Ledger, Ingestion and Transfers modules.
 
 - 2026-11-23 — Console Batch 4B adds compact workflow hubs and browser coverage for Budget recovery, Ledger corrections, import staging and transfer confirmation.
@@ -98,6 +102,3 @@ hand to find the transfer-linker gap.
 
 - 2026-11-22 — Console Phase 2c spikes the shared hero transition, collapsing Income and Overview hubs, Accounts preview and Control Centre review cards.
 
-- 2026-11-21 — Wave 3C.4 scopes taxonomy, identifiers, planning and recurrence; DataContext boots profile/account directories only, with tenant-safe targeted invalidation and guarded detected-bill Undo.
-
-- 2026-11-21 — Wave 3C.3 pages Ledger, Accounts, Expenses and transfer/investment queues with full-parent editing and group-wide transfer batches.

@@ -15,7 +15,7 @@ import Area from '../components/charts/Area'
 import Bar from '../components/charts/Bar'
 import AllocationDonut from '../components/AllocationDonut'
 import Ledger from '../components/Ledger'
-import { fmtCents, glowColor, type Glow } from '../data'
+import { categoryDisplayName, fmtCents, glowColor, type Glow } from '../data'
 import { gridStagger } from '../components/motion'
 import { useData } from '../contexts/DataContext'
 import { MONTHS, iso, TODAY, monthStart, monthEnd, addDays, auFyStart, LAST, monthLabel, monthAxisLabels, fullDayLabel } from '../lib/period'
@@ -164,7 +164,7 @@ export default function Accounts() {
           <option value="Expense">Expenses</option>
         </Select>
         <Select value={filterCat} onChange={setFilterCat} ariaLabel="Category">
-          {allCategories.map(category => <option key={category} value={category}>{category === 'All' ? 'All categories' : category}</option>)}
+          {allCategories.map(category => <option key={category} value={category}>{category === 'All' ? 'All categories' : categoryDisplayName(category)}</option>)}
         </Select>
       </div>
     </div> : <div className="mb-6 flex flex-col gap-4 border-b border-[var(--hair-soft)] pb-5">

@@ -11,19 +11,23 @@ import type { InvestmentImport } from '../lib/investments/types'
 import { Button } from './Controls'
 import { OperationStatusPanel, OperationSteps } from './OperationStatus'
 import DropZone from './ingest/DropZone'
+import type { ImportProgress } from './ingest/ImportProgress'
+import { useView } from '../router'
 
 type Step = 'upload' | 'review' | 'reconcile' | 'processing' | 'success'
 
 type Props = {
   accountId: string
   accountName: string
+  onProgress?: (progress: ImportProgress) => void
   onImportStateChange?: (active: boolean) => void
   onReviewTransfers?: () => void
 }
 
-export default function InvestmentCSVUploader({ accountId, accountName, onImportStateChange, onReviewTransfers }: Props) {
+export default function InvestmentCSVUploader({ accountId, accountName, onImportStateChange, onReviewTransfers, onProgress }: Props) {
   const { refreshData } = useData()
   const formatDay = useConsoleDayLabel()
+  const consoleStyle = useView().theme === 'console'
   const [step, setStep] = useState<Step>('upload')
   const [staged, setStaged] = useState<InvestmentImport | null>(null)
   const [confirmedUnits, setConfirmedUnits] = useState('')
@@ -132,6 +136,10 @@ export default function InvestmentCSVUploader({ accountId, accountName, onImport
 
   const blocked = staged?.activities.filter((activity) => !activity.include).length ?? 0
   const importable = staged?.activities.filter((activity) => activity.include).length ?? 0
+  useEffect(() => {
+    const phase = step === 'reconcile' || step === 'processing' ? 'import' : step === 'success' ? 'done' : step
+    onProgress?.({ phase, rows: importable })
+  }, [step, importable, onProgress])
 
   return (
     <div className="grid gap-4">
@@ -153,12 +161,12 @@ export default function InvestmentCSVUploader({ accountId, accountName, onImport
             <Metric label="DRP" value={fmtCents(staged.summary.reinvestedDistributionsCents)} />
             <Metric label="Derived units" value={staged.summary.calculatedUnits} />
           </div>
-          <div className="overflow-x-auto rounded-[10px] border border-[var(--hair)]">
+          <div className={`overflow-x-auto rounded-[10px] border border-[var(--hair)] ${consoleStyle ? 'console-ingestion-review-table' : ''}`}>
             <table className="w-full min-w-[720px] text-left text-[13px]">
               <caption className="sr-only">Managed-investment activities staged for import</caption>
               <thead className="bg-black/[0.025] text-muted"><tr><th className="p-3">Date</th><th>Activity</th><th>Units</th><th>Unit price</th><th>Value</th><th>Status</th></tr></thead>
               <tbody>{staged.activities.map((activity) => <tr key={activity.id} className="border-t border-[var(--hair-soft)]">
-                <td className="p-3">{activity.tradeDate ?? 'Invalid'}</td><td>{activity.activityType?.replace(/_/g, ' ') ?? activity.sourceLabel}</td>
+                <td className="p-3">{activity.tradeDate ? consoleStyle ? formatDay(activity.tradeDate) : activity.tradeDate : 'Invalid'}</td><td>{activity.activityType?.replace(/_/g, ' ') ?? activity.sourceLabel}</td>
                 <td className="font-mono">{activity.quantity ?? '—'}</td><td className="font-mono">{activity.unitPrice ? `$${activity.unitPrice}` : '—'}</td>
                 <td className="font-mono">{activity.valueCents === null ? '—' : fmtCents(activity.valueCents)}</td>
                 <td className={activity.include ? 'text-pos' : 'text-neg'}>{activity.include ? 'Ready' : activity.issues.join(', ')}</td>

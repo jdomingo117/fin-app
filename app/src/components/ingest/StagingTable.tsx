@@ -117,7 +117,7 @@ export default function StagingTable({
         )}
       </div>
 
-      <div className="max-h-[420px] overflow-auto rounded-[10px] border border-[var(--hair)] bg-[var(--color-surface)]">
+      <div className="console-ingestion-review-table max-h-[420px] overflow-auto rounded-[10px] border border-[var(--hair)] bg-[var(--color-surface)]">
         <table className="w-full border-collapse text-[12.5px]">
           <caption className="sr-only">Transactions staged for import and category review</caption>
           <thead className="sticky top-0 z-10 bg-[var(--color-surface)]">

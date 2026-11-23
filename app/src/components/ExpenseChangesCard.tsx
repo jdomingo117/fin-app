@@ -1,7 +1,8 @@
 import type {Facet} from '../lib/reports'
 import { useMemo, useState } from 'react'
 import Tile from './Tile'
-import { fmt } from '../data'
+import { fmt, fmtCents } from '../data'
+import { useView } from '../router'
 import { catInScope, isActive, type CatSelection } from '../lib/expenseSelection'
 
 type ChangeRow = {
@@ -138,11 +139,13 @@ export default function ExpenseChangesCard({
 }
 
 function MoverSummaryRow({ row, dimmed, onClick }: { row: ChangeRow; dimmed: boolean; onClick: () => void }) {
+  const consoleStyle = useView().theme === 'console'
+  const money = consoleStyle ? fmtCents : fmt
   const isNew = row.previous === 0 && row.current > 0
   const tone = isNew ? 'var(--color-warn)' : row.delta > 0 ? 'var(--color-neg)' : row.delta < 0 ? 'var(--color-pos)' : 'var(--color-muted)'
   const deltaLabel = isNew
     ? 'New'
-    : `${row.delta > 0 ? '+' : row.delta < 0 ? '−' : '±'}${fmt(Math.abs(row.delta))}${row.previous > 0 ? ` · ${row.delta > 0 ? '+' : ''}${Math.round((row.delta / row.previous) * 100)}%` : ''}`
+    : `${row.delta > 0 ? '+' : row.delta < 0 ? '−' : '±'}${money(Math.abs(row.delta))}${row.previous > 0 ? ` · ${row.delta > 0 ? '+' : ''}${Math.round((row.delta / row.previous) * 100)}%` : ''}`
 
   return (
     <li className={dimmed ? 'opacity-40' : ''}>
@@ -152,11 +155,11 @@ function MoverSummaryRow({ row, dimmed, onClick }: { row: ChangeRow; dimmed: boo
         className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-md py-4 text-left transition-colors hover:bg-[var(--hair-soft)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       >
         <span className="flex min-w-0 items-center gap-2.5">
-          <i className="h-2 w-2 shrink-0 rounded-full" style={{ background: tone }} />
+          <i className="h-2 w-2 shrink-0 rounded-full" style={{ background: consoleStyle ? 'var(--console-chart-tint)' : tone }} />
           <span className="min-w-0 truncate text-[14px] font-semibold text-ink">{row.name}</span>
-          <span className="shrink-0 text-[12px] tabular-nums text-muted">{fmt(row.current)} vs {fmt(row.previous)}</span>
+          <span className="shrink-0 text-[12px] tabular-nums text-muted">{money(row.current)} vs {money(row.previous)}</span>
         </span>
-        <span className="text-right text-[13px] font-semibold tabular-nums" style={{ color: tone }}>{deltaLabel}</span>
+        <span className="text-right text-[13px] font-semibold tabular-nums" style={{ color: consoleStyle ? undefined : tone }}>{deltaLabel}</span>
       </button>
     </li>
   )
@@ -170,6 +173,8 @@ function ChangeRow({ row, maxValue, dimmed, onClick }: { row: ChangeRow; maxValu
   const plotX = (value: number) => plotStart + (value / maxValue) * plotWidth
   const currentX = plotX(row.current)
   const previousX = plotX(row.previous)
+  const consoleStyle = useView().theme === 'console'
+  const money = consoleStyle ? fmtCents : fmt
   const isNew = row.previous === 0 && row.current > 0
   const tone = isNew ? 'var(--color-warn)' : row.delta > 0 ? 'var(--color-neg)' : row.delta < 0 ? 'var(--color-pos)' : 'var(--color-muted)'
   const direction = row.delta > 0 ? '↗' : row.delta < 0 ? '↘' : '—'
@@ -185,12 +190,12 @@ function ChangeRow({ row, maxValue, dimmed, onClick }: { row: ChangeRow; maxValu
         <span className="relative block h-9 rounded-full bg-[var(--track)]">
           <span className="absolute top-1/2 h-px -translate-y-1/2 bg-[var(--hair)]" style={{ left: `${Math.min(previousX, currentX)}%`, width: `${Math.abs(currentX - previousX)}%` }} />
           {row.previous > 0 && <span className="absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[var(--toast-bg)] bg-[var(--color-muted)]" style={{ left: `${previousX}%` }} />}
-          <span className="absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[var(--toast-bg)] shadow-[0_0_0_2px_color-mix(in_srgb,var(--color-accent)_18%,transparent)]" style={{ left: `${currentX}%`, background: tone }} />
-          <span className="absolute left-2 top-1/2 z-10 -translate-y-1/2 rounded bg-[var(--toast-bg)] px-1.5 py-0.5 text-[12px] tabular-nums text-muted shadow-sm">{fmt(row.previous)}</span>
-          <span className="absolute right-2 top-1/2 z-10 -translate-y-1/2 rounded bg-[var(--toast-bg)] px-1.5 py-0.5 text-[12px] font-semibold tabular-nums text-ink shadow-sm">{fmt(row.current)}</span>
+          <span className="absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[var(--toast-bg)] shadow-[0_0_0_2px_color-mix(in_srgb,var(--color-accent)_18%,transparent)]" style={{ left: `${currentX}%`, background: consoleStyle ? 'var(--console-chart-tint)' : tone }} />
+          <span className="absolute left-2 top-1/2 z-10 -translate-y-1/2 rounded bg-[var(--toast-bg)] px-1.5 py-0.5 text-[12px] tabular-nums text-muted shadow-sm">{money(row.previous)}</span>
+          <span className="absolute right-2 top-1/2 z-10 -translate-y-1/2 rounded bg-[var(--toast-bg)] px-1.5 py-0.5 text-[12px] font-semibold tabular-nums text-ink shadow-sm">{money(row.current)}</span>
         </span>
         <span className="flex items-center justify-end gap-1.5 text-right text-[13px] font-semibold tabular-nums" style={{ color: tone }}>
-          {isNew ? 'New' : `${row.delta > 0 ? '+' : row.delta < 0 ? '−' : '±'}${fmt(Math.abs(row.delta))}`}
+          {isNew ? 'New' : `${row.delta > 0 ? '+' : row.delta < 0 ? '−' : '±'}${money(Math.abs(row.delta))}`}
           <span aria-hidden>{direction}</span>
         </span>
       </button>

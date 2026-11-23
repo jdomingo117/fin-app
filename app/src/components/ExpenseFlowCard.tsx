@@ -5,7 +5,8 @@ import '@xyflow/react/dist/style.css'
 import Tile from './Tile'
 import { catInScope, isActive, subInScope, type CatSelection } from '../lib/expenseSelection'
 import { catColor } from '../lib/categoryColor'
-import { fmt } from '../data'
+import { fmt, fmtCents } from '../data'
+import { useView } from '../router'
 
 
 /* √-scaled, capped edge width — keeps "thicker = bigger" but bounds the dominant
@@ -88,6 +89,8 @@ export default function ExpenseFlowCard({
   /** Taller category sets need a taller graph rather than smaller nodes. */
   height?: number
 }) {
+  const consoleStyle = useView().theme === 'console'
+  const money = consoleStyle ? fmtCents : fmt
   // Which category is expanded when nothing is focused. Kept across a focus so
   // clearing returns you where you were rather than snapping to the biggest.
   const [local, setLocal] = useState<string | null>(null)
@@ -135,31 +138,31 @@ export default function ExpenseFlowCard({
     const edges: any[] = []
     const centerY = FLOW_LAYOUT.topY + ((cats.length - 1) * FLOW_LAYOUT.categoryGap) / 2
 
-    nodes.push({ id: 'total', type: 'flow', position: { x: FLOW_LAYOUT.totalX, y: centerY }, data: { label: 'Total outflow', amount: fmt(total), color: 'var(--color-ink2)', kind: 'total' } })
+    nodes.push({ id: 'total', type: 'flow', position: { x: FLOW_LAYOUT.totalX, y: centerY }, data: { label: 'Total outflow', amount: money(total), color: 'var(--color-ink2)', kind: 'total' } })
 
     cats.forEach((c, i) => {
       const y = FLOW_LAYOUT.topY + i * FLOW_LAYOUT.categoryGap
-      const color = catColor(c.name)
+      const color = consoleStyle ? 'var(--console-chart-tint)' : catColor(c.name)
       const isExpanded = expanded === c.name
       // dimming is additive: with no focus it's always false, so the card renders
       // exactly as it did before cross-filtering existed
       const isDimmed = focusOn && !catInScope(c.name, selection)
-      nodes.push({ id: `cat:${c.name}`, type: 'flow', position: { x: FLOW_LAYOUT.categoryX, y }, data: { label: c.name, amount: fmt(c.total), pct: `${Math.round((c.total / total) * 100)}%`, color, kind: 'cat', selected: isExpanded, dimmed: isDimmed } })
+      nodes.push({ id: `cat:${c.name}`, type: 'flow', position: { x: FLOW_LAYOUT.categoryX, y }, data: { label: c.name, amount: money(c.total), pct: `${Math.round((c.total / total) * 100)}%`, color, kind: 'cat', selected: isExpanded, dimmed: isDimmed } })
       // `animated` stays bound to expansion, not the focus — a multi-select would
       // otherwise animate every edge at once
-      edges.push({ id: `e-t-${c.name}`, source: 'total', target: `cat:${c.name}`, animated: isExpanded, style: { stroke: color, strokeWidth: edgeW(c.total / total, 16, 13), opacity: (isExpanded ? 0.85 : 0.28) * (isDimmed ? 0.5 : 1) } })
+      edges.push({ id: `e-t-${c.name}`, source: 'total', target: `cat:${c.name}`, animated: !consoleStyle && isExpanded, style: { stroke: color, strokeWidth: edgeW(c.total / total, 16, 13), opacity: (isExpanded ? 0.85 : 0.28) * (isDimmed ? 0.5 : 1) } })
 
       if (isExpanded) {
         const subStartY = y - ((c.subs.length - 1) * FLOW_LAYOUT.subcategoryGap) / 2
         c.subs.forEach((s, j) => {
           const subDimmed = focusOn && !subInScope(c.name, s.name, selection)
-          nodes.push({ id: `sub:${c.name}:${s.name}`, type: 'flow', position: { x: FLOW_LAYOUT.subcategoryX, y: subStartY + j * FLOW_LAYOUT.subcategoryGap }, data: { label: s.name, amount: fmt(s.value), color, kind: 'sub', dimmed: subDimmed } })
-          edges.push({ id: `e-${c.name}-${s.name}`, source: `cat:${c.name}`, target: `sub:${c.name}:${s.name}`, animated: true, style: { stroke: color, strokeWidth: edgeW(s.value / c.total, 12, 11), opacity: 0.85 * (subDimmed ? 0.5 : 1) } })
+          nodes.push({ id: `sub:${c.name}:${s.name}`, type: 'flow', position: { x: FLOW_LAYOUT.subcategoryX, y: subStartY + j * FLOW_LAYOUT.subcategoryGap }, data: { label: s.name, amount: money(s.value), color, kind: 'sub', dimmed: subDimmed } })
+          edges.push({ id: `e-${c.name}-${s.name}`, source: `cat:${c.name}`, target: `sub:${c.name}:${s.name}`, animated: !consoleStyle, style: { stroke: color, strokeWidth: edgeW(s.value / c.total, 12, 11), opacity: 0.85 * (subDimmed ? 0.5 : 1) } })
         })
       }
     })
     return { nodes, edges }
-  }, [cats, total, expanded, focusOn, selection])
+  }, [cats, total, expanded, focusOn, selection, consoleStyle, money])
 
   // refit when the expanded category (or dataset) changes. Two passes: an early
   // one, plus a later one after React Flow has measured node sizes and the grid

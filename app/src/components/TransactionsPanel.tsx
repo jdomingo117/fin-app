@@ -1,6 +1,7 @@
 import {expenseAmountRange} from '../lib/expenseAmountRange'
 import { useMemo, useState } from 'react'
 import Tile from './Tile'
+import { ConsoleModule } from './console/ConsoleHub'
 import Ledger from './Ledger'
 import FiltersPopover from './FiltersPopover'
 import { SearchInput, RemovableChip } from './Controls'
@@ -35,7 +36,8 @@ export default function TransactionsPanel({
   const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null)
   const debouncedQuery = useDebouncedValue(query, 180)
   const { refreshData } = useData()
-  const { toast } = useView()
+  const { toast, theme } = useView()
+  const consoleStyle = theme === 'console'
 
   // Category options (stable set) with per-category counts over the scoped rows.
   const categoryOptions = useMemo(() => {
@@ -94,12 +96,11 @@ export default function TransactionsPanel({
     toast({ title: 'Transaction updated', sub: 'Expenses analytics have been refreshed.' })
   }
 
-  return (
-    <Tile span={3} className="relative z-10">
+  const content = <>
       {/* header — title + result count · search + filters */}
       <header className="mb-3.5 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-baseline gap-2.5">
-          <h3 className="font-display text-[16px] font-bold text-ink">Transactions</h3>
+          {!consoleStyle && <h3 className="font-display text-[16px] font-bold text-ink">Transactions</h3>}
           <span className="text-[13px] uppercase tracking-[0.06em] tabular-nums text-muted">
             Showing {shownRows.length} of {matching}
           </span>
@@ -159,7 +160,7 @@ export default function TransactionsPanel({
       {selectedTransactionId && <ReportStatus report={editor} label="Transaction" />}
       {matching > 0 ? (
         <>
-          <Ledger rows={shownRows} onEdit={(transaction) => setSelectedTransactionId(transaction.parentTransactionId ?? transaction.id)} />
+          <Ledger rows={shownRows} consoleStyle={consoleStyle} onEdit={(transaction) => setSelectedTransactionId(transaction.parentTransactionId ?? transaction.id)} />
           <footer className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--hair-soft)] pt-3">
             <span className="text-[13px] tabular-nums text-muted">Showing {shownRows.length} of {matching} transactions</span>
             <div className="flex flex-wrap items-center gap-2">
@@ -190,6 +191,7 @@ export default function TransactionsPanel({
         onClose={() => setSelectedTransactionId(null)}
         onChanged={refreshAfterEdit}
       />
-    </Tile>
-  )
+  </>
+  return consoleStyle ? <ConsoleModule title="Transactions" kind="flat" order={4}>{content}</ConsoleModule>
+    : <Tile span={3} className="relative z-10">{content}</Tile>
 }

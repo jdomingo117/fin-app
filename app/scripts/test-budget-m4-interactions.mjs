@@ -20,7 +20,12 @@ export async function budgetM4Interactions({newUser,sql,quote,check,signedPage,s
  const f=await fixture()
  sql(`INSERT INTO public.transactions(user_id,tenant_id,account_id,date,original_description,merchant,merchant_key,category,amount,kind,kind_source,pending) SELECT ${quote(f.u.id)},${quote(f.u.tenant)},${quote(f.account)},((now() AT TIME ZONE 'Australia/Sydney')::date-make_interval(months=>n))::date,'M4 bill fixture','Internet','internet','Shopping',-5000,'expense','user',false FROM generate_series(0,5) n;`)
  const p=await signedPage(f.u,1440,true)
- await p.getByText('Find bills from recorded spending',{exact:true}).click()
+ async function openBillFinder(){
+  const disclosure=p.locator('#budget-find-bills')
+  await expect(disclosure).toBeVisible()
+  if(await disclosure.getAttribute('open')===null)await disclosure.locator('summary').click()
+ }
+ await openBillFinder()
  await p.getByRole('button',{name:'Review Internet',exact:true}).click()
  let task=p.getByRole('dialog')
  await expect(task.getByLabel('Amount per bill payment (AUD)',{exact:true})).toHaveValue('50.00')
@@ -34,6 +39,7 @@ export async function budgetM4Interactions({newUser,sql,quote,check,signedPage,s
  await expect(task.getByLabel('Name',{exact:true})).toHaveValue('Home internet')
  p.once('dialog',d=>d.accept());await task.getByRole('button',{name:'Close',exact:true}).click()
  await p.getByRole('button',{name:'Refresh saved data',exact:true}).click()
+ await openBillFinder()
  await p.getByRole('button',{name:'Review Internet',exact:true}).click()
  task=p.getByRole('dialog');await task.getByLabel('Name',{exact:true}).fill('Home internet')
  await task.getByRole('button',{name:'Review impact'}).click()
@@ -42,7 +48,9 @@ export async function budgetM4Interactions({newUser,sql,quote,check,signedPage,s
  check('detected bill saves only after explicit reviewed confirmation',snapshot(f.u).lines.length,3)
  sql(`UPDATE public.transactions SET amount=-6000 WHERE tenant_id=${quote(f.u.tenant)} AND merchant_key='internet';`)
  await p.getByRole('button',{name:'Refresh saved data',exact:true}).click()
- await p.getByRole('button',{name:'Review the update to Home internet',exact:true}).click()
+ await openBillFinder()
+ // The finder names the source merchant; the saved budget item keeps the edited name.
+ await p.getByRole('button',{name:'Review the update to Internet',exact:true}).click()
  task=p.getByRole('dialog');await expect(task.getByLabel('Amount per bill payment (AUD)',{exact:true})).toHaveValue('60.00')
  const savedBill=snapshot(f.u).lines.find(l=>l.name==='Home internet')
  check('changed detector terms propose but do not rewrite saved bill',sql(`SELECT payload->>'amount_cents' FROM public.budget_item_revisions WHERE line_id=${quote(savedBill.id)} ORDER BY version DESC LIMIT 1;`),'5000')

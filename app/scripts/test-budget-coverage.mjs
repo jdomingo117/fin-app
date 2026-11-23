@@ -2,12 +2,27 @@ import assert from 'node:assert/strict'
 import {randomUUID} from 'node:crypto'
 import {expect} from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
+import {setTimeout as wait} from 'node:timers/promises'
 
 /** Uses a guarded disposable candidate. No fixture writes to the coverage table. */
 export async function budgetCoverageChecks({newUser,sql,quote:q,check,edge,signedPage}){
  const owner=await newUser(),other=await newUser(),viewer=await newUser(),member=await newUser()
+ // Browser and direct assertions use the same owner's 30-read/minute bucket.
+ // Reserve the same request cadence for both paths on this disposable target.
+ let nextOwnerRead=0
+ async function paceOwnerRead(){
+  const slot=Math.max(Date.now(),nextOwnerRead)
+  nextOwnerRead=slot+2200
+  await wait(slot-Date.now())
+ }
+ const openOwnerPage=(width,hasPlan=false)=>signedPage(owner,width,hasPlan,async context=>{
+  await context.route('**/functions/v1/query-budget',async route=>{
+   if(route.request().method()==='POST')await paceOwnerRead()
+   await route.continue()
+  })
+ })
  const range=JSON.parse(sql(`SELECT json_build_object('first',(date_trunc('month',now() AT TIME ZONE 'Australia/Sydney')-interval '3 months')::date,'start',date_trunc('month',now() AT TIME ZONE 'Australia/Sydney')::date,'last',(now() AT TIME ZONE 'Australia/Sydney')::date,'tomorrow',(now() AT TIME ZONE 'Australia/Sydney')::date+1);`))
- const invoke=async(u,fn,payload)=>{const r=await edge(u,fn,payload);assert.equal(r.status,200,`${fn}: ${JSON.stringify(r.body)}`);return r.body}
+ const invoke=async(u,fn,payload)=>{if(u===owner&&fn==='query-budget')await paceOwnerRead();const r=await edge(u,fn,payload);assert.equal(r.status,200,`${fn} ${payload.action??''}: ${JSON.stringify(r.body)}`);return r.body}
  const create=(u,name)=>invoke(u,'upsert-account',{name,type:'Liquid',currency:'AUD',balance:0})
  const account=await create(owner,'Coverage fixture account'),foreign=await create(other,'Separate fixture account')
  const batch=randomUUID()
@@ -41,12 +56,12 @@ export async function budgetCoverageChecks({newUser,sql,quote:q,check,edge,signe
  check('R09 actual future dates are rejected',(await edge(other,'manage-budget',{...confirm,account_id:foreign.id,last_date:range.tomorrow,request_id:randomUUID(),expected_source:foreignBasis})).body.code,'budget_invalid_coverage_dates')
  check('R09 omitted attestation is rejected',(await edge(other,'manage-budget',{...confirm,account_id:foreign.id,confirmed:false,request_id:randomUUID(),expected_source:foreignBasis})).status,422)
  check('R09 browser roles cannot call coverage SQL directly or mutate evidence',sql(`SELECT NOT has_function_privilege('authenticated','public.budget_coverage(uuid,uuid,uuid)','EXECUTE') AND NOT has_table_privilege('authenticated','public.account_activity_coverage','INSERT,UPDATE,DELETE');`),'t')
- const page=await signedPage(owner,390)
+ const page=await openOwnerPage(390)
  await page.getByRole('button',{name:'Help me build a budget'}).click()
  const assistanceDialog=page.getByRole('dialog',{name:'Help me build a budget'})
  await assistanceDialog.getByRole('checkbox',{name:'Coverage fixture account · AUD'}).check()
  await assistanceDialog.getByRole('button',{name:'Check my history'}).click()
- await expect(assistanceDialog.getByRole('heading',{name:'Confirm your account history',exact:true})).toBeVisible()
+ await expect(assistanceDialog.getByRole('heading',{name:'Confirm your account history',exact:true})).toBeVisible({timeout:20000})
  await expect(assistanceDialog.getByRole('button',{name:'Enter my own amounts'})).toBeEnabled()
  check('R09 rendered missing-history flow retains immediate manual setup',true)
  await assistanceDialog.getByText('Confirm dates I know are complete',{exact:true}).click()
@@ -80,7 +95,7 @@ export async function budgetCoverageChecks({newUser,sql,quote:q,check,edge,signe
  await command({action:'activate',expected_draft:'1',accept_gap:false})
  const ready=await workspace()
  check('R09 forecast becomes available using the attested dates',[ready.details.forecast.flexible.available,ready.details.forecast.flexible.history.map(m=>m.gross_cents)],[true,[1000,0,0]])
- const active=await signedPage(owner,1440,true)
+ const active=await openOwnerPage(1440,true)
  await active.getByRole('button',{name:'Accounts & settings'}).click()
  await active.getByRole('button',{name:'Review account history coverage'}).click()
  const settings=active.getByRole('dialog',{name:'Account history coverage'})

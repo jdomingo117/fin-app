@@ -24,8 +24,9 @@ export async function runBudgetWorkspaceChecks({repo,api,browserPort=57300,viteC
  try {
   for(let n=0;n<100;n++){try{if((await fetch(url)).ok)break}catch{}await new Promise(r=>setTimeout(r,100))}
   browser=await chromium.launch()
-  async function signedPage(user,width=1440,hasPlan=false) {
+  async function signedPage(user,width=1440,hasPlan=false,prepareContext) {
    const context=await browser.newContext({viewport:{width,height:1050},reducedMotion:'reduce'})
+   await prepareContext?.(context)
    await context.addInitScript(({session,key})=>localStorage.setItem(key,JSON.stringify(session)),{session:user.session,key:'sb-127-auth-token'})
    const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));page.on('console',message=>{if(message.text().startsWith('[vite]'))console.log('Budget test dev-server:',message.text())})
    await page.goto(`${url}/budget`)

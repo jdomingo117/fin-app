@@ -2,7 +2,7 @@ import { defineConfig } from '@playwright/test'
 
 export default defineConfig({
   testDir: './e2e',
-  testMatch: ['console-foundation.spec.ts', 'console-effects.spec.ts', 'console-gate-three.spec.ts', 'console-phase-three.spec.ts'],
+  testMatch: ['console-foundation.spec.ts', 'console-effects.spec.ts', 'console-gate-three.spec.ts', 'console-phase-three.spec.ts', 'console-analysis-hubs.spec.ts'],
   timeout: 60_000,
   expect: { timeout: 10_000 },
   reporter: 'list',

@@ -101,9 +101,31 @@ export async function signInForConsole(page: Page, controlledClock = true, befor
     const key = url.pathname.split('/').at(-1) ?? ''
     await beforeRead?.(key)
     let body = fixtures[key] ?? []
+    if (key === 'movement_history') {
+      const account = accounts.find(item => item.id === request.postDataJSON().p_account_ids?.[0])
+      const balance = account?.balance ?? 0
+      body = { months: [0.67, 0.72, 0.70, 0.84, 0.91, 1].map((ratio, index) => ({
+        month: `2026-${String(6 + index).padStart(2, '0')}-01`,
+        account_balance_cents: Math.round(balance * ratio),
+      })) }
+    }
+    if (key === 'account_activity_categories') body = [...new Set(recent.map(row => row.category))]
+    if (key === 'ledger_page') {
+      const params = request.postDataJSON()
+      const rows = recent.filter(row =>
+        (!params.p_ids || params.p_ids.includes(row.parent_id)) &&
+        (!params.p_account_ids || params.p_account_ids.includes(row.account_id)) &&
+        (!params.p_category || row.category === params.p_category) &&
+        (!params.p_account_search || row.merchant.toLowerCase().includes(params.p_account_search.toLowerCase())))
+      body = {
+        rows: rows.slice(0, params.p_limit).map(row => ({ ...row, id: row.parent_id, account_name: 'Everyday', allocations: [] })),
+        before: null, matching_count: rows.length, attention_count: 0, has_more: false,
+      }
+    }
     if (key === 'reporting_transaction_lines') {
       const category = url.searchParams.get('category')?.slice(3)
-      const rows = url.searchParams.get('amount') === 'gt.0' ? recent.filter(row=>row.amount>0) : recent
+      const amount = url.searchParams.get('amount')
+      const rows = recent.filter(row => amount === 'gt.0' ? row.amount > 0 : amount === 'lt.0' ? row.amount < 0 : true)
       body = category ? rows.filter(row=>row.category===category) : rows
     }
     const response = override?.(key, request, body) ?? { json: body }

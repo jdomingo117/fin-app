@@ -1,7 +1,7 @@
 import ReportStatus from './ReportStatus'
 import { useTaxonomy } from '../hooks/useTaxonomy'
 import { useConsoleDayLabel } from '../hooks/useConsoleDayLabel'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Papa from 'papaparse'
 import { supabase } from '../lib/supabaseClient'
@@ -86,8 +86,9 @@ export default function CSVUploader({
 
   const [staged, setStaged] = useState<StagedRow[]>([])
   const [stageStats, setStageStats] = useState<Awaited<ReturnType<typeof stageRows>> | null>(null)
-  const stagedHeading = useRef<HTMLHeadingElement>(null)
-  const reviewingRows = step === 'staging' && !!stageStats
+  const focusStagedHeading = useCallback((heading: HTMLHeadingElement | null) => {
+    heading?.focus()
+  }, [])
   const [categorizing, setCategorizing] = useState(false)
   const [categorizationProgress, setCategorizationProgress] = useState<{ completed: number; total: number; failed: number } | null>(null)
   const [catStats, setCatStats] = useState<{ fromCache: number; fromBank: number; fromAi: number; geminiCalls: number } | null>(null)
@@ -103,9 +104,6 @@ export default function CSVUploader({
   }, [step, onImportStateChange])
 
   useEffect(() => () => onImportStateChange?.(false), [onImportStateChange])
-  useEffect(() => {
-    if (theme === 'console' && reviewingRows) stagedHeading.current?.focus()
-  }, [theme, reviewingRows])
 
   const reset = () => {
     setStep('upload'); setError(''); setHeaders([]); setRawRows([])
@@ -420,7 +418,7 @@ export default function CSVUploader({
 
         {step === 'staging' && stageStats && (
           <motion.div key="staging" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="grid gap-4">
-            {theme === 'console' && <h3 ref={stagedHeading} tabIndex={-1} className="console-module-title" data-module-title>Review statement rows</h3>}
+            {theme === 'console' && <h3 ref={focusStagedHeading} tabIndex={-1} className="console-module-title" data-module-title>Review statement rows</h3>}
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[12.5px] text-muted">
               <span><strong className="text-ink">{importable}</strong> ready</span>
               {stageStats.stats.badDate > 0 && <span>{stageStats.stats.badDate} bad dates</span>}

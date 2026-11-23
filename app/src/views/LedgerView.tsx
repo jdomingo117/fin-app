@@ -391,9 +391,11 @@ function LedgerWorkspace({ tenant }: { tenant: string }) {
       <TransactionCategoryDrawer transaction={selected}
         protectDraft={theme === 'console'}
         restoreSelector={theme === 'console' && selectedId ? `[data-ledger-edit="${CSS.escape(selectedId)}"]` : undefined}
-        onClose={() => { setSelectedId(null); setReviewEditorId(null) }} onChanged={async () => {
-        await refreshData()
-      }} />
+        onClose={() => { setSelectedId(null); setReviewEditorId(null) }}
+        onChanged={async () => {
+          if (reviewEditorId !== null) setReviewInvalidated(true)
+          await refreshData()
+        }} />
       {bulkOpen && bulk.data && <BulkCategoryDialog transactions={selectedTransactions} onClose={(clearSelection) => {
         setBulkOpen(false)
         if (clearSelection) { setSelectedIds(new Set()) }

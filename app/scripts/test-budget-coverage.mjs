@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict'
 import {randomUUID} from 'node:crypto'
-import {expect} from '@playwright/test'
+import {expect as browserExpect} from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import {setTimeout as wait} from 'node:timers/promises'
+
+const expect=browserExpect.configure({timeout:20000})
 
 /** Uses a guarded disposable candidate. No fixture writes to the coverage table. */
 export async function budgetCoverageChecks({newUser,sql,quote:q,check,edge,signedPage}){
@@ -60,8 +62,11 @@ export async function budgetCoverageChecks({newUser,sql,quote:q,check,edge,signe
  await page.getByRole('button',{name:'Help me build a budget'}).click()
  const assistanceDialog=page.getByRole('dialog',{name:'Help me build a budget'})
  await assistanceDialog.getByRole('checkbox',{name:'Coverage fixture account · AUD'}).check()
+ const historyResponse=page.waitForResponse(response=>response.url().includes('/functions/v1/query-budget')
+  &&response.request().method()==='POST'&&response.request().postDataJSON()?.action==='assisted_setup')
  await assistanceDialog.getByRole('button',{name:'Check my history'}).click()
- await expect(assistanceDialog.getByRole('heading',{name:'Confirm your account history',exact:true})).toBeVisible({timeout:20000})
+ check('R09 Classic assistance returns a successful history response',(await historyResponse).status(),200)
+ await expect(assistanceDialog.getByRole('heading',{name:'Confirm your account history',exact:true})).toBeVisible()
  await expect(assistanceDialog.getByRole('button',{name:'Enter my own amounts'})).toBeEnabled()
  check('R09 rendered missing-history flow retains immediate manual setup',true)
  await assistanceDialog.getByText('Confirm dates I know are complete',{exact:true}).click()

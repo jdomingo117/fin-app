@@ -137,7 +137,6 @@
   color: var(--console-label);
 }
 .console-orb-stat strong { font: 200 clamp(26px, 5vw, 52px)/1.1 var(--font-display); color: var(--console-ink); }
-.console-orb-trend-caption { position: absolute; inset-block-end: 15%; font-size: 13px; color: var(--console-label); }
 .console-orb-progress { filter: drop-shadow(0 0 5px currentColor); }
 .console-art-empty { justify-self: center; max-width: 200px; color: var(--console-label); font-size: 13px; }
 .redacted .console-orb-progress { visibility: hidden; }
@@ -246,7 +245,6 @@
   .console-home .console-orb { inline-size: 102px; justify-self: end; align-self: start; }
   .console-orb-stat strong { font-size: 27px; }
   .console-orb-stat { font-size: 10px; }
-  .console-orb-trend-caption { font-size: 10px; text-align: center; inset-block-end: 12%; }
   .console-hub-heading h1 { font-size: 36px; }
   .console-preview[data-section="dashboard"] .console-hero {
     grid-template: "headline headline" auto "movement art" auto / minmax(0, 1fr) var(--console-overview-phone-art);

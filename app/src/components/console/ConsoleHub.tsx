@@ -135,11 +135,11 @@ export function ConsoleHeroArt({ id, art, reduced, origin, home, redacted }: {
         </>}
       </svg>
       {redacted ? <figcaption className="sr-only">Trend hidden</figcaption> :
-        percent !== undefined ? <figcaption className="console-orb-stat tabular-nums"><strong>{percent}%</strong>{art?.label}</figcaption> :
-        <figcaption className={id === 'expenses' ? 'console-orb-trend-caption' : 'sr-only'}>
-          {id === 'expenses' ? 'Cumulative gross outflow' : art?.label}
-          <span className="sr-only">. First value {fmtCents(values[0])}. Last value {fmtCents(values[values.length - 1])}.</span>
-        </figcaption>}
+        percent !== undefined ? <>
+          <div className="console-orb-stat tabular-nums" aria-hidden="true"><strong>{percent}%</strong></div>
+          <figcaption className="sr-only">{art?.label}: {percent}%</figcaption>
+        </> :
+        <figcaption className="sr-only">{art?.label}. First value {fmtCents(values[0])}. Last value {fmtCents(values[values.length - 1])}.</figcaption>}
     </motion.figure>
     </ConsoleHandoff>
   )
@@ -150,7 +150,7 @@ export function ConsoleModule({ title, tools, children, kind, order = 0 }: {
 }) {
   return <GlassSurface as="section" material={kind === 'flat' ? 'opaque' : 'hub'} className="console-module" data-focus-ring data-console-row-item tabIndex={0}
     aria-label={title} style={{ '--console-module-order': order } as React.CSSProperties}>
-    <header><h2>{title}</h2>{tools}</header>
+    <header><h2 data-module-title className="console-module-title">{title}</h2>{tools}</header>
     {children}
   </GlassSurface>
 }

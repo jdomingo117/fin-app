@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
+import { auditConsoleChrome } from './fixtures/console-leftovers'
 import { dashboard, signInForConsole } from './fixtures/console-review'
 
 const hubs = [
@@ -35,16 +36,22 @@ for (const hub of hubs) {
     await expect(surface).toHaveAttribute('data-hero-state', 'expanded')
     await expect(surface.getByRole('heading', { name: hub.name, exact: true, level: 1 })).toBeVisible()
     await expect(surface.getByText('View chart values')).toBeVisible()
+    if (hasTouch) {
+      const glass = surface.locator('[data-console-surface="hub"]')
+      for (const module of await glass.all()) await expect(module).toHaveCSS('backdrop-filter', 'none')
+    }
     if (hub.slug === 'income') {
       const filter = surface.getByRole('button', { name: '24 Oct – 22 Nov' })
       const title = surface.getByRole('heading', { name: 'Income', exact: true, level: 1 })
       if (hasTouch) expect((await filter.boundingBox())!.y).toBeGreaterThan((await title.boundingBox())!.y)
       else expect((await filter.boundingBox())!.y).toBeLessThan((await title.boundingBox())!.y)
     }
+    await auditConsoleChrome(surface, `${hub.name} ${await surface.getAttribute('data-hero-state')}`)
     await checkAxe(page)
     await surface.evaluate(node => node.scrollTo(0, 600))
     await expect(surface).toHaveAttribute('data-hero-state', 'compact')
     await expect(surface.locator('.console-dock-material')).toHaveCSS('opacity', '1')
+    await auditConsoleChrome(surface, `${hub.name} ${await surface.getAttribute('data-hero-state')}`)
     await checkAxe(page)
     await page.getByRole('button', { name: 'Back to Home' }).click()
     await expect(page).toHaveURL(dashboard)
@@ -99,4 +106,34 @@ test('A Home account card opens the corresponding account and returns to Account
   await expect(page.locator('.console-expanded-hero .console-hero-amount')).toContainText('$75,000.00')
   await page.getByRole('button', { name: 'Back to Home' }).click()
   await expect(tile(page, 'Accounts')).toBeFocused()
+})
+
+test('Expenses displays reconciled prior detail and nice-number money ticks', async ({ page }) => {
+  await signInForConsole(page)
+  await page.getByRole('button', { name: 'Console', exact: true }).click()
+  await open(page, hubs[2])
+  const title = page.getByRole('region', { name: 'Period changes', exact: true })
+  const movers = page.getByRole('region', { name: 'Category changes summary', exact: true })
+  for (const module of [title, movers]) {
+    const totals = await module.evaluate(node => ({
+      rows: [...node.querySelectorAll('[data-comparison-prior]')].map(element => Number(element.getAttribute('data-comparison-prior'))),
+      other: Number(node.querySelector('[data-comparison-prior-other]')?.getAttribute('data-comparison-prior-other') ?? 0),
+      total: Number(node.querySelector('[data-comparison-prior-total]')?.getAttribute('data-comparison-prior-total')),
+    }))
+    expect(totals.total).toBe(349420)
+    expect(totals.rows.some(amount => amount > 0)).toBe(true)
+    expect(totals.rows.reduce((sum, amount) => sum + amount, 0) + totals.other).toBe(totals.total)
+  }
+  const chart = page.getByRole('region', { name: 'Spending over time' })
+  for (const tab of ['Cumulative', 'Per period']) {
+    await chart.getByRole('tab', { name: tab }).click()
+    const ticks = chart.locator('[data-console-axis-tick]')
+    await expect(ticks.first()).toBeVisible()
+    const values = await ticks.evaluateAll(elements => elements.map(element => Number(element.getAttribute('data-console-axis-tick'))))
+    expect(values.length).toBeGreaterThan(1)
+    for (const amount of values.filter(Boolean)) {
+      const scale = 10 ** Math.floor(Math.log10(Math.abs(amount)))
+      expect([1, 2, 2.5, 5]).toContain(Math.abs(amount) / scale)
+    }
+  }
 })

@@ -65,6 +65,8 @@ When reusing a preview port, verify the listener’s working directory and the s
 
 ## Acceptance evidence
 
+- **Classic leftovers.** Run the rendered Console audit on each Phase 4 batch and record its output in the gate note. Check sentence-case interface labels, the Console module-title token, Classic accent colours, the Console variant of chips, selects and inputs, and house dates. Exempt proper nouns and record-supplied text from casing. Exercise the routes at desktop and phone widths in the normal signed-in app.
+
 - **Appearance and layout.** Capture the same fictional state at 320, 390, 768, 1024 and 1440px. Compare Console against the supplied target. Include the first and last tile, long names, ring edges, an open overlay, and 200% zoom. Check focus-induced layout shift independently of the intended track transform.
 - **Classic fallback.** Smoke-check rendering, navigation and browser console errors while the frozen fallback remains available. Remove Classic after Phase 5.
 - **Input and accessibility.** Use Playwright and axe on real states, then operate each row and dialog using keyboard and touch. Inspect accessible names, focus restoration, visible labels, both signed-figure colours against each section’s gradient extremes, including Spending 35° against negative 25°, forced colours and native controls. Verify that navigation works while the entrance is playing.

@@ -36,6 +36,9 @@ export function Button({
 export function Chip({ active, children, onClick, className = '' }: { active?: boolean; children: ReactNode; onClick?: () => void; className?: string }) {
   return (
     <button
+      type="button"
+      aria-pressed={active}
+      data-control-kind="chip"
       onClick={onClick}
       className={`rounded-[10px] border px-3.5 py-2 text-[12px] font-medium transition ${className} ${
         active
@@ -52,7 +55,7 @@ export function Chip({ active, children, onClick, className = '' }: { active?: b
  *  active state. */
 export function RemovableChip({ children, onRemove }: { children: ReactNode; onRemove: () => void }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-[9px] border border-accent bg-[var(--accent-wash)] py-1 pl-2.5 pr-1 text-[12px] font-medium text-accent-ink">
+    <span data-control-kind="chip" className="inline-flex items-center gap-1 rounded-[9px] border border-accent bg-[var(--accent-wash)] py-1 pl-2.5 pr-1 text-[12px] font-medium text-accent-ink">
       {children}
       <button
         type="button"

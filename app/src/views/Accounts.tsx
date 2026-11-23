@@ -7,7 +7,7 @@ import { useLocation, useOutletContext } from 'react-router-dom'
 import ConsoleHub, { ConsoleChartValues, ConsoleModule } from '../components/console/ConsoleHub'
 import type { ConsoleOutlet } from '../components/console/ConsoleViewport'
 import { FocusRow } from '../components/console/FocusRow'
-import { Select } from '../components/Controls'
+import { Chip, SearchInput, Select } from '../components/Controls'
 import { Screen, ViewHeader } from '../components/Screen'
 import Tile from '../components/Tile'
 import Stat from '../components/Stat'
@@ -146,9 +146,28 @@ export default function Accounts() {
   const pageCount = Math.max(1, Math.ceil(matching / itemsPerPage))
   const validPage = activity.page - 1
   const paginatedTxns = activity.data?.rows ?? []
+  const consolePeriods = [
+    ['All Time', 'All time'], ['This Week', 'This week'], ['This Month', 'This month'],
+    ['Last Month', 'Last month'], ['Last 3 Months', 'Last 3 months'],
+    ['This Year YTD', 'Calendar year to date'], ['Financial YTD', 'Financial year to date'],
+  ]
   const ledgerContent = <>
-    {/* Advanced Filters */}
-    <div className="mb-6 flex flex-col gap-4 border-b border-[var(--hair-soft)] pb-5">
+    {consoleRoute ? <div className="mb-6 grid gap-4 border-b border-[var(--hair-soft)] pb-5">
+      <div className="flex flex-wrap gap-2" role="group" aria-label="Activity period">
+        {consolePeriods.map(([value, label]) => <Chip key={value} active={timeframe === value} onClick={() => setTimeframe(value)}>{label}</Chip>)}
+      </div>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <SearchInput value={searchQuery} onChange={setSearchQuery} placeholder="Search description" ariaLabel="Search description" />
+        <Select value={filterFlow} onChange={value => setFilterFlow(value as typeof filterFlow)} ariaLabel="Transaction type">
+          <option value="All">All transactions</option>
+          <option value="Income">Income</option>
+          <option value="Expense">Expenses</option>
+        </Select>
+        <Select value={filterCat} onChange={setFilterCat} ariaLabel="Category">
+          {allCategories.map(category => <option key={category} value={category}>{category === 'All' ? 'All categories' : category}</option>)}
+        </Select>
+      </div>
+    </div> : <div className="mb-6 flex flex-col gap-4 border-b border-[var(--hair-soft)] pb-5">
 
       {/* Quick Timeframe Selectors */}
       <div>
@@ -234,7 +253,7 @@ export default function Accounts() {
           </div>
         </div>
       </div>
-    </div>
+    </div>}
 
     <ReportStatus report={activity} label="Account activity" />
     <ReportStatus report={options} label="Category options" />

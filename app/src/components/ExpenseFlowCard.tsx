@@ -192,9 +192,9 @@ export default function ExpenseFlowCard({
   return (
     <Tile className="flex flex-col">
       <header className="mb-3 flex flex-wrap items-baseline justify-between gap-3">
-        <h3 className="font-display text-[16px] font-bold text-ink">{consoleStyle ? 'Category outflow' : 'Category Outflow'}</h3>
+        <h3 data-module-title className={consoleStyle ? 'console-module-title' : 'font-display text-[16px] font-bold text-ink'}>{consoleStyle ? 'Category outflow' : 'Category Outflow'}</h3>
         <span className="text-[13px] uppercase tracking-[0.06em] text-muted">
-          {denseFlow ? 'click to focus · drag to explore' : 'click to focus the page'}
+          {denseFlow ? 'Click to focus · drag to explore' : 'Click to focus the page'}
         </span>
       </header>
 
@@ -205,6 +205,11 @@ export default function ExpenseFlowCard({
       ) : (
         <div ref={paneRef} style={{ height: flowHeight }}>
           <ReactFlow
+            ariaLabelConfig={consoleStyle ? {
+              'controls.zoomIn.ariaLabel': 'Zoom in',
+              'controls.zoomOut.ariaLabel': 'Zoom out',
+              'controls.fitView.ariaLabel': 'Fit view',
+            } : undefined}
             nodes={nodes}
             edges={edges}
             nodeTypes={nodeTypes}

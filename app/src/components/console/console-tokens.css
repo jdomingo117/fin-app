@@ -11,6 +11,7 @@ html[data-theme="console"] {
 }
 
 .console-viewport {
+  --console-module-title-font: 400 19px/1.2 var(--font-display);
   --console-gutter: clamp(20px, 4vw, 72px);
   --console-section-gap: 34px;
   --console-tile: 96px;
@@ -87,4 +88,25 @@ html[data-theme="console"] {
 
 :root:is([data-console-effects="balanced"], [data-console-effects="reduce"]) :is(.workflow-surface, .glass) {
   background: var(--color-surface);
+}
+
+/* Native controls and shared chips keep their semantics in Console, including
+   controls inside portalled forms. The audit reads the applied variant. */
+html[data-theme="console"] :is(select, textarea, input:not([type="checkbox"], [type="radio"], [type="range"], [type="file"], [type="hidden"]), [data-control-kind="chip"]) {
+  --console-control-variant: console;
+  min-block-size: var(--console-control-size, 46px);
+  border: 1px solid var(--console-line, rgb(255 255 255 / .14));
+  border-radius: var(--console-button-radius, 12px);
+  background-color: var(--console-fill, rgb(255 255 255 / .075));
+  color: var(--console-ink);
+}
+html[data-theme="console"] [data-control-kind="chip"] {
+  border-radius: 999px;
+}
+html[data-theme="console"] [data-control-kind="chip"][aria-pressed="true"] {
+  background-color: var(--accent-wash);
+}
+html[data-theme="console"] :is(select, textarea, input, [data-control-kind="chip"]):focus-visible {
+  outline: 2px solid var(--console-ink);
+  outline-offset: 3px;
 }

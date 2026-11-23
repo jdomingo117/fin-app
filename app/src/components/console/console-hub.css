@@ -54,6 +54,7 @@
 .console-compact-title strong { font: 200 30px/1.05 var(--font-display); overflow-wrap: anywhere; }
 .console-hub-tabs { margin-inline-start: auto; }
 .console-hub-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
+.console-hub-filters-mobile { position: relative; z-index: 3; margin: 0 var(--console-gutter) 16px; }
 .console-spending-filters { position: relative; z-index: 1; margin: 0 0 16px; }
 .console-designed-scroll :is(.console-hub-filters button[aria-haspopup], .console-chart-switch button) {
   min-height: 42px;
@@ -181,14 +182,33 @@
 }
 
 @media (max-width: 600px) {
-  .console-designed-scroll[data-section="dashboard"] .console-expanded-hero {
+  .console-designed-scroll .console-expanded-hero {
     grid-template: "headline headline" auto "movement art" auto / minmax(0, 1fr) var(--console-overview-phone-art);
   }
-  .console-designed-scroll[data-section="dashboard"] .console-expanded-copy { display: contents; }
-  .console-designed-scroll[data-section="dashboard"] .console-headline { grid-area: headline; }
-  .console-designed-scroll[data-section="dashboard"] .console-figures { grid-area: movement; }
-  .console-designed-scroll[data-section="dashboard"] .console-expanded-hero > :is(.console-handoff, .console-orb) {
+  .console-designed-scroll .console-expanded-copy { display: contents; }
+  .console-designed-scroll .console-headline { grid-area: headline; }
+  .console-designed-scroll .console-figures { grid-area: movement; }
+  .console-designed-scroll .console-expanded-hero > :is(.console-handoff, .console-orb) {
     grid-area: art;
     width: var(--console-overview-phone-art);
   }
+}
+
+.console-analysis-modules { display: grid; gap: var(--console-analysis-gap); }
+.console-designed-scroll { --console-analysis-gap: clamp(14px, 1.6vw, 24px); }
+.console-analysis-modules :is(.glass, .console-module) { min-width: 0; }
+.console-account-picker { max-width: 100%; }
+.console-analysis-modules .console-chart-switch { display: flex; gap: 5px; }
+.console-analysis-modules .console-chart-switch button { padding-inline: 12px; }
+
+.console-analysis-modules .glass {
+  border: 1px solid var(--console-line);
+  border-radius: var(--console-card-radius);
+  background: var(--console-module-flat);
+  box-shadow: none;
+}
+.console-analysis-modules [data-console-row-item] { min-width: 0; }
+
+@media (max-width: 1050px) {
+  .console-expense-secondary { grid-template-columns: minmax(0, 1fr); }
 }

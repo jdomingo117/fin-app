@@ -27,12 +27,14 @@ async function enter(page: Page, path: string, options?: Parameters<typeof workf
   const data = workflowReplies(options)
   await signInForConsole(page, true, undefined, data.reply)
   await page.getByRole('button', { name: 'Console', exact: true }).click()
-  if (path === 'budget' && process.env.CONSOLE_WORKFLOW_CAPTURE_DIR) {
+  const { project, title } = test.info()
+  if (path === 'budget' && title.startsWith('Leftovers') && process.env.CONSOLE_WORKFLOW_CAPTURE_DIR) {
     await expect(page.locator('.console-home')).toBeVisible()
+    await expect(page.getByText('Session secured', { exact: true })).toHaveCount(0)
+    if (project.name === 'Desktop') await page.mouse.move(1435, 66)
     await capture(page, 'dashboard')
   }
   const traceDirectory = process.env.CONSOLE_WORKFLOW_TRACE_DIR
-  const { project, title } = test.info()
   if (traceDirectory && project.name === 'Desktop' && !/^(?:Leftovers|Budget recovers)/.test(title)) {
     await mkdir(traceDirectory, { recursive: true })
     const cdp = await page.context().newCDPSession(page)

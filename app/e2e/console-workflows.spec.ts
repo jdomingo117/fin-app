@@ -146,6 +146,16 @@ test('Budget reviews, saves and reopens a changed allocation', async ({ page }) 
   }
   await page.getByRole('button', { name: /Change my plan/ }).click()
   await expect(amount).toHaveValue('1030.00')
+  await amount.fill('1040.00')
+  page.once('dialog', dialog => dialog.accept())
+  await page.getByRole('button', { name: 'Back to Home' }).click()
+  await expect(page).toHaveURL(/\/dashboard$/)
+  await page.getByRole('toolbar', { name: 'Sections' }).getByRole('button', { name: 'Budget', exact: true }).press('Enter')
+  await expect(page).toHaveURL(/\/budget$/)
+  await expect(form).toHaveCount(0)
+  await page.locator('summary').filter({ hasText: 'Income & allocations' }).click()
+  await page.getByRole('button', { name: /Change my plan/ }).click()
+  await expect(amount).toHaveValue('1030.00')
 })
 
 test('Budget recovers a committed allocation after a reload without a second write', async ({ page }) => {

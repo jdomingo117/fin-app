@@ -162,16 +162,19 @@ function SetupProgress({current}:{current:0|1}) {
 function BudgetEditor({setup,active,onAssistance}:{setup:Setup;active:boolean;onAssistance?:()=>void}) {
   const formatDay = useConsoleDayLabel()
   const b=useBudget(),s=b.snapshot!,form=useRef<HTMLFormElement>(null)
+  const { guardTaskNavigation, setEditing } = b
   const { theme } = useView()
   const [changed, setChanged] = useState(false)
   const protect = theme === 'console' && active && changed
   useUnsavedChanges(protect)
   useEffect(() => {
     if (!protect) return
-    return b.guardTaskNavigation(proceed => {
-      if (window.confirm('Leave Budget and discard unsaved allocation changes?')) proceed()
+    return guardTaskNavigation(proceed => {
+      if (!window.confirm('Leave Budget and discard unsaved allocation changes?')) return
+      setEditing(null)
+      proceed()
     })
-  }, [protect, b.guardTaskNavigation])
+  }, [protect, guardTaskNavigation, setEditing])
   const [review,setReview]=useState(false),[accepted,setAccepted]=useState(false),[scope,setScope]=useState<'period'|'period-and-future'>('period')
   const [localError,setLocalError]=useState('')
   useEffect(()=>{if(active){const heading=form.current?.querySelector<HTMLElement>('h3');if(heading){heading.tabIndex=-1;heading.focus()}}},[active])

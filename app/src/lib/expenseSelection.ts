@@ -13,7 +13,7 @@
  * `subcats ⊆ union(CATEGORY_TAXONOMY[categories])` holds by construction — an
  * impossible pair like `{categories:['Food & drink'], subcats:['Clothing']}` matches zero
  * rows and offers the user no explanation for the empty list. */
-import { CATEGORY_TAXONOMY, type Txn } from '../data'
+import { CATEGORY_TAXONOMY, categoryDisplayName, type Txn } from '../data'
 
 export interface CatSelection {
   categories: string[]
@@ -81,7 +81,7 @@ export const toggleSubcat = (s: CatSelection, cat: string, sub: string): CatSele
 /** Human label for the current focus — "Shopping" / "Shopping · Clothing". */
 export const selectionLabel = (s: CatSelection): string => {
   if (!isActive(s)) return ''
-  const cats = s.categories.length > 1 ? `${s.categories.length} categories` : s.categories[0]
+  const cats = s.categories.length > 1 ? `${s.categories.length} categories` : categoryDisplayName(s.categories[0] ?? '')
   if (!s.subcats.length) return cats ?? ''
   const subs = s.subcats.length > 1 ? `${s.subcats.length} sub-categories` : s.subcats[0]
   return cats ? `${cats} · ${subs}` : subs

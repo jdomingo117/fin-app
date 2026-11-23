@@ -586,7 +586,9 @@ export function DateRangePicker({
   )
 }
 
-export function Switch({ on, onToggle, label, disabled }: { on: boolean; onToggle: () => void; label: string; disabled?: boolean }) {
+export function Switch({ on, onToggle, label, disabled, describedBy }: {
+  on: boolean; onToggle: () => void; label: string; disabled?: boolean; describedBy?: string
+}) {
   return (
     <button
       type="button"
@@ -594,6 +596,7 @@ export function Switch({ on, onToggle, label, disabled }: { on: boolean; onToggl
       disabled={disabled}
       data-control-kind="switch"
       aria-checked={on}
+      aria-describedby={describedBy}
       onClick={onToggle}
       className="flex min-h-11 w-full items-center justify-between gap-3 py-3 text-left disabled:opacity-50"
     >

@@ -20,11 +20,19 @@ html[data-theme="console"] .console-settings-choices [aria-pressed="true"] {
 }
 .console-settings-preferences [data-control-kind="switch"] {
   border-block-end: 1px solid var(--console-line);
+  border-radius: var(--console-button-radius);
+  padding-inline: 8px;
+}
+.console-settings-preferences :is([data-control-kind="switch"], .console-effects-setting, .console-volume) > span:first-child {
+  font-size: var(--console-label-size);
+  font-weight: 500;
+  color: var(--color-ink2);
 }
 .console-settings-preferences [data-control-kind="switch"]:last-child { border-block-end: 0; }
 .console-settings-preferences .console-volume input {
   inline-size: 100%;
   min-block-size: var(--console-control-size);
+  border-radius: var(--console-button-radius);
 }
 .console-settings-preferences .console-effects-setting > span:last-child {
   flex: 1 1 11rem;

@@ -44,11 +44,13 @@
   animation: console-tile-sweep var(--dur-sweep) linear var(--dur-sweep-delay) infinite;
 }
 
-.console-viewport [data-focus-ring]:focus-visible,
-.console-viewport :is(button, a, input, select, textarea, summary):not(.console-section):focus-visible {
-  outline: 0;
+/* Portalled controls share the static ring. Section tiles paint their own
+   scale-compensated edge and programmatic headings only announce the route. */
+html[data-theme="console"] :where(button, a, input, select, textarea, summary, [data-focus-ring], [tabindex], [role="button"]):focus-visible:not(:where(.console-section, h1, h2, h3, h4, h5, h6)) {
+  outline: none;
   box-shadow: var(--console-ring);
 }
+html[data-theme="console"] :is(h1,h2,h3,h4,h5,h6)[tabindex="-1"]:focus { outline: none; }
 
 .console-activity-card {
   position: relative;
@@ -59,6 +61,8 @@
 .console-activity-card:is(:hover, :focus-visible):not(:disabled) {
   z-index: 2;
   transform: scale(var(--console-card-focus-scale));
+}
+.console-activity-card:hover:not(:disabled) {
   box-shadow: var(--console-ring);
 }
 .console-activity-card:is(:hover, :focus-visible):not(:disabled) .console-focus-decoration::before {
@@ -76,8 +80,7 @@
 
 @media (forced-colors: active) {
   .console-section:is([data-active="true"], :focus-visible) .console-focus-decoration[data-layer="edge"],
-  .console-viewport [data-focus-ring]:focus-visible,
-  .console-viewport :is(button, a, input, select, textarea, summary):not(.console-section):focus-visible {
+  html[data-theme="console"] :where(button, a, input, select, textarea, summary, [data-focus-ring], [tabindex], [role="button"]):focus-visible:not(:where(.console-section, h1, h2, h3, h4, h5, h6)) {
     outline: 2px solid Highlight;
     outline-offset: 3px;
   }

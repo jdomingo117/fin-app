@@ -5,6 +5,11 @@ html[data-theme="console"] {
   --console-module-title-font: 400 19px/1.2 var(--font-display);
   --console-control-size: 46px;
   --console-button-radius: 12px;
+  --console-label-size: 13px;
+  --console-ring-gap: 3px;
+  --console-ring-edge: 6px;
+  --console-ring-gap-ink: rgb(6 8 16 / .85);
+  --console-ring: 0 0 0 var(--console-ring-gap) var(--console-ring-gap-ink), 0 0 0 var(--console-ring-edge) var(--console-ink);
   --console-base: #0a0d16;
   --console-sheet-fill: #111824;
   --color-console-pos: oklch(.87 .14 150);
@@ -52,10 +57,6 @@ html[data-theme="console"] {
   --console-label: rgb(255 255 255 / .85);
   --console-fill: rgb(255 255 255 / .075);
   --console-line: rgb(255 255 255 / .14);
-  --console-ring-gap: 3px;
-  --console-ring-edge: 6px;
-  --console-ring-gap-ink: rgb(6 8 16 / .85);
-  --console-ring: 0 0 0 var(--console-ring-gap) var(--console-ring-gap-ink), 0 0 0 var(--console-ring-edge) var(--console-ink);
   --console-card-focus-scale: 1.06;
   --console-sweep-paint: linear-gradient(110deg, transparent 38%, rgb(255 255 255 / .55) 50%, transparent 62%);
   --console-glow-low: 0 0 26px 6px rgb(255 255 255 / .28);
@@ -109,22 +110,6 @@ html[data-theme="console"] [data-control-kind="chip"] {
 html[data-theme="console"] [data-control-kind="chip"][aria-pressed="true"] {
   background-color: var(--accent-wash);
 }
-html[data-theme="console"] :is(select, textarea, input, [data-control-kind="chip"]):focus-visible {
-  outline: 2px solid var(--console-ink);
-  outline-offset: 3px;
-}
-
 html[data-theme="console"] {
   accent-color: var(--console-ink);
-}
-
-html[data-theme="console"] [tabindex]:not(h1,h2,h3,h4,h5,h6):focus-visible {
-  outline: 2px solid var(--console-ink);
-  outline-offset: 3px;
-}
-/* Programmatic headings announce route or step changes. The controls after
-   them carry the keyboard focus ring. */
-html[data-theme="console"] :is(h1,h2,h3,h4,h5,h6)[tabindex="-1"]:focus { outline: none; }
-@media (forced-colors: active) {
-  html[data-theme="console"] [tabindex]:not(h1,h2,h3,h4,h5,h6):focus-visible { outline-color: Highlight; }
 }

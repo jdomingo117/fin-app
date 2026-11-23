@@ -2,7 +2,7 @@ import { Select } from '../Controls'
 import { useConsoleDayLabel } from '../../hooks/useConsoleDayLabel'
 import { useMemo, useState } from 'react'
 import type { StagedRow } from '../../lib/csv/pipeline'
-import { CATEGORY_TAXONOMY, FULL_TAXONOMY, ALL_CATEGORIES, UNCATEGORIZED, type CustomSubcategory } from '../../data'
+import { CATEGORY_TAXONOMY, FULL_TAXONOMY, ALL_CATEGORIES, categoryDisplayName, UNCATEGORIZED, type CustomSubcategory } from '../../data'
 
 /**
  * The staging buffer (SRD §6.E).
@@ -113,7 +113,7 @@ export default function StagingTable({
               ariaLabel="Set category for selected rows"
             >
               <option value="" disabled>Set category…</option>
-              {ALL_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+              {ALL_CATEGORIES.map((c) => <option key={c} value={c}>{categoryDisplayName(c)}</option>)}
             </Select>
           </div>
         )}
@@ -195,8 +195,8 @@ export default function StagingTable({
                           className="min-w-36"
                           ariaLabel={`Category for ${r.merchantDisplay}`}
                         >
-                          {[...ALL_CATEGORIES, UNCATEGORIZED].map((c) => (
-                            <option key={c} value={c}>{c}</option>
+                          {ALL_CATEGORIES.map((c) => (
+                            <option key={c} value={c}>{categoryDisplayName(c)}</option>
                           ))}
                         </Select>
                         {subcategoryOptions.length > 0 && (

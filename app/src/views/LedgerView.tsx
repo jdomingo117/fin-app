@@ -13,7 +13,7 @@ import { Button, Chip, SearchInput, Select } from '../components/Controls'
 import TransactionCategoryDrawer from '../components/TransactionCategoryDrawer'
 import BulkCategoryDialog from '../components/BulkCategoryDialog'
 import BulkClassificationDialog from '../components/BulkClassificationDialog'
-import { ALL_CATEGORIES, fmtCents, type Txn } from '../data'
+import { ALL_CATEGORIES, categoryDisplayName, fmtCents, type Txn } from '../data'
 import { useData } from '../contexts/DataContext'
 import {
   MAX_BULK_SELECTION,
@@ -38,7 +38,7 @@ const REVIEW_FILTERS: { id: LedgerReviewFilter; label: string }[] = [
   { id: 'needs-attention', label: 'Needs attention' },
   { id: 'unresolved', label: UNASSIGNED_LABEL },
   { id: 'needs-review', label: 'Needs review' },
-  { id: 'uncategorized', label: 'Uncategorized' },
+  { id: 'uncategorized', label: 'Uncategorised' },
   { id: 'missing-subcategory', label: 'Missing subcategory' },
   { id: 'ai', label: 'AI' },
   { id: 'bank', label: 'Bank' },
@@ -303,7 +303,7 @@ function LedgerWorkspace({ tenant }: { tenant: string }) {
           </Select>
           <Select value={category} onChange={setCategory} ariaLabel="Filter ledger by category" inputClassName="py-3 text-[14px]">
             <option value="">All categories</option>
-            {ALL_CATEGORIES.map((candidate) => <option key={candidate} value={candidate}>{candidate}</option>)}
+            {ALL_CATEGORIES.map((candidate) => <option key={candidate} value={candidate}>{categoryDisplayName(candidate)}</option>)}
           </Select>
           <Select value={kind} onChange={setKind} ariaLabel="Filter ledger by transaction kind" inputClassName="py-3 text-[14px]">
             <option value="">All kinds</option>
@@ -378,7 +378,7 @@ function LedgerWorkspace({ tenant }: { tenant: string }) {
                   <span className="block truncate text-[15px] font-semibold text-ink">{transaction.merchant}</span>
                   {!!transaction.allocations?.length && <span className="mr-1 inline-flex rounded-full border border-accent px-1.5 py-0.5 text-[10px] font-semibold uppercase text-accent-ink">Split {transaction.allocations.length}</span>}
                   <span className="mt-1 block truncate text-[13px] text-muted xl:hidden">{transaction.account} · {transactionDate(transaction.date)}</span>
-                  <span className="mt-1 block truncate text-[13px] text-ink2 xl:hidden">{transaction.cat}{transaction.subcat ? ` · ${transaction.subcat}` : ''}</span>
+                  <span className="mt-1 block truncate text-[13px] text-ink2 xl:hidden">{categoryDisplayName(transaction.cat)}{transaction.subcat ? ` · ${transaction.subcat}` : ''}</span>
                   <span className="hidden truncate text-[12.5px] text-muted xl:block">{transaction.originalDescription || transaction.merchant}</span>
                   {consoleStyle && transaction.categorySource && <span className="block text-[12.5px] text-muted">Category source: {sourceName(transaction.categorySource)}</span>}
                   {consoleStyle && (transaction.needsReview || transaction.cat === 'Uncategorized') && <span className="console-workflow-badge mt-1">Review</span>}
@@ -388,7 +388,7 @@ function LedgerWorkspace({ tenant }: { tenant: string }) {
                   <span className="block truncate text-[12.5px] text-muted">{KIND_LABELS[transaction.kind as TransactionKind]}</span>
                 </span>
                 <span className="hidden min-w-0 xl:block">
-                  <span className="block truncate text-[14px] font-medium text-ink2">{transaction.cat}</span>
+                  <span className="block truncate text-[14px] font-medium text-ink2">{categoryDisplayName(transaction.cat)}</span>
                   <span className="block truncate text-[12.5px] text-muted">{transaction.subcat || 'No subcategory'}</span>
                 </span>
                 {consoleStyle ? null : <span className="hidden xl:block">

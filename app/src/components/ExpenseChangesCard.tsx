@@ -1,7 +1,7 @@
 import type {Facet} from '../lib/reports'
 import { useMemo, useState } from 'react'
 import Tile from './Tile'
-import { fmt, fmtCents } from '../data'
+import { categoryDisplayName, fmt, fmtCents } from '../data'
 import { useView } from '../router'
 import { catInScope, isActive, type CatSelection } from '../lib/expenseSelection'
 
@@ -170,7 +170,7 @@ function MoverSummaryRow({ row, dimmed, onClick }: { row: ChangeRow; dimmed: boo
       >
         <span className="flex min-w-0 items-center gap-2.5">
           <i className="h-2 w-2 shrink-0 rounded-full" style={{ background: consoleStyle ? 'var(--console-chart-tint)' : tone }} />
-          <span className="min-w-0 truncate text-[14px] font-semibold text-ink">{row.name}</span>
+          <span className="min-w-0 truncate text-[14px] font-semibold text-ink">{categoryDisplayName(row.name)}</span>
           <span className="shrink-0 text-[12px] tabular-nums text-muted">{money(row.current)} vs {money(row.previous)}</span>
         </span>
         <span className="text-right text-[13px] font-semibold tabular-nums" style={{ color: consoleStyle ? undefined : tone }}>{deltaLabel}</span>
@@ -200,7 +200,7 @@ function ChangeRow({ row, maxValue, dimmed, onClick }: { row: ChangeRow; maxValu
         onClick={onClick}
         className="grid w-full grid-cols-1 gap-2 rounded-md py-4 text-left transition-colors hover:bg-[var(--hair-soft)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent sm:grid-cols-[minmax(155px,0.8fr)_minmax(240px,2.1fr)_132px] sm:items-center sm:gap-5 sm:px-2"
       >
-        <span className="min-w-0 truncate text-[14px] font-semibold text-ink">{row.name}</span>
+        <span className="min-w-0 truncate text-[14px] font-semibold text-ink">{categoryDisplayName(row.name)}</span>
         <span className="relative block h-9 rounded-full bg-[var(--track)]">
           <span className="absolute top-1/2 h-px -translate-y-1/2 bg-[var(--hair)]" style={{ left: `${Math.min(previousX, currentX)}%`, width: `${Math.abs(currentX - previousX)}%` }} />
           {row.previous > 0 && <span className="absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[var(--toast-bg)] bg-[var(--color-muted)]" style={{ left: `${previousX}%` }} />}

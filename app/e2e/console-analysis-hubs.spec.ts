@@ -153,4 +153,17 @@ test('the leftovers audit detects unstyled browser controls and a default focus 
   expect(issues.controls).toContain('Native select: Choose account')
   expect(issues.defaultAccents).toEqual(['This transaction'])
   expect(issues.defaultOutlines).toEqual(['Transaction details'])
+  expect(issues.focusRings).toEqual(['Transaction details'])
+})
+
+test('the rendered audit rejects an authored outline and US interface spellings', async ({ page }) => {
+  await page.setContent(`<main>
+    <button style="outline: 2px solid white; outline-offset: 3px; border-radius: 12px">Categorize</button>
+    <p aria-label="Color">Cash-flow behavior</p><p data-console-record-label>Favorite Color Café</p>
+    <p>Categorise by colour</p></main>`)
+  await page.keyboard.press('Tab')
+  const { issues } = await collectConsoleChrome(page.locator('main'))
+  expect(issues.defaultOutlines).toEqual([])
+  expect(issues.focusRings).toEqual(['Categorize'])
+  expect(issues.spelling).toEqual(['Categorize', 'Color', 'behavior'])
 })

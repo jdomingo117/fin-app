@@ -4,7 +4,7 @@ import { useTaxonomy } from '../hooks/useTaxonomy'
 import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ALL_CATEGORIES, FULL_TAXONOMY, fmtCents, type Txn } from '../data'
+import { ALL_CATEGORIES, FULL_TAXONOMY, categoryDisplayName, fmtCents, type Txn } from '../data'
 import { supabase } from '../lib/supabaseClient'
 import { Button, Select, Switch } from './Controls'
 import { InlineActivity } from './OperationStatus'
@@ -50,7 +50,7 @@ interface ClassificationEditHistory {
 }
 
 const pair = (category: string, subcategory?: string | null) =>
-  subcategory ? `${category} · ${subcategory}` : category
+  subcategory ? `${categoryDisplayName(category)} · ${subcategory}` : categoryDisplayName(category)
 
 function sourceLabel(source: Txn['categorySource']) {
   if (source === 'user') return 'Manually categorised'
@@ -367,7 +367,7 @@ export default function TransactionCategoryDrawer({
                   <label className="grid gap-1.5 text-[12px] font-semibold text-ink2">
                     Category
                     <Select value={category} onChange={(value) => { setCategory(value); setSubcategory('') }} ariaLabel="Transaction category">
-                      {ALL_CATEGORIES.map((candidate) => <option key={candidate} value={candidate}>{candidate}</option>)}
+                      {ALL_CATEGORIES.map((candidate) => <option key={candidate} value={candidate}>{categoryDisplayName(candidate)}</option>)}
                     </Select>
                   </label>
                   <label className="grid gap-1.5 text-[12px] font-semibold text-ink2">
@@ -409,7 +409,7 @@ export default function TransactionCategoryDrawer({
                 <h3 id="classification-edit-title" data-module-title className={protectDraft ? 'console-module-title' : 'font-display text-[15px] font-bold text-ink'}>Accounting & attributes</h3>
                 <span className="text-[11px] text-muted">Transaction only</span>
               </div>
-              <p className="mt-1 text-[12px] leading-relaxed text-muted">Kind controls cash-flow behavior. Attributes describe cross-cutting context without changing the spending category.</p>
+              <p className="mt-1 text-[12px] leading-relaxed text-muted">Kind controls cash-flow behaviour. Attributes describe cross-cutting context without changing the spending category.</p>
               {isReconciliation ? (
                 <p className="mt-3 rounded-lg border border-[var(--hair)] bg-[var(--hair-soft)] p-3 text-[12.5px] text-ink2">System reconciliation entries remain locked as adjustments.</p>
               ) : (

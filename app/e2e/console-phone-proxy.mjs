@@ -2,11 +2,14 @@ import { chromium } from 'playwright'
 import { writeFile } from 'node:fs/promises'
 import { gzipSync } from 'node:zlib'
 import { dashboard, signInForConsole } from './fixtures/console-review.ts'
+import { workflowReplies } from './fixtures/console-workflow-replies.ts'
 
 const output = process.argv[2]
 if (!output) throw new Error('Pass the output trace filename.')
 const targets = process.argv.slice(3)
 if (!targets.length) targets.push('Accounts', 'Income', 'Expenses')
+const quickActions = new Set(['Ledger review', 'Ingestion', 'Transfers'])
+const workflows = targets.some(name => name === 'Budget' || quickActions.has(name))
 const browser = await chromium.launch({ channel: 'chrome' })
 const context = await browser.newContext({
   viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 1, serviceWorkers: 'block',
@@ -33,7 +36,7 @@ async function tier(tierName) {
   if (await viewport.getAttribute('data-effects-tier') !== tierName) throw Error('Wrong effects tier.')
 }
 try {
-  await signInForConsole(page)
+  await signInForConsole(page, true, undefined, workflows ? workflowReplies().reply : undefined)
   await page.getByRole('button', { name: 'Console', exact: true }).click()
   await home()
   await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 })
@@ -50,20 +53,33 @@ try {
 
   await mark('navigation.start')
   const back = page.getByRole('button', { name: 'Back to Home' })
+  const centre = page.getByRole('dialog', { name: 'Control Centre' })
+  const centreButton = page.getByRole('button', { name: 'Control Centre', exact: true })
   for (const name of targets) {
-    const target = tile(name)
-    await target.tap()
-    await page.waitForTimeout(480)
-    await target.tap()
+    if (quickActions.has(name)) {
+      await centreButton.tap()
+      await centre.getByRole('group', { name: 'Quick actions' }).getByRole('button', { name, exact: true }).tap()
+    } else {
+      // On touch, Budget enters the visible track after browsing its neighbours.
+      if (name === 'Budget') {
+        for (const section of ['Accounts', 'Income', 'Expenses']) {
+          await tile(section).tap()
+          await page.waitForTimeout(480)
+        }
+      }
+      const target = tile(name)
+      await target.tap()
+      await page.waitForTimeout(480)
+      await target.tap()
+    }
     await back.waitFor()
-    await page.locator('.console-designed-scroll').waitFor()
-    await page.locator('.console-designed-scroll').evaluate(node => node.scrollTo(0, 450))
+    const scroll = page.locator('.console-route-layer:not([inert])').locator('.console-designed-scroll, .console-workflow-hub .console-hub-scroll')
+    await scroll.evaluate(node => node.scrollTo(0, 450))
     await page.waitForTimeout(180)
     await back.click()
     await home()
   }
-  const centre = page.getByRole('dialog', { name: 'Control Centre' })
-  await page.getByRole('button', { name: 'Control Centre', exact: true }).click()
+  await centreButton.click()
   await centre.waitFor()
   await page.keyboard.press('Escape')
   await centre.waitFor({ state: 'hidden' })

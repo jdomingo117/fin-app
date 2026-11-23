@@ -285,11 +285,12 @@ function ExpenseAnalytics({
                 <ConsoleModule title="Spending breakdown" order={1}>
                   <dl className="console-module-readouts">
                     <div><dt>Largest category</dt><dd>{m.topCat.name}</dd></div>
-                    <div><dt>Top vendor</dt><dd>{shortMerchant(m.topMerch.name)}</dd></div>
+                    <div><dt>Top vendor</dt><dd>{merchant?.merchant ? shortMerchant(merchant.merchant) : 'No vendor data'}</dd></div>
                   </dl>
                 </ConsoleModule>
                 <div data-console-row-item data-focus-ring tabIndex={0} role="region" aria-label="Category changes summary">
-                  <ExpenseChangesCard variant="summary" outflows={current} previousOutflows={prior} selection={sel}
+                  <ExpenseChangesCard variant="summary" outflows={current} previousOutflows={prior}
+                    previousTotal={focused ? undefined : prevTotal} selection={sel}
                     onToggleCategory={onToggleCategory} onViewDetail={showDetailedChanges} />
                 </div>
               </div>
@@ -299,7 +300,7 @@ function ExpenseAnalytics({
                 <ExpenseFlowCard outflows={current} selection={sel} onToggleCategory={onToggleCategory} onToggleSubcat={onToggleSubcat} />
               </div>
               <div ref={changesRef} data-console-row-item data-focus-ring tabIndex={0} role="region" aria-label="Period changes">
-                <ExpenseChangesCard outflows={current} previousOutflows={prior} selection={sel}
+                <ExpenseChangesCard outflows={current} previousOutflows={prior} previousTotal={focused ? undefined : prevTotal} selection={sel}
                   onToggleCategory={onToggleCategory} expanded={changesExpanded} onExpandedChange={setChangesExpanded} />
               </div>
             </FocusRow>

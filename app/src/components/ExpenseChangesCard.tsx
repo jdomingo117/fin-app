@@ -28,6 +28,7 @@ const totalByCategory = (transactions: Facet[]) => {
 export default function ExpenseChangesCard({
   outflows,
   previousOutflows,
+  previousTotal,
   selection,
   onToggleCategory,
   variant = 'detail',
@@ -37,6 +38,7 @@ export default function ExpenseChangesCard({
 }: {
   outflows: Facet[]
   previousOutflows: Facet[]
+  previousTotal?: number
   selection: CatSelection
   onToggleCategory: (category: string) => void
   /** `summary` is the companion card for the trend chart; `detail` retains the
@@ -66,6 +68,7 @@ export default function ExpenseChangesCard({
     }
   }, [outflows, previousOutflows])
 
+  const consoleStyle = useView().theme === 'console'
   const focused = isActive(selection)
   const isSummary = variant === 'summary'
   const [localExpanded, setLocalExpanded] = useState(false)
@@ -77,11 +80,16 @@ export default function ExpenseChangesCard({
   const hasHiddenRows = rows.length > 6
   const displayedRows = isSummary ? rows.slice(0, 3) : isExpanded ? rows : rows.slice(0, 6)
 
+  const shownPrior = displayedRows.reduce((sum, row) => sum + row.previous, 0)
+  const listedPrior = rows.reduce((sum, row) => sum + row.previous, 0)
+  const priorRemainder = Math.max(0, (previousTotal ?? listedPrior) - listedPrior)
+  const otherListedPrior = listedPrior - shownPrior
+
   return (
     <Tile span={isSummary ? undefined : 3} className={isSummary ? 'flex min-h-[280px] flex-1 flex-col overflow-hidden' : 'overflow-hidden'}>
       <header className={`${isSummary ? 'mb-2' : 'mb-5'} flex flex-wrap items-baseline justify-between gap-3`}>
         <div>
-          <h3 className="font-display text-[16px] font-bold text-ink">{isSummary ? 'Largest movers' : 'What changed this period'}</h3>
+          <h3 data-module-title className={consoleStyle ? 'console-module-title' : 'font-display text-[16px] font-bold text-ink'}>{isSummary ? 'Largest movers' : 'What changed this period'}</h3>
           <p className="mt-1 text-[14px] text-muted">
             {isSummary ? 'The three categories with the biggest period-on-period shifts.' : 'Current spend compared with the immediately prior period, ranked by material change.'}
           </p>
@@ -106,6 +114,12 @@ export default function ExpenseChangesCard({
           </div>
         )}
       </header>
+
+      {consoleStyle && previousTotal !== undefined && <dl className="mb-3 flex flex-wrap gap-x-4 gap-y-1 text-[13px] text-muted">
+        <div><dt>Prior-period outflow</dt><dd className="tabular-nums" data-comparison-prior-total={previousTotal}>{fmtCents(previousTotal)}</dd></div>
+        {otherListedPrior > 0 && <div><dt>Other listed categories</dt><dd className="tabular-nums" data-comparison-prior-other={otherListedPrior}>{fmtCents(otherListedPrior)}</dd></div>}
+        {priorRemainder > 0 && <div><dt>Prior outflow without category detail</dt><dd className="tabular-nums" data-comparison-prior-remainder={priorRemainder}>{fmtCents(priorRemainder)}</dd></div>}
+      </dl>}
 
       {rows.length === 0 ? (
         <div className={`grid flex-1 place-items-center text-center text-[12.5px] text-muted ${isSummary ? 'py-8' : 'py-16'}`}>No spending in this or the prior period.</div>
@@ -148,7 +162,7 @@ function MoverSummaryRow({ row, dimmed, onClick }: { row: ChangeRow; dimmed: boo
     : `${row.delta > 0 ? '+' : row.delta < 0 ? '−' : '±'}${money(Math.abs(row.delta))}${row.previous > 0 ? ` · ${row.delta > 0 ? '+' : ''}${Math.round((row.delta / row.previous) * 100)}%` : ''}`
 
   return (
-    <li className={dimmed ? 'opacity-40' : ''}>
+    <li data-comparison-prior={consoleStyle ? row.previous : undefined} className={dimmed ? 'opacity-40' : ''}>
       <button
         type="button"
         onClick={onClick}
@@ -180,7 +194,7 @@ function ChangeRow({ row, maxValue, dimmed, onClick }: { row: ChangeRow; maxValu
   const direction = row.delta > 0 ? '↗' : row.delta < 0 ? '↘' : '—'
 
   return (
-    <li className={dimmed ? 'opacity-40' : ''}>
+    <li data-comparison-prior={consoleStyle ? row.previous : undefined} className={dimmed ? 'opacity-40' : ''}>
       <button
         type="button"
         onClick={onClick}

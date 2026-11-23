@@ -43,9 +43,18 @@ for (const tx of recent) {
 }
 const absoluteSum = (rows: typeof recent, kind: ScenarioRow[4]) => rows.filter(row => row.kind===kind).reduce((total,row) => total + Math.abs(row.amount),0)
 const expenses = absoluteSum(recent,'expense')
+const priorSpending = [
+  ['Housing', 163500], ['Transport', 55920], ['Groceries', 58000],
+  ['Bills', 48000], ['Uncategorized', 24000],
+] as const
+for (const [category, amount] of priorSpending) {
+  facets.set(`prior:${category}`, { period: 'prior', category, subcategory: null,
+    earned_cents: 0, gross_cents: amount, expense_count: 1, deposit_count: 0, largest_deposit_cents: 0, latest_deposit: null })
+}
+const priorExpenses = priorSpending.reduce((sum, [, amount]) => sum + amount, 0)
 const periods = {
   current:{earned_cents:absoluteSum(recent,'income'),gross_cents:expenses,expense_cents:expenses,expense_attention_count:0},
-  prior:{earned_cents:684000,gross_cents:349420,expense_cents:349420,expense_attention_count:0},
+  prior:{earned_cents:684000,gross_cents:priorExpenses,expense_cents:priorExpenses,expense_attention_count:1},
 }
 const fixtureExpiry = Date.parse('2099-01-01T00:00:00Z') / 1000
 const session = {

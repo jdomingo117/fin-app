@@ -24,8 +24,9 @@ export async function runBudgetWorkspaceChecks({repo,api,browserPort=57300,viteC
  try {
   for(let n=0;n<100;n++){try{if((await fetch(url)).ok)break}catch{}await new Promise(r=>setTimeout(r,100))}
   browser=await chromium.launch()
-  async function signedPage(user,width=1440,hasPlan=false) {
+  async function signedPage(user,width=1440,hasPlan=false,prepareContext) {
    const context=await browser.newContext({viewport:{width,height:1050},reducedMotion:'reduce'})
+   await prepareContext?.(context)
    await context.addInitScript(({session,key})=>localStorage.setItem(key,JSON.stringify(session)),{session:user.session,key:'sb-127-auth-token'})
    const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));page.on('console',message=>{if(message.text().startsWith('[vite]'))console.log('Budget test dev-server:',message.text())})
    await page.goto(`${url}/budget`)
@@ -195,10 +196,8 @@ export async function runBudgetWorkspaceChecks({repo,api,browserPort=57300,viteC
    await phoneAssisted.getByRole('button',{name:'Check my history',exact:true}).click()
    await expect(phoneAssisted.getByRole('heading',{name:'Your history is ready'})).toBeVisible()
    await phoneAssisted.getByText('How we worked this out',{exact:true}).click()
-   await expect(phoneAssisted.getByText(/Missing periods were excluded, never filled with zero/)).toBeVisible()
-   void 0
+   await expect(assistanceRegion.getByText('These dates weren’t confirmed as complete, so they were left out rather than counted as $0:', {exact:true})).toBeVisible()
    await phoneAssisted.getByLabel(/Have your income/).selectOption('no')
-   await phoneAssisted.getByRole('checkbox',{name:/I checked the income/}).check()
    await confirmBudgetAssistance(phoneAssisted,sql("SELECT (date_trunc('month',now() AT TIME ZONE 'Australia/Sydney')+interval '1 month')::date;"))
    await phoneAssisted.getByRole('checkbox',{name:/Try moving some everyday money elsewhere/}).check()
    await phoneAssisted.getByRole('checkbox',{name:/Yes, this is for the budget starting/}).check()
@@ -227,9 +226,11 @@ export async function runBudgetWorkspaceChecks({repo,api,browserPort=57300,viteC
    await limited.getByRole('checkbox',{name:/No-history assistance account/}).check()
    await limited.getByRole('button',{name:'Check my history',exact:true}).click()
    await expect(limited.getByRole('heading',{name:/^(History needs more information|Confirm your account history)$/})).toBeVisible()
-   await expect(limited.getByText(/excluded, never treated as zero/)).toBeVisible()
+   await limited.getByText('How we worked this out',{exact:true}).click()
+   await expect(limited.getByText('These dates weren’t confirmed as complete, so they were left out rather than counted as $0:', {exact:true})).toBeVisible()
    await limited.getByRole('button',{name:'Enter my own amounts',exact:true}).click()
-   await expect(limited.getByRole('heading',{name:'Let’s build your budget'})).toBeVisible()
+   await expect(limited.getByRole('dialog',{name:'Build your budget',exact:true})).toBeVisible()
+   await expect(limited.getByRole('form',{name:'Manual budget setup',exact:true})).toBeVisible()
    check('insufficient history keeps the phone manual path usable',true)
    await limited.close()
 
@@ -239,9 +240,7 @@ export async function runBudgetWorkspaceChecks({repo,api,browserPort=57300,viteC
    await assisted.getByRole('checkbox',{name:/Assistance fictional account/}).check()
    await assisted.getByRole('button',{name:'Check my history',exact:true}).click()
    await expect(assisted.getByRole('heading',{name:'Your history is ready'})).toBeVisible()
-   void 0
    await assisted.getByLabel(/Have your income/).selectOption('no')
-   await assisted.getByRole('checkbox',{name:/I checked the income/}).check()
    await confirmBudgetAssistance(assisted,sql("SELECT (date_trunc('month',now() AT TIME ZONE 'Australia/Sydney')+interval '1 month')::date;"))
    await assisted.getByRole('checkbox',{name:/Try moving some everyday money elsewhere/}).check()
    await assisted.getByRole('checkbox',{name:/Yes, this is for the budget starting/}).check()
@@ -252,6 +251,7 @@ export async function runBudgetWorkspaceChecks({repo,api,browserPort=57300,viteC
    await assisted.getByLabel('Needed by (optional)').fill('2027-12-01')
    await assisted.getByLabel('Already set aside for this goal (AUD; enter 0 if none)').fill('0')
    await assisted.getByRole('checkbox',{name:/I’ve checked my pay, bills and what’s already saved/}).check()
+   await assisted.getByRole('checkbox',{name:/I’ve checked these amounts/}).check()
    await assisted.getByRole('button',{name:'Use this draft',exact:true}).click()
    await expect(assisted.getByLabel('Expected income this period (AUD)',{exact:true})).toHaveValue('500.00')
    await expect(assisted.getByLabel('Planned for Everyday spending (AUD)',{exact:true})).toHaveValue('80.00')

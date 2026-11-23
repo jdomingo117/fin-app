@@ -3,13 +3,17 @@ import { useLayoutEffect } from 'react'
 const appearanceChange = 'halcyon:before-appearance-change'
 
 /** Let a mounted editor report the draft without changing its navigation behavior. */
-export function useUnsavedChanges(dirty: boolean) {
+export function useUnsavedChanges(dirty: boolean, warnOnUnload = false) {
   useLayoutEffect(() => {
     if (!dirty) return
     function report(event: Event) { event.preventDefault() }
     window.addEventListener(appearanceChange, report)
-    return () => window.removeEventListener(appearanceChange, report)
-  }, [dirty])
+    if (warnOnUnload) window.addEventListener('beforeunload', report)
+    return () => {
+      window.removeEventListener(appearanceChange, report)
+      if (warnOnUnload) window.removeEventListener('beforeunload', report)
+    }
+  }, [dirty, warnOnUnload])
 }
 
 export function confirmAppearanceChange() {

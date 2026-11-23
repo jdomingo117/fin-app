@@ -55,7 +55,7 @@ Each Phase 4 batch branches from current `main` and stops at its gate. Merge the
 
 [Phase 2 Gate 1 review and captures](console-phase-2-gate-1.md) · [Phase 2 Gate 2 walkthrough and trace](console-phase-2-gate-2.md) · [Phase 2 Gate 3 acceptance and Balanced trace](console-phase-2-gate-3.md) · [Phase 3 review and device gate](console-phase-3-review.md).
 
-[Gate 4A review and phone proxy](console-phase-4a-review.md).
+[Gate 4A review and phone proxy](console-phase-4a-review.md) · [Gate 4B workflow review](console-phase-4b-review.md).
 
 Start each review note with the **branch, commit, worktree path, exact dev-server command and URL**, followed by a capture of that URL.
 
@@ -65,7 +65,7 @@ When reusing a preview port, verify the listener’s working directory and the s
 
 ## Acceptance evidence
 
-- **Classic leftovers.** Run the rendered Console audit on each Phase 4 batch and record its output in the gate note. Check sentence-case interface labels, the Console module-title token, Classic accent colours, the Console variant of chips, selects and inputs, and house dates. Exempt proper nouns and record-supplied text from casing. Exercise the routes at desktop and phone widths in the normal signed-in app.
+- **Classic leftovers.** Run the rendered Console audit at the start and end of each Phase 4 batch and record its output in the gate note. Check sentence-case interface labels, the Console module-title token, Classic accent colours, the Console variant of chips, selects and inputs, and house dates. Exempt proper nouns and record-supplied text from casing. Exercise the routes and key in-task states at desktop and phone widths in the normal signed-in app.
 
 - **Appearance and layout.** Capture the same fictional state at 320, 390, 768, 1024 and 1440px. Compare Console against the supplied target. Include the first and last tile, long names, ring edges, an open overlay, and 200% zoom. Check focus-induced layout shift independently of the intended track transform.
 - **Classic fallback.** Smoke-check rendering, navigation and browser console errors while the frozen fallback remains available. Remove Classic after Phase 5.

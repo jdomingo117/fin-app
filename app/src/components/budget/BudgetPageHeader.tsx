@@ -1,3 +1,4 @@
+import { useView } from '../../router'
 import { useBudget } from '../../contexts/BudgetContext'
 import { Select } from '../Controls'
 import { addDays } from '../../lib/budget'
@@ -13,6 +14,7 @@ export default function BudgetPageHeader({presentation:p,view,onView,onSettings}
   presentation:BudgetPresentation;view:BudgetView;onView:(view:BudgetView)=>void;onSettings:()=>void
 }){
   const b=useBudget(),s=b.snapshot,l=s?.details?.lifecycle
+  const consoleStyle = useView().theme === 'console'
   const locked=b.loading||b.busy||!!b.pending||!!b.editing
   function go(id:string|null){
     // Existing inline reviews retain their period-exit decision; the provider
@@ -20,8 +22,8 @@ export default function BudgetPageHeader({presentation:p,view,onView,onSettings}
     if(!window.dispatchEvent(new Event('budget-before-period-navigation',{cancelable:true})))return
     b.selectPeriod(id)
   }
-  return <header className="budget-page-header" role="region" aria-label="Budget header">
-    <div className="budget-page-heading"><div><p className="budget-eyebrow">05 — A little intention</p><h2>Budget</h2><p className="budget-page-subtitle">Make room for what matters.</p></div>
+  return <header data-budget-module={consoleStyle ? '' : undefined} className="budget-page-header" role="region" aria-label="Budget header">
+    <div className="budget-page-heading">{!consoleStyle && <div><p className="budget-eyebrow">05 — A little intention</p><h2>Budget</h2><p className="budget-page-subtitle">Make room for what matters.</p></div>}
       <div className="budget-period-picker">
         {p.period&&l&&<fieldset disabled={locked} aria-label="Budget period navigation">
           <label><span className="sr-only">Saved budget period</span><Select ariaLabel="Saved budget period" value={p.period.id} onChange={go}>{l.periods.map(period=><option key={period.id} value={period.id}>{period.end_date.slice(8)==='01'&&period.start_date.slice(8)==='01'?budgetDate(period.start_date,true):`${budgetDate(period.start_date)} – ${budgetDate(addDays(period.end_date,-1))}`}</option>)}</Select></label>

@@ -82,6 +82,8 @@ hand to find the transfer-linker gap.
 
 ## Recent changes
 
+- 2026-11-23 — Console Batch 4B adds compact workflow hubs and browser coverage for Budget recovery, Ledger corrections, import staging and transfer confirmation.
+
 - 2026-11-23 — Console Batch 4A gives Accounts, Income and Expenses expanded analysis hubs and adds the throttled phone proxy.
 
 - 2026-11-23 — Console Phase 3 separates Home and Overview, keeps the Dashboard report cache warm, and moves the phone trend orb beside movement.
@@ -99,5 +101,3 @@ hand to find the transfer-linker gap.
 - 2026-11-21 — Wave 3C.3 pages Ledger, Accounts, Expenses and transfer/investment queues with full-parent editing and group-wide transfer batches.
 
 - 2026-11-21 — Wave 3C.2 wires six reporting surfaces to scoped SQL reads, including monthly valuations and account balance history.
-
-- 2026-11-20 — Wave 3C.1 adds tenant-scoped portfolio, cash-flow, movement history and split-safe ledger SQL read contracts.

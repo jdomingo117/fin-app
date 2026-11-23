@@ -1,5 +1,6 @@
 import ReportStatus from './ReportStatus'
 import { useTaxonomy } from '../hooks/useTaxonomy'
+import { useConsoleDayLabel } from '../hooks/useConsoleDayLabel'
 import { useCallback, useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Papa from 'papaparse'
@@ -19,6 +20,7 @@ import { runDetectRecurrenceHints } from '../lib/detectRecurrenceHints'
 import { profileDisplayName, profileFingerprint } from '../lib/csv/profileFingerprint'
 import { sourceRowLimitError } from '../lib/csv/limits'
 import { runCategorizationChunks } from '../lib/csv/categorizeChunks'
+import { useView } from '../router'
 
 /**
  * The single ingestion engine.
@@ -64,6 +66,8 @@ export default function CSVUploader({
   onReviewTransfers,
 }: Props) {
   const { refreshData } = useData()
+  const { theme } = useView()
+  const formatDay = useConsoleDayLabel()
   const [step, setStep] = useState<Step>('upload')
   const taxonomy = useTaxonomy(step === 'staging')
   const { customSubcategories } = taxonomy
@@ -82,6 +86,9 @@ export default function CSVUploader({
 
   const [staged, setStaged] = useState<StagedRow[]>([])
   const [stageStats, setStageStats] = useState<Awaited<ReturnType<typeof stageRows>> | null>(null)
+  const focusStagedHeading = useCallback((heading: HTMLHeadingElement | null) => {
+    heading?.focus()
+  }, [])
   const [categorizing, setCategorizing] = useState(false)
   const [categorizationProgress, setCategorizationProgress] = useState<{ completed: number; total: number; failed: number } | null>(null)
   const [catStats, setCatStats] = useState<{ fromCache: number; fromBank: number; fromAi: number; geminiCalls: number } | null>(null)
@@ -268,7 +275,7 @@ export default function CSVUploader({
     if (isConnected) {
       if (connectedOverlapCount > 0) {
         setError(
-          `${connectedOverlapCount} row${connectedOverlapCount === 1 ? '' : 's'} fall on or after ${cutoverDate}. ` +
+          `${connectedOverlapCount} row${connectedOverlapCount === 1 ? '' : 's'} fall on or after ${formatDay(cutoverDate)}. ` +
           'Your bank connection already owns that period; upload an earlier statement instead.',
         )
         return
@@ -411,6 +418,7 @@ export default function CSVUploader({
 
         {step === 'staging' && stageStats && (
           <motion.div key="staging" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="grid gap-4">
+            {theme === 'console' && <h3 ref={focusStagedHeading} tabIndex={-1} className="console-module-title" data-module-title>Review statement rows</h3>}
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[12.5px] text-muted">
               <span><strong className="text-ink">{importable}</strong> ready</span>
               {stageStats.stats.badDate > 0 && <span>{stageStats.stats.badDate} bad dates</span>}
@@ -452,13 +460,13 @@ export default function CSVUploader({
                 {connectedOverlapCount > 0 ? (
                   <>
                     <strong>{connectedOverlapCount}</strong> row{connectedOverlapCount === 1 ? '' : 's'} fall on or after{' '}
-                    <strong>{cutoverDate}</strong>, when the bank connection takes over. This file cannot be imported
+                    <strong>{formatDay(cutoverDate)}</strong>, when the bank connection takes over. This file cannot be imported
                     into {accountName}; choose an earlier statement so transactions are not duplicated.
                   </>
                 ) : (
                   <>
                     {accountName}'s balance comes from your bank connection. This CSV adds history
-                    {cutoverDate ? <> before <strong>{cutoverDate}</strong></> : ''} only, with no balance step.
+                    {cutoverDate ? <> before <strong>{formatDay(cutoverDate)}</strong></> : ''} only, with no balance step.
                   </>
                 )}
               </div>

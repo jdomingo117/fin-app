@@ -19,7 +19,7 @@ export async function budgetTemporalInteractions({fixtures,check,signedPage,sett
    await expect(goal.locator(`[data-budget-value="goal-reserve:${f.goal}"] [data-budget-amount]`)).toHaveText(new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD'}).format(reserve/100))
    await expect(goal.locator(`[data-budget-value="goal-reserve:${f.goal}"]`)).toHaveAttribute('data-freshness','current')
    if(period===f.first){await page.getByRole('button',{name:'Look back',exact:true}).click();await expect(region).toContainText('Changed since review');await page.getByRole('button',{name:'Overview',exact:true}).click()}
-   await expect(goal).toContainText('Planned amounts are not bank transfers')
+   await expect(goal.getByText('Setting money aside here is a plan. It doesn’t move money in your bank.', {exact:true})).toBeVisible()
    await page.reload()
    await expect(selector).toHaveValue(period)
    check(`${width}px temporal: saved selection reloads ${period===f.first?'original':period===f.second?'transition':'continuing'} period with its own goal amount`,true)

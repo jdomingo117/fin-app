@@ -85,7 +85,7 @@ const cors = {
 const fixtureEmail = 'console-review@example.invalid'
 const fixturePassword = 'fictional-password-not-a-credential'
 
-type FixtureResponse = { json: unknown; status?: number }
+type FixtureResponse = { json: unknown; status?: number; headers?: Record<string, string> }
 
 export async function signInForConsole(page: Page, controlledClock = true, beforeRead?: (resource: string) => void | Promise<void>,
   override?: (resource: string, request: Request, body: unknown) => FixtureResponse | undefined) {
@@ -139,7 +139,7 @@ export async function signInForConsole(page: Page, controlledClock = true, befor
       body = category ? rows.filter(row=>row.category===category) : rows
     }
     const response = override?.(key, request, body) ?? { json: body }
-    return route.fulfill({headers:cors,...response})
+    return route.fulfill({ ...response, headers: { ...cors, 'access-control-expose-headers': 'content-range', ...response.headers } })
   })
   if (controlledClock) await page.addInitScript(anchor => {
     // Shift calendar time while retaining the browser’s own frame and timer scheduler.

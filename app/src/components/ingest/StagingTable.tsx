@@ -87,6 +87,8 @@ export default function StagingTable({
           {(['all', 'review', 'issues'] as const).map((f) => (
             <button
               key={f}
+              type="button"
+              data-control-kind="chip"
               onClick={() => setFilter(f)}
               aria-pressed={filter === f}
               className={`min-h-11 rounded-[8px] border px-3 py-2 text-[13px] font-medium transition ${

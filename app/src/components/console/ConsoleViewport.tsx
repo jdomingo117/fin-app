@@ -29,6 +29,7 @@ const hubTitles: Partial<Record<View, string>> = {
   ledger: 'Ledger review', transfers: 'Transfers', ingestion: 'Ingestion', settings: 'Settings',
 }
 
+const workflowHubs: View[] = ['budget', 'ledger', 'ingestion', 'transfers']
 const expandedHubs: View[] = ['dashboard', 'income', 'expenses', 'accounts']
 
 function sceneSection(view: View): SectionId {
@@ -84,6 +85,7 @@ function ConsoleViewportContent({ visible }: { visible: boolean }) {
   const wasHome = useRef(home)
   const reduce = useConsoleReducedMotion()
   const designed = !home && expandedHubs.includes(view)
+  const workflow = workflowHubs.includes(view)
   const outlet = useOutlet({ home, active, select, restoreFocus, entry, begin, back: requestBack } satisfies ConsoleOutlet)
 
   useLayoutEffect(() => {
@@ -143,6 +145,9 @@ function ConsoleViewportContent({ visible }: { visible: boolean }) {
     if (!closing) return
     const duration = consoleDuration[reduce ? 'reduced' : 'hub']
     const timer = window.setTimeout(() => {
+      // The destination may be vetoed by a mounted workflow's navigation
+      // guard. Finish the visual exit state even when the route stays here.
+      setClosing(false)
       navigate('/dashboard', { replace: true })
     }, duration)
     return () => window.clearTimeout(timer)
@@ -203,13 +208,13 @@ function ConsoleViewportContent({ visible }: { visible: boolean }) {
         {!startupVisible && <LayoutGroup id="console-hub-entry">
           <AnimatePresence initial={false}>
             <ConsoleRouteLayer key={home ? 'home' : view} reduced={reduce}>
-              {!home && !designed && <header className="console-hub-heading" data-initial-hero={expandedHubs.includes(view) ? 'expanded' : 'compact'}>
+              {!home && !designed && <header className={workflow ? "console-hub-heading console-workflow-dock" : "console-hub-heading"} data-initial-hero={expandedHubs.includes(view) ? 'expanded' : 'compact'}>
                 <button type="button" className="console-utility" aria-label="Back to Home" onClick={requestBack}>
                   <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m14 5-7 7 7 7" /></svg>
                 </button>
                 <h1 ref={hubHeading} tabIndex={-1}>{hubTitles[view]}</h1>
               </header>}
-              <div className={home ? 'console-home-slot' : designed ? 'console-designed-hub' : 'console-hub'} data-closing={closing}>
+              <div className={home ? 'console-home-slot' : designed ? 'console-designed-hub' : workflow ? 'console-hub console-workflow-hub' : 'console-hub'} data-closing={closing}>
                 {demo ? <FoundationDemo /> : outlet}
               </div>
             </ConsoleRouteLayer>

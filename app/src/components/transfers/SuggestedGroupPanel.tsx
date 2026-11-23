@@ -1,3 +1,4 @@
+import { useView } from '../../router'
 import { useConsoleDayLabel } from '../../hooks/useConsoleDayLabel'
 import { useReport } from '../../hooks/useReport'
 import { transferBatch } from '../../lib/ledgerPage'
@@ -28,6 +29,7 @@ export function SuggestedGroupPanel({
   busy: boolean
   onBulkDecide: (linkIds: string[], verdict: 'confirmed' | 'rejected') => void
 }) {
+  const consoleStyle = useView().theme === 'console'
   const nonAmbiguous = group.links.filter((l) => !l.ambiguous)
   const ambiguous = group.links.filter((l) => l.ambiguous)
   const batch = useReport(['transfer batch','suggested',group.key,[...deselected]], tenant =>
@@ -39,11 +41,18 @@ export function SuggestedGroupPanel({
   const deferredIdSet = new Set(group.links.filter(row => !selectedIdSet.has(row.id) && !deselected.has(row.id)).map(row => row.id))
   const disclosure = groupActionDisclosure(selectedIds, group.links.map(row => row.id))
   const total = selection.amount
+  const decide = (verdict: 'confirmed' | 'rejected') => {
+    const count = `${selectedIds.length} transfer${selectedIds.length === 1 ? '' : 's'}`
+    if (consoleStyle && !window.confirm(verdict === 'confirmed'
+      ? `Confirm ${count} as internal? Their amounts will be excluded from income and spending.`
+      : `Count ${count} as regular activity? They will be included in income and spending where applicable.`)) return
+    onBulkDecide(selectedIds, verdict)
+  }
 
   return (
     <div className="rounded-[12px] border border-[var(--hair)] overflow-hidden">
       <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
-        <button onClick={onToggleExpand} aria-expanded={expanded} className="flex min-h-11 min-w-0 items-center gap-2 text-left">
+        <button type="button" data-console-record-label onClick={onToggleExpand} aria-expanded={expanded} className="flex min-h-11 min-w-0 items-center gap-2 text-left">
           <span className={`flex-shrink-0 text-muted transition-transform ${expanded ? 'rotate-90' : ''}`}>›</span>
           <span className="min-w-0 truncate">
             <span className="font-semibold text-ink">
@@ -56,10 +65,10 @@ export function SuggestedGroupPanel({
         </button>
         <div className="flex flex-shrink-0 flex-wrap gap-2">
           {selectedIds.length > 0 ? <>
-            <Button onClick={() => onBulkDecide(selectedIds, 'confirmed')} disabled={busy}>
+            <Button onClick={() => decide('confirmed')} disabled={busy}>
               Confirm {selectedIds.length} internal transfer{selectedIds.length === 1 ? '' : 's'}{disclosure}
             </Button>
-            <Button variant="ghost" onClick={() => onBulkDecide(selectedIds, 'rejected')} disabled={busy}>
+            <Button variant="ghost" onClick={() => decide('rejected')} disabled={busy}>
               Count {selectedIds.length} as regular activity{disclosure}
             </Button>
           </> : (

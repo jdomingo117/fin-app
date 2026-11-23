@@ -663,6 +663,7 @@ dialog.budget-panel:not([open]) { display: none; }
 .budget-sheet th, .budget-sheet td { padding: 12px 16px; text-align: right; vertical-align: top; border-bottom: 1px solid var(--hair-soft); overflow-wrap: anywhere; }
 .budget-sheet th[scope="row"], .budget-sheet th[scope="colgroup"], .budget-sheet thead th:first-child { text-align: left; }
 .budget-sheet thead th { padding-block: 10px; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--color-muted); border-bottom: 1px solid var(--hair); }
+html[data-theme="console"] .budget-sheet thead th { font-weight: 500; letter-spacing: normal; text-transform: none; }
 .budget-sheet tbody td { font-size: 15px; color: var(--color-ink); }
 .budget-sheet-group-row th, .budget-sheet-group-row td { padding-block: 16px 8px; font-size: 13px; color: var(--color-muted); border-bottom: 1px solid var(--hair); background: color-mix(in srgb, var(--color-ink) 3%, transparent); }
 .budget-sheet-group-row th[scope="colgroup"] { font-family: var(--font-display); font-size: 15px; font-weight: 700; color: var(--color-ink); letter-spacing: -.005em; }

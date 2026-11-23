@@ -2,8 +2,8 @@ import { expect, test, type Locator } from '@playwright/test'
 
 /** Audit rendered chrome on the signed-in route. Text supplied by financial
  * records can opt out of casing with data-console-record-label. */
-export async function auditConsoleChrome(root: Locator, state: string) {
-  const findings = await root.evaluate(scope => {
+export async function collectConsoleChrome(root: Locator) {
+  return root.evaluate(scope => {
     const issues = { casing: [] as string[], moduleTitles: [] as string[], accents: [] as string[],
       controls: [] as string[], dates: [] as string[] }
     const checked = { labels: 0, moduleTitles: 0, controls: 0, textNodes: 0 }
@@ -14,9 +14,22 @@ export async function auditConsoleChrome(root: Locator, state: string) {
       .replace(/\s+/g, ' ').trim().slice(0, 100)
     const allowedAcronyms = new Set(['CSV', 'AUD', 'USD', 'FY', 'YTD', 'ID', 'NAV', 'API', 'ETF', 'GST', 'PDF', 'OFX', 'OK', 'HALCYON', 'UP'])
     const properNouns = /\b(?:Back to Home|Control Centre|Strategic projections|Up Bank|High-interest savings|Net Worth|Market Grocer|New South Wales)\b/g
-    const designLabel = 'button, a, label, [role="tab"], legend, summary, h1, h2, h3, option, [data-console-label]'
+    const designLabel = 'button, a, label, [role="tab"], [role="columnheader"], [role="rowheader"], th, legend, summary, h1, h2, h3, h4, h5, h6, option, [data-console-label]'
+    const recordLabel = '[data-console-record-label], .console-ledger-list, .console-activity-card, .react-flow__node, .console-chart-values table'
     const classicAccent = /(?:#(?:11b596|08735f|16c7a4|3ad9bd)\b|rgb\(\s*(?:17,\s*181,\s*150|8,\s*115,\s*95|22,\s*199,\s*164|58,\s*217,\s*189)\s*\))/i
     const date = /\b(?:19|20)\d{2}-(?:0[1-9]|1[0-2])(?:-\d{2})?\b|\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\.? (?:[1-9]|[12]\d|3[01])\b/i
+    function checkRenderedCase(value: string, textStyle: CSSStyleDeclaration) {
+      const text = value.replace(/\s+/g, ' ').trim()
+      const words = text.replace(properNouns, '').match(/[A-Za-z][A-Za-z'-]*/g) ?? []
+      const principal = words.filter(word => !allowedAcronyms.has(word))
+      if (!principal.length) return
+      const transforms = textStyle.textTransform.split(' ')
+      if (transforms.includes('uppercase') || /(?:small|petite)-caps/.test(textStyle.fontVariantCaps)) {
+        issues.casing.push(text.toUpperCase())
+      } else if (transforms.includes('capitalize') && principal.length > 1) {
+        issues.casing.push(text.replace(/\b\p{L}/gu, letter => letter.toUpperCase()))
+      }
+    }
     const titleProbe = document.createElement('span')
     titleProbe.className = 'console-module-title'
     rootAppend(titleProbe)
@@ -28,14 +41,14 @@ export async function auditConsoleChrome(root: Locator, state: string) {
     for (const element of scope.querySelectorAll('*')) {
       if (!visible(element)) continue
       const style = getComputedStyle(element)
-      if (element.matches(designLabel) && !element.closest('[data-console-record-label], .console-ledger-list, .console-activity-card, .react-flow__node, .console-chart-values table')) {
+      if (element.matches(designLabel) && !element.closest(recordLabel)) {
         const text = description(element)
         const words = text.replace(properNouns, '').replace(/\b\d{1,2} (?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/gi, '').match(/[A-Za-z][A-Za-z'-]*/g) ?? []
         const principal = words.filter(word => !/^(?:and|to|the|of|for|in|or|a|by|on|with|vs)$/i.test(word) && !allowedAcronyms.has(word))
         checked.labels++
         const uppercase = principal.length > 0 && principal.every(word => /^[A-Z]{2,}$/.test(word))
         const titleCase = principal.length >= 2 && principal.every(word => /^[A-Z][a-z]+$/.test(word))
-        if (uppercase || titleCase || (style.textTransform === 'uppercase' && principal.length)) issues.casing.push(text)
+        if (uppercase || titleCase) issues.casing.push(text)
       }
       if (element.matches('[data-module-title], .console-module > header h2')) {
         checked.moduleTitles++
@@ -57,10 +70,23 @@ export async function auditConsoleChrome(root: Locator, state: string) {
         checked.textNodes++
         const match = node.textContent.match(date)
         if (match) issues.dates.push(match[0])
+        if (!element.closest(recordLabel)) checkRenderedCase(node.textContent, style)
+      }
+      if (element.matches(`${designLabel}, [data-label]`) && !element.closest(recordLabel)) {
+        for (const side of ['::before', '::after']) {
+          const pseudo = getComputedStyle(element, side)
+          if (pseudo.display === 'none' || pseudo.visibility !== 'visible') continue
+          const content = pseudo.content.match(/^"(.*)"$/)?.[1]
+          if (content) checkRenderedCase(content, pseudo)
+        }
       }
     }
     return { checked, issues: Object.fromEntries(Object.entries(issues).map(([key, values]) => [key, [...new Set(values)]])) }
   })
+}
+
+export async function auditConsoleChrome(root: Locator, state: string) {
+  const findings = await collectConsoleChrome(root)
   await test.info().attach(`Console leftovers – ${state}`, { body: JSON.stringify(findings, null, 2), contentType: 'application/json' })
   console.log(`${state} leftovers ${JSON.stringify(findings)}`)
   expect.soft(findings.issues, state).toEqual({ casing: [], moduleTitles: [], accents: [], controls: [], dates: [] })

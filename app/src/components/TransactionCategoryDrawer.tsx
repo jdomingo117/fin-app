@@ -12,6 +12,7 @@ import { KIND_LABELS, TRANSACTION_KINDS, type SpendingNature, type TransactionKi
 import { useReport } from '../hooks/useReport'
 import ReportStatus from './ReportStatus'
 import { useData } from '../contexts/DataContext'
+import { useBudget } from '../contexts/BudgetContext'
 import TransactionSplitEditor from './TransactionSplitEditor'
 import { useDialogFocus } from '../hooks/useDialogFocus'
 
@@ -64,15 +65,18 @@ export default function TransactionCategoryDrawer({
   redacted = false,
   onClose,
   restoreSelector,
+  protectDraft = false,
   onChanged,
 }: {
   transaction: Txn | null
   redacted?: boolean
   onClose: () => void
   restoreSelector?: string
+  protectDraft?: boolean
   onChanged: () => Promise<void>
 }) {
   const { reportRevision } = useData()
+  const { guardTaskNavigation } = useBudget()
   const formatDay = useConsoleDayLabel()
   const taxonomy = useTaxonomy(Boolean(transaction))
   const { customSubcategories } = taxonomy
@@ -129,15 +133,6 @@ export default function TransactionCategoryDrawer({
     setLastClassificationEditId(null)
   }, [transaction?.id, transaction?.cat, transaction?.subcat, transaction?.kind, transaction?.isRecurring, transaction?.isSubscription, transaction?.spendingNature, transaction?.isReimbursable, transaction?.isTaxRelated])
 
-  useEffect(() => {
-    if (!transaction) return
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [transaction, onClose])
-
   const subcategories = [...(FULL_TAXONOMY[category] ?? []), ...customSubcategories.filter((item) => item.category === category).map((item) => item.displayName)]
   const unchanged = transaction
     ? category === transaction.cat && subcategory === (transaction.subcat ?? '')
@@ -163,7 +158,30 @@ export default function TransactionCategoryDrawer({
       && isTaxRelated === (transaction.isTaxRelated ?? false)
     : true
 
-  useUnsavedChanges(!!transaction && (!unchanged || !classificationUnchanged || scope === 'merchant_rule' || !!customName.trim()))
+  const dirty = Boolean(transaction && (!unchanged || !classificationUnchanged || scope === 'merchant_rule' || customName.trim()))
+  const confirmDiscard = () => window.confirm('Discard unsaved transaction changes?')
+  const close = () => {
+    if (protectDraft && (saving || classificationSaving || (dirty && !confirmDiscard()))) return
+    onClose()
+  }
+  useUnsavedChanges(dirty, protectDraft)
+  useEffect(() => {
+    if (!protectDraft || !transaction || (!dirty && !saving && !classificationSaving)) return
+    return guardTaskNavigation(proceed => {
+      if (!saving && !classificationSaving && confirmDiscard()) proceed()
+    })
+  }, [protectDraft, transaction, dirty, saving, classificationSaving, guardTaskNavigation])
+
+  useEffect(() => {
+    if (!transaction) return
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || event.defaultPrevented) return
+      if (protectDraft) event.preventDefault()
+      close()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  })
 
   const saveClassification = async () => {
     if (!transaction || isReconciliation) return
@@ -290,7 +308,7 @@ export default function TransactionCategoryDrawer({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          onMouseDown={(event) => { if (event.target === event.currentTarget) onClose() }}
+          onMouseDown={(event) => { if (event.target === event.currentTarget) close() }}
         >
           <motion.aside
             ref={dialogRef}
@@ -302,15 +320,15 @@ export default function TransactionCategoryDrawer({
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: 30, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 280, damping: 28 }}
-            className="h-full w-full max-w-[520px] overflow-y-auto border-l border-[var(--hair)] bg-surface p-6 shadow-2xl"
+            className={`h-full w-full max-w-[520px] overflow-y-auto border-l border-[var(--hair)] bg-surface p-6 shadow-2xl ${protectDraft ? 'console-ledger-detail' : ''}`}
           >
             <header className="flex items-start justify-between gap-4">
               <div className="min-w-0">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-accent-ink">Transaction detail</p>
-                <h2 id="transaction-drawer-title" className="mt-1 truncate font-display text-[25px] font-black text-ink">{transaction.merchant}</h2>
+                <h2 data-console-record-label id="transaction-drawer-title" className="mt-1 truncate font-display text-[25px] font-black text-ink">{transaction.merchant}</h2>
                 <p className="mt-1 text-[13px] text-muted">{formatDay(transaction.date)} · {transaction.account}</p>
               </div>
-              <button type="button" onClick={onClose} aria-label="Close transaction detail" className="grid min-h-11 min-w-11 place-items-center rounded-lg border border-[var(--hair)] text-ink transition hover:bg-[var(--hair-soft)]">×</button>
+              <button type="button" onClick={close} aria-label="Close transaction detail" className="grid min-h-11 min-w-11 place-items-center rounded-lg border border-[var(--hair)] text-ink transition hover:bg-[var(--hair-soft)]">×</button>
             </header>
         <ReportStatus report={taxonomy} label="Custom categories" />
 

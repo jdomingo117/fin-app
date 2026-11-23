@@ -137,7 +137,7 @@ function LedgerWorkspace({ tenant }: { tenant: string }) {
     return { attention: all.attention_count, unresolved: unresolved.matching_count, eligible: eligible.matching_count }
   })
   const unresolved = counts.data?.attention ?? 0
-  const editor = useReport(['ledger editor',selectedId], owner => hydrateParents(owner,[selectedId!]), !!selectedId)
+  const editor = useReport(['ledger editor',selectedId], owner => hydrateParents(owner,[selectedId!]), !!selectedId, theme === 'console')
   const selected = editor.data?.[0] ?? null
   const bulk = useReport(['bulk', [...selectedIds]], owner => hydrateParents(owner,[...selectedIds]), bulkOpen || bulkClassificationOpen)
   const selectedTransactions = bulk.data ?? []
@@ -238,7 +238,7 @@ function LedgerWorkspace({ tenant }: { tenant: string }) {
         {(bulkOpen || bulkClassificationOpen) && <ReportStatus report={bulk} label="Selected transactions" />}
         {actionError && <p role="alert">{actionError}</p>}
         <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
-          <h2 className="font-display text-[18px] font-bold text-ink">Transactions</h2>
+          <h2 data-module-title className={theme === 'console' ? 'console-module-title' : 'font-display text-[18px] font-bold text-ink'}>Transactions</h2>
           <CategorizationReviewActions
             unresolvedCount={counts.data?.unresolved ?? 0}
             eligibleCount={counts.data?.eligible ?? 0}
@@ -327,14 +327,28 @@ function LedgerWorkspace({ tenant }: { tenant: string }) {
             <p className="body-copy">No transactions match this ledger view.</p>
           </div>
         ) : (
-          <div className="divide-y divide-[var(--hair-soft)]">
+          <div className="divide-y divide-[var(--hair-soft)]" role={theme === 'console' ? 'list' : undefined}
+            aria-label={theme === 'console' ? 'Ledger transactions' : undefined}
+            onKeyDown={theme === 'console' ? event => {
+              if (!(event.target instanceof HTMLElement) || !event.target.matches('[data-ledger-edit]')) return
+              const rows = [...event.currentTarget.querySelectorAll<HTMLButtonElement>('[data-ledger-edit]')]
+              const index = rows.indexOf(event.target as HTMLButtonElement)
+              const target = event.key === 'ArrowDown' ? rows[index + 1] : event.key === 'ArrowUp' ? rows[index - 1]
+                : event.key === 'Home' ? rows[0] : event.key === 'End' ? rows.at(-1) : undefined
+              if (target) {
+                event.preventDefault()
+                target.focus()
+              }
+            } : undefined}>
             {visible.map((transaction) => (
-              <div key={transaction.id} className="flex items-center gap-2">
-                <label className="grid min-h-11 min-w-11 cursor-pointer place-items-center" aria-label={`Select ${transaction.merchant} on ${transactionDate(transaction.date)}`}>
+              <div key={transaction.id} role={theme === 'console' ? 'listitem' : undefined} className="flex items-center gap-2">
+                <label data-console-record-label className="grid min-h-11 min-w-11 cursor-pointer place-items-center" aria-label={`Select ${transaction.merchant} on ${transactionDate(transaction.date)}`}>
                   <input type="checkbox" checked={selectedIds.has(transaction.id)} disabled={!selectedIds.has(transaction.id) && selection.total >= MAX_BULK_SELECTION} aria-describedby="ledger-bulk-selection-limit" onChange={() => toggleSelected(transaction.id)} className="h-4 w-4 accent-[var(--color-accent)] disabled:cursor-not-allowed disabled:opacity-40" />
                 </label>
                 <button
                   type="button"
+                  data-ledger-edit={transaction.id}
+                  data-console-record-label
                   onClick={() => setSelectedId(transaction.id)}
                   className="grid min-h-[72px] min-w-0 flex-1 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 py-3.5 text-left transition hover:bg-[var(--hair-soft)] focus-visible:bg-[var(--accent-wash)] xl:grid-cols-[96px_minmax(0,1.4fr)_minmax(120px,0.7fr)_minmax(132px,0.85fr)_108px_106px]"
                 >
@@ -374,7 +388,10 @@ function LedgerWorkspace({ tenant }: { tenant: string }) {
         )}
       </Tile>
 
-      <TransactionCategoryDrawer transaction={selected} onClose={() => { setSelectedId(null); setReviewEditorId(null) }} onChanged={async () => {
+      <TransactionCategoryDrawer transaction={selected}
+        protectDraft={theme === 'console'}
+        restoreSelector={theme === 'console' && selectedId ? `[data-ledger-edit="${CSS.escape(selectedId)}"]` : undefined}
+        onClose={() => { setSelectedId(null); setReviewEditorId(null) }} onChanged={async () => {
         await refreshData()
       }} />
       {bulkOpen && bulk.data && <BulkCategoryDialog transactions={selectedTransactions} onClose={(clearSelection) => {

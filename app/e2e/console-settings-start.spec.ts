@@ -38,6 +38,7 @@ test('Settings applies, persists and reflects preferences across appearances', a
   const effects = page.getByRole('combobox', { name: 'Effects tier' })
   await expect(effects).toHaveValue('')
   await expect(layer(page)).toHaveCSS('opacity', '1')
+  await expect(layer(page).locator('.console-workflow-hub')).toHaveCSS('opacity', '1')
   await auditConsoleChrome(layer(page), 'Settings opening')
   await axe(page)
   await capture(page, 'settings')

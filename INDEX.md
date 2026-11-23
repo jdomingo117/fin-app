@@ -609,7 +609,8 @@ implemented but the remaining M6 verification gates are still open.
   `WorkflowHub.tsx` provides the compact Home pill, route title, data-owned status and skeleton modules for Budget, Ledger, Ingestion and Transfers. Budget reuses cached current-period figures for the Home handoff and keeps the existing interrupted-save checkpoint. Ledger has a reading surface, companion modules and a Console detail sheet. Ingestion's stepper follows the existing bank and investment uploaders. Transfers keeps its queue and scan actions alongside decision guidance. The existing draft-exit, keyboard focus and grouped-confirmation guards remain in their workflow controllers.
   `AmbientBackground.tsx` owns the six-material scene, effects tiers and suspension rules.
   `SoundEngine.ts` synthesizes cues and music from user gestures. `ConsolePreferences.tsx`
-  owns the local controls, and `ConsoleStartScreen.tsx` is the optional Home entry.
+  owns the local preferences and the Console Settings modules for appearance, effects, navigation and sound.
+  `ConsoleStartScreen.tsx` gates signed-in Home entry at `/` and `/dashboard` when enabled. The app retains completion across shell swaps and puts focus on Overview after the dissolve. [Gate 4C](docs/design/console-phase-4c-review.md).
   The signed-in
   `/dashboard?demo=foundation` route shows the foundation states in development.
   See [the console rollout](docs/design/console-rollout.md) for gate fixtures and checks.

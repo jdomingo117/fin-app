@@ -214,3 +214,39 @@
 @media (max-width: 1050px) {
   .console-expense-secondary { grid-template-columns: minmax(0, 1fr); }
 }
+
+.console-hub-heading.console-workflow-dock {
+  padding-block: 6px 12px;
+  background: var(--console-sheet-fill);
+}
+.console-hub-heading.console-workflow-dock h1 { font: var(--console-workflow-dock-title); }
+.console-hub.console-workflow-hub {
+  margin: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+.console-workflow-hub .console-hub-scroll { padding: 12px var(--console-gutter) max(24px, env(safe-area-inset-bottom)); }
+.console-workflow-hub :is(.glass, .workflow-surface, [data-budget-module]) {
+  background: var(--console-sheet-fill);
+  border: 1px solid var(--console-line);
+  border-radius: var(--console-card-radius);
+  box-shadow: none;
+  backdrop-filter: none;
+}
+.console-workflow-hub .budget-workspace { max-width: none; padding: 0; }
+.console-workflow-hub [data-budget-module] { padding: var(--console-workflow-padding); margin-block-end: var(--console-workflow-gap); }
+.console-workflow-hub .budget-hero-amount { font-weight: 250; }
+.console-workflow-hub .budget-view-switch { gap: 6px; }
+.console-workflow-hub .budget-view-switch .budget-tab { padding-inline: 13px; }
+.console-workflow-hub .budget-view-switch .budget-tab[aria-pressed="true"] { font-weight: 600; }
+html[data-theme="console"] :is(.console-workflow-hub, [aria-modal="true"]) :is(.uppercase, .micro, .field-label, .budget-eyebrow) { text-transform: none; letter-spacing: normal; }
+html[data-theme="console"] :is(.console-workflow-hub, .console-ledger-detail) [data-shared-button] {
+  border-radius: var(--console-button-radius);
+  min-block-size: var(--console-control-size);
+  font-size: 13px;
+}
+html[data-theme="console"] :is(.console-workflow-hub, .console-ledger-detail) [data-shared-button="primary"] {
+  background: var(--console-ink);
+  color: var(--console-base);
+}

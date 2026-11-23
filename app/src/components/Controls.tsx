@@ -27,7 +27,7 @@ export function Button({
       ? 'bg-ink text-surface hover:-translate-y-px hover:shadow-lg'
       : 'border border-[var(--hair)] text-ink hover:bg-black/[0.03]'
   return (
-    <motion.button type={type} disabled={disabled} aria-label={ariaLabel} onClick={onClick} whileTap={disabled ? undefined : { scale: 0.97 }} className={`${base} ${styles} ${className} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
+    <motion.button type={type} disabled={disabled} aria-label={ariaLabel} data-shared-button={variant} onClick={onClick} whileTap={disabled ? undefined : { scale: 0.97 }} className={`${base} ${styles} ${className} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
       {children}
     </motion.button>
   )

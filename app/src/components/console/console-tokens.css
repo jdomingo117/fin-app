@@ -2,6 +2,10 @@
    including shared controls portalled outside the viewport. */
 html[data-theme="console"] {
   --console-ink: #fff;
+  --console-module-title-font: 400 19px/1.2 var(--font-display);
+  --console-control-size: 46px;
+  --console-button-radius: 12px;
+  --console-base: #0a0d16;
   --color-console-pos: oklch(.87 .14 150);
   --color-console-neg: oklch(.82 .12 25);
   /* Classic accent preferences may be authored as inline root declarations. */
@@ -11,9 +15,11 @@ html[data-theme="console"] {
 }
 
 .console-viewport {
-  --console-module-title-font: 400 19px/1.2 var(--font-display);
   --console-gutter: clamp(20px, 4vw, 72px);
   --console-section-gap: 34px;
+  --console-workflow-padding: clamp(14px, 2.4vw, 26px);
+  --console-workflow-gap: 14px;
+  --console-workflow-dock-title: 300 30px/1.15 var(--font-display);
   --console-tile: 96px;
   --console-tile-active: 152px;
   --console-tile-scale: 1.583333;
@@ -39,13 +45,10 @@ html[data-theme="console"] {
   --scene-c-edge: .14;
   --scene-l-base: .24;
   --scene-l-floor: .11;
-  --console-control-size: 46px;
-  --console-button-radius: 12px;
   --console-button-height: 56px;
 
   --console-start-top: #050b17;
   --console-start-bottom: #070916;
-  --console-base: #0a0d16;
   --console-label: rgb(255 255 255 / .85);
   --console-fill: rgb(255 255 255 / .075);
   --console-line: rgb(255 255 255 / .14);

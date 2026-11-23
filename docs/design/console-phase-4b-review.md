@@ -3,7 +3,8 @@
 | Reproduction field | Value |
 | --- | --- |
 | Branch | `codex/console-phase-4b` |
-| Application commit | `4fea2af050a215ca5e14b7a1439349c6ecb4eb95` |
+| Application commit | `f817b8f26b4e5b328f952a71ec58bd1a27c19c2e` |
+| Initial capture commit for Ledger, Ingestion and Transfers | `4fea2af050a215ca5e14b7a1439349c6ecb4eb95` |
 | Main base | `8569c1dcb4c9c15ca6f90f86129ae1d30293b14e` |
 | Worktree | `/Users/joel/Developer/fin-app` |
 | URL | [http://127.0.0.1:5320/dashboard](http://127.0.0.1:5320/dashboard) |
@@ -30,7 +31,7 @@ Chrome's browser-native confirmations appear as pauses in the page recordings. P
 
 ## Workflow checks
 
-- Budget keeps the existing review and save flow. Cancelling an exit preserves the amount being edited. A committed allocation whose response gets lost can be recovered after reload through the original operation lookup. The browser test verifies one write and one read of the matching receipt.
+- Budget keeps the existing review and save flow. Cancelling an exit preserves the amount being edited. Accepting discard returns to the last saved amount on the next in-app visit. A committed allocation whose response gets lost can be recovered after reload through the original operation lookup. The browser test verifies one write and one read of the matching receipt.
 - Ledger accepts Arrow Up, Arrow Down, Home and End between transaction rows. Tab still reaches filters, checkboxes and the drawer. Cancelling Escape preserves a dirty correction. Saving sends the existing parent transaction ID and restores the opener on close. Typing C into the search field leaves the shortcut inactive.
 - Ingestion focuses the staged-row heading and guards leaving while a statement is being prepared. Cancelling the exit keeps the staged rows and target account. The personal database was outside every test target.
 - Transfers confirms the group and explains how the verdict affects Income and Spending. Cancelling sends zero writes. Confirming sends exactly one batch through the existing decision function.
@@ -52,13 +53,13 @@ The auditor attaches its checks and findings as JSON in each Playwright result. 
 
 | Check | Result |
 | --- | --- |
-| Console workflow Playwright at 1440 × 900 and 390 × 844 | 18 passed. All eight hub landing scans reported zero axe violations. |
+| Console workflow Playwright at 1440 × 900 and 390 × 844 | 18 passed, plus four passes when the Budget landing and save/discard workflow were rerun against the final application commit. All hub landing scans reported zero axe violations. |
 | Offline tests, frontend and browser TypeScript, production build | 731 unit and contract tests passed. Both type checks and the build passed. |
 | Existing Budget plan suite on isolated Supabase | 133 durable-boundary checks passed, including period-only save, period-and-future recovery and no console errors. |
 | Existing full Budget release run | 479 checks passed before the Classic assisted account-history browser flow timed out. A targeted run from merged main reached the same history-coverage suite and later stopped on a 429. The full release run remains incomplete. |
 | Existing Ingestion and Transfers suite on isolated Supabase | 8 passed, including actual imports and the 203-link transfer batch. The provider-disabled run excludes live AI categorisation. |
 | Existing Ledger sessions and review contract | 7 session tests and 15 isolated contract checks passed. The live bulk browser suite passed its first case, failed on “Review selected (2)” and skipped its two later serial cases. The same scenario also fails on merged main with the stable rail locator, at its immediate request assertion after Apply. The full legacy browser suite remains incomplete. |
-| Classic smoke and full Console suite | Classic smoke passed on Desktop and Phone. [Full Console CI for the application commit](https://github.com/jdomingo117/fin-app/actions/runs/45117840701). |
+| Classic smoke and full Console suite | Classic smoke passed on Desktop and Phone. [Full Console CI for the initial capture commit](https://github.com/jdomingo117/fin-app/actions/runs/45117840701). |
 
 ## Performance
 

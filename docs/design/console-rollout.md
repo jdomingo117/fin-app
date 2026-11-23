@@ -47,13 +47,15 @@ Login, onboarding, callback, password reset and the internal concept route get d
 
 Each Phase 4 batch branches from current `main` and stops at its gate. Merge the approved batch before branching the next. Gate 4A covers expanded and compact captures at 1440 and 390, a walkthrough across all three analysis hubs, Playwright/axe and the throttled proxy. Gate 4B covers the full Ledger categorisation, Budget allocation, import staging and transfer confirmation workflows with existing and Console browser tests. Gate 4C covers Settings and Landing/start entry and stops before Phase 5.
 
-## Later mobile refinements
+## Analysis hubs on phones
 
-- Phase 4.2 moves the Income filters below the hero or into a sheet on phones. This frees the title from the three rows of Home, tabs and filters above it.
+- Batch 4A puts the analysis filters below the expanded hero on phone widths. The compact Income header carries Home, the section figure and analyzer/projections tabs.
 
 ## Review reproduction
 
 [Phase 2 Gate 1 review and captures](console-phase-2-gate-1.md) · [Phase 2 Gate 2 walkthrough and trace](console-phase-2-gate-2.md) · [Phase 2 Gate 3 acceptance and Balanced trace](console-phase-2-gate-3.md) · [Phase 3 review and device gate](console-phase-3-review.md).
+
+[Gate 4A review and phone proxy](console-phase-4a-review.md).
 
 Start each review note with the **branch, commit, worktree path, exact dev-server command and URL**, followed by a capture of that URL.
 

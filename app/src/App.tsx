@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useRef, useState, type ReactNode } from 'react'
+import { lazy, Suspense, useCallback, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import {
   BrowserRouter, Navigate, Outlet, Route, Routes, useLocation, useNavigate,
@@ -102,6 +102,10 @@ function AppFrame({
     && view !== 'login' && view !== 'onboarding' && view !== 'operation-status'
     && !location.pathname.startsWith('/auth/') && !recoveryError
   const effectiveDark = consoleViewport || dark
+  const ready = booted || theme === 'console'
+  useLayoutEffect(() => {
+    if (theme === 'console' && !booted) setBooted(true)
+  }, [theme, booted, setBooted])
 
   useAppearanceDocument(consoleViewport ? 'console' : 'classic', effectiveDark)
 
@@ -115,10 +119,10 @@ function AppFrame({
       {!consoleViewport && <SceneBackground view={view} motionOn={motionOn} dark={dark} />}
 
       <AnimatePresence>
-        {!booted && <Boot key="boot" onDone={() => setBooted(true)} />}
+        {!ready && <Boot key="boot" onDone={() => setBooted(true)} />}
       </AnimatePresence>
 
-      {booted && recoveryError ? (
+      {ready && recoveryError ? (
         <div className="absolute inset-0 flex items-center justify-center p-6">
           <div className="max-w-sm text-center">
             <p className="text-[15px] font-medium">Account recovery needs attention</p>
@@ -128,7 +132,7 @@ function AppFrame({
             </button>
           </div>
         </div>
-      ) : booted && (
+      ) : ready && (
         <Routes location={location} key={consoleViewport ? 'console-viewport' : location.pathname}>
           {/* Pre-auth */}
           <Route element={<BareLayout />}>
@@ -169,10 +173,10 @@ function AppFrame({
         </Routes>
       )}
 
-      {booted && view!=='budget' && !consoleViewport && (
+      {ready && view!=='budget' && !consoleViewport && (
         <ThemeToggle onConsole={view === 'dashboard' && session ? () => setTheme('console') : undefined} />
       )}
-      {booted && session && <ProviderSyncNotice />}
+      {ready && session && <ProviderSyncNotice />}
       <MilestoneToast toast={toast} />
     </ViewBridge>
   )

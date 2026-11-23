@@ -31,7 +31,7 @@
   background: linear-gradient(
     to bottom,
     var(--console-dock-ink) calc(100% - var(--console-dock-fade)),
-    oklch(.185 .03 var(--section-hue) / 0)
+    transparent
   );
 }
 .console-dock-top { display: flex; align-items: center; gap: 14px; min-height: var(--console-control-size); }

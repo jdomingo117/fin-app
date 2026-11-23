@@ -10,6 +10,7 @@ import { useView, type View } from '../../router'
 import { enabledSections, type SectionId } from './sections'
 import { captureConsoleOrigin, type ConsoleEntry } from './ConsoleHub'
 import { ControlCentre } from './ControlCentre'
+import { WorkflowHub } from './WorkflowHub'
 import { ConsoleStartScreen } from './ConsoleStartScreen'
 import FoundationDemo from './FoundationDemo'
 import { consoleDuration, consoleMotionStyle, consoleTransition, useConsoleReducedMotion } from './motion'
@@ -208,15 +209,17 @@ function ConsoleViewportContent({ visible }: { visible: boolean }) {
         {!startupVisible && <LayoutGroup id="console-hub-entry">
           <AnimatePresence initial={false}>
             <ConsoleRouteLayer key={home ? 'home' : view} reduced={reduce}>
-              {!home && !designed && <header className={workflow ? "console-hub-heading console-workflow-dock" : "console-hub-heading"} data-initial-hero={expandedHubs.includes(view) ? 'expanded' : 'compact'}>
+              {workflow ? <WorkflowHub title={hubTitles[view] ?? view} headingRef={hubHeading} closing={closing}
+                entry={entry?.id === view ? entry : undefined} onBack={requestBack}>{outlet}</WorkflowHub> : <>
+              {!home && !designed && <header className="console-hub-heading" data-initial-hero="compact">
                 <button type="button" className="console-utility" aria-label="Back to Home" onClick={requestBack}>
                   <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m14 5-7 7 7 7" /></svg>
                 </button>
                 <h1 ref={hubHeading} tabIndex={-1}>{hubTitles[view]}</h1>
               </header>}
-              <div className={home ? 'console-home-slot' : designed ? 'console-designed-hub' : workflow ? 'console-hub console-workflow-hub' : 'console-hub'} data-closing={closing}>
+              <div className={home ? 'console-home-slot' : designed ? 'console-designed-hub' : 'console-hub'} data-closing={closing}>
                 {demo ? <FoundationDemo /> : outlet}
-              </div>
+              </div></>}
             </ConsoleRouteLayer>
           </AnimatePresence>
         </LayoutGroup>}

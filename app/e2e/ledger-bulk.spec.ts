@@ -92,7 +92,8 @@ async function loginToLedger(page: Page) {
   await page.getByLabel('Password', { exact: true }).fill(PASSWORD)
   await page.getByRole('button', { name: 'Sign in', exact: true }).click()
   await expect(page).toHaveURL('/')
-  await page.getByRole('button', { name: 'Ledger', exact: true }).click()
+  // The attention count can arrive while the Classic navigation is settling.
+  await page.getByRole('button', { name: /^Ledger(?:$| · )/ }).click()
   await expect(page).toHaveURL('/ledger')
   await expect(page.getByRole('heading', { name: 'Ledger' })).toBeVisible()
 }
@@ -100,6 +101,14 @@ async function loginToLedger(page: Page) {
 async function filterLedger(page: Page, query: string, count: number) {
   await page.getByRole('textbox', { name: 'Search ledger' }).fill(query)
   await expect(page.getByText(`${count} transaction${count === 1 ? '' : 's'}`, { exact: true })).toBeVisible()
+}
+
+async function makeMixedRowsReviewable() {
+  const { error } = await fixture.service.from('transactions')
+    .update({ category_source: 'ai' })
+    .eq('tenant_id', fixture.tenantId)
+    .in('merchant', ['E2E MIXED COFFEE', 'E2E MIXED GROCERIES'])
+  if (error) throw error
 }
 
 test.describe.serial('Ledger bulk browser regressions', () => {
@@ -323,6 +332,7 @@ test.describe.serial('Ledger bulk browser regressions', () => {
   })
 
   test('review shows transaction context, stages a choice and safely excludes a Ledger handoff', async ({ page }) => {
+    await makeMixedRowsReviewable()
     const { data: rows, error } = await fixture.service.from('transactions')
       .select('id,date,merchant,category,subcategory,category_source,category_confidence,needs_review')
       .in('merchant', ['E2E MIXED COFFEE', 'E2E MIXED GROCERIES'])
@@ -347,6 +357,7 @@ test.describe.serial('Ledger bulk browser regressions', () => {
 
     await filterLedger(page, 'E2E MIXED', 2)
     await page.getByRole('button', { name: 'Select all matching (2)' }).click()
+    await expect(page.getByText(/2 selected · 2 on this page/)).toBeVisible()
     await page.getByRole('button', { name: 'Review selected (2)' }).click()
     const dialog = page.getByRole('dialog', { name: 'Review with categorisation engine' })
     await expect(dialog.getByRole('button', { name: 'Suggested (1)' })).toHaveAttribute('aria-pressed', 'true')
@@ -375,7 +386,7 @@ test.describe.serial('Ledger bulk browser regressions', () => {
     await expect(dialog.getByText('Opened in Ledger — excluded from this preview')).toBeVisible()
     await expect(groceries.getByText('Your choice: Shopping · General retail')).toBeVisible()
     await dialog.getByRole('button', { name: 'Apply accepted (1)' }).click()
-    expect(submitted).toEqual([expect.objectContaining({ transaction_id: rows.find((row) => row.merchant.endsWith('GROCERIES'))?.id, category: 'Shopping', subcategory: 'General retail' })])
+    await expect.poll(() => submitted).toEqual([expect.objectContaining({ transaction_id: rows.find((row) => row.merchant.endsWith('GROCERIES'))?.id, category: 'Shopping', subcategory: 'General retail' })])
   })
 
   test('review defaults to suggestions and explains when none are available', async ({ page }) => {
@@ -403,6 +414,7 @@ test.describe.serial('Ledger bulk browser regressions', () => {
   })
 
   test('review invalidates the batch after an actual Ledger editor change', async ({ page }) => {
+    await makeMixedRowsReviewable()
     const { data: rows, error } = await fixture.service.from('transactions')
       .select('id,date,merchant,category,subcategory,category_source,category_confidence,needs_review')
       .in('merchant', ['E2E MIXED COFFEE', 'E2E MIXED GROCERIES'])

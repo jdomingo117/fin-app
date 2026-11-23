@@ -101,5 +101,3 @@ hand to find the transfer-linker gap.
 - 2026-11-22 — Console Phase 2 adds the full ambient scene, opt-in sound and music, and the optional start screen.
 
 - 2026-11-22 — Console Phase 2 foundation shares appearance tokens, motion presets, FocusRing, FocusRow and GlassSurface, with signed-in browser checks.
-
-

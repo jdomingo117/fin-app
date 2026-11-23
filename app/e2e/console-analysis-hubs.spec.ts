@@ -83,6 +83,10 @@ test('Expenses allows keyboard range focus and Escape dismisses its date filter'
   await expect(page).toHaveURL(/\/expenses$/)
   await page.getByRole('combobox', { name: 'Focus spending period' }).selectOption('23')
   await expect(page.getByRole('combobox', { name: 'Focus spending period' })).toHaveValue('23')
+  await page.getByRole('tab', { name: 'Recurring hub' }).click()
+  await expect(page.getByText('Recurring commitments', { exact: true })).toBeVisible()
+  await page.getByRole('tab', { name: 'Analytics' }).click()
+  await expect(page.getByRole('combobox', { name: 'Focus spending period' })).toHaveValue('23')
 })
 
 test('A Home account card opens the corresponding account and returns to Accounts', async ({ page }) => {

@@ -142,7 +142,7 @@ function MoverSummaryRow({ row, dimmed, onClick }: { row: ChangeRow; dimmed: boo
   const consoleStyle = useView().theme === 'console'
   const money = consoleStyle ? fmtCents : fmt
   const isNew = row.previous === 0 && row.current > 0
-  const tone = isNew ? 'var(--color-warn)' : row.delta > 0 ? 'var(--color-neg)' : row.delta < 0 ? 'var(--color-pos)' : 'var(--color-muted)'
+  const tone = isNew ? (consoleStyle ? 'var(--console-label)' : 'var(--color-warn)') : row.delta > 0 ? 'var(--color-neg)' : row.delta < 0 ? 'var(--color-pos)' : 'var(--color-muted)'
   const deltaLabel = isNew
     ? 'New'
     : `${row.delta > 0 ? '+' : row.delta < 0 ? '−' : '±'}${money(Math.abs(row.delta))}${row.previous > 0 ? ` · ${row.delta > 0 ? '+' : ''}${Math.round((row.delta / row.previous) * 100)}%` : ''}`
@@ -176,7 +176,7 @@ function ChangeRow({ row, maxValue, dimmed, onClick }: { row: ChangeRow; maxValu
   const consoleStyle = useView().theme === 'console'
   const money = consoleStyle ? fmtCents : fmt
   const isNew = row.previous === 0 && row.current > 0
-  const tone = isNew ? 'var(--color-warn)' : row.delta > 0 ? 'var(--color-neg)' : row.delta < 0 ? 'var(--color-pos)' : 'var(--color-muted)'
+  const tone = isNew ? (consoleStyle ? 'var(--console-label)' : 'var(--color-warn)') : row.delta > 0 ? 'var(--color-neg)' : row.delta < 0 ? 'var(--color-pos)' : 'var(--color-muted)'
   const direction = row.delta > 0 ? '↗' : row.delta < 0 ? '↘' : '—'
 
   return (

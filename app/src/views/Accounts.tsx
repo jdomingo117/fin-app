@@ -160,6 +160,7 @@ export default function Accounts() {
           {['All Time', 'This Week', 'This Month', 'Last Month', 'Last 3 Months', 'This Year YTD', 'Financial YTD'].map(tf => (
             <button
               key={tf}
+                  aria-pressed={consoleRoute ? timeframe === tf : undefined}
               onClick={() => { setTimeframe(tf) }}
               className={`px-3 py-1.5 rounded-lg text-[11px] font-bold tracking-[0.04em] transition-colors duration-200 cursor-pointer whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-accent/50 ${
                 timeframe === tf

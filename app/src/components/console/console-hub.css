@@ -206,7 +206,9 @@
   border-radius: var(--console-card-radius);
   background: var(--console-module-flat);
   box-shadow: none;
+  backdrop-filter: none;
 }
+.console-analysis-modules .uppercase { text-transform: none; letter-spacing: normal; }
 .console-analysis-modules [data-console-row-item] { min-width: 0; }
 
 @media (max-width: 1050px) {

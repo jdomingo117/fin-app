@@ -64,6 +64,7 @@ const fixtures: Record<string, unknown> = {
     return { bucket:day(index), earned_cents:absoluteSum(rows,'income'), gross_cents:expense_cents, expense_cents }
   }), top_merchant: null },
   reporting_transaction_lines: recent,
+  recurrence_scope_summary: { groups: [], names: [], total_pressure_cents: 0 },
   net_worth_monthly: [18432000, 18100000, 18224000, 17739000, 17142000, 17358000, 16893000, 16245000].map((value_cents, index) => ({month: `2026-${String(11-index).padStart(2, '0')}-01`,value_cents})),
 }
 

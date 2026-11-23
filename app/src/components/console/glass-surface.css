@@ -1,4 +1,5 @@
-[data-console-surface] {
+[data-console-surface],
+.console-analysis-modules .glass {
   --console-module-tint: oklch(.26 .035 var(--section-hue, 255) / .85);
   --console-module-flat: oklch(.215 .022 var(--section-hue, 255));
   min-inline-size: 0;

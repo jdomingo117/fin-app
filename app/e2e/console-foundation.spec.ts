@@ -116,6 +116,20 @@ test('Home and hubs render from the signed-in entry and pass axe', async ({ page
   await expect(axis.filter({ hasText: /^Apr$/ })).toHaveCount(1)
   await expect(axis.filter({ hasText: /\b20\d{2}-\d{2}\b/ })).toHaveCount(0)
   await expect(page.getByText('Gross assets', { exact: true })).toBeAttached()
+  const allocation = page.getByRole('region', { name: 'Asset allocation' })
+  const allocationTotals = await allocation.evaluate(node => {
+    const cents = (text: string | null | undefined) => Number(text?.replace(/[^\d]/g, ''))
+    const segments = [...node.querySelectorAll('.donut-legend-row')]
+      .map(row => cents(row.lastElementChild?.lastElementChild?.lastElementChild?.textContent))
+    return {
+      segments,
+      centre: cents(node.querySelector('.donut-center')?.textContent),
+      grossAssets: cents(node.querySelector('.allocation-donut__legend')?.lastElementChild?.lastElementChild?.textContent),
+    }
+  })
+  expect(allocationTotals.segments).toEqual([9644000, 8788000])
+  expect(allocationTotals.centre).toBe(allocationTotals.segments.reduce((sum, cents) => sum + cents, 0))
+  expect(allocationTotals.grossAssets).toBe(allocationTotals.centre)
   await expect(page.getByText('Explore category →', { exact: true })).toHaveCSS('color', 'rgb(255, 255, 255)')
   await checkAxe(page, 'overview-expanded')
   await takeCapture(page, 'overview-expanded')

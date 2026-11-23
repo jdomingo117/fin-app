@@ -31,6 +31,7 @@ export default function Boot({ onDone }: { onDone: () => void }) {
 
   return (
     <motion.div
+      data-classic-boot
       className="fixed inset-0 z-[100] grid place-items-center bg-surface"
       exit={{ opacity: 0 }}
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}

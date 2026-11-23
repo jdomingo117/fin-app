@@ -1,0 +1,42 @@
+.console-ingestion-controls, .console-ingestion-controls > label { min-inline-size: 0; }
+.console-ingestion-controls select { max-inline-size: 100%; min-inline-size: 0; inline-size: 100%; }
+.console-ingestion-controls select option { white-space: normal; }
+.console-ingestion-review-table { background: var(--console-sheet-fill); }
+.console-ingestion-review-table thead { background: var(--console-sheet-fill); }
+
+.console-ingestion-steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-block-end: var(--console-workflow-gap);
+  padding: 8px;
+  border: 1px solid var(--console-line);
+  border-radius: var(--console-card-radius);
+  background: var(--console-sheet-fill);
+}
+.console-ingestion-steps li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: var(--console-button-radius);
+  font-size: 13px;
+  color: var(--console-label);
+}
+.console-ingestion-steps li span {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  inline-size: 24px;
+  block-size: 24px;
+  border-radius: 50%;
+  border: 1px solid var(--console-line);
+  font-variant-numeric: tabular-nums;
+}
+.console-ingestion-steps li[aria-current="step"] { background: var(--console-fill); color: var(--console-ink); }
+.console-ingestion-steps li[aria-current="step"] span { background: var(--console-ink); color: var(--console-base); }
+.console-ingestion-steps li[data-done="true"] span { border-color: var(--console-label); }
+@media (max-width: 560px) {
+  .console-ingestion-steps { gap: 4px; padding: 6px; }
+  .console-ingestion-steps li { flex-direction: column; text-align: center; gap: 4px; padding: 6px 2px; font-size: 12px; }
+}

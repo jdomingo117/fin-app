@@ -45,7 +45,7 @@ Use the development-only foundation demo on the signed-in Dashboard at `/dashboa
 
 Login, onboarding, callback, password reset and the internal concept route get direct-entry and keyboard regression checks. Their functional forms and recovery routes are unaffected by the home-screen treatment. A section without existing Dashboard data can expose a labelled route action. Hovering it must never query a specialist screen or display a fabricated zero.
 
-Each Phase 4 batch branches from current `main` and stops at its gate. Merge the approved batch before branching the next. Gate 4A covers expanded and compact captures at 1440 and 390, a walkthrough across all three analysis hubs, Playwright/axe and the throttled proxy. Gate 4B covers the full Ledger categorisation, Budget allocation, import staging and transfer confirmation workflows with existing and Console browser tests. Gate 4C covers Settings and Landing/start entry and stops before Phase 5.
+Each Phase 4 batch branches from current `main` and stops at its gate. Merge the approved batch before branching the next. Gate 4A covers expanded and compact captures at 1440 and 390, a walkthrough across all three analysis hubs, Playwright/axe and the throttled proxy. Gate 4B covers the full Ledger categorisation, Budget allocation, import staging and transfer confirmation workflows with existing and Console browser tests. After Gate 4B merges, Phase 4B-design branches from that merge for the shared compact header, Budget modules, Ledger reading surface and sheet, Ingestion stepper and Transfers queue. Capture each landing and worked state at desktop and phone widths. Replay all four workflows, rerun their isolated suites and attach the rendered Classic-leftover audit. Stop for owner review. Gate 4C covers Settings and Landing/start entry and stops before Phase 5.
 
 ## Analysis hubs on phones
 
@@ -55,7 +55,7 @@ Each Phase 4 batch branches from current `main` and stops at its gate. Merge the
 
 [Phase 2 Gate 1 review and captures](console-phase-2-gate-1.md) · [Phase 2 Gate 2 walkthrough and trace](console-phase-2-gate-2.md) · [Phase 2 Gate 3 acceptance and Balanced trace](console-phase-2-gate-3.md) · [Phase 3 review and device gate](console-phase-3-review.md).
 
-[Gate 4A review and phone proxy](console-phase-4a-review.md) · [Gate 4B workflow review](console-phase-4b-review.md).
+[Gate 4A review and phone proxy](console-phase-4a-review.md) · [Gate 4B workflow review](console-phase-4b-review.md) · [Phase 4B-design review](console-phase-4b-design-review.md).
 
 Start each review note with the **branch, commit, worktree path, exact dev-server command and URL**, followed by a capture of that URL.
 

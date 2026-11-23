@@ -346,7 +346,7 @@ export default function TransactionCategoryDrawer({
 
             <section className="mt-6" aria-labelledby="category-edit-title">
               <div className="flex items-baseline justify-between gap-3">
-                <h3 id="category-edit-title" className="font-display text-[15px] font-bold text-ink">Category</h3>
+                <h3 id="category-edit-title" data-module-title className={protectDraft ? 'console-module-title' : 'font-display text-[15px] font-bold text-ink'}>Category</h3>
                 <span className="text-[11px] text-muted">Choose the correction scope</span>
               </div>
               <div className="mt-3 grid gap-2">
@@ -406,7 +406,7 @@ export default function TransactionCategoryDrawer({
 
             <section className="mt-7 border-t border-[var(--hair)] pt-5" aria-labelledby="classification-edit-title">
               <div className="flex items-baseline justify-between gap-3">
-                <h3 id="classification-edit-title" className="font-display text-[15px] font-bold text-ink">Accounting & attributes</h3>
+                <h3 id="classification-edit-title" data-module-title className={protectDraft ? 'console-module-title' : 'font-display text-[15px] font-bold text-ink'}>Accounting & attributes</h3>
                 <span className="text-[11px] text-muted">Transaction only</span>
               </div>
               <p className="mt-1 text-[12px] leading-relaxed text-muted">Kind controls cash-flow behavior. Attributes describe cross-cutting context without changing the spending category.</p>
@@ -456,7 +456,7 @@ export default function TransactionCategoryDrawer({
               <TransactionSplitEditor transaction={transaction} customSubcategories={customSubcategories} onChanged={onChanged} />}
 
             <section className="mt-7 border-t border-[var(--hair)] pt-5">
-              <h3 className="font-display text-[14px] font-bold text-ink">Classification status</h3>
+              <h3 data-module-title className={protectDraft ? 'console-module-title' : 'font-display text-[14px] font-bold text-ink'}>Classification status</h3>
               <dl className="mt-3 grid grid-cols-2 gap-3 text-[12.5px]">
                 <div><dt className="text-muted">Kind</dt><dd className="mt-0.5 font-medium text-ink">{KIND_LABELS[transaction.kind]}</dd></div>
                 <div><dt className="text-muted">Kind source</dt><dd className="mt-0.5 font-medium capitalize text-ink">{transaction.kindSource ?? 'derived'}</dd></div>
@@ -468,7 +468,7 @@ export default function TransactionCategoryDrawer({
             </section>
 
             <section className="mt-7 border-t border-[var(--hair)] pt-5">
-              <h3 className="font-display text-[14px] font-bold text-ink">Category history</h3>
+              <h3 data-module-title className={protectDraft ? 'console-module-title' : 'font-display text-[14px] font-bold text-ink'}>Category history</h3>
               <ReportStatus report={audit} label="Transaction history" />
               {history.length === 0 ? (
                 <p className="mt-2 text-[12.5px] text-muted">No manual category changes yet.</p>

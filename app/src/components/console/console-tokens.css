@@ -6,6 +6,7 @@ html[data-theme="console"] {
   --console-control-size: 46px;
   --console-button-radius: 12px;
   --console-base: #0a0d16;
+  --console-sheet-fill: #111824;
   --color-console-pos: oklch(.87 .14 150);
   --color-console-neg: oklch(.82 .12 25);
   /* Classic accent preferences may be authored as inline root declarations. */
@@ -28,7 +29,6 @@ html[data-theme="console"] {
   --console-active-radius: 18px;
   --console-card-radius: 16px;
   --console-glass-filter: blur(24px) saturate(150%);
-  --console-sheet-fill: #111824;
   --console-card-width: 300px;
   --console-overview-phone-art: clamp(70px, 22vw, 94px);
   --tile-l-high: .66;

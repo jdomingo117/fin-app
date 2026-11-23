@@ -12,6 +12,7 @@ import UploadHistory from './UploadHistory'
 import DropZone from './ingest/DropZone'
 import MappingEditor from './ingest/MappingEditor'
 import StagingTable from './ingest/StagingTable'
+import type { ImportProgress } from './ingest/ImportProgress'
 import {
   stageRows, applyAssignments, markFailedCategorizationRows, toTransactionPayload,
   type ColumnMapping, type StagedRow,
@@ -37,6 +38,7 @@ type Props = {
   accountType: string
   isConnected?: boolean
   cutoverDate?: string
+  onProgress?: (progress: ImportProgress) => void
   onImportStateChange?: (active: boolean) => void
   onReviewTransfers?: () => void
 }
@@ -63,6 +65,7 @@ export default function CSVUploader({
   isConnected,
   cutoverDate,
   onImportStateChange,
+  onProgress,
   onReviewTransfers,
 }: Props) {
   const { refreshData } = useData()
@@ -367,6 +370,10 @@ export default function CSVUploader({
   }
 
   const importable = staged.filter((r) => r.include).length
+  useEffect(() => {
+    const phase = step === 'staging' ? 'review' : step === 'balance' || step === 'processing' ? 'import' : step === 'success' ? 'done' : 'upload'
+    onProgress?.({ phase, rows: importable })
+  }, [step, importable, onProgress])
   const connectedOverlapCount = isConnected && cutoverDate
     ? staged.filter((r) => r.include && r.date !== null && r.date >= cutoverDate).length
     : 0

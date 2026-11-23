@@ -5,6 +5,8 @@ import { cumulativeValues, type ConsoleArt, type ConsoleFigure } from '../../com
 import { dashboardWindow, useCachedDashboardReports } from '../../components/console/DashboardReports'
 import type { ConsoleOutlet } from '../../components/console/ConsoleViewport'
 import { useData } from '../../contexts/DataContext'
+import { useBudget } from '../../contexts/BudgetContext'
+import { budgetPresentation } from '../../lib/budgetPresentation'
 import { useRedactBalances } from '../../hooks/useRedactBalances'
 import { expenseEffectCents, isEarnedIncome } from '../../lib/classification'
 import { dateRangeLabel, fullDayLabel } from '../../lib/period'
@@ -14,6 +16,10 @@ import { useDashboardTransaction } from './DashboardActivity'
 export default function ConsoleDashboardHome({ route }: { route: ConsoleOutlet }) {
   const { accounts } = useData()
   const { go } = useView()
+  const { snapshot, readState, pending } = useBudget()
+  const budgetPreview = snapshot?.plan ? budgetPresentation(snapshot, readState, { pendingWrite: !!pending }) : undefined
+  const remaining = budgetPreview?.phase === 'current' && budgetPreview.everyday.remaining.freshness !== 'stale'
+    ? budgetPreview.everyday.remaining : undefined
   const navigate = useNavigate()
   const redacted = useRedactBalances()
   const editor = useDashboardTransaction(redacted)
@@ -37,6 +43,7 @@ export default function ConsoleDashboardHome({ route }: { route: ConsoleOutlet }
     ],
     income: [{ label: 'Inflow', cents: flow.data?.periods.current.earned_cents }],
     expenses: [{ label: 'Net spending', cents: flow.data?.periods.current.expense_cents }],
+    ...(remaining?.availability === 'known' ? { budget: [{ label: 'Left for everyday spending', cents: remaining.cents }] } : {}),
   }
   const previewArt: Partial<Record<typeof active, ConsoleArt>> = {
     dashboard: { label: 'Monthly net worth', values: history.data?.map(point => point.value) ?? [] },

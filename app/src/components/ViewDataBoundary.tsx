@@ -2,10 +2,16 @@ import type { ReactNode } from 'react'
 import { useData } from '../contexts/DataContext'
 import { Grid, Screen, ViewHeader } from './Screen'
 import Tile from './Tile'
+import { useView } from '../router'
+import { WorkflowSkeleton } from './console/WorkflowHub'
 
 type Props = { index: string; title: string; sub?: string; children: ReactNode }
 
 export function ViewLoadingState({ index, title, sub }: Omit<Props, 'children'>) {
+  const { theme, view } = useView()
+  if (theme === 'console' && ['budget', 'ledger', 'ingestion', 'transfers'].includes(view)) {
+    return <Screen><WorkflowSkeleton label={`Loading ${title}`} /></Screen>
+  }
   return <Screen><ViewHeader index={index} title={title} sub={sub} /><Grid>
     {[1, 2, 3, 4, 5, 6].map((key) => <Tile key={key} className={key < 4 ? 'h-32 animate-pulse' : 'h-52 animate-pulse'}><div className="h-3 w-24 rounded bg-[var(--hair)]" /></Tile>)}
   </Grid></Screen>

@@ -606,7 +606,7 @@ implemented but the remaining M6 verification gates are still open.
   `ConsoleHub.tsx` provides the shared-entry hero, sticky compact header and modules for
   Income, Overview, Accounts and Expenses. The analysis hubs use their existing reports and keep a single filter instance below the hero on phones. The Phase 2 foundation shares appearance preferences, CSS/Framer Motion
   presets, `FocusRing`, `FocusRow` and `GlassSurface` across those views.
-  Budget, Ledger, Ingestion and Transfers render in the compact workflow shell with opaque reading and editing modules. The existing Budget checkpoint supports interrupted-save recovery. Console adds draft-exit guards, keyboard row movement and focus return for Ledger, and confirmation for grouped transfer decisions.
+  `WorkflowHub.tsx` provides the compact Home pill, route title, data-owned status and skeleton modules for Budget, Ledger, Ingestion and Transfers. Budget reuses cached current-period figures for the Home handoff and keeps the existing interrupted-save checkpoint. Ledger has a reading surface, companion modules and a Console detail sheet. Ingestion's stepper follows the existing bank and investment uploaders. Transfers keeps its queue and scan actions alongside decision guidance. The existing draft-exit, keyboard focus and grouped-confirmation guards remain in their workflow controllers.
   `AmbientBackground.tsx` owns the six-material scene, effects tiers and suspension rules.
   `SoundEngine.ts` synthesizes cues and music from user gestures. `ConsolePreferences.tsx`
   owns the local controls, and `ConsoleStartScreen.tsx` is the optional Home entry.

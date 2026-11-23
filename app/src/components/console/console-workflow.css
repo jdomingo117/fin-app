@@ -1,0 +1,64 @@
+.console-hub-heading.console-workflow-dock {
+  position: relative;
+  isolation: isolate;
+  z-index: 2;
+  --console-dock-ink: var(--console-sheet-fill);
+  --console-dock-fade: 12px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) max-content;
+  gap: var(--console-workflow-gap);
+  align-items: center;
+  min-block-size: 76px;
+}
+
+.console-workflow-status-copy {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+  text-align: end;
+}
+
+.console-workflow-status-copy > span { font-size: 13px; color: var(--console-label); }
+.console-workflow-status-copy strong { font: var(--console-workflow-dock-title); }
+.console-workflow-status:empty { min-inline-size: 10ch; }
+
+.console-workflow-grid, .console-workflow-skeleton {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, .32fr);
+  gap: var(--console-workflow-gap);
+  align-items: start;
+}
+
+.console-workflow-companions { display: grid; gap: var(--console-workflow-gap); min-inline-size: 0; }
+.console-workflow-skeleton > div {
+  display: grid;
+  gap: var(--console-workflow-gap);
+  padding: var(--console-workflow-padding);
+  border: 1px solid var(--console-line);
+  border-radius: var(--console-card-radius);
+  background: var(--console-sheet-fill);
+}
+.console-workflow-skeleton i {
+  block-size: 25px;
+  border-radius: var(--console-button-radius);
+  background: var(--console-line);
+}
+.console-workflow-skeleton i:first-child { inline-size: 46%; }
+.console-workflow-skeleton i:nth-child(2n) { inline-size: 83%; }
+
+@media (max-width: 800px) {
+  .console-workflow-grid, .console-workflow-skeleton { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 560px) {
+  .console-hub-heading.console-workflow-dock { grid-template-columns: auto minmax(0, 1fr) minmax(0, max-content); gap: 8px; min-block-size: 67px; }
+  .console-hub-heading.console-workflow-dock h1,
+  .console-workflow-status-copy strong { font-size: clamp(16px, 4.65vw, 24px); }
+  .console-workflow-status-copy > span { font-size: 11px; max-inline-size: 23ch; }
+  .console-workflow-status:empty { min-inline-size: 4ch; }
+}
+
+.console-workflow-hub .console-hub-scroll :is(.console-ledger-table, .workflow-surface) {
+  background: var(--console-sheet-fill);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}

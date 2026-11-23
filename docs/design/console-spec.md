@@ -195,6 +195,12 @@ The hub scroll container drives opacity and transform for the expanded and compa
 
 Phase 2c implements the selected composition in Overview and Income. The remaining routes declare their mode for rollout. This is a spike with a review gate before primitive hardening or automated coverage.
 
+## Phase 4B workflow hubs
+
+Budget, Ledger, Ingestion and Transfers use the compact dock from first paint. Place the Home pill, the route title and the current workflow status in the same header. Budget reports what is left for everyday spending. Ledger shows the existing unresolved review count. Ingestion shows readiness or the number of staged rows. Transfers shows suggested pairs and unmatched transactions awaiting a decision. Use the Home projection when opening Budget from its tile. Use a cached current-period Budget figure when available and resolve a cold entry from the Budget report. Signed-in Console routes skip the Classic boot sequence and show skeleton modules while route data loads.
+
+Budget gives the period controls, everyday spending and progress, attention, allocation editor and funding summary their own surfaces. Amount inputs show currency on blur and raw decimal amounts while editing. Ledger places its opaque transaction reading surface next to review counts, data scope and rules, and opens the existing transaction editor in a Console sheet. Ingestion's ordered stepper follows the existing account, upload, review and import states. Transfers pairs the reconciliation queue with decision guidance and shows an all-reconciled ring with the existing scan action when the internal queue clears.
+
 ## Phase 3 Dashboard surfaces
 
 Home and Overview are separate signed-in views within the Console Dashboard route. The viewport owns the unfiltered Dashboard reports. Home previews and Overview entry reuse the current Dashboard reports, and a warm return paints from the cache. Entering another hub loads that hub’s own data. The cold Home reserves the headline line, activity rail and Overview-art slot. Dashboard preview errors expose retry actions, and empty report results keep their module and navigation context.

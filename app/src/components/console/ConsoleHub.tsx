@@ -40,7 +40,7 @@ export function cumulativeValues(values: number[]) {
   return values.map(value => (total += value))
 }
 
-function ConsoleHandoff({ box, children }: { box?: ProjectionBox; children: ReactNode }) {
+export function ConsoleHandoff({ box, children }: { box?: ProjectionBox; children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null)
 
   useLayoutEffect(() => {
@@ -173,6 +173,12 @@ function subscribeToPhoneFilters(notify: () => void) {
   return () => query.removeEventListener('change', notify)
 }
 
+export function ConsoleHomeButton({ onBack }: { onBack: () => void }) {
+  return <button type="button" className="console-hub-back" onClick={onBack} aria-label="Back to Home">
+    <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M19 12H5m7-7-7 7 7 7" /></svg><span>Home</span>
+  </button>
+}
+
 export default function ConsoleHub({ id, title, period, figure, strip, art, filters, tabs, entry, onBack, children, redacted }: {
   id: 'income' | 'dashboard' | 'accounts' | 'expenses'
   title: string
@@ -226,9 +232,7 @@ export default function ConsoleHub({ id, title, period, figure, strip, art, filt
       <header className="console-hub-dock">
         <motion.div className="console-dock-material" style={{ opacity: compact ? 1 : headerOpacity }} aria-hidden="true" />
         <div className="console-dock-top">
-          <button type="button" className="console-hub-back" onClick={onBack} aria-label="Back to Home">
-            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M19 12H5m7-7-7 7 7 7" /></svg><span>Home</span>
-          </button>
+          <ConsoleHomeButton onBack={onBack} />
           <h2 ref={heading} tabIndex={-1} className="sr-only">{title} hub</h2>
           <motion.div className="console-compact-title" style={{ opacity: headerOpacity, y: reduce ? 0 : headerShift }} aria-hidden={!compact}>
             <span>{title}</span>

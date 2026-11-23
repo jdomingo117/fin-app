@@ -11,7 +11,7 @@ import { useBudget } from '../contexts/BudgetContext'
 import { useAuth } from '../contexts/AuthContext'
 import { fmtCents } from '../data'
 import { addDays, today } from '../lib/budget'
-import { BUDGET_ENABLED, blankSetup, fromSnapshot, moneyEntry, parseBudgetMoney, readSavedSetup, setupPeriod, setupSummary, validateSetup, type Setup } from '../lib/budgetWorkspace'
+import { BUDGET_ENABLED, blankSetup, fromSnapshot, readSavedSetup, setupPeriod, setupSummary, validateSetup, type Setup } from '../lib/budgetWorkspace'
 import './budget.css'
 import BudgetItems from '../components/BudgetItems'
 import BudgetLifecycle from '../components/BudgetLifecycle'
@@ -27,21 +27,23 @@ import BudgetPlan from '../components/budget/BudgetPlan'
 import BudgetHistoryCoverage from '../components/budget/BudgetHistoryCoverage'
 import {assistanceSteps,AssistanceStepIcon} from '../components/budget/BudgetAssistanceSteps'
 import BudgetEditTable from '../components/budget/BudgetEditTable'
+import BudgetAmountInput from '../components/budget/BudgetAmountInput'
+import { WorkflowSkeleton, WorkflowStatus } from '../components/console/WorkflowHub'
+import { useRedactBalances } from '../hooks/useRedactBalances'
 
 const purposeNames={everyday:'Everyday spending',fixed:'Regular bills',reserve:'Set money aside',contribution:'Planned transfer'}
 function Field({label,children,hint}:{label:string;children:ReactNode;hint?:string}) {
   return <label className="grid min-w-0 gap-2"><span className="field-label">{label}</span>{children}{hint&&<span className="detail-copy text-muted">{hint}</span>}</label>
 }
 function MoneyField({label,value,onChange,hint}:{label:string;value:number;onChange:(v:number)=>void;hint?:string}) {
-  const [entry,setEntry]=useState(moneyEntry(value))
-  return <Field label={label} hint={hint}><input className="budget-input tabular-nums" aria-label={label} inputMode="decimal" required pattern="[0-9]+(\.[0-9]{1,2})?" value={entry}
-    onChange={e=>{setEntry(e.target.value);const amount=parseBudgetMoney(e.target.value);e.target.setCustomValidity(amount===null?'Enter a positive amount or zero, using no more than two decimal places.':'');if(amount!==null)onChange(amount)}} /></Field>
+  return <Field label={label} hint={hint}><BudgetAmountInput label={label} value={value} onChange={onChange}/></Field>
 }
 function Balance({setup,both}:{setup:Setup;both:boolean}) {
   const b=useBudget()
+  const consoleStyle=useView().theme==='console'
   try {
     const summary=setupSummary(setup,b.snapshot?.details?.controls?.archives.map(a=>a.line_id))
-    return <div className="outcome-panel space-y-2" aria-live="polite"><p>Expected income: <strong>{fmtCents(setup.income_cents)}</strong></p><p>Existing cash to use once: <strong>{fmtCents(setup.opening_drawdown_cents)}</strong></p><p>Total to plan with this period: <strong>{fmtCents(summary.current.resources)}</strong></p>
+    return <div className="outcome-panel space-y-2" data-budget-module={consoleStyle ? '' : undefined} aria-live="polite">{consoleStyle&&<h3 className="console-module-title" data-module-title>Funding summary</h3>}<p>Expected income: <strong>{fmtCents(setup.income_cents)}</strong></p><p>Existing cash to use once: <strong>{fmtCents(setup.opening_drawdown_cents)}</strong></p><p>Total to plan with this period: <strong>{fmtCents(summary.current.resources)}</strong></p>
       <p>Planned across your allowances: <strong>{fmtCents(summary.current.allocated)}</strong></p>
       <p className={summary.current.fundingGap?'text-warn':'text-ink'}>{summary.current.fundingGap?'More planned than available':'Not yet given a job'}: <strong>{fmtCents(summary.current.fundingGap||summary.current.unallocated)}</strong></p>
       {both&&<p className={summary.future.fundingGap?'text-warn':'text-muted'}>Future periods use income only; archived allowances stay at zero. {summary.future.fundingGap?`Funding gap: ${fmtCents(summary.future.fundingGap)}`:`Not yet allocated: ${fmtCents(summary.future.unallocated)}`}</p>}
@@ -52,6 +54,7 @@ function Balance({setup,both}:{setup:Setup;both:boolean}) {
 export default function Budget() {
   const budget=useBudget(),{role,tenantId,refreshMembership}=useAuth()
   const { theme } = useView()
+  const redacted = useRedactBalances()
   const {snapshot:s,draft,editing,setEditing,loading,busy,error,notice,pending,canWrite}=budget
   const presentation=budgetPresentation(s,budget.readState,{pendingWrite:!!pending})
   const [view,setView]=useState<BudgetView>('overview')
@@ -85,12 +88,15 @@ export default function Budget() {
   function editPlan(){if(s&&window.dispatchEvent(new Event('budget-before-period-navigation',{cancelable:true})))setEditing(fromSnapshot(s))}
   function focusSection(id:string){const target=document.getElementById(id);for(let parent=target?.parentElement;parent;parent=parent.parentElement)if(parent instanceof HTMLDetailsElement)parent.open=true;target?.focus({preventScroll:true});target?.scrollIntoView({block:'start',behavior:'auto'})}
   return <Screen><div ref={root} className="budget-workspace">
+    {theme==='console'&&<WorkflowStatus label={s?.plan ? 'Left for everyday spending' : 'Spending plan'}>
+      {redacted ? 'Hidden' : s?.plan ? <BudgetValue value={presentation.everyday.remaining}/> : loading ? 'Loading' : s ? 'No active plan' : 'Unavailable'}
+    </WorkflowStatus>}
     <BudgetPageHeader presentation={presentation} view={view} onView={setView} onSettings={()=>setSettingsOpen(true)}/>
     {settingsOpen&&s?.plan&&<BudgetSettings onClose={()=>setSettingsOpen(false)}/>}
     {coverageOpen&&s&&!s.plan&&role==='owner'&&<BudgetTaskPanel title="Account history coverage" onClose={()=>setCoverageOpen(false)} resetKey={s.source_revision} completion="recovery"><BudgetHistoryCoverage/></BudgetTaskPanel>}
     {!tenantId&&<OperationStatusPanel state="failed" title="Your workspace isn’t available yet" description="We haven’t loaded a workspace membership, so no Budget information has been read or changed." action={<Button variant="ghost" onClick={()=>void refreshMembership()}>Retry workspace connection</Button>} className="mt-4"/>}
     {!BUDGET_ENABLED&&<p className="outcome-panel mt-4">The Budget preview is not enabled on this build. Saved data and interrupted-save recovery remain available here.</p>}
-    {loading&&!budget.preparation&&<OperationStatusPanel state="working" title="Loading your saved budget" description="Reading your saved plan and account scope." className="mt-4"/>}
+    {loading&&!budget.preparation&&(theme==='console'&&!s ? <WorkflowSkeleton label="Loading your saved budget"/> : <OperationStatusPanel state="working" title="Loading your saved budget" description="Reading your saved plan and account scope." className="mt-4"/>)}
     {budget.preparation&&<section aria-label="Preparing budget history" className="outcome-panel mt-4 space-y-3" aria-busy={loading}>
       <h3 className="font-semibold">Checking your budget history</h3><p className="body-copy" role="status">{budget.preparation.completed} of {budget.preparation.total} saved budgets checked. We’ll show updated balances when the full history is ready. Your plan and transactions are unchanged.</p>
       <OperationProgress label="Saved budgets checked" progress={{kind:'determinate',current:budget.preparation.completed,total:budget.preparation.total}}/>

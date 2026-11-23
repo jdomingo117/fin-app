@@ -56,7 +56,7 @@ export default function ConsoleHome({
               figure={headline} reduced={!!reduce} period={isFlow ? period : undefined} redacted={redacted} />
             {secondary.length > 0 && <ConsoleFigureStrip figures={secondary} redacted={redacted} />}
             {isFlow && <p className="console-asof">{latestDate ? `Latest transaction · ${latestDate}` : '\u00a0'}</p>}
-            {headline && figureReport.error && <div className="console-preview-report">
+            {section.id !== 'budget' && headline && figureReport.error && <div className="console-preview-report">
               <ReportStatus report={figureReport} label={headline.label} />
             </div>}
           </div>

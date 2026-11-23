@@ -1,6 +1,7 @@
-import { useState, type KeyboardEvent } from 'react'
+import { type KeyboardEvent } from 'react'
 import { fmtCents } from '../../data'
-import { moneyEntry, parseBudgetMoney, type Setup } from '../../lib/budgetWorkspace'
+import type { Setup } from '../../lib/budgetWorkspace'
+import BudgetAmountInput from './BudgetAmountInput'
 
 type Line=Setup['lines'][number]
 const purposeNames={everyday:'Everyday spending',fixed:'Regular bills',reserve:'Set money aside',contribution:'Planned transfer'}
@@ -19,9 +20,7 @@ function moveDown(e:KeyboardEvent<HTMLInputElement>){
 }
 
 function MoneyCell({label,value,onChange,column}:{label:string;value:number;onChange:(cents:number)=>void;column:string}){
-  const [entry,setEntry]=useState(moneyEntry(value))
-  return <input className="budget-input budget-sheet-input tabular-nums" aria-label={label} inputMode="decimal" required pattern="[0-9]+(\.[0-9]{1,2})?" value={entry} data-sheet-input={column} onKeyDown={moveDown}
-    onChange={e=>{setEntry(e.target.value);const amount=parseBudgetMoney(e.target.value);e.target.setCustomValidity(amount===null?'Enter a positive amount or zero, using no more than two decimal places.':'');if(amount!==null)onChange(amount)}}/>
+  return <BudgetAmountInput label={label} value={value} onChange={onChange} column={column} onKeyDown={moveDown}/>
 }
 
 /**

@@ -1,15 +1,27 @@
 import AxeBuilder from '@axe-core/playwright'
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, type CDPSession, type Page } from '@playwright/test'
 import { auditConsoleChrome } from './fixtures/console-leftovers'
 import { dashboard, signInForConsole } from './fixtures/console-review'
 import { workflowReplies } from './fixtures/console-workflow-replies'
-import { mkdir } from 'node:fs/promises'
+import { mkdir, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
+import { gzipSync } from 'node:zlib'
 
 const routes = [
   { path: 'budget', title: 'Budget' }, { path: 'ledger', title: 'Ledger review' },
   { path: 'ingestion', title: 'Ingestion' }, { path: 'transfers', title: 'Transfers' },
 ] as const
+
+const traces = new WeakMap<Page, { cdp: CDPSession; output: string; events: unknown[] }>()
+
+test.afterEach(async ({ page }) => {
+  const trace = traces.get(page)
+  if (!trace) return
+  const complete = new Promise(done => trace.cdp.once('Tracing.tracingComplete', done))
+  await trace.cdp.send('Tracing.end')
+  await complete
+  await writeFile(trace.output, gzipSync(JSON.stringify({ traceEvents: trace.events })))
+})
 
 async function enter(page: Page, path: string, options?: Parameters<typeof workflowReplies>[0]) {
   const data = workflowReplies(options)
@@ -18,6 +30,17 @@ async function enter(page: Page, path: string, options?: Parameters<typeof workf
   if (path === 'budget' && process.env.CONSOLE_WORKFLOW_CAPTURE_DIR) {
     await expect(page.locator('.console-home')).toBeVisible()
     await capture(page, 'dashboard')
+  }
+  const traceDirectory = process.env.CONSOLE_WORKFLOW_TRACE_DIR
+  const { project, title } = test.info()
+  if (traceDirectory && project.name === 'Desktop' && !/^(?:Leftovers|Budget recovers)/.test(title)) {
+    await mkdir(traceDirectory, { recursive: true })
+    const cdp = await page.context().newCDPSession(page)
+    const events: unknown[] = []
+    cdp.on('Tracing.dataCollected', chunk => events.push(...chunk.value))
+    await cdp.send('Tracing.start', { categories:
+      'toplevel,devtools.timeline,disabled-by-default-devtools.timeline,disabled-by-default-devtools.timeline.frame,blink.user_timing,cc,viz,gpu' })
+    traces.set(page, { cdp, output: resolve(traceDirectory, `console-phase-4b-${path}-chrome.json.gz`), events })
   }
   await page.goto(new URL(path, dashboard).href)
   await expect(page.locator('.console-viewport')).toHaveCount(1)
@@ -47,7 +70,7 @@ for (const route of routes) test(`Leftovers audit · ${route.path}`, async ({ pa
   await enter(page, route.path)
   await expect(routeLayer(page).getByRole('heading', { name: route.title, exact: true }).first()).toBeVisible()
   await expect(page.getByText('Session secured', { exact: true })).toHaveCount(0)
-  if (route.path === 'budget') await expect(page.getByRole('region', { name: 'Budget overview' }).getByText('$577.80')).toBeVisible()
+  if (route.path === 'budget') await expect(page.locator('[data-budget-value="hero-remaining"] [data-budget-amount]')).toHaveText('$577.80')
   if (route.path === 'ledger') await expect(page.getByRole('button', { name: /Market grocer/ }).first()).toBeVisible()
   if (route.path === 'ingestion') await expect(page.getByLabel('Import into')).toBeVisible()
   if (route.path === 'transfers') await expect(page.getByRole('button', { name: /^Confirm 1 internal transfer/ })).toBeVisible()

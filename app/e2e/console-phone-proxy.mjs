@@ -18,10 +18,12 @@ const tile = name => page.getByRole('toolbar', { name: 'Sections' }).getByRole('
 const mark = name => page.evaluate(name => performance.mark(name), 'console.proxy.' + name)
 const events = []
 const viewport = page.locator('.console-viewport')
-const preview = page.locator('.console-preview')
 async function home() {
-  await preview.waitFor()
-  await page.waitForFunction(() => getComputedStyle(document.querySelector('.console-preview')).opacity === '1')
+  await page.waitForURL(dashboard)
+  await page.waitForFunction(() => {
+    const current = document.querySelector('.console-route-layer:not([inert]) .console-preview')
+    return current && getComputedStyle(current).opacity === '1'
+  })
 }
 async function tier(tierName) {
   await page.getByRole('button', { name: 'Settings', exact: true }).click()

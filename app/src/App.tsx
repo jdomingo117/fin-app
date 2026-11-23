@@ -43,9 +43,9 @@ function LazyDataRoute({ index, title, sub, children }: { index: string; title: 
 }
 
 /** Chrome shared by the signed-in views. */
-function ShellLayout() {
+function ShellLayout({ startEntrySeen }: { startEntrySeen: { current: boolean } }) {
   const { theme } = useView()
-  if (theme === 'console') return <ConsoleViewport />
+  if (theme === 'console') return <ConsoleViewport startEntrySeen={startEntrySeen} />
   return (
     <Shell>
       <Outlet />
@@ -98,6 +98,10 @@ function AppFrame({
   const location = useLocation()
   const view = pathToView(location.pathname)
   const { session, recoveryError, retryAccountRecovery } = useAuth()
+  const startEntrySeen = useRef(false)
+  useLayoutEffect(() => {
+    if (!session) startEntrySeen.current = false
+  }, [session])
   const consoleEntry = theme === 'console'
     && view !== 'login' && view !== 'onboarding' && view !== 'operation-status'
     && !location.pathname.startsWith('/auth/')
@@ -153,7 +157,7 @@ function AppFrame({
             element={
               <RequireAuth>
                 <RequireOnboarded>
-                  <ShellLayout />
+                  <ShellLayout startEntrySeen={startEntrySeen} />
                 </RequireOnboarded>
               </RequireAuth>
             }

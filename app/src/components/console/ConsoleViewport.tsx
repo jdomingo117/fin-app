@@ -30,7 +30,7 @@ const hubTitles: Partial<Record<View, string>> = {
   ledger: 'Ledger review', transfers: 'Transfers', ingestion: 'Ingestion', settings: 'Settings',
 }
 
-const workflowHubs: View[] = ['budget', 'ledger', 'ingestion', 'transfers']
+const workflowHubs: View[] = ['budget', 'ledger', 'ingestion', 'transfers', 'settings']
 const expandedHubs: View[] = ['dashboard', 'income', 'expenses', 'accounts']
 
 function sceneSection(view: View): SectionId {
@@ -51,20 +51,20 @@ function ConsoleRouteLayer({ children, reduced }: { children: ReactNode; reduced
   </motion.div>
 }
 
-export default function ConsoleViewport() {
+export default function ConsoleViewport({ startEntrySeen }: { startEntrySeen: { current: boolean } }) {
   const visible = useDocumentVisible()
   return <ConsolePreferencesProvider visible={visible}>
-    <DashboardReportsProvider><ConsoleViewportContent visible={visible} /></DashboardReportsProvider>
+    <DashboardReportsProvider><ConsoleViewportContent visible={visible} startEntrySeen={startEntrySeen} /></DashboardReportsProvider>
   </ConsolePreferencesProvider>
 }
 
-function ConsoleViewportContent({ visible }: { visible: boolean }) {
+function ConsoleViewportContent({ visible, startEntrySeen }: { visible: boolean; startEntrySeen: { current: boolean } }) {
   const { go, view, setTheme } = useView()
   const { profile } = useData()
   const location = useLocation()
   const navigate = useNavigate()
   const query = new URLSearchParams(location.search)
-  const home = view === 'dashboard' && query.get('hub') !== 'overview'
+  const home = location.pathname === '/' || (view === 'dashboard' && query.get('hub') !== 'overview')
   const demo = import.meta.env.DEV && home && query.get('demo') === 'foundation'
   const [active, setActive] = useState<SectionId>(() => sceneSection(view))
   const [entry, setEntry] = useState<ConsoleEntry>()
@@ -74,7 +74,7 @@ function ConsoleViewportContent({ visible }: { visible: boolean }) {
   const [centreOpen, setCentreOpen] = useState(false)
   const overlay = useCoveringOverlay()
   const audio = useConsolePreferences()!
-  const [showStart] = useState(() => home && !demo && audio.preferences.startScreen)
+  const [showStart] = useState(() => home && !demo && !startEntrySeen.current && audio.preferences.startScreen)
   const [finishedStart, setFinishedStart] = useState(false)
   const startupVisible = showStart && !finishedStart && home
   const paused = !visible || centreOpen || overlay || startupVisible
@@ -96,9 +96,10 @@ function ConsoleViewportContent({ visible }: { visible: boolean }) {
   }, [effectsTier])
 
   const finishStartup = useCallback(() => {
+    startEntrySeen.current = true
     setFinishedStart(true)
     setRestoreFocus(true)
-  }, [])
+  }, [startEntrySeen])
 
   function select(id: SectionId) {
     if (id !== active) audio.play('move', enabledSections.findIndex(section => section.id === id))

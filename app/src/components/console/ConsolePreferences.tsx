@@ -1,5 +1,7 @@
 import { createContext, useCallback, useContext, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
-import { Switch } from '../Controls'
+import { Chip, Select, Switch } from '../Controls'
+import { useView } from '../../router'
+import { ConsoleModule } from './ConsoleHub'
 import { SoundEngine, type ConsoleCue } from './SoundEngine'
 import { effectsTiers, useDefaultEffectsTier, type EffectsTier } from './effectsTier'
 import { useSystemReducedMotion } from './systemMotion'
@@ -113,35 +115,49 @@ export function useConsolePreferences() {
   return useContext(ConsoleContext)
 }
 
-export function ConsoleSettingsControls() {
+export function ConsoleSettingsControls({ redact, toggleRedact }: { redact: boolean; toggleRedact: () => void }) {
   const audio = useConsolePreferences()
+  const { setTheme, motionOn, setMotionOn } = useView()
   if (!audio) return null
-  const { preferences, defaultTier, soundAllowed, setSound, toggle, update, unlock, playFromGesture } = audio
-  return <>
-    <label className="console-effects-setting">
-      <span>Effects tier</span>
-      <select value={preferences.effectsTier ?? ''} onChange={event => {
-        update({ effectsTier: (event.currentTarget.value || null) as EffectsTier | null })
-        playFromGesture('tab')
-      }}>
-        <option value="">Automatic ({defaultTier === 'balanced' ? 'Balanced' : 'Full'})</option>
-        <option value="full">Full</option>
-        <option value="balanced">Balanced</option>
-        <option value="reduce">Reduce effects</option>
-      </select>
-    </label>
-    <Switch on={preferences.centreShortcut} onToggle={() => toggle('centreShortcut')} label="Control Centre keyboard shortcut (C)" />
-    <Switch on={preferences.startScreen} onToggle={() => toggle('startScreen')} label="Show start screen" />
-    <Switch on={soundAllowed} onToggle={() => setSound(!soundAllowed)} label="Console sound" />
-    {preferences.sound && !soundAllowed && <p className="text-[13px] text-muted">Sound is paused by your system motion preference.</p>}
-    <Switch on={preferences.music} onToggle={() => toggle('music')} label="Ambient music" />
-    <label className="console-volume">
-      <span>Master volume</span>
-      <input type="range" min={0} max={100} value={preferences.volume} onChange={event => {
-        update({ volume: event.currentTarget.valueAsNumber })
-        unlock()
-      }} />
-      <output>{preferences.volume}%</output>
-    </label>
-  </>
+  const { preferences, defaultTier, soundAllowed, setSound, toggle, toggleTopbarSound, update, unlock, playFromGesture } = audio
+  return <div className="console-settings-preferences">
+    <ConsoleModule title="Appearance" kind="flat">
+      <div className="console-settings-choices" role="group" aria-label="Appearance">
+        <Chip active>Console</Chip>
+        <Chip active={false} onClick={() => setTheme('classic')}>Classic</Chip>
+      </div>
+      <Switch on={redact} onToggle={toggleRedact} label="Redact balances" />
+    </ConsoleModule>
+    <ConsoleModule title="Effects and navigation" kind="flat">
+      <label className="console-effects-setting">
+        <span>Effects tier</span>
+        <Select value={preferences.effectsTier ?? ''} onChange={value => {
+          update({ effectsTier: (value || null) as EffectsTier | null })
+          playFromGesture('tab')
+        }}>
+          <option value="">Automatic ({defaultTier === 'balanced' ? 'Balanced' : 'Full'})</option>
+          <option value="full">Full</option>
+          <option value="balanced">Balanced</option>
+          <option value="reduce">Reduce effects</option>
+        </Select>
+      </label>
+      <Switch on={motionOn} onToggle={() => setMotionOn(!motionOn)} label="Ambient motion" />
+      <Switch on={preferences.startScreen} onToggle={() => toggle('startScreen')} label="Show start screen" />
+      <Switch on={preferences.centreShortcut} onToggle={() => toggle('centreShortcut')} label="Control Centre keyboard shortcut (C)" />
+    </ConsoleModule>
+    <ConsoleModule title="Sound" kind="flat">
+      <Switch on={soundAllowed} onToggle={() => setSound(!soundAllowed)} label="Console sound" />
+      {preferences.sound && !soundAllowed && <p className="detail-copy">Sound is paused by your system motion preference.</p>}
+      <Switch on={preferences.muted} disabled={!soundAllowed} onToggle={toggleTopbarSound} label="Mute sound and music" />
+      <Switch on={preferences.music} onToggle={() => toggle('music')} label="Ambient music" />
+      <label className="console-volume">
+        <span>Master volume</span>
+        <input aria-label="Master volume" type="range" min={0} max={100} value={preferences.volume} onChange={event => {
+          update({ volume: event.currentTarget.valueAsNumber })
+          unlock()
+        }} />
+        <output aria-hidden="true">{preferences.volume}%</output>
+      </label>
+    </ConsoleModule>
+  </div>
 }

@@ -78,6 +78,9 @@ export function Select({
   onChange,
   children,
   ariaLabel,
+  id,
+  describedBy,
+  disabled,
   className = '',
   inputClassName = '',
 }: {
@@ -85,16 +88,22 @@ export function Select({
   onChange: (v: string) => void
   children: ReactNode
   ariaLabel?: string
+  id?: string
+  describedBy?: string
+  disabled?: boolean
   className?: string
   inputClassName?: string
 }) {
   return (
-    <div className={`relative ${className}`}>
+    <span className={`relative block ${className}`}>
       <select
+        id={id}
         aria-label={ariaLabel}
+        aria-describedby={describedBy}
+        disabled={disabled}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className={`native-select w-full cursor-pointer appearance-none rounded-[10px] border border-[var(--hair)] bg-[var(--input-bg)] py-2.5 pl-3.5 pr-9 text-[13px] font-medium text-ink outline-none transition focus:border-accent focus:ring-4 focus:ring-[var(--accent-wash)] ${inputClassName}`}
+        className={`native-select w-full cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 appearance-none rounded-[10px] border border-[var(--hair)] bg-[var(--input-bg)] py-2.5 pl-3.5 pr-9 text-[13px] font-medium text-ink outline-none transition focus:border-accent focus:ring-4 focus:ring-[var(--accent-wash)] ${inputClassName}`}
       >
         {children}
       </select>
@@ -106,7 +115,7 @@ export function Select({
       >
         <path d="m6 9 6 6 6-6" />
       </svg>
-    </div>
+    </span>
   )
 }
 
@@ -577,22 +586,26 @@ export function DateRangePicker({
   )
 }
 
-export function Switch({ on, onToggle, label }: { on: boolean; onToggle: () => void; label: string }) {
+export function Switch({ on, onToggle, label, disabled }: { on: boolean; onToggle: () => void; label: string; disabled?: boolean }) {
   return (
     <button
+      type="button"
       role="switch"
+      disabled={disabled}
+      data-control-kind="switch"
       aria-checked={on}
       onClick={onToggle}
-      className="flex w-full items-center justify-between py-3"
+      className="flex min-h-11 w-full items-center justify-between gap-3 py-3 text-left disabled:opacity-50"
     >
       <span className="text-[13px] font-medium text-ink2">{label}</span>
       <span
-        className="relative h-[26px] w-[46px] rounded-full transition-colors"
+        className="relative h-[26px] w-[46px] shrink-0 rounded-full transition-colors"
         style={{ background: on ? 'var(--color-ink)' : 'var(--switch-off)' }}
       >
         <motion.span
           className="absolute top-[3px] h-5 w-5 rounded-full bg-surface shadow"
-          animate={{ left: on ? 23 : 3 }}
+          style={{ left: 3 }}
+          animate={{ x: on ? 20 : 0 }}
           transition={{ type: 'spring', stiffness: 500, damping: 32 }}
         />
       </span>

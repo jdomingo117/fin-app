@@ -1,3 +1,4 @@
+import { Select } from '../components/Controls'
 import './console-ingestion.css'
 import { useBudget } from '../contexts/BudgetContext'
 import { useUnsavedChanges } from '../hooks/useUnsavedChanges'
@@ -77,30 +78,28 @@ export default function Ingestion() {
           <ReportStatus report={identifiers} label="Account identifiers" />
           {accounts.length === 0 ? (
             <p className="body-copy">
-              Create an account before importing — transactions have to belong to one.
+              Create an account to import its transactions.
             </p>
           ) : (
             <div className={`grid gap-2 pt-1 ${consoleStyle ? 'console-ingestion-controls' : ''}`}>
               <label className="grid gap-1.5 sm:max-w-[520px]">
                 <span className="micro text-muted">Import into</span>
-                <select
-                  data-control-kind={consoleStyle ? 'select' : undefined}
-                  data-control-variant={consoleStyle ? 'console' : undefined}
+                <Select
                   value={accountId}
-                  onChange={(event) => {
-                    const next = selectTargetAccount(accountId, event.target.value, importActive)
+                  onChange={(value) => {
+                    const next = selectTargetAccount(accountId, value, importActive)
                     if (next !== accountId) setProgress({ phase: 'upload', rows: 0 })
                     setAccountId(next)
                   }}
                   disabled={importActive}
-                  aria-describedby="target-account-help"
-                  className="min-h-11 rounded-[10px] border border-[var(--hair)] bg-[var(--input-bg)] px-3 text-[14px] outline-none focus:border-accent disabled:cursor-not-allowed disabled:opacity-60"
+                  describedBy="target-account-help"
+                  inputClassName="min-h-11"
                 >
                   <option value="" disabled>Choose an account…</option>
                   {accounts.map((a) => (
                     <option key={a.id} value={a.id}>{accountOptionLabel(a)}</option>
                   ))}
-                </select>
+                </Select>
               </label>
               {account ? (
                 <div className="grid gap-1 rounded-[10px] border border-[var(--hair)] bg-black/[0.02] px-3 py-2 text-[13px] text-ink2 sm:max-w-[520px]">
@@ -110,9 +109,9 @@ export default function Ingestion() {
               ) : null}
               <p id="target-account-help" className="text-[13px] text-ink2">
                 {importActive
-                  ? 'Target locked while this file is being prepared. Cancel or finish the import to choose another account.'
+                  ? 'Finish or cancel this import to choose a different account.'
                   : account
-                    ? 'Rows are matched against this account only; duplicate statements are detected and skipped.'
+                    ? 'Halcyon checks for duplicates in this account and skips any it finds.'
                     : 'Choose the ledger this statement belongs to before selecting a file.'}
               </p>
             </div>

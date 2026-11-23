@@ -63,7 +63,7 @@ export function UnmatchedGroupPanel({
             </span>
           </div>
         </div>
-        <div className="flex flex-shrink-0 gap-2">
+        <div className="console-transfer-actions flex flex-shrink-0 gap-2">
           <button
             onClick={() => onSingleDecide(u.id, 'external')}
             disabled={singleBusy === u.id}
@@ -96,7 +96,7 @@ export function UnmatchedGroupPanel({
           </span>
         </button>
         {selectedIds.length > 0 && (
-          <div className="flex flex-shrink-0 flex-wrap gap-2">
+          <div className="console-transfer-actions flex flex-shrink-0 flex-wrap gap-2">
             <Button variant="ghost" onClick={() => onBulkDecide(selectedIds, 'external')} disabled={busy}>
               Transfer to/from an untracked account ({selectedIds.length}){disclosure}
             </Button>
@@ -109,7 +109,7 @@ export function UnmatchedGroupPanel({
 
       {selection.deferredCount > 0 && (
         <div className="px-4 pb-2 text-[12px] text-muted" role="status">
-          The safe batch limit is 200. {selection.deferredCount} transaction{selection.deferredCount === 1 ? '' : 's'} will remain for the next action.
+          You can review up to 200 at a time. {selection.deferredCount} transaction{selection.deferredCount === 1 ? '' : 's'} will remain for the next action.
         </div>
       )}
 

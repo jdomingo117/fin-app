@@ -16,7 +16,7 @@
 @container (min-width: 740px) {
   .console-ledger-columns, [data-console-ledger-row] {
     display: grid;
-    grid-template-columns: 58px minmax(0, 1.45fr) minmax(0, .9fr) minmax(0, 1fr) 66px 90px;
+    grid-template-columns: 58px minmax(0, 1.45fr) minmax(0, .9fr) minmax(0, 1fr) 90px;
     gap: 10px;
     align-items: center;
   }
@@ -44,3 +44,9 @@ html[data-theme="console"] .console-ledger-detail {
 .console-ledger-detail :is(.uppercase, .micro) { text-transform: none; letter-spacing: normal; }
 .console-ledger-detail [aria-labelledby="category-edit-title"],
 .console-ledger-detail [aria-labelledby="classification-edit-title"] { padding: 16px; border: 1px solid var(--hair); border-radius: var(--console-button-radius); }
+
+/* Initial dialog focus announces its title. Interactive descendants have
+   their own visible focus treatment as the user tabs through the form. */
+html[data-theme="console"] .console-ledger-detail:focus { outline: none; }
+.console-review-counts > div { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 3px 12px; }
+.console-review-counts > div > dd:last-child { grid-column: 1 / -1; text-align: start; color: var(--color-muted); }

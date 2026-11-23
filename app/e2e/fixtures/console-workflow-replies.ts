@@ -10,6 +10,7 @@ export function workflowReplies({ loseBudgetReceipt = false } = {}) {
   let allocation = 95_000
   let planVersion = '1'
   let category = 'Groceries'
+  let categoryEdited = false
   let transferState = 'suggested'
   const budgetReceipts = new Map<string, { request_id: string; status: string; operation_id: string; result: object }>()
   const budgetChecks: string[] = []
@@ -74,10 +75,26 @@ export function workflowReplies({ loseBudgetReceipt = false } = {}) {
     if (resource === 'update-transaction-category') {
       writes.push({ resource, body })
       category = body.category
+      categoryEdited = true
       return { json: { category, subcategory: null, edit_id: 'fixture-edit' } }
     }
     if (resource === 'ledger_page' && fallback && typeof fallback === 'object' && 'rows' in fallback && Array.isArray(fallback.rows)) {
-      return { json: { ...fallback, rows: fallback.rows.map(row => row.id === parentId ? { ...row, category } : row) } }
+      const allRows = fallback.rows.map(row => {
+        if (row.id === 'local-fixture-0') return { ...row, category: 'Uncategorized', category_source: null }
+        if (row.id === 'local-fixture-1') return { ...row, needs_review: true, category_source: 'ai' }
+        if (row.id === parentId) return { ...row, category, category_source: categoryEdited ? 'user' : 'bank' }
+        return { ...row, category_source: 'bank' }
+      })
+      const needsAttention = (row: typeof allRows[number]) => row.needs_review || row.category === 'Uncategorized'
+      const rows = allRows.filter(row => {
+        if (body.p_review === 'unresolved') return row.category === 'Uncategorized' && row.category_source === null
+        if (body.p_review === 'needs-attention') return needsAttention(row)
+        if (body.p_review === 'uncategorized') return row.category === 'Uncategorized'
+        if (body.p_review === 'eligible') return row.category_source !== 'bank' && row.category_source !== 'user'
+        return true
+      })
+      return { json: { ...fallback, rows: rows.slice(0, body.p_limit), matching_count: rows.length,
+        attention_count: rows.filter(needsAttention).length } }
     }
     if (resource === 'static_profiles') return { json: {
       name: 'Review statement layout',

@@ -128,7 +128,7 @@ export async function signInForConsole(page: Page, controlledClock = true, befor
         (!params.p_category || row.category === params.p_category) &&
         (!params.p_account_search || row.merchant.toLowerCase().includes(params.p_account_search.toLowerCase())))
       body = {
-        rows: rows.slice(0, params.p_limit).map(row => ({ ...row, id: row.parent_id, account_name: 'Everyday', allocations: [] })),
+        rows: (override ? rows : rows.slice(0, params.p_limit)).map(row => ({ ...row, id: row.parent_id, account_name: 'Everyday', allocations: [] })),
         before: null, matching_count: rows.length, attention_count: 0, has_more: false,
       }
     }

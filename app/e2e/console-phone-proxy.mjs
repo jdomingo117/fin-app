@@ -8,8 +8,9 @@ const output = process.argv[2]
 if (!output) throw new Error('Pass the output trace filename.')
 const targets = process.argv.slice(3)
 if (!targets.length) targets.push('Accounts', 'Income', 'Expenses')
-const quickActions = new Set(['Ledger review', 'Ingestion', 'Transfers'])
+const quickActions = new Set(['Ledger review', 'Ingestion', 'Transfers', 'Settings'])
 const workflows = targets.some(name => name === 'Budget' || quickActions.has(name))
+const traceStartup = targets.includes('Landing')
 const browser = await chromium.launch({ channel: 'chrome' })
 const context = await browser.newContext({
   viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 1, serviceWorkers: 'block',
@@ -55,7 +56,7 @@ try {
   const back = page.getByRole('button', { name: 'Back to Home' })
   const centre = page.getByRole('dialog', { name: 'Control Centre' })
   const centreButton = page.getByRole('button', { name: 'Control Centre', exact: true })
-  for (const name of targets) {
+  for (const name of targets.filter(name => name !== 'Landing')) {
     if (quickActions.has(name)) {
       await centreButton.tap()
       await centre.getByRole('group', { name: 'Quick actions' }).getByRole('button', { name, exact: true }).tap()
@@ -84,6 +85,17 @@ try {
   await page.keyboard.press('Escape')
   await centre.waitFor({ state: 'hidden' })
   await mark('navigation.end')
+  if (traceStartup) {
+    await page.getByRole('button', { name: 'Settings', exact: true }).tap()
+    await page.getByRole('switch', { name: 'Show start screen' }).tap()
+    await page.goto(new URL('/', dashboard).href)
+    const start = page.getByRole('button', { name: 'Start Halcyon' })
+    await start.waitFor()
+    await mark('startup.start')
+    await start.tap()
+    await home()
+    await mark('startup.end')
+  }
   const complete = new Promise(resolve => cdp.once('Tracing.tracingComplete', resolve))
   await cdp.send('Tracing.end')
   await complete
@@ -134,10 +146,14 @@ try {
   const balanced = perFrame('balanced')
   const reduce = perFrame('reduce')
   const navigation = windowEvents('navigation')
-  const longestNavigationMs = Math.max(0, ...navigation.tasks
-    .filter(task => task.pid === navigation.start.pid && task.tid === navigation.start.tid).map(task => task.dur / 1000))
+  function longestMainTask(window) {
+    return Math.max(0, ...window.tasks.filter(task => task.pid === window.start.pid && task.tid === window.start.tid)
+      .map(task => task.dur / 1000))
+  }
   console.log(JSON.stringify({
-    balanced, reduce, added: { mean: balanced.mean - reduce.mean, p95: balanced.p95 - reduce.p95 }, longestNavigationMs,
+    balanced, reduce, added: { mean: balanced.mean - reduce.mean, p95: balanced.p95 - reduce.p95 },
+    longestNavigationMs: longestMainTask(navigation),
+    ...(traceStartup ? { longestStartupMs: longestMainTask(windowEvents('startup')) } : {}),
   }, null, 2))
 } finally {
   await browser.close()

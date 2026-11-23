@@ -30,10 +30,13 @@ import { ConsoleModule, consoleMoney } from '../components/console/ConsoleHub'
 import { WorkflowSkeleton, WorkflowStatus } from '../components/console/WorkflowHub'
 
 const PAGE_SIZE = 50
-const PRIMARY_REVIEW_IDS: LedgerReviewFilter[] = ['all', 'needs-attention', 'uncategorized']
+const CLASSIC_REVIEW_IDS: LedgerReviewFilter[] = ['all', 'needs-attention', 'uncategorized']
+const CONSOLE_REVIEW_IDS: LedgerReviewFilter[] = ['all', 'unresolved', 'needs-attention', 'uncategorized']
+const UNASSIGNED_LABEL = 'Category not assigned'
 const REVIEW_FILTERS: { id: LedgerReviewFilter; label: string }[] = [
   { id: 'all', label: 'All' },
   { id: 'needs-attention', label: 'Needs attention' },
+  { id: 'unresolved', label: UNASSIGNED_LABEL },
   { id: 'needs-review', label: 'Needs review' },
   { id: 'uncategorized', label: 'Uncategorized' },
   { id: 'missing-subcategory', label: 'Missing subcategory' },
@@ -70,6 +73,7 @@ export default function LedgerView() {
 function LedgerWorkspace({ tenant }: { tenant: string }) {
   const { theme } = useView()
   const consoleStyle = theme === 'console'
+  const primaryReviewIds = consoleStyle ? CONSOLE_REVIEW_IDS : CLASSIC_REVIEW_IDS
   const transactionDate = (date: string) => theme === 'console' ? dayLabel(date) : date
   const { accounts, refreshData, reportRevision } = useData()
   const location = useLocation()
@@ -140,7 +144,7 @@ function LedgerWorkspace({ tenant }: { tenant: string }) {
       ledgerPage(owner, { p_review, p_limit: 1 })))
     return { attention: all.attention_count, unresolved: unresolved.matching_count, eligible: eligible.matching_count }
   })
-  const unresolved = counts.data?.attention ?? 0
+  const attention = counts.data?.attention ?? 0
   const editor = useReport(['ledger editor',selectedId], owner => hydrateParents(owner,[selectedId!]), !!selectedId, theme === 'console')
   const selected = editor.data?.[0] ?? null
   const bulk = useReport(['bulk', [...selectedIds]], owner => hydrateParents(owner,[...selectedIds]), bulkOpen || bulkClassificationOpen)
@@ -230,12 +234,12 @@ function LedgerWorkspace({ tenant }: { tenant: string }) {
 
   const rulesAction = <button type="button" onClick={() => setRulesOpen(true)}
     className="min-h-11 rounded-lg px-3 py-2 text-[14px] font-semibold text-ink2 hover:bg-[var(--hair-soft)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent">
-    Rules & review policy <span aria-hidden="true">↗</span>
+    {consoleStyle ? 'Manage category rules' : 'Rules & review policy'} <span aria-hidden="true">↗</span>
   </button>
   const pageLoading = consoleStyle && activity.pending && !activity.data && !activity.error
   return (
     <Screen>
-      {consoleStyle&&<WorkflowStatus label="To review">{counts.data?.unresolved ?? (counts.error ? 'Unavailable' : 'Loading')}</WorkflowStatus>}
+      {consoleStyle&&<WorkflowStatus label={UNASSIGNED_LABEL}>{counts.data?.unresolved ?? (counts.error ? 'Unavailable' : 'Loading')}</WorkflowStatus>}
       {!consoleStyle&&<div className="flex flex-wrap items-end justify-between gap-4">
         <ViewHeader index={`${navNumber('ledger')} — Ledger`} title="Ledger" sub="Inspect, review and correct every transaction" />
         {rulesAction}
@@ -281,14 +285,16 @@ function LedgerWorkspace({ tenant }: { tenant: string }) {
         )}
         <div className="flex flex-wrap items-center justify-between gap-x-5 border-b border-[var(--hair)]">
           <div role="group" aria-label="Transaction views" className={consoleStyle ? 'console-ledger-views' : 'flex min-w-0 gap-5 overflow-x-auto'}>
-            {REVIEW_FILTERS.filter((filter) => PRIMARY_REVIEW_IDS.includes(filter.id)).map((filter) => <button key={filter.id} type="button" data-control-kind={consoleStyle ? 'chip' : undefined} data-control-variant={consoleStyle ? 'console' : undefined} aria-pressed={review === filter.id} onClick={() => filter.id === 'needs-attention' ? showAttention() : setReview(filter.id)} className={`flex min-h-12 shrink-0 items-center gap-2 border-b-2 text-[14px] font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent ${review === filter.id ? 'border-[var(--color-ink)] text-ink' : 'border-transparent text-muted hover:text-ink'}`}>
-              {filter.label}{filter.id === 'needs-attention' && <span className={`rounded-full bg-[var(--track)] px-2 py-0.5 text-[12px] tabular-nums ${unresolved ? 'text-warn' : 'text-muted'}`}>{review === 'needs-attention' ? attentionInView : unresolved}</span>}
+            {REVIEW_FILTERS.filter((filter) => primaryReviewIds.includes(filter.id)).map((filter) => <button key={filter.id} type="button" data-control-kind={consoleStyle ? 'chip' : undefined} data-control-variant={consoleStyle ? 'console' : undefined} aria-pressed={review === filter.id} onClick={() => filter.id === 'needs-attention' ? showAttention() : setReview(filter.id)} className={`flex min-h-12 shrink-0 items-center gap-2 border-b-2 text-[14px] font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent ${review === filter.id ? 'border-[var(--color-ink)] text-ink' : 'border-transparent text-muted hover:text-ink'}`}>
+              {filter.label}
+              {consoleStyle && filter.id === 'unresolved' && counts.data && <span className="console-workflow-badge">{counts.data.unresolved}</span>}
+              {filter.id === 'needs-attention' && <span className={`rounded-full bg-[var(--track)] px-2 py-0.5 text-[12px] tabular-nums ${!consoleStyle && attention ? 'text-warn' : 'text-muted'}`}>{consoleStyle ? counts.data?.attention ?? '—' : review === 'needs-attention' ? attentionInView : attention}</span>}
             </button>)}
           </div>
-          <button type="button" aria-expanded={moreViewsOpen} aria-controls="additional-ledger-views" onClick={() => setMoreViewsOpen(!moreViewsOpen)} className="min-h-12 py-3 text-[14px] font-semibold text-ink2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent">More views{!PRIMARY_REVIEW_IDS.includes(review) ? ` · ${REVIEW_FILTERS.find((filter) => filter.id === review)?.label}` : ''} <span aria-hidden="true">{moreViewsOpen ? '−' : '+'}</span></button>
+          <button type="button" aria-expanded={moreViewsOpen} aria-controls="additional-ledger-views" onClick={() => setMoreViewsOpen(!moreViewsOpen)} className="min-h-12 py-3 text-[14px] font-semibold text-ink2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent">More views{!primaryReviewIds.includes(review) ? ` · ${REVIEW_FILTERS.find((filter) => filter.id === review)?.label}` : ''} <span aria-hidden="true">{moreViewsOpen ? '−' : '+'}</span></button>
         </div>
-        {moreViewsOpen && <div id="additional-ledger-views" className="flex flex-wrap gap-2 border-b border-[var(--hair)] py-4" role="group" aria-label="Additional transaction views">{REVIEW_FILTERS.filter((filter) => !PRIMARY_REVIEW_IDS.includes(filter.id)).map((filter) => <Chip key={filter.id} active={review === filter.id} onClick={() => setReview(filter.id)} className="min-h-11 px-4 py-2.5 text-[13px]">{filter.label}</Chip>)}</div>}
-        {review === 'needs-attention' && <p role="status" className="mt-4 text-[14px] leading-6 text-ink2">{unresolved === 0 ? 'All caught up. No transactions need attention.' : 'Flagged for review or missing a category.'}</p>}
+        {moreViewsOpen && <div id="additional-ledger-views" className="flex flex-wrap gap-2 border-b border-[var(--hair)] py-4" role="group" aria-label="Additional transaction views">{REVIEW_FILTERS.filter((filter) => !primaryReviewIds.includes(filter.id) && (consoleStyle || filter.id !== 'unresolved')).map((filter) => <Chip key={filter.id} active={review === filter.id} onClick={() => setReview(filter.id)} className="min-h-11 px-4 py-2.5 text-[13px]">{filter.label}</Chip>)}</div>}
+        {review === 'needs-attention' && <p role="status" className="mt-4 text-[14px] leading-6 text-ink2">{attention === 0 ? 'All caught up. No transactions need attention.' : 'Flagged for review or missing a category.'}</p>}
         <div className={consoleStyle ? 'console-ledger-filters' : 'mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(220px,1fr)_190px_190px_190px]'}>
           <SearchInput value={query} onChange={setQuery} placeholder="Search merchant or description" ariaLabel="Search ledger" inputClassName="py-3 text-[14px]" />
           <Select value={accountId} onChange={setAccountId} ariaLabel="Filter ledger by account" inputClassName="py-3 text-[14px]">
@@ -339,7 +345,7 @@ function LedgerWorkspace({ tenant }: { tenant: string }) {
           </div>
         ) : (
           <>{consoleStyle&&<div className="console-ledger-columns" aria-hidden="true">
-            <span>Date</span><span>Transaction</span><span>Account</span><span>Category</span><span>Source</span><span>Amount</span>
+            <span>Date</span><span>Transaction</span><span>Account</span><span>Category</span><span>Amount</span>
           </div>}
           <div className="divide-y divide-[var(--hair-soft)]" role={theme === 'console' ? 'list' : undefined}
             aria-label={theme === 'console' ? 'Ledger transactions' : undefined}
@@ -374,6 +380,8 @@ function LedgerWorkspace({ tenant }: { tenant: string }) {
                   <span className="mt-1 block truncate text-[13px] text-muted xl:hidden">{transaction.account} · {transactionDate(transaction.date)}</span>
                   <span className="mt-1 block truncate text-[13px] text-ink2 xl:hidden">{transaction.cat}{transaction.subcat ? ` · ${transaction.subcat}` : ''}</span>
                   <span className="hidden truncate text-[12.5px] text-muted xl:block">{transaction.originalDescription || transaction.merchant}</span>
+                  {consoleStyle && transaction.categorySource && <span className="block text-[12.5px] text-muted">Category source: {sourceName(transaction.categorySource)}</span>}
+                  {consoleStyle && (transaction.needsReview || transaction.cat === 'Uncategorized') && <span className="console-workflow-badge mt-1">Review</span>}
                 </span>
                 <span className="hidden min-w-0 xl:block">
                   <span className="block truncate text-[14px] font-medium text-ink2">{transaction.account}</span>
@@ -383,10 +391,10 @@ function LedgerWorkspace({ tenant }: { tenant: string }) {
                   <span className="block truncate text-[14px] font-medium text-ink2">{transaction.cat}</span>
                   <span className="block truncate text-[12.5px] text-muted">{transaction.subcat || 'No subcategory'}</span>
                 </span>
-                <span className="hidden xl:block">
-                  <span className={consoleStyle ? 'console-workflow-badge' : 'inline-flex rounded-full border border-[var(--hair)] px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted'}>{sourceName(transaction.categorySource)}</span>
+                {consoleStyle ? null : <span className="hidden xl:block">
+                  <span className="inline-flex rounded-full border border-[var(--hair)] px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">{sourceName(transaction.categorySource)}</span>
                   {(transaction.needsReview || transaction.cat === 'Uncategorized') && <span className="mt-1 block text-[11px] font-semibold uppercase text-warn">Review</span>}
-                </span>
+                </span>}
                 <span data-sign={consoleStyle && transaction.amount < 0 ? 'negative' : undefined} className={`text-right text-[15px] font-bold tabular-nums ${transaction.amount > 0 ? 'text-pos' : 'text-ink'}`}>{consoleStyle ? consoleMoney(transaction.amount, true) : fmtCents(transaction.amount)}</span>
                 </button>
               </div>
@@ -404,20 +412,20 @@ function LedgerWorkspace({ tenant }: { tenant: string }) {
       </Tile>
       {consoleStyle&&<aside className="console-workflow-companions" aria-label="Ledger context">
         <ConsoleModule title="Review counts" kind="flat">
-          <dl className="console-workflow-facts">
-            <div><dt>Needs attention</dt><dd>{counts.data?.attention ?? 'Unavailable'}</dd></div>
-            <div><dt>Unresolved</dt><dd>{counts.data?.unresolved ?? 'Unavailable'}</dd></div>
-            <div><dt>Eligible for review</dt><dd>{counts.data?.eligible ?? 'Unavailable'}</dd></div>
+          <dl className="console-workflow-facts console-review-counts">
+            <div><dt>{UNASSIGNED_LABEL}</dt><dd>{counts.data?.unresolved ?? 'Unavailable'}</dd><dd>Uncategorised transactions with no recorded category source.</dd></div>
+            <div><dt>Needs attention</dt><dd>{counts.data?.attention ?? 'Unavailable'}</dd><dd>Transactions flagged for review or marked uncategorised, including those above.</dd></div>
+            <div><dt>Can be recategorised</dt><dd>{counts.data?.eligible ?? 'Unavailable'}</dd><dd>Transactions Halcyon can suggest categories for. Bank categories, manual choices and system balance adjustments are protected.</dd></div>
           </dl>
         </ConsoleModule>
-        <ConsoleModule title="Data scope" kind="flat">
+        <ConsoleModule title="What’s shown" kind="flat">
           <dl className="console-workflow-facts">
             <div><dt>Accounts</dt><dd>{accountId ? accounts.find(account => account.id === accountId)?.name ?? 'Selected account' : incomeSourceScope?.accountIds.length ? `${incomeSourceScope.accountIds.length} selected` : 'All accounts'}</dd></div>
             <div><dt>Matching transactions</dt><dd>{activity.data ? matching : 'Unavailable'}</dd></div>
           </dl>
         </ConsoleModule>
-        <ConsoleModule title="Classification rules" kind="flat">
-          <p className="text-muted">Review the rules and protections applied to transaction categories.</p>
+        <ConsoleModule title="Category rules" kind="flat">
+          <p className="text-muted">Choose when to flag categories for review and manage saved rules.</p>
           {rulesAction}
         </ConsoleModule>
       </aside>}

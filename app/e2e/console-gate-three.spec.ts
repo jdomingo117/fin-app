@@ -160,7 +160,7 @@ test('the reduced startup uses a stable prompt and a 150ms fade', async ({ page 
   await page.getByRole('switch', { name: 'Show start screen' }).click()
   await page.goto(dashboard)
   const intro = page.getByRole('dialog', { name: 'Halcyon start screen' })
-  const start = intro.getByRole('button', { name: /Press Enter/ })
+  const start = intro.getByRole('button', { name: 'Start Halcyon' })
   await expect(start).toHaveCSS('animation-name', 'none')
   const duration = await intro.evaluate(node => {
     const watching = new Promise<string>(resolve => {

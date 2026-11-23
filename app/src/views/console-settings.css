@@ -1,0 +1,46 @@
+.console-settings-preferences {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: start;
+  gap: var(--console-workflow-gap);
+  margin-block-end: var(--console-workflow-gap);
+}
+.console-settings-preferences > :first-child { grid-column: 1 / -1; }
+.console-settings-choices { display: flex; flex-wrap: wrap; gap: 8px; }
+html[data-theme="console"] .console-settings-choices [aria-pressed="true"] {
+  background-color: var(--console-ink);
+  color: var(--console-base);
+}
+@media (min-width: 1150px) {
+  .console-settings-preferences { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .console-settings-preferences > :first-child { grid-column: auto; }
+}
+@media (forced-colors: active) {
+  html[data-theme="console"] .console-settings-choices [aria-pressed="true"] { border-color: Highlight; }
+}
+.console-settings-preferences [data-control-kind="switch"] {
+  border-block-end: 1px solid var(--console-line);
+}
+.console-settings-preferences [data-control-kind="switch"]:last-child { border-block-end: 0; }
+.console-settings-preferences .console-volume input {
+  inline-size: 100%;
+  min-block-size: var(--console-control-size);
+}
+.console-settings-preferences .console-effects-setting > span:last-child {
+  flex: 1 1 11rem;
+  max-inline-size: 17rem;
+}
+@media (max-width: 720px) {
+  .console-settings-preferences { grid-template-columns: minmax(0, 1fr); }
+  .console-settings-preferences .console-volume { grid-template-columns: minmax(0, 1fr) 4ch; }
+  .console-settings-preferences .console-volume > span { grid-column: 1 / -1; }
+}
+
+.console-effects-setting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-block: 10px;
+}

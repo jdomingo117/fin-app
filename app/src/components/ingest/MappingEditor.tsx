@@ -1,3 +1,4 @@
+import { Select } from '../Controls'
 import type { ColumnMapping } from '../../lib/csv/pipeline'
 import type { DateFormat } from '../../lib/csv/parseDate'
 
@@ -24,14 +25,14 @@ function Field({
   return (
     <label className="grid gap-1">
       <span className="micro text-muted">{label}</span>
-      <select
+      <Select
         value={value ?? ''}
-        onChange={(e) => onChange(e.target.value || null)}
-        className="min-h-[38px] rounded-[8px] border border-[var(--hair)] bg-[var(--input-bg)] px-2 text-[13px] outline-none focus:border-accent"
+        onChange={(value) => onChange(value || null)}
+        inputClassName="min-h-[38px]"
       >
         {allowNone && <option value="">— none —</option>}
         {options.map((o) => <option key={o} value={o}>{o}</option>)}
-      </select>
+      </Select>
       {hint && <span className="text-[13px] text-ink2">{hint}</span>}
     </label>
   )
@@ -76,13 +77,13 @@ export default function MappingEditor({
 
         <label className="grid gap-1">
           <span className="micro text-muted">Date format</span>
-          <select
+          <Select
             value={mapping.dateFormat ?? 'DD/MM/YYYY'}
-            onChange={(e) => set({ dateFormat: e.target.value as DateFormat })}
-            className="min-h-[38px] rounded-[8px] border border-[var(--hair)] bg-[var(--input-bg)] px-2 text-[13px] outline-none focus:border-accent"
+            onChange={(value) => set({ dateFormat: value as DateFormat })}
+            inputClassName="min-h-[38px]"
           >
             {DATE_FORMATS.map((f) => <option key={f} value={f}>{f}</option>)}
-          </select>
+          </Select>
           {!dateFormatConfident && (
             <span className="text-[13px] font-medium text-[var(--color-warn)]">
               Every date in this file is ambiguous (no day above 12). Assuming

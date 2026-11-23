@@ -809,3 +809,24 @@ button.budget-sheet-name:focus-visible { outline: 2px solid var(--color-accent-i
 @media (max-width: 650px) {
   .console-workflow-hub .budget-hero { grid-template: "balance" auto "forecast" auto / minmax(0, 1fr); }
 }
+
+.console-forecast-unavailable {
+ display:grid;
+ grid-template-columns:auto minmax(0,1fr);
+ align-items:start;
+ gap:14px;
+ padding:var(--console-workflow-padding);
+ border:1px solid var(--console-line);
+ border-radius:var(--console-card-radius);
+ background:var(--console-sheet-fill);
+}
+.console-forecast-unavailable p { margin-block:6px 12px; }
+.console-forecast-symbol {
+ display:grid;
+ place-items:center;
+ inline-size:46px;
+ block-size:46px;
+ border:1px dashed var(--console-label);
+ border-radius:50%;
+ color:var(--console-label);
+}

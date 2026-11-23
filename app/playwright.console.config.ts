@@ -4,7 +4,7 @@ const workflowCapture = Boolean(process.env.CONSOLE_WORKFLOW_CAPTURE_DIR)
 
 export default defineConfig({
   testDir: './e2e',
-  testMatch: ['console-foundation.spec.ts', 'console-effects.spec.ts', 'console-gate-three.spec.ts', 'console-phase-three.spec.ts', 'console-analysis-hubs.spec.ts', 'console-workflows.spec.ts'],
+  testMatch: ['console-foundation.spec.ts', 'console-effects.spec.ts', 'console-gate-three.spec.ts', 'console-phase-three.spec.ts', 'console-analysis-hubs.spec.ts', 'console-workflows.spec.ts', 'console-settings-start.spec.ts'],
   timeout: 60_000,
   expect: { timeout: 10_000 },
   reporter: 'list',

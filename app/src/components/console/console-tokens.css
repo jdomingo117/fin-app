@@ -95,7 +95,7 @@ html[data-theme="console"] {
 
 /* Native controls and shared chips keep their semantics in Console, including
    controls inside portalled forms. The audit reads the applied variant. */
-html[data-theme="console"] :is(select, textarea, input:not([type="checkbox"], [type="radio"], [type="range"], [type="file"], [type="hidden"]), [data-control-kind="chip"]) {
+html[data-theme="console"] :is(.native-select, textarea, input:not([type="checkbox"], [type="radio"], [type="range"], [type="file"], [type="hidden"]), [data-control-kind="chip"]) {
   --console-control-variant: console;
   min-block-size: var(--console-control-size, 46px);
   border: 1px solid var(--console-line, rgb(255 255 255 / .14));
@@ -112,4 +112,19 @@ html[data-theme="console"] [data-control-kind="chip"][aria-pressed="true"] {
 html[data-theme="console"] :is(select, textarea, input, [data-control-kind="chip"]):focus-visible {
   outline: 2px solid var(--console-ink);
   outline-offset: 3px;
+}
+
+html[data-theme="console"] {
+  accent-color: var(--console-ink);
+}
+
+html[data-theme="console"] [tabindex]:not(h1,h2,h3,h4,h5,h6):focus-visible {
+  outline: 2px solid var(--console-ink);
+  outline-offset: 3px;
+}
+/* Programmatic headings announce route or step changes. The controls after
+   them carry the keyboard focus ring. */
+html[data-theme="console"] :is(h1,h2,h3,h4,h5,h6)[tabindex="-1"]:focus { outline: none; }
+@media (forced-colors: active) {
+  html[data-theme="console"] [tabindex]:not(h1,h2,h3,h4,h5,h6):focus-visible { outline-color: Highlight; }
 }

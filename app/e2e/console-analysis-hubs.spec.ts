@@ -143,3 +143,14 @@ test('the leftovers audit detects casing applied only in the rendered view', asy
     <button><span style="font-variant-caps: small-caps">Planned</span></button></main>`)
   expect((await collectConsoleChrome(page.locator('main'))).issues.casing).toEqual(['ITEM', 'STATUS', 'PLANNED'])
 })
+
+test('the leftovers audit detects unstyled browser controls and a default focus outline', async ({ page }) => {
+  await page.setContent(`<main><select aria-label="Choose account"><option>Everyday</option></select>
+    <label><input type="radio">This transaction</label>
+    <aside tabindex="-1">Transaction details</aside></main>`)
+  await page.locator('aside').focus()
+  const { issues } = await collectConsoleChrome(page.locator('main'))
+  expect(issues.controls).toContain('Native select: Choose account')
+  expect(issues.defaultAccents).toEqual(['This transaction'])
+  expect(issues.defaultOutlines).toEqual(['Transaction details'])
+})

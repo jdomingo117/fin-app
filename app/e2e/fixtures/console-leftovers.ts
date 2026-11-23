@@ -5,15 +5,18 @@ import { expect, test, type Locator } from '@playwright/test'
 export async function collectConsoleChrome(root: Locator) {
   return root.evaluate(scope => {
     const issues = { casing: [] as string[], moduleTitles: [] as string[], accents: [] as string[],
-      controls: [] as string[], dates: [] as string[] }
-    const checked = { labels: 0, moduleTitles: 0, controls: 0, textNodes: 0 }
+      controls: [] as string[], defaultAccents: [] as string[], defaultOutlines: [] as string[], dates: [] as string[] }
+    const checked = { labels: 0, moduleTitles: 0, controls: 0, accentControls: 0, focusedElements: 0, textNodes: 0 }
     const ignored = '[aria-hidden="true"], [hidden], [inert]'
     const visible = (element: Element) => !element.closest(ignored) && element.getClientRects().length > 0
       && getComputedStyle(element).visibility === 'visible'
-    const description = (element: Element) => (element.getAttribute('aria-label') || element.textContent || element.tagName)
-      .replace(/\s+/g, ' ').trim().slice(0, 100)
+    const description = (element: Element) => {
+      const labels = element instanceof HTMLInputElement ? [...(element.labels ?? [])].map(label => label.textContent).join(' ') : ''
+      return (element.getAttribute('aria-label') || labels || element.textContent || element.tagName)
+        .replace(/\s+/g, ' ').trim().slice(0, 100)
+    }
     const allowedAcronyms = new Set(['CSV', 'AUD', 'USD', 'FY', 'YTD', 'ID', 'NAV', 'API', 'ETF', 'GST', 'PDF', 'OFX', 'OK', 'HALCYON', 'UP'])
-    const properNouns = /\b(?:Back to Home|Control Centre|Strategic projections|Up Bank|High-interest savings|Net Worth|Market Grocer|New South Wales)\b/g
+    const properNouns = /\b(?:Back to Home|Control Centre|Halcyon|HALCYON|Strategic projections|Up Bank|High-interest savings|Net Worth|Market Grocer|New South Wales)\b/g
     const designLabel = 'button, a, label, [role="tab"], [role="columnheader"], [role="rowheader"], th, legend, summary, h1, h2, h3, h4, h5, h6, option, [data-console-label]'
     const recordLabel = '[data-console-record-label], .console-ledger-list, .console-activity-card, .react-flow__node, .console-chart-values table'
     const classicAccent = /(?:#(?:11b596|08735f|16c7a4|3ad9bd)\b|rgb\(\s*(?:17,\s*181,\s*150|8,\s*115,\s*95|22,\s*199,\s*164|58,\s*217,\s*189)\s*\))/i
@@ -38,7 +41,7 @@ export async function collectConsoleChrome(root: Locator) {
     titleProbe.remove()
 
     function rootAppend(element: Element) { scope.appendChild(element) }
-    for (const element of scope.querySelectorAll('*')) {
+    for (const element of [scope, ...scope.querySelectorAll('*')]) {
       if (!visible(element)) continue
       const style = getComputedStyle(element)
       if (element.matches(designLabel) && !element.closest(recordLabel)) {
@@ -60,6 +63,19 @@ export async function collectConsoleChrome(root: Locator) {
         checked.controls++
         if (style.getPropertyValue('--console-control-variant').trim() !== 'console' || !parseFloat(style.borderRadius)) {
           issues.controls.push(description(element))
+        }
+      }
+      if (element.matches('select') && (!element.classList.contains('native-select') || style.appearance !== 'none')) {
+        issues.controls.push(`Native select: ${description(element)}`)
+      }
+      if (element.matches('input:is([type="checkbox"], [type="radio"], [type="range"]), progress')) {
+        checked.accentControls++
+        if (style.accentColor === 'auto') issues.defaultAccents.push(description(element))
+      }
+      if (element.matches(':focus')) {
+        checked.focusedElements++
+        if (style.outlineStyle === 'auto' && parseFloat(style.outlineWidth) > 0) {
+          issues.defaultOutlines.push(description(element))
         }
       }
       if ([style.color, style.backgroundColor, style.borderTopColor, style.outlineColor, style.fill, style.stroke].some(color => classicAccent.test(color))) {
@@ -89,5 +105,5 @@ export async function auditConsoleChrome(root: Locator, state: string) {
   const findings = await collectConsoleChrome(root)
   await test.info().attach(`Console leftovers – ${state}`, { body: JSON.stringify(findings, null, 2), contentType: 'application/json' })
   console.log(`${state} leftovers ${JSON.stringify(findings)}`)
-  expect.soft(findings.issues, state).toEqual({ casing: [], moduleTitles: [], accents: [], controls: [], dates: [] })
+  expect.soft(findings.issues, state).toEqual({ casing: [], moduleTitles: [], accents: [], controls: [], defaultAccents: [], defaultOutlines: [], dates: [] })
 }

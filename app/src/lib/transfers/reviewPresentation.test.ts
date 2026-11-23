@@ -70,7 +70,7 @@ describe('transfer review presentation', () => {
   })
 })
 
-it('discloses the off-page portion of the bounded group after cross-page deselections', () => {
+it('discloses the selection on other pages of the bounded group after cross-page deselections', () => {
   const ids = Array.from({ length: 205 }, (_, i) => String(i))
   const pageOne = toggleReviewExclusion(new Set(),ids[0])
   const deselected = toggleReviewExclusion(pageOne,ids[51])
@@ -80,5 +80,6 @@ it('discloses the off-page portion of the bounded group after cross-page deselec
   expect(batch.deferredCount).toBe(3)
   expect(batch.selectedIds).not.toContain(ids[0])
   expect(batch.selectedIds).not.toContain(ids[51])
-  expect(groupActionDisclosure(batch.selectedIds, ids.slice(50,100))).toBe(' (151 off-page)')
+  expect(groupActionDisclosure(batch.selectedIds, ids.slice(50,100))).toBe(' (151 on other pages)')
+  expect(groupActionDisclosure(batch.selectedIds, ids)).toBe('')
 })

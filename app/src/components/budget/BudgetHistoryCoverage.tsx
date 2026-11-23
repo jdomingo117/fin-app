@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Button, DateInput, Select } from '../Controls'
 import { useBudget } from '../../contexts/BudgetContext'
+import { useConsoleDayLabel } from '../../hooks/useConsoleDayLabel'
 import type { BudgetCoverage } from '../../lib/budgetWorkspace'
 
 export default function BudgetHistoryCoverage() {
@@ -24,6 +25,7 @@ export default function BudgetHistoryCoverage() {
 }
 
 function AccountCoverage({ accountId }: { accountId: string }) {
+  const formatDay = useConsoleDayLabel()
   const b = useBudget()
   const readCoverage = b.coverage, source = b.snapshot?.source_revision
   const [data, setData] = useState<BudgetCoverage | null>(null)
@@ -64,13 +66,13 @@ function AccountCoverage({ accountId }: { accountId: string }) {
           <h4 className="font-semibold">Your confirmed dates</h4>
           {data.confirmations.length === 0 ? <p className="body-copy text-muted">You haven’t confirmed any dates for this account.</p> : <ul className="space-y-3">
             {data.confirmations.map(range => <li key={range.id} className="outcome-panel space-y-2">
-              <p className="body-copy"><strong>{range.first_date} to {range.last_date}</strong> · Confirmed by you</p>
+              <p className="body-copy"><strong>{formatDay(range.first_date)} to {formatDay(range.last_date)}</strong> · Confirmed by you</p>
               {removing === range.id ? <>
                 <p className="detail-copy">Remove this confirmation if these dates aren’t complete. Suggestions or forecasts that need this history may become unavailable.</p>
                 <div className="flex flex-wrap gap-2"><Button disabled={!writable} onClick={async () => {
                   if (await b.run({action:'revoke_coverage', coverage_id:range.id})) setRemoving(null)
                 }}>Remove these dates</Button><Button variant="ghost" disabled={b.busy} onClick={() => setRemoving(null)}>Keep confirmation</Button></div>
-              </> : <Button variant="ghost" disabled={!writable} ariaLabel={`Remove confirmation for ${range.first_date} to ${range.last_date}`} onClick={() => setRemoving(range.id)}>Remove confirmation</Button>}
+              </> : <Button variant="ghost" disabled={!writable} ariaLabel={`Remove confirmation for ${formatDay(range.first_date)} to ${formatDay(range.last_date)}`} onClick={() => setRemoving(range.id)}>Remove confirmation</Button>}
             </li>)}
           </ul>}
         </section>

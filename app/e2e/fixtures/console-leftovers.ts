@@ -104,7 +104,8 @@ export async function collectConsoleChrome(root: Locator) {
       }
       if (element.matches('input:is([type="checkbox"], [type="radio"], [type="range"]), progress')) {
         checked.accentControls++
-        if (style.accentColor === 'auto') issues.defaultAccents.push(description(element))
+        // Forced colours deliberately substitute the user's system accent.
+        if (!forcedColours && style.accentColor === 'auto') issues.defaultAccents.push(description(element))
       }
       if (element.matches(':focus')) {
         checked.focusedElements++

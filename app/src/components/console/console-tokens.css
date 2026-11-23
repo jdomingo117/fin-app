@@ -113,3 +113,33 @@ html[data-theme="console"] [data-control-kind="chip"][aria-pressed="true"] {
 html[data-theme="console"] {
   accent-color: var(--console-ink);
 }
+
+@media (forced-colors: active) {
+  html[data-theme="console"] {
+    --color-ink: CanvasText;
+    --color-ink2: CanvasText;
+    --color-muted: CanvasText;
+    --color-faint: CanvasText;
+    --color-pos: CanvasText;
+    --color-neg: CanvasText;
+    --color-console-pos: CanvasText;
+    --color-console-neg: CanvasText;
+    --console-ink: CanvasText;
+    --console-label: CanvasText;
+  }
+  html[data-theme="console"] [data-switch-track] {
+    forced-color-adjust: none;
+    outline: 1px solid ButtonText;
+    outline-offset: -1px;
+    background: ButtonFace !important;
+  }
+  html[data-theme="console"] [data-switch-thumb] { background: ButtonText; }
+  html[data-theme="console"] [aria-checked="true"] > [data-switch-track] { background: Highlight !important; }
+  html[data-theme="console"] [aria-checked="true"] [data-switch-thumb] { background: HighlightText; }
+  html[data-theme="console"] :is([data-shared-button="primary"], [data-category-review-trigger], [data-control-kind="chip"][aria-pressed="true"]) {
+    forced-color-adjust: none;
+    background-color: Highlight;
+    color: HighlightText;
+    border-color: Highlight;
+  }
+}

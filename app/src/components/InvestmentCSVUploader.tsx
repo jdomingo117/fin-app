@@ -1,3 +1,4 @@
+import { useConsoleDayLabel } from '../hooks/useConsoleDayLabel'
 import { useEffect, useState } from 'react'
 import Papa from 'papaparse'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -22,6 +23,7 @@ type Props = {
 
 export default function InvestmentCSVUploader({ accountId, accountName, onImportStateChange, onReviewTransfers }: Props) {
   const { refreshData } = useData()
+  const formatDay = useConsoleDayLabel()
   const [step, setStep] = useState<Step>('upload')
   const [staged, setStaged] = useState<InvestmentImport | null>(null)
   const [confirmedUnits, setConfirmedUnits] = useState('')
@@ -182,8 +184,8 @@ export default function InvestmentCSVUploader({ accountId, accountName, onImport
         {step === 'success' && result && <motion.div key="success" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid gap-3">
           <p className="text-[15px] font-semibold">{result.inserted === 0 ? 'No new investment activity' : 'Investment activity imported'}</p>
           <ul className="grid gap-2 body-copy"><li><strong className="text-ink">{result.inserted}</strong> activities imported</li>{result.skipped > 0 && <li><strong className="text-ink">{result.skipped}</strong> duplicates skipped</li>}<li><strong className="text-ink">{result.units}</strong> units held</li></ul>
-          {result.valuation.status === 'preserved' && <p className="text-[12.5px] text-muted">No monetary data changed. Your existing valuation of <strong className="text-ink">{fmtCents(result.valuation.value_cents)}</strong>{result.valuation.price_date ? ` as at ${result.valuation.price_date.slice(0, 10)}` : ''} was preserved.</p>}
-          {result.valuation.status === 'revalued' && <p className="text-[12.5px] text-muted">The account was revalued from the verified NAV already on file{result.valuation.price_date ? `, dated ${result.valuation.price_date.slice(0, 10)}` : ''}. No live provider request was required.</p>}
+          {result.valuation.status === 'preserved' && <p className="text-[12.5px] text-muted">No monetary data changed. Your existing valuation of <strong className="text-ink">{fmtCents(result.valuation.value_cents)}</strong>{result.valuation.price_date ? ` as at ${formatDay(result.valuation.price_date.slice(0, 10))}` : ''} was preserved.</p>}
+          {result.valuation.status === 'revalued' && <p className="text-[12.5px] text-muted">The account was revalued from the verified NAV already on file{result.valuation.price_date ? `, dated ${formatDay(result.valuation.price_date.slice(0, 10))}` : ''}. No live provider request was required.</p>}
           {result.valuation.status === 'awaiting_price' && <p className="text-[12.5px] text-muted">The activity is recorded, but a verified price is not yet available for all of it. Your last valid value is retained until the next NAV refresh.</p>}
           {(result.cashLinks.auto > 0 || result.cashLinks.suggested > 0) && <p className="text-[12.5px] text-muted">
             <strong className="text-ink">{result.cashLinks.auto}</strong> bank movement{result.cashLinks.auto === 1 ? '' : 's'} linked automatically

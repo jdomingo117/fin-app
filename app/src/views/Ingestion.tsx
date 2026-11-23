@@ -1,4 +1,6 @@
-import { useState } from 'react'
+import { useBudget } from '../contexts/BudgetContext'
+import { useUnsavedChanges } from '../hooks/useUnsavedChanges'
+import { useEffect, useState } from 'react'
 import { Screen, ViewHeader, Grid } from '../components/Screen'
 import Tile from '../components/Tile'
 import CSVUploader from '../components/CSVUploader'
@@ -30,9 +32,18 @@ import {
 export default function Ingestion() {
   const identifiers = useAccountIdentifiers()
   const { accounts } = identifiers
-  const { go } = useView()
+  const { go, theme } = useView()
+  const { guardTaskNavigation } = useBudget()
   const [accountId, setAccountId] = useState<string>(INITIAL_TARGET_ACCOUNT_ID)
   const [importActive, setImportActive] = useState(false)
+
+  useUnsavedChanges(theme === 'console' && importActive, true)
+  useEffect(() => {
+    if (theme !== 'console' || !importActive) return
+    return guardTaskNavigation(proceed => {
+      if (window.confirm('Leave the import? You’ll need to stage this statement again.')) proceed()
+    })
+  }, [theme, importActive, guardTaskNavigation])
 
   const account = accounts.find((a) => a.id === accountId)
 

@@ -604,7 +604,7 @@ implemented but the remaining M6 verification gates are still open.
   `ConsoleOverviewHub.tsx` owns the Overview modules and scopes its date and account filters to
   Spending insights. Both read the viewport's warm `DashboardReports.tsx` cache.
   `ConsoleHub.tsx` provides the shared-entry hero, sticky compact header and modules for
-  Income and Overview. The Phase 2 foundation shares appearance preferences, CSS/Framer Motion
+  Income, Overview, Accounts and Expenses. The analysis hubs use their existing reports and keep a single filter instance below the hero on phones. The Phase 2 foundation shares appearance preferences, CSS/Framer Motion
   presets, `FocusRing`, `FocusRow` and `GlassSurface` across those views.
   `AmbientBackground.tsx` owns the six-material scene, effects tiers and suspension rules.
   `SoundEngine.ts` synthesizes cues and music from user gestures. `ConsolePreferences.tsx`

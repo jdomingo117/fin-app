@@ -1,3 +1,6 @@
+import type { RefObject } from 'react'
+import { useDialogFocus } from '../hooks/useDialogFocus'
+import { useView } from '../router'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '../lib/supabaseClient'
@@ -78,6 +81,8 @@ function resolvePreset(preset: HistoryPreset, upAccount: UpAccountOption, noOver
 }
 
 export default function ConnectBankModal({ isOpen, onClose }: Props) {
+  const consoleStyle = useView().theme === 'console'
+  const dialog = useDialogFocus({ active: consoleStyle && isOpen })
   const { accounts, refreshData } = useData()
   const [step, setStep] = useState<Step>('token')
   const [busy, setBusy] = useState(false)
@@ -296,6 +301,17 @@ export default function ConnectBankModal({ isOpen, onClose }: Props) {
             className="absolute inset-0 bg-black/40 backdrop-blur-sm"
           />
           <motion.div
+            ref={dialog as RefObject<HTMLDivElement>}
+            role={consoleStyle ? 'dialog' : undefined}
+            aria-modal={consoleStyle ? true : undefined}
+            aria-label={consoleStyle ? 'Connect bank' : undefined}
+            tabIndex={consoleStyle ? -1 : undefined}
+            onKeyDown={consoleStyle ? event => {
+              if (event.key === 'Escape' && !event.defaultPrevented) {
+                event.preventDefault()
+                if (step !== 'backfill') handleClose()
+              }
+            } : undefined}
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
@@ -327,7 +343,7 @@ export default function ConnectBankModal({ isOpen, onClose }: Props) {
                       value={token}
                       onChange={(e) => setToken(e.target.value)}
                       placeholder="up:yeah:..."
-                      autoFocus
+                      autoFocus={!consoleStyle}
                       className="rounded-lg border border-[var(--hair)] bg-[var(--input-bg)] px-3.5 py-2.5 text-[14px] text-ink outline-none transition focus:border-accent font-mono"
                     />
                   </label>

@@ -1,5 +1,5 @@
 import { useView } from '../router'
-import { monthAxisLabels } from '../lib/period'
+import { dayLabel, monthLabel, monthAxisLabels } from '../lib/period'
 import { useQueuePage } from '../lib/queuePage'
 import { useReport } from '../hooks/useReport'
 import { QueueNavigation } from './QueueNavigation'
@@ -10,6 +10,7 @@ import { fmtCents, glowColor } from '../data'
 import Tile from './Tile'
 import { useData } from '../contexts/DataContext'
 import Area from './charts/Area'
+import { ConsoleChartValues, ConsoleModule } from './console/ConsoleHub'
 import InvestmentTaxAwareness from './InvestmentTaxAwareness'
 import { InlineActivity } from './OperationStatus'
 
@@ -113,7 +114,13 @@ export default function InvestmentAccountActivity({ accountId }: { accountId: st
   const cashLinkByActivity = new Map(cashLinks.map((link) => [link.activity_id, link]))
   const accountName = (id?: string) => accounts.find((account) => account.id === id)?.name ?? 'Bank account'
 
-  return <Tile title={summary.instrument_name} tag={`${summary.identifier} · ${summary.reconciliation_status}`}>
+  const consoleStyle = theme === 'console'
+  const series = [
+    { data: monthly.map(point => Number(point.value_cents)), color: consoleStyle ? 'var(--console-chart-ink)' : glowColor.green, label: 'Value' },
+    { data: monthly.map(point => Number(point.cumulative_contributions_cents)), color: consoleStyle ? 'var(--console-chart-net)' : glowColor.blue, fill: false, label: 'Contributions' },
+  ]
+  const description = `${summary.identifier} · ${summary.reconciliation_status}`
+  const summaryContent = <>
     <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-[10px] border border-[var(--hair)] bg-black/[0.02] px-3 py-2">
       <p className="text-[12.5px] text-muted">Daily managed-fund NAV is refreshed from Vanguard and retains its real publication date. {summary.price_date && (Date.now() - new Date(`${summary.price_date}T00:00:00Z`).getTime() > 4 * 86400_000) ? <strong className="text-warn">Price may be stale.</strong> : null}</p>
       <button type="button" onClick={refreshPrice} disabled={refreshing} className="micro inline-flex items-center gap-2 rounded-lg border border-[var(--hair)] px-3 py-1.5 text-ink transition hover:bg-black/[0.04] disabled:opacity-50">{refreshing && <InlineActivity label="Refreshing price" size="compact" />}{refreshing ? 'Refreshing price…' : 'Refresh price'}</button>
@@ -124,12 +131,17 @@ export default function InvestmentAccountActivity({ accountId }: { accountId: st
       <Metric label="Net contributions" value={fmtCents(summary.net_external_contributions_cents)} />
       <Metric label="Reinvested distributions" value={fmtCents(summary.reinvested_distributions_cents)} />
       <Metric label="Investment return" value={`${totalReturn >= 0 ? '+' : '-'}${fmtCents(Math.abs(totalReturn))} · ${returnPct.toFixed(1)}%`} />
-      <Metric label={summary.price_date ? `NAV · ${summary.price_date}` : 'NAV'} value={summary.nav_price ? `$${summary.nav_price}` : 'Not priced'} />
+      <Metric label={summary.price_date ? `NAV · ${consoleStyle ? dayLabel(summary.price_date) : summary.price_date}` : 'NAV'} value={summary.nav_price ? `$${summary.nav_price}` : 'Not priced'} />
     </div>
-    {monthly.length > 0 && <div className="mt-5 rounded-[10px] border border-[var(--hair-soft)] p-3">
+  </>
+  const chart = monthly.length > 0 && <div className={consoleStyle ? undefined : 'mt-5 rounded-[10px] border border-[var(--hair-soft)] p-3'}>
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2"><div><p className="text-[13px] font-semibold">Value vs contributions</p><p className="text-[11.5px] text-muted">Market movement is separated from money you added.</p></div><div className="flex gap-3 text-[11px] text-muted"><span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-accent" />Value</span><span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-muted" />Contributions</span></div></div>
-      <Area series={[{ data: monthly.map((point) => Number(point.value_cents)), color: glowColor.green, label: 'Value' }, { data: monthly.map((point) => Number(point.cumulative_contributions_cents)), color: glowColor.blue, fill: false, label: 'Contributions' }]} labels={theme === 'console' ? monthAxisLabels(monthly.map(point => point.valuation_date)) : monthly.map(point => point.valuation_date.slice(0, 7))} height={220} ariaLabel="Investment value compared with cumulative contributions" />
-    </div>}
+      <Area consoleStyle={consoleStyle} series={series}
+        labels={consoleStyle ? monthAxisLabels(monthly.map(point => point.valuation_date)) : monthly.map(point => point.valuation_date.slice(0, 7))}
+        height={220} ariaLabel="Investment value compared with cumulative contributions" />
+      {consoleStyle && <ConsoleChartValues labels={monthly.map(point => monthLabel(point.valuation_date))} series={series} />}
+    </div>
+  const activityContent = <>
     <p>{activityPage.data?.count ?? 0} activities</p>
     <QueueNavigation label="Investment activity pages" queue={activityPage} />
     <InvestmentTaxAwareness accountId={accountId} />
@@ -137,14 +149,19 @@ export default function InvestmentAccountActivity({ accountId }: { accountId: st
       <table className="w-full min-w-[820px] text-left text-[12.5px]">
         <thead className="text-muted"><tr><th className="pb-2">Trade date</th><th>Activity</th><th>Units</th><th>Unit price</th><th>Value</th><th>Brokerage</th><th>Cash movement</th></tr></thead>
         <tbody>{activities.map((activity) => { const cashLink = cashLinkByActivity.get(activity.id); return <tr key={activity.id} className="border-t border-[var(--hair-soft)]">
-          <td className="py-3">{activity.trade_date}</td><td className="capitalize">{activity.activity_type.replaceAll('_', ' ')}</td>
+          <td className="py-3">{consoleStyle ? dayLabel(activity.trade_date) : activity.trade_date}</td><td className="capitalize">{activity.activity_type.replaceAll('_', ' ')}</td>
           <td className="font-mono">{activity.quantity_delta}</td><td className="font-mono">{activity.unit_price ? `$${activity.unit_price}` : '—'}</td>
           <td className="font-mono">{fmtCents(activity.value_cents)}</td><td className="font-mono">{fmtCents(activity.brokerage_cents)}</td>
           <td>{cashLink ? <span className="text-[11.5px] text-muted">{activity.activity_type === 'redemption' ? 'To' : 'From'} {accountName(cashLink.transaction?.account_id)} · <span className="capitalize">{cashLink.state}</span></span> : '—'}</td>
         </tr> })}</tbody>
       </table>
     </div>
-  </Tile>
+  </>
+  return consoleStyle ? <>
+    <ConsoleModule title={summary.instrument_name} tools={<span>{description}</span>}>{summaryContent}</ConsoleModule>
+    {chart && <ConsoleModule title="Value and contributions" kind="chart" order={1}>{chart}</ConsoleModule>}
+    <ConsoleModule title="Investment activity" kind="flat" order={2}>{activityContent}</ConsoleModule>
+  </> : <Tile title={summary.instrument_name} tag={description}>{summaryContent}{chart}{activityContent}</Tile>
 }
 
 function Metric({ label, value }: { label: string; value: string }) {

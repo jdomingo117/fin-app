@@ -65,10 +65,12 @@ export default function ConsoleDashboardHome({ route }: { route: ConsoleOutlet }
       openTransaction={editor.edit}
       figures={previewFigures}
       trends={previewArt}
-      open={section => {
+      open={(section, accountId) => {
         route.begin({ id: section, headline: previewFigures[section]?.[0], art: previewArt[section] })
         if (section === 'dashboard') {
           navigate('/dashboard?hub=overview')
+        } else if (section === 'accounts' && accountId) {
+          go(section, { state: { accountId } })
         } else if (section === 'expenses') {
           go(section, { state: { source: 'dashboard-insight', from: thirtyDaysAgoIso, to: today } })
         } else {

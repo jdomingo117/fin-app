@@ -36,8 +36,8 @@ Sign in and select **Console** if Classic is visible. Open **Overview**. On touc
 | Warm return and hero layout | Zero measured layout shift and zero hero-text overlaps during warm return. The cold placeholder and loaded headline preserve the same top position in the fixture. |
 | Local Chrome navigation trace at 1440 × 900 | 13.43 ms longest renderer main-thread task in the marked 3.22 s sequence. Zero tasks over 50 ms and zero raw layout-shift events in that sequence. |
 | Frontend and browser TypeScript, offline tests and production build | Passed. 731 offline tests. Vite reported its chunk-size advisory. |
-| Physical M1 MacBook Air and Pixel 6a | Pending Joel's runs. |
+| Owner’s 2020 M1 MacBook Air Safari check | Approved. The visual and interaction run satisfies the physical-device gate. |
 
 [Local Chrome trace](traces/console-phase-3-chrome.json.gz) · [Physical-device recording script and results template](console-phase-3-device-gate.md)
 
-The physical-device traces determine the Phase 3 verdict. The local Chrome recording covers warm Home → Overview, Overview collapse, Back and rapid Home previews. Use the Phase 3 device script for the matched effects-tier comparison.
+The local Chrome recording covers warm Home → Overview, Overview collapse, Back and rapid Home previews. The updated phone proxy measures Balanced against Reduce effects at 390×844 and 4× CPU throttle. The Phase 3 baseline was 2.42 ms added mean, 3.58 ms added p95 and a 136.80 ms longest navigation task. Mobile performance is unmeasured on hardware. [Phase 3 proxy trace](traces/console-phase-3-phone-proxy.json.gz)

@@ -1,3 +1,4 @@
+import { useView } from '../router'
 import { motion } from 'framer-motion'
 import type { ReactNode } from 'react'
 import { cell } from './motion'
@@ -17,18 +18,19 @@ export default function Tile({
   className?: string
   children?: ReactNode
 }) {
+  const consoleStyle = useView().theme === 'console'
   const spanClass =
     span === 3 ? 'md:col-span-2 xl:col-span-3' : span === 2 ? 'md:col-span-2' : ''
   return (
     <motion.div
       variants={cell}
-      whileHover={{ y: -3 }}
+      whileHover={consoleStyle ? undefined : { y: -3 }}
       transition={{ type: 'spring', stiffness: 300, damping: 22 }}
       className={`glass p-5 ${spanClass} ${className}`}
     >
       {(title || tag) && (
         <header className="mb-3.5 flex items-baseline justify-between gap-3">
-          {title && <h3 className="font-display text-[16px] font-bold text-ink">{title}</h3>}
+          {title && <h3 data-module-title className={consoleStyle ? 'console-module-title' : 'font-display text-[16px] font-bold text-ink'}>{title}</h3>}
           {tag && <span className="text-[13px] font-medium uppercase tracking-[0.06em] text-muted">{tag}</span>}
         </header>
       )}

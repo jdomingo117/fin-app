@@ -1,3 +1,4 @@
+import { consoleAxis, formatConsoleTick } from '../../lib/consoleAxis'
 import anime from 'animejs'
 import { fmtCents } from '../../data'
 import { useEffect, useId, useRef, useState } from 'react'
@@ -64,8 +65,10 @@ export default function Area({
   const yTickCount = chartYTickCount(innerH)
   const xTickIndices = visibleTickIndices(labels.length, innerW)
   const all = series.flatMap((s) => s.data)
-  const max = Math.max(...all) * 1.15
-  const min = Math.min(0, Math.min(...all)) * 0.95
+  const maxValue = (all.length ? Math.max(...all) : 0) * 1.15
+  const minValue = Math.min(0, ...all) * 0.95
+  const axis = consoleStyle ? consoleAxis(Math.min(minValue, ...all), maxValue, yTickCount) : undefined
+  const { min, max } = axis ?? { min: minValue, max: maxValue }
   const span = max - min || 1
   const n = series[0].data.length
   // a single point has no horizontal span — centre it instead of dividing by 0
@@ -165,9 +168,8 @@ export default function Area({
         aria-label={ariaLabel}
       >
       {/* gridlines + $ ticks */}
-      {Array.from({ length: yTickCount }).map((_, g) => {
-        const y = padT + (g / (yTickCount - 1)) * innerH
-        const val = max - (g / (yTickCount - 1)) * span
+      {(axis?.ticks ?? Array.from({ length: yTickCount }, (_, g) => max - (g / (yTickCount - 1)) * span)).map((val, g) => {
+        const y = yOf(val)
         return (
           <g key={g}>
             <line x1={padL} y1={y} x2={W - padR} y2={y} stroke="var(--hair-soft)" strokeWidth={1} />
@@ -178,9 +180,9 @@ export default function Area({
               fontSize={12}
               textAnchor="end"
               letterSpacing="0.04em"
-              className="tabular-nums"
+              className="tabular-nums" data-console-axis-tick={axis ? val : undefined}
             >
-              {formatChartTick(val)}
+              {axis ? formatConsoleTick(val) : formatChartTick(val)}
             </text>
           </g>
         )

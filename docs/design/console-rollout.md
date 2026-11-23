@@ -47,13 +47,15 @@ Login, onboarding, callback, password reset and the internal concept route get d
 
 Each Phase 4 batch branches from current `main` and stops at its gate. Merge the approved batch before branching the next. Gate 4A covers expanded and compact captures at 1440 and 390, a walkthrough across all three analysis hubs, Playwright/axe and the throttled proxy. Gate 4B covers the full Ledger categorisation, Budget allocation, import staging and transfer confirmation workflows with existing and Console browser tests. Gate 4C covers Settings and Landing/start entry and stops before Phase 5.
 
-## Later mobile refinements
+## Analysis hubs on phones
 
-- Phase 4.2 moves the Income filters below the hero or into a sheet on phones. This frees the title from the three rows of Home, tabs and filters above it.
+- Batch 4A puts the analysis filters below the expanded hero on phone widths. The compact Income header carries Home, the section figure and analyzer/projections tabs.
 
 ## Review reproduction
 
 [Phase 2 Gate 1 review and captures](console-phase-2-gate-1.md) · [Phase 2 Gate 2 walkthrough and trace](console-phase-2-gate-2.md) · [Phase 2 Gate 3 acceptance and Balanced trace](console-phase-2-gate-3.md) · [Phase 3 review and device gate](console-phase-3-review.md).
+
+[Gate 4A review and phone proxy](console-phase-4a-review.md).
 
 Start each review note with the **branch, commit, worktree path, exact dev-server command and URL**, followed by a capture of that URL.
 
@@ -62,6 +64,8 @@ Record every capture and walkthrough on the signed-in route of the actual dev se
 When reusing a preview port, verify the listener’s working directory and the served app source before trusting it. Restart a stale process from the named worktree. Reopen the documented URL, sign in and activate Console to verify the viewport shell before recording. Keep real-account confirmation separate from fictional-data recording.
 
 ## Acceptance evidence
+
+- **Classic leftovers.** Run the rendered Console audit on each Phase 4 batch and record its output in the gate note. Check sentence-case interface labels, the Console module-title token, Classic accent colours, the Console variant of chips, selects and inputs, and house dates. Exempt proper nouns and record-supplied text from casing. Exercise the routes at desktop and phone widths in the normal signed-in app.
 
 - **Appearance and layout.** Capture the same fictional state at 320, 390, 768, 1024 and 1440px. Compare Console against the supplied target. Include the first and last tile, long names, ring edges, an open overlay, and 200% zoom. Check focus-induced layout shift independently of the intended track transform.
 - **Classic fallback.** Smoke-check rendering, navigation and browser console errors while the frozen fallback remains available. Remove Classic after Phase 5.

@@ -388,6 +388,7 @@ function IncomeSourceActivity({
             key={transaction.id}
             type="button"
             onClick={() => onEdit(transaction)}
+            data-console-record-label={theme === 'console' || undefined}
             aria-label={theme === 'console' ? undefined : `Edit ${transaction.merchant} on ${dayLabel(transaction.date)}`}
             className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 py-2.5 text-left transition hover:bg-[var(--hair-soft)] focus-visible:bg-[var(--accent-wash)]"
           >

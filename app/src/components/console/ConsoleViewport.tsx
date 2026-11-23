@@ -83,7 +83,7 @@ function ConsoleViewportContent({ visible }: { visible: boolean }) {
   const hubHeading = useRef<HTMLHeadingElement>(null)
   const wasHome = useRef(home)
   const reduce = useConsoleReducedMotion()
-  const designed = !home && (view === 'dashboard' || view === 'income')
+  const designed = !home && expandedHubs.includes(view)
   const outlet = useOutlet({ home, active, select, restoreFocus, entry, begin, back: requestBack } satisfies ConsoleOutlet)
 
   useLayoutEffect(() => {

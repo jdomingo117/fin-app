@@ -1,7 +1,8 @@
 import type {Facet} from '../lib/reports'
 import { useMemo, useState } from 'react'
 import Tile from './Tile'
-import { fmt } from '../data'
+import { fmt, fmtCents } from '../data'
+import { useView } from '../router'
 import { catInScope, isActive, type CatSelection } from '../lib/expenseSelection'
 
 type ChangeRow = {
@@ -27,6 +28,7 @@ const totalByCategory = (transactions: Facet[]) => {
 export default function ExpenseChangesCard({
   outflows,
   previousOutflows,
+  previousTotal,
   selection,
   onToggleCategory,
   variant = 'detail',
@@ -36,6 +38,7 @@ export default function ExpenseChangesCard({
 }: {
   outflows: Facet[]
   previousOutflows: Facet[]
+  previousTotal?: number
   selection: CatSelection
   onToggleCategory: (category: string) => void
   /** `summary` is the companion card for the trend chart; `detail` retains the
@@ -65,6 +68,7 @@ export default function ExpenseChangesCard({
     }
   }, [outflows, previousOutflows])
 
+  const consoleStyle = useView().theme === 'console'
   const focused = isActive(selection)
   const isSummary = variant === 'summary'
   const [localExpanded, setLocalExpanded] = useState(false)
@@ -76,11 +80,16 @@ export default function ExpenseChangesCard({
   const hasHiddenRows = rows.length > 6
   const displayedRows = isSummary ? rows.slice(0, 3) : isExpanded ? rows : rows.slice(0, 6)
 
+  const shownPrior = displayedRows.reduce((sum, row) => sum + row.previous, 0)
+  const listedPrior = rows.reduce((sum, row) => sum + row.previous, 0)
+  const priorRemainder = Math.max(0, (previousTotal ?? listedPrior) - listedPrior)
+  const otherListedPrior = listedPrior - shownPrior
+
   return (
     <Tile span={isSummary ? undefined : 3} className={isSummary ? 'flex min-h-[280px] flex-1 flex-col overflow-hidden' : 'overflow-hidden'}>
       <header className={`${isSummary ? 'mb-2' : 'mb-5'} flex flex-wrap items-baseline justify-between gap-3`}>
         <div>
-          <h3 className="font-display text-[16px] font-bold text-ink">{isSummary ? 'Largest movers' : 'What changed this period'}</h3>
+          <h3 data-module-title className={consoleStyle ? 'console-module-title' : 'font-display text-[16px] font-bold text-ink'}>{isSummary ? 'Largest movers' : 'What changed this period'}</h3>
           <p className="mt-1 text-[14px] text-muted">
             {isSummary ? 'The three categories with the biggest period-on-period shifts.' : 'Current spend compared with the immediately prior period, ranked by material change.'}
           </p>
@@ -105,6 +114,12 @@ export default function ExpenseChangesCard({
           </div>
         )}
       </header>
+
+      {consoleStyle && previousTotal !== undefined && <dl className="mb-3 flex flex-wrap gap-x-4 gap-y-1 text-[13px] text-muted">
+        <div><dt>Prior-period outflow</dt><dd className="tabular-nums" data-comparison-prior-total={previousTotal}>{fmtCents(previousTotal)}</dd></div>
+        {otherListedPrior > 0 && <div><dt>Other listed categories</dt><dd className="tabular-nums" data-comparison-prior-other={otherListedPrior}>{fmtCents(otherListedPrior)}</dd></div>}
+        {priorRemainder > 0 && <div><dt>Prior outflow without category detail</dt><dd className="tabular-nums" data-comparison-prior-remainder={priorRemainder}>{fmtCents(priorRemainder)}</dd></div>}
+      </dl>}
 
       {rows.length === 0 ? (
         <div className={`grid flex-1 place-items-center text-center text-[12.5px] text-muted ${isSummary ? 'py-8' : 'py-16'}`}>No spending in this or the prior period.</div>
@@ -138,25 +153,27 @@ export default function ExpenseChangesCard({
 }
 
 function MoverSummaryRow({ row, dimmed, onClick }: { row: ChangeRow; dimmed: boolean; onClick: () => void }) {
+  const consoleStyle = useView().theme === 'console'
+  const money = consoleStyle ? fmtCents : fmt
   const isNew = row.previous === 0 && row.current > 0
-  const tone = isNew ? 'var(--color-warn)' : row.delta > 0 ? 'var(--color-neg)' : row.delta < 0 ? 'var(--color-pos)' : 'var(--color-muted)'
+  const tone = isNew ? (consoleStyle ? 'var(--console-label)' : 'var(--color-warn)') : row.delta > 0 ? 'var(--color-neg)' : row.delta < 0 ? 'var(--color-pos)' : 'var(--color-muted)'
   const deltaLabel = isNew
     ? 'New'
-    : `${row.delta > 0 ? '+' : row.delta < 0 ? '−' : '±'}${fmt(Math.abs(row.delta))}${row.previous > 0 ? ` · ${row.delta > 0 ? '+' : ''}${Math.round((row.delta / row.previous) * 100)}%` : ''}`
+    : `${row.delta > 0 ? '+' : row.delta < 0 ? '−' : '±'}${money(Math.abs(row.delta))}${row.previous > 0 ? ` · ${row.delta > 0 ? '+' : ''}${Math.round((row.delta / row.previous) * 100)}%` : ''}`
 
   return (
-    <li className={dimmed ? 'opacity-40' : ''}>
+    <li data-comparison-prior={consoleStyle ? row.previous : undefined} className={dimmed ? 'opacity-40' : ''}>
       <button
         type="button"
         onClick={onClick}
         className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-md py-4 text-left transition-colors hover:bg-[var(--hair-soft)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       >
         <span className="flex min-w-0 items-center gap-2.5">
-          <i className="h-2 w-2 shrink-0 rounded-full" style={{ background: tone }} />
+          <i className="h-2 w-2 shrink-0 rounded-full" style={{ background: consoleStyle ? 'var(--console-chart-tint)' : tone }} />
           <span className="min-w-0 truncate text-[14px] font-semibold text-ink">{row.name}</span>
-          <span className="shrink-0 text-[12px] tabular-nums text-muted">{fmt(row.current)} vs {fmt(row.previous)}</span>
+          <span className="shrink-0 text-[12px] tabular-nums text-muted">{money(row.current)} vs {money(row.previous)}</span>
         </span>
-        <span className="text-right text-[13px] font-semibold tabular-nums" style={{ color: tone }}>{deltaLabel}</span>
+        <span className="text-right text-[13px] font-semibold tabular-nums" style={{ color: consoleStyle ? undefined : tone }}>{deltaLabel}</span>
       </button>
     </li>
   )
@@ -170,12 +187,14 @@ function ChangeRow({ row, maxValue, dimmed, onClick }: { row: ChangeRow; maxValu
   const plotX = (value: number) => plotStart + (value / maxValue) * plotWidth
   const currentX = plotX(row.current)
   const previousX = plotX(row.previous)
+  const consoleStyle = useView().theme === 'console'
+  const money = consoleStyle ? fmtCents : fmt
   const isNew = row.previous === 0 && row.current > 0
-  const tone = isNew ? 'var(--color-warn)' : row.delta > 0 ? 'var(--color-neg)' : row.delta < 0 ? 'var(--color-pos)' : 'var(--color-muted)'
+  const tone = isNew ? (consoleStyle ? 'var(--console-label)' : 'var(--color-warn)') : row.delta > 0 ? 'var(--color-neg)' : row.delta < 0 ? 'var(--color-pos)' : 'var(--color-muted)'
   const direction = row.delta > 0 ? '↗' : row.delta < 0 ? '↘' : '—'
 
   return (
-    <li className={dimmed ? 'opacity-40' : ''}>
+    <li data-comparison-prior={consoleStyle ? row.previous : undefined} className={dimmed ? 'opacity-40' : ''}>
       <button
         type="button"
         onClick={onClick}
@@ -185,12 +204,12 @@ function ChangeRow({ row, maxValue, dimmed, onClick }: { row: ChangeRow; maxValu
         <span className="relative block h-9 rounded-full bg-[var(--track)]">
           <span className="absolute top-1/2 h-px -translate-y-1/2 bg-[var(--hair)]" style={{ left: `${Math.min(previousX, currentX)}%`, width: `${Math.abs(currentX - previousX)}%` }} />
           {row.previous > 0 && <span className="absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[var(--toast-bg)] bg-[var(--color-muted)]" style={{ left: `${previousX}%` }} />}
-          <span className="absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[var(--toast-bg)] shadow-[0_0_0_2px_color-mix(in_srgb,var(--color-accent)_18%,transparent)]" style={{ left: `${currentX}%`, background: tone }} />
-          <span className="absolute left-2 top-1/2 z-10 -translate-y-1/2 rounded bg-[var(--toast-bg)] px-1.5 py-0.5 text-[12px] tabular-nums text-muted shadow-sm">{fmt(row.previous)}</span>
-          <span className="absolute right-2 top-1/2 z-10 -translate-y-1/2 rounded bg-[var(--toast-bg)] px-1.5 py-0.5 text-[12px] font-semibold tabular-nums text-ink shadow-sm">{fmt(row.current)}</span>
+          <span className="absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[var(--toast-bg)] shadow-[0_0_0_2px_color-mix(in_srgb,var(--color-accent)_18%,transparent)]" style={{ left: `${currentX}%`, background: consoleStyle ? 'var(--console-chart-tint)' : tone }} />
+          <span className="absolute left-2 top-1/2 z-10 -translate-y-1/2 rounded bg-[var(--toast-bg)] px-1.5 py-0.5 text-[12px] tabular-nums text-muted shadow-sm">{money(row.previous)}</span>
+          <span className="absolute right-2 top-1/2 z-10 -translate-y-1/2 rounded bg-[var(--toast-bg)] px-1.5 py-0.5 text-[12px] font-semibold tabular-nums text-ink shadow-sm">{money(row.current)}</span>
         </span>
         <span className="flex items-center justify-end gap-1.5 text-right text-[13px] font-semibold tabular-nums" style={{ color: tone }}>
-          {isNew ? 'New' : `${row.delta > 0 ? '+' : row.delta < 0 ? '−' : '±'}${fmt(Math.abs(row.delta))}`}
+          {isNew ? 'New' : `${row.delta > 0 ? '+' : row.delta < 0 ? '−' : '±'}${money(Math.abs(row.delta))}`}
           <span aria-hidden>{direction}</span>
         </span>
       </button>

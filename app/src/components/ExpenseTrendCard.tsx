@@ -3,7 +3,9 @@ import Tile from './Tile'
 import Area from './charts/Area'
 import Bar from './charts/Bar'
 import SegmentedTabs from './SegmentedTabs'
-import {addDays,iso} from '../lib/period'
+import { ConsoleChartValues, ConsoleModule } from './console/ConsoleHub'
+import { Select } from './Controls'
+import {addDays,dateRangeLabel,dayLabel,iso,monthAxisLabels,monthLabel} from '../lib/period'
 
 const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 const parse = (s: string) => new Date(`${s}T00:00:00`)
@@ -26,6 +28,7 @@ export default function ExpenseTrendCard({
   timeFocus,
   onTimeFocus,
   height = 420,
+  consoleStyle = false,
 }: {
   buckets: {bucket:string;gross_cents:number}[]
   bucket: "day" | "week" | "month"
@@ -39,6 +42,7 @@ export default function ExpenseTrendCard({
   /** The trend has a stable visual rhythm; it does not inherit the height of
    *  the adjacent category-flow diagram. */
   height?: number
+  consoleStyle?: boolean
 }) {
   const [tab, setTab] = useState('cumulative')
 
@@ -71,11 +75,36 @@ export default function ExpenseTrendCard({
     if (timeFocus && timeFocus.from === bin.from && timeFocus.to === bin.to) {
       onTimeFocus(null)
     } else {
-      onTimeFocus(bin)
+      onTimeFocus(consoleStyle ? { ...bin, label: bucket === 'month' ? monthLabel(bin.from) : dateRangeLabel(bin.from, bin.to) } : bin)
     }
   }
 
   const empty = bins.data.every((v) => v === 0)
+
+  if (consoleStyle) {
+    const labels = bucket === 'month' ? monthAxisLabels(bins.ranges.map(range => range.from)) : bins.ranges.map(range => dayLabel(range.from))
+    const ranges = bins.ranges.map(range => bucket === 'month' ? monthLabel(range.from) :
+      bucket === 'week' ? dateRangeLabel(range.from, range.to) : dayLabel(range.from))
+    const chartSeries = [{ label: 'Gross outflow', data: tab === 'cumulative' ? cumulative : bins.data, color: 'var(--console-chart-ink)' }]
+    const selectPeriod = (index: string) => {
+      if (index === '') onTimeFocus(null)
+      else onTimeFocus({ ...bins.ranges[Number(index)], label: ranges[Number(index)] })
+    }
+    return <ConsoleModule title={scopeLabel ? `${scopeLabel} over time` : 'Spending over time'} kind="chart"
+      tools={<SegmentedTabs tabs={TABS} active={tab} onChange={setTab} layoutId="console-exp-trend-tabs" />}>
+      {empty ? <p>No spending in the selected period.</p> : <>
+        {tab === 'cumulative' ? <Area consoleStyle series={chartSeries} labels={labels} height={height}
+          onClickDataPoint={handleSelectBin} selectedIndex={selectedIndex} ariaLabel="Cumulative gross outflow" />
+          : <Bar consoleStyle series={chartSeries} labels={labels} height={height} onClickDataPoint={handleSelectBin}
+            selectedIndex={selectedIndex} ariaLabel="Gross outflow per interval" />}
+        <Select ariaLabel="Focus spending period" value={selectedIndex?.toString() ?? ''} onChange={selectPeriod}>
+          <option value="">Whole range</option>
+          {ranges.map((label, index) => <option key={bins.ranges[index].from} value={index}>{label}</option>)}
+        </Select>
+        <ConsoleChartValues labels={ranges} series={chartSeries} />
+      </>}
+    </ConsoleModule>
+  }
 
   return (
     <Tile className="flex flex-col">

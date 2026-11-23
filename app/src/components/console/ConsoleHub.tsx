@@ -1,5 +1,5 @@
 import { animate, motion, useMotionValue, useMotionValueEvent, useScroll, useTransform } from 'framer-motion'
-import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
 import { fmt, fmtCents } from '../../data'
 import { consoleProjection, useConsoleReducedMotion } from './motion'
 import type { SectionId } from './sections'
@@ -135,11 +135,11 @@ export function ConsoleHeroArt({ id, art, reduced, origin, home, redacted }: {
         </>}
       </svg>
       {redacted ? <figcaption className="sr-only">Trend hidden</figcaption> :
-        percent !== undefined ? <figcaption className="console-orb-stat tabular-nums"><strong>{percent}%</strong>{art?.label}</figcaption> :
-        <figcaption className={id === 'expenses' ? 'console-orb-trend-caption' : 'sr-only'}>
-          {id === 'expenses' ? 'Cumulative gross outflow' : art?.label}
-          <span className="sr-only">. First value {fmtCents(values[0])}. Last value {fmtCents(values[values.length - 1])}.</span>
-        </figcaption>}
+        percent !== undefined ? <>
+          <div className="console-orb-stat tabular-nums" aria-hidden="true"><strong>{percent}%</strong></div>
+          <figcaption className="sr-only">{art?.label}: {percent}%</figcaption>
+        </> :
+        <figcaption className="sr-only">{art?.label}. First value {fmtCents(values[0])}. Last value {fmtCents(values[values.length - 1])}.</figcaption>}
     </motion.figure>
     </ConsoleHandoff>
   )
@@ -150,7 +150,7 @@ export function ConsoleModule({ title, tools, children, kind, order = 0 }: {
 }) {
   return <GlassSurface as="section" material={kind === 'flat' ? 'opaque' : 'hub'} className="console-module" data-focus-ring data-console-row-item tabIndex={0}
     aria-label={title} style={{ '--console-module-order': order } as React.CSSProperties}>
-    <header><h2>{title}</h2>{tools}</header>
+    <header><h2 data-module-title className="console-module-title">{title}</h2>{tools}</header>
     {children}
   </GlassSurface>
 }
@@ -166,8 +166,15 @@ export function ConsoleChartValues({ labels, series }: { labels: string[]; serie
   </details>
 }
 
+const phoneFilters = '(max-width: 600px)'
+function subscribeToPhoneFilters(notify: () => void) {
+  const query = window.matchMedia(phoneFilters)
+  query.addEventListener('change', notify)
+  return () => query.removeEventListener('change', notify)
+}
+
 export default function ConsoleHub({ id, title, period, figure, strip, art, filters, tabs, entry, onBack, children, redacted }: {
-  id: 'income' | 'dashboard'
+  id: 'income' | 'dashboard' | 'accounts' | 'expenses'
   title: string
   period: string
   figure: ConsoleFigure
@@ -181,6 +188,8 @@ export default function ConsoleHub({ id, title, period, figure, strip, art, filt
   redacted?: boolean
 }) {
   const reduce = useConsoleReducedMotion()
+  const filtersBelowHero = useSyncExternalStore(subscribeToPhoneFilters,
+    () => window.matchMedia(phoneFilters).matches, () => false)
   const scroll = useRef<HTMLDivElement>(null)
   const hero = useRef<HTMLElement>(null)
   const heading = useRef<HTMLHeadingElement>(null)
@@ -227,7 +236,7 @@ export default function ConsoleHub({ id, title, period, figure, strip, art, filt
           </motion.div>
           {tabs && <div className="console-hub-tabs">{tabs}</div>}
         </div>
-        {filters && <div className="console-hub-filters">{filters}</div>}
+        {filters && !filtersBelowHero && <div className="console-hub-filters">{filters}</div>}
       </header>
       <motion.section ref={hero} className="console-expanded-hero" style={{ opacity: heroOpacity, y: reduce ? 0 : heroShift }} aria-hidden={compact}>
         <div className="console-expanded-copy">
@@ -236,6 +245,7 @@ export default function ConsoleHub({ id, title, period, figure, strip, art, filt
         </div>
         <ConsoleHeroArt id={id} art={art} reduced={reduce} origin={entry?.origin?.art} redacted={redacted} />
       </motion.section>
+      {filters && filtersBelowHero && <div className="console-hub-filters console-hub-filters-mobile">{filters}</div>}
       <div className="console-hub-body">{children}</div>
     </motion.div>
   )

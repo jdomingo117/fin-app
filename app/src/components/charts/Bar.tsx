@@ -1,3 +1,4 @@
+import { consoleAxis, formatConsoleTick } from '../../lib/consoleAxis'
 import { useId, useState } from 'react'
 import anime from 'animejs'
 import { useChartReveal, CHART_EASE } from '../../hooks/useChartReveal'
@@ -64,8 +65,10 @@ export default function Bar({
   const uid = useId().replace(/:/g, '')
 
   const all = series.flatMap((s) => s.data)
-  const max = Math.max(...all) * 1.15
-  const min = Math.min(0, Math.min(...all)) * 0.95
+  const maxValue = (all.length ? Math.max(...all) : 0) * 1.15
+  const minValue = Math.min(0, ...all) * 0.95
+  const axis = consoleStyle ? consoleAxis(Math.min(minValue, ...all), maxValue, yTickCount) : undefined
+  const { min, max } = axis ?? { min: minValue, max: maxValue }
   const span = max - min || 1
 
   const yOf = (v: number) => padT + innerH - ((v - min) / span) * innerH
@@ -158,9 +161,8 @@ export default function Bar({
       </defs>
 
       {/* Gridlines + Y Ticks */}
-      {Array.from({ length: yTickCount }).map((_, g) => {
-        const y = padT + (g / (yTickCount - 1)) * innerH
-        const val = max - (g / (yTickCount - 1)) * span
+      {(axis?.ticks ?? Array.from({ length: yTickCount }, (_, g) => max - (g / (yTickCount - 1)) * span)).map((val, g) => {
+        const y = yOf(val)
         return (
           <g key={g}>
             <line x1={padL} y1={y} x2={W - padR} y2={y} stroke="var(--hair-soft)" strokeWidth={1} />
@@ -171,9 +173,9 @@ export default function Bar({
               fontSize={12}
               textAnchor="end"
               letterSpacing="0.04em"
-              className="tabular-nums"
+              className="tabular-nums" data-console-axis-tick={axis ? val : undefined}
             >
-              {formatChartTick(val)}
+              {axis ? formatConsoleTick(val) : formatChartTick(val)}
             </text>
           </g>
         )

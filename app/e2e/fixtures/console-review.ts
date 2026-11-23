@@ -43,9 +43,18 @@ for (const tx of recent) {
 }
 const absoluteSum = (rows: typeof recent, kind: ScenarioRow[4]) => rows.filter(row => row.kind===kind).reduce((total,row) => total + Math.abs(row.amount),0)
 const expenses = absoluteSum(recent,'expense')
+const priorSpending = [
+  ['Housing', 163500], ['Transport', 55920], ['Groceries', 58000],
+  ['Bills', 48000], ['Uncategorized', 24000],
+] as const
+for (const [category, amount] of priorSpending) {
+  facets.set(`prior:${category}`, { period: 'prior', category, subcategory: null,
+    earned_cents: 0, gross_cents: amount, expense_count: 1, deposit_count: 0, largest_deposit_cents: 0, latest_deposit: null })
+}
+const priorExpenses = priorSpending.reduce((sum, [, amount]) => sum + amount, 0)
 const periods = {
   current:{earned_cents:absoluteSum(recent,'income'),gross_cents:expenses,expense_cents:expenses,expense_attention_count:0},
-  prior:{earned_cents:684000,gross_cents:349420,expense_cents:349420,expense_attention_count:0},
+  prior:{earned_cents:684000,gross_cents:priorExpenses,expense_cents:priorExpenses,expense_attention_count:1},
 }
 const fixtureExpiry = Date.parse('2099-01-01T00:00:00Z') / 1000
 const session = {
@@ -64,6 +73,7 @@ const fixtures: Record<string, unknown> = {
     return { bucket:day(index), earned_cents:absoluteSum(rows,'income'), gross_cents:expense_cents, expense_cents }
   }), top_merchant: null },
   reporting_transaction_lines: recent,
+  recurrence_scope_summary: { groups: [], names: [], total_pressure_cents: 0 },
   net_worth_monthly: [18432000, 18100000, 18224000, 17739000, 17142000, 17358000, 16893000, 16245000].map((value_cents, index) => ({month: `2026-${String(11-index).padStart(2, '0')}-01`,value_cents})),
 }
 
@@ -101,9 +111,31 @@ export async function signInForConsole(page: Page, controlledClock = true, befor
     const key = url.pathname.split('/').at(-1) ?? ''
     await beforeRead?.(key)
     let body = fixtures[key] ?? []
+    if (key === 'movement_history') {
+      const account = accounts.find(item => item.id === request.postDataJSON().p_account_ids?.[0])
+      const balance = account?.balance ?? 0
+      body = { months: [0.67, 0.72, 0.70, 0.84, 0.91, 1].map((ratio, index) => ({
+        month: `2026-${String(6 + index).padStart(2, '0')}-01`,
+        account_balance_cents: Math.round(balance * ratio),
+      })) }
+    }
+    if (key === 'account_activity_categories') body = [...new Set(recent.map(row => row.category))]
+    if (key === 'ledger_page') {
+      const params = request.postDataJSON()
+      const rows = recent.filter(row =>
+        (!params.p_ids || params.p_ids.includes(row.parent_id)) &&
+        (!params.p_account_ids || params.p_account_ids.includes(row.account_id)) &&
+        (!params.p_category || row.category === params.p_category) &&
+        (!params.p_account_search || row.merchant.toLowerCase().includes(params.p_account_search.toLowerCase())))
+      body = {
+        rows: rows.slice(0, params.p_limit).map(row => ({ ...row, id: row.parent_id, account_name: 'Everyday', allocations: [] })),
+        before: null, matching_count: rows.length, attention_count: 0, has_more: false,
+      }
+    }
     if (key === 'reporting_transaction_lines') {
       const category = url.searchParams.get('category')?.slice(3)
-      const rows = url.searchParams.get('amount') === 'gt.0' ? recent.filter(row=>row.amount>0) : recent
+      const amount = url.searchParams.get('amount')
+      const rows = recent.filter(row => amount === 'gt.0' ? row.amount > 0 : amount === 'lt.0' ? row.amount < 0 : true)
       body = category ? rows.filter(row=>row.category===category) : rows
     }
     const response = override?.(key, request, body) ?? { json: body }

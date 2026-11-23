@@ -1,3 +1,4 @@
+import { consoleAxis, formatConsoleTick } from '../lib/consoleAxis'
 import { useView } from '../router'
 import { monthAxisLabels, monthLabel } from '../lib/period'
 import { useState } from 'react'
@@ -47,11 +48,14 @@ export default function ProjectionChart({
   const rawMin = Math.min(...values)
   const rawMax = Math.max(...values)
   const buffer = Math.max((rawMax - rawMin) * 0.12, 10_000)
-  const min = Math.min(0, rawMin - buffer)
-  const max = rawMax + buffer
+
   const innerW = W - pad.left - pad.right
   const innerH = H - pad.top - pad.bottom
   const yTickCount = chartYTickCount(innerH)
+  const minValue = Math.min(0, rawMin - buffer)
+  const maxValue = rawMax + buffer
+  const axis = theme === 'console' ? consoleAxis(minValue, maxValue, yTickCount) : undefined
+  const { min, max } = axis ?? { min: minValue, max: maxValue }
   const dateTickIndices = visibleTickIndices(allDates.length, innerW, 84, 8)
   const showAnnotationLabels = innerW >= 240
   const x = (index: number) => pad.left + (index / Math.max(allDates.length - 1, 1)) * innerW
@@ -95,10 +99,9 @@ export default function ProjectionChart({
         </defs>
         <rect x={pad.left} y={pad.top} width={innerW} height={innerH} rx="8" fill="var(--glass-fill)" opacity="0.32" />
         <rect x={x(projectionOffset)} y={pad.top} width={Math.max(W - pad.right - x(projectionOffset), 0)} height={innerH} fill="var(--color-accent)" opacity="0.035" />
-        {Array.from({ length: yTickCount }).map((_, index) => {
-          const value = max - ((max - min) * index) / (yTickCount - 1)
+        {(axis?.ticks ?? Array.from({ length: yTickCount }, (_, index) => max - ((max - min) * index) / (yTickCount - 1))).map((value, index) => {
           const py = y(value)
-          return <g key={index}><line x1={pad.left} x2={W - pad.right} y1={py} y2={py} stroke="var(--hair-soft)" /><text x={pad.left - 10} y={py + 4} textAnchor="end" fontSize="12" fill="var(--color-muted)">{compact(value)}</text></g>
+          return <g key={index}><line x1={pad.left} x2={W - pad.right} y1={py} y2={py} stroke="var(--hair-soft)" /><text x={pad.left - 10} y={py + 4} textAnchor="end" fontSize="12" fill="var(--color-muted)" data-console-axis-tick={axis ? value : undefined}>{axis ? formatConsoleTick(value) : compact(value)}</text></g>
         })}
         {showAnnotationLabels && <text x={pad.left} y={pad.top - 12} fontSize="12" fontWeight="600" fill="var(--color-muted)">Historical</text>}
         {showAnnotationLabels && <text x={x(projectionOffset) + 10} y={pad.top - 12} fontSize="12" fontWeight="600" fill="var(--color-accent)">Forecast</text>}
@@ -113,7 +116,7 @@ export default function ProjectionChart({
         <circle cx={x(projectionOffset)} cy={y(actual.at(-1)?.value ?? baseline[0]?.value ?? 0)} r="4" fill="var(--color-ink2)" stroke="var(--surface)" strokeWidth="2" />
         <circle cx={x(baselineEndIndex)} cy={y(baseline.at(-1)?.value ?? 0)} r="4.5" fill="var(--color-accent)" stroke="var(--surface)" strokeWidth="2" />
         {scenario && <circle cx={x(baselineEndIndex)} cy={y(scenario.at(-1)?.value ?? 0)} r="4" fill="var(--color-blue)" stroke="var(--surface)" strokeWidth="2" />}
-        {dateTickIndices.map((index) => <text key={allDates[index]} x={x(index)} y={H - 10} textAnchor="middle" fontSize="12" fill="var(--color-muted)">{axisLabels[index]}</text>)}
+        {dateTickIndices.map((index) => <text key={allDates[index]} x={x(index)} y={H - 10} textAnchor="middle" fontSize="12" fill="var(--color-muted)" >{axisLabels[index]}</text>)}
         {hovered !== null && <line x1={x(projectionOffset + hovered)} x2={x(projectionOffset + hovered)} y1={pad.top} y2={pad.top + innerH} stroke="var(--color-accent)" opacity="0.4" />}
       </svg>}
       {hoverPoint && (

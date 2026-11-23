@@ -1,3 +1,6 @@
+import type { RefObject } from 'react'
+import { useDialogFocus } from '../hooks/useDialogFocus'
+import { useView } from '../router'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '../lib/supabaseClient'
@@ -21,6 +24,8 @@ const TYPE_DESCRIPTIONS: Record<AccountType, string> = {
 }
 
 export default function AddAccountModal({ isOpen, onClose }: Props) {
+  const consoleStyle = useView().theme === 'console'
+  const dialog = useDialogFocus({ active: consoleStyle && isOpen })
   const { refreshData } = useData()
   const [name, setName] = useState('')
   const [type, setType] = useState<AccountType>('Savings')
@@ -101,11 +106,22 @@ export default function AddAccountModal({ isOpen, onClose }: Props) {
             className="absolute inset-0 bg-black/40 backdrop-blur-sm"
           />
           <motion.div
+            ref={dialog as RefObject<HTMLDivElement>}
+            role={consoleStyle ? 'dialog' : undefined}
+            aria-modal={consoleStyle ? true : undefined}
+            aria-label={consoleStyle ? 'Add account' : undefined}
+            tabIndex={consoleStyle ? -1 : undefined}
+            onKeyDown={consoleStyle ? event => {
+              if (event.key === 'Escape' && !event.defaultPrevented) {
+                event.preventDefault()
+                handleClose()
+              }
+            } : undefined}
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="relative w-full max-w-md overflow-hidden rounded-2xl bg-surface shadow-2xl ring-1 ring-black/5"
+            className={`relative w-full max-w-md ${consoleStyle ? 'max-h-[85dvh] overflow-y-auto' : 'overflow-hidden'} rounded-2xl bg-surface shadow-2xl ring-1 ring-black/5`}
           >
             <div className="p-6">
               <h2 className="text-[18px] font-bold tracking-tight text-ink">Add Account</h2>
@@ -120,7 +136,7 @@ export default function AddAccountModal({ isOpen, onClose }: Props) {
                     onChange={e => setName(e.target.value)}
                     placeholder={type === 'Invest' ? 'e.g. Vanguard Personal Investor' : 'e.g. Macquarie Savings'}
                     className="rounded-lg border border-[var(--hair)] bg-[var(--input-bg)] px-3.5 py-2.5 text-[14px] text-ink outline-none transition focus:border-accent"
-                    autoFocus
+                    autoFocus={!consoleStyle}
                   />
                 </label>
 

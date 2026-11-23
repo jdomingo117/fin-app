@@ -24,7 +24,7 @@ type Props = {
   restoreFocus: boolean
   covered: boolean
   redacted: boolean
-  open: (section: SectionId) => void
+  open: (section: SectionId, accountId?: string) => void
   openTransaction: (transaction: Txn) => void
 }
 
@@ -66,7 +66,7 @@ export default function ConsoleHome({
           <h2>Accounts</h2>
           {accounts.length ? <FocusRow label="Account cards" className="console-activity-row">
             {accounts.map(account => <GlassSurface as="button" material="activity" key={account.id} className="console-activity-card"
-              data-console-row-item onClick={() => open('accounts')}>
+              data-console-row-item onClick={() => open('accounts', account.id)}>
               <FocusRing layer="sweep" />
               <span className="console-card-emblem"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 6h18v12H3zM3 10h18M7 15h4" /></svg></span>
               <span className="console-card-category">{account.type}{account.institution ? ` · ${account.institution}` : ''}</span>

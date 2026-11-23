@@ -1,0 +1,10 @@
+.console-transfer-cleared {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding: var(--console-workflow-padding);
+  text-align: center;
+}
+.console-transfer-cleared > p { max-inline-size: 56ch; }
+.console-transfer-cleared .console-orb { width: 145px; }
+.console-transfer-cleared .console-orb-stat { display: none; }

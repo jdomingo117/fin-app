@@ -18,6 +18,10 @@ import {
 } from '../lib/transfers/reviewPresentation'
 import InvestmentCashLinker from './InvestmentCashLinker'
 import { OperationStatusPanel } from './OperationStatus'
+import { WorkflowSkeleton, WorkflowStatus } from './console/WorkflowHub'
+import { ConsoleHeroArt } from './console/ConsoleHub'
+import { useConsoleReducedMotion } from './console/motion'
+import { useView } from '../router'
 
 import { type TransferLinkRow, type UnmatchedRow, type OverflowRow, type SuggestedGroup, type UnmatchedGroup } from './transfers/types'
 import { SuggestedGroupPanel } from './transfers/SuggestedGroupPanel'
@@ -75,6 +79,8 @@ export default function OskoLinker() {
 
 function TransferQueues() {
   const formatDay = useConsoleDayLabel()
+  const consoleStyle = useView().theme === 'console'
+  const reduced = useConsoleReducedMotion()
   const { accounts, refreshData } = useData()
   const suggestions = useQueuePage<TransferLinkRow>('transfer_links','score',{ state:'suggested' })
   const automatic = useQueuePage<TransferLinkRow>('transfer_links','score',{ state:'auto' })
@@ -222,30 +228,44 @@ function TransferQueues() {
     setUnmatchedDeselected(prev => toggleReviewExclusion(prev,id))
 
   const reports = [suggestions, automatic, legs, buckets, totals]
-  if (reports.some(r => r.error)) return <>{reports.filter(r => r.error).map((r,i) => <ReportStatus key={i} report={r} label="Transfer review" />)}</>
-  if (reports.some(r => r.pending && !r.data)) return <OperationStatusPanel state="working" title="Loading transfer suggestions" description="Fetching the current bounded review queue. No transfer decision is being changed." />
+  if (reports.some(r => r.error)) return <>{consoleStyle&&<WorkflowStatus label="To review">Unavailable</WorkflowStatus>}{reports.filter(r => r.error).map((r,i) => <ReportStatus key={i} report={r} label="Transfer review" />)}</>
+  if (reports.some(r => r.pending && !r.data)) return consoleStyle
+    ? <WorkflowSkeleton label="Loading transfer suggestions" /> : <OperationStatusPanel state="working" title="Loading transfer suggestions" description="Fetching the current bounded review queue. No transfer decision is being changed." />
 
+  const outstanding = (suggestions.data?.count ?? 0) + unmatchedTotal
+  const status = consoleStyle && <WorkflowStatus label="To review">{outstanding}</WorkflowStatus>
   const { groups: suggestedGroups, groupless } = groupSuggested(suggested)
   const overflowSummary = totals.data ?? { bucketCount: 0, legCount: 0, suggestedPairCount: 0 }
+
+  const scan = <Button variant="ghost" onClick={rescan} disabled={rescanning}>
+    {rescanning ? 'Scanning…' : 'Scan your ledger for internal transfers'}
+  </Button>
+  const emptyMessage = <p className="text-[13px] text-muted">
+    No internal transfers pending review. Import statements from more than one account
+    to start finding them, or scan what's already in your ledger.
+  </p>
+  const cleared = consoleStyle && outstanding === 0 && !overflow.length ? <div className="console-transfer-cleared">
+    <div aria-hidden="true"><ConsoleHeroArt id="dashboard" art={{ label: 'All reconciled', percent: 100 }} reduced={reduced} /></div>
+    <h3 className="console-module-title" data-module-title>All reconciled</h3>
+    {emptyMessage}
+    <div>{scan}</div>
+  </div> : undefined
 
   if (!suggestions.data?.count && !automatic.data?.count && unmatchedTotal === 0 && overflow.length === 0) {
     return (
       <div className="grid gap-3">
         <InvestmentCashLinker refreshKey={investmentRefreshKey} />
         {rescanning && <OperationStatusPanel state="working" title="Scanning your ledger for transfers" description="Replacing the bounded review queue with the latest matches. No transfer decision is being changed." />}
-        <p className="text-[13px] text-muted">
-          No internal transfers pending review. Import statements from more than one account
-          to start finding them, or scan what's already in your ledger.
-        </p>
-        <div><Button variant="ghost" onClick={rescan} disabled={rescanning}>
-          {rescanning ? 'Scanning…' : 'Scan your ledger for internal transfers'}
-        </Button></div>
+        {status}
+        {error && consoleStyle && <p role="alert">{error}</p>}
+        {cleared ?? <>{emptyMessage}<div>{scan}</div></>}
       </div>
     )
   }
 
   return (
-    <div className="grid gap-5">
+    <div className="grid gap-5 console-transfer-queue">
+      {status}
       <InvestmentCashLinker refreshKey={investmentRefreshKey} />
       {error && (
         <div role="alert" className="rounded-[10px] border border-[var(--color-neg)] bg-[var(--color-neg)]/5 px-3 py-2 text-[13px] text-[var(--color-neg)]">
@@ -255,19 +275,19 @@ function TransferQueues() {
 
       {rescanning && <OperationStatusPanel state="working" title="Scanning your ledger for transfers" description="Replacing the bounded review queue with the latest matches. No transfer decision is being changed." />}
 
-      <div className="flex items-center justify-between">
+      {cleared ?? <div className={consoleStyle ? 'flex flex-wrap items-center justify-between gap-3' : 'flex items-center justify-between'}>
         <p className="text-[13px] text-muted">
           {suggested.length > 0
             ? <>
-                <strong className="text-ink">{suggestions.data?.count}</strong> transfer{suggestions.data?.count === 1 ? '' : 's'} need your review
+                <strong className="text-ink">{suggestions.data?.count}</strong> {suggestions.data?.count === 1 ? 'transfer needs' : 'transfers need'} your review
                 {overflowSummary.suggestedPairCount > 1 && <> across {overflowSummary.suggestedPairCount} account pairs</>}
               </>
-            : 'Everything is reviewed.'}
+            : consoleStyle && unmatchedTotal ? 'No suggested pairs. Review possible transfers below.' : 'Everything is reviewed.'}
         </p>
         <Button variant="ghost" onClick={rescan} disabled={rescanning}>
           {rescanning ? 'Scanning…' : 'Rescan ledger'}
         </Button>
-      </div>
+      </div>}
 
       {overflow.length > 0 && (
         <div className="rounded-[10px] border border-[var(--color-warn)] bg-[var(--color-warn)]/5 px-3 py-2.5 text-[12.5px] text-ink2">

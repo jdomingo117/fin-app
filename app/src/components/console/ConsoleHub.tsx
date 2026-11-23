@@ -63,10 +63,10 @@ function ConsoleHandoff({ box, children }: { box?: ProjectionBox; children: Reac
   return box ? <div ref={ref} className="console-handoff">{children}</div> : <>{children}</>
 }
 
-export function ConsoleHeadline({ id, label, figure, reduced, title, period, origin, home }: {
-  id: SectionId; label: string; figure?: ConsoleFigure; reduced?: boolean; title?: string; period?: string; origin?: ConsoleEntry['origin']; home?: boolean
+export function ConsoleHeadline({ id, label, figure, reduced, title, period, origin, home, redacted }: {
+  id: SectionId; label: string; figure?: ConsoleFigure; reduced?: boolean; title?: string; period?: string; origin?: ConsoleEntry['origin']; home?: boolean; redacted?: boolean
 }) {
-  return <>
+  return <div className="console-headline">
     {title && <h1 className="console-hub-title">{title}</h1>}
     <ConsoleHandoff box={reduced ? undefined : origin?.label}>
       <motion.p layoutId={reduced || home ? undefined : `console-${id}-label`} transition={{ layout: consoleProjection }}
@@ -77,33 +77,34 @@ export function ConsoleHeadline({ id, label, figure, reduced, title, period, ori
       <motion.p
         layoutId={reduced || home ? undefined : `console-${id}-figure`}
         transition={{ layout: consoleProjection }}
-        className={`console-hero-amount tabular-nums ${figure?.cents === undefined ? 'console-unavailable' : ''}`}
+        className={`console-hero-amount${redacted ? '' : ' tabular-nums'}`}
         data-console-shared="figure"
       >
-        {figure?.cents === undefined ? <span className="console-hero-placeholder">{id === 'budget' ? 'Budget' : 'Unavailable'}</span> : <>
+        {redacted && figure ? <span className="console-hero-placeholder">Hidden</span> :
+          figure?.cents === undefined ? <span className="console-hero-placeholder">{id === 'budget' ? 'Budget' : 'Unavailable'}</span> : <>
           <span aria-hidden="true">{consoleMoney(figure.cents, figure.signed, true)}</span>
           <span className="sr-only">{consoleMoney(figure.cents, figure.signed)}</span>
         </>}
       </motion.p>
     </ConsoleHandoff>
-  </>
+  </div>
 }
 
-export function ConsoleFigureStrip({ figures }: { figures: ConsoleFigure[] }) {
+export function ConsoleFigureStrip({ figures, redacted }: { figures: ConsoleFigure[]; redacted?: boolean }) {
   return <dl className="console-figures">
     {figures.map(({ label, cents, signed }) => <div key={label}>
       <dt>{label}</dt>
-      <dd className="tabular-nums" data-sign={signed && cents ? (cents > 0 ? 'positive' : 'negative') : undefined}>
-        {cents === undefined ? 'Unavailable' : consoleMoney(cents, signed)}
+      <dd className={redacted ? undefined : 'tabular-nums'} data-sign={!redacted && signed && cents ? (cents > 0 ? 'positive' : 'negative') : undefined}>
+        {redacted ? 'Hidden' : cents === undefined ? 'Unavailable' : consoleMoney(cents, signed)}
       </dd>
     </div>)}
   </dl>
 }
 
-export function ConsoleHeroArt({ id, art, reduced, origin, home }: {
-  id: SectionId; art?: ConsoleArt; reduced?: boolean; origin?: ProjectionBox; home?: boolean
+export function ConsoleHeroArt({ id, art, reduced, origin, home, redacted }: {
+  id: SectionId; art?: ConsoleArt; reduced?: boolean; origin?: ProjectionBox; home?: boolean; redacted?: boolean
 }) {
-  const values = art?.values ?? []
+  const values = redacted ? [] : art?.values ?? []
   const low = Math.min(...values)
   const span = Math.max(...values) - low
   const points = values.length > 0 ? values.map((value, i) => {
@@ -111,10 +112,12 @@ export function ConsoleHeroArt({ id, art, reduced, origin, home }: {
     const y = span ? 99 - (value - low) * 42 / span : 79
     return `${x},${y}`
   }).join(' ') : undefined
-  const percent = art?.percent
-  if (!points && percent === undefined) return id === 'accounts' ? (
-    <p className="console-art-empty">Holdings appear here when accounts have a cash or investment balance.</p>
-  ) : null
+  const percent = redacted ? undefined : art?.percent
+  if (!points && percent === undefined && !redacted) {
+    if (id === 'accounts') return <p className="console-art-empty">Holdings appear here when accounts have a cash or investment balance.</p>
+    if (id === 'dashboard') return <div aria-hidden="true" className="console-orb" />
+    return null
+  }
   return (
     <ConsoleHandoff box={reduced ? undefined : origin}>
     <motion.figure layoutId={reduced || home ? undefined : `console-${id}-art`} transition={{ layout: consoleProjection }}
@@ -131,7 +134,8 @@ export function ConsoleHeroArt({ id, art, reduced, origin, home }: {
           <polyline className="console-orb-line" points={points} />
         </>}
       </svg>
-      {percent !== undefined ? <figcaption className="console-orb-stat tabular-nums"><strong>{percent}%</strong>{art?.label}</figcaption> :
+      {redacted ? <figcaption className="sr-only">Trend hidden</figcaption> :
+        percent !== undefined ? <figcaption className="console-orb-stat tabular-nums"><strong>{percent}%</strong>{art?.label}</figcaption> :
         <figcaption className={id === 'expenses' ? 'console-orb-trend-caption' : 'sr-only'}>
           {id === 'expenses' ? 'Cumulative gross outflow' : art?.label}
           <span className="sr-only">. First value {fmtCents(values[0])}. Last value {fmtCents(values[values.length - 1])}.</span>
@@ -162,7 +166,7 @@ export function ConsoleChartValues({ labels, series }: { labels: string[]; serie
   </details>
 }
 
-export default function ConsoleHub({ id, title, period, figure, strip, art, filters, tabs, entry, onBack, children }: {
+export default function ConsoleHub({ id, title, period, figure, strip, art, filters, tabs, entry, onBack, children, redacted }: {
   id: 'income' | 'dashboard'
   title: string
   period: string
@@ -174,6 +178,7 @@ export default function ConsoleHub({ id, title, period, figure, strip, art, filt
   entry?: ConsoleEntry
   onBack: () => void
   children: ReactNode
+  redacted?: boolean
 }) {
   const reduce = useConsoleReducedMotion()
   const scroll = useRef<HTMLDivElement>(null)
@@ -218,18 +223,18 @@ export default function ConsoleHub({ id, title, period, figure, strip, art, filt
           <h2 ref={heading} tabIndex={-1} className="sr-only">{title} hub</h2>
           <motion.div className="console-compact-title" style={{ opacity: headerOpacity, y: reduce ? 0 : headerShift }} aria-hidden={!compact}>
             <span>{title}</span>
-            <strong className="tabular-nums">{figure.cents === undefined ? 'Unavailable' : consoleMoney(figure.cents, figure.signed)}</strong>
+            <strong className={redacted ? undefined : 'tabular-nums'}>{redacted ? 'Hidden' : figure.cents === undefined ? 'Unavailable' : consoleMoney(figure.cents, figure.signed)}</strong>
           </motion.div>
           {tabs && <div className="console-hub-tabs">{tabs}</div>}
         </div>
         {filters && <div className="console-hub-filters">{filters}</div>}
       </header>
       <motion.section ref={hero} className="console-expanded-hero" style={{ opacity: heroOpacity, y: reduce ? 0 : heroShift }} aria-hidden={compact}>
-        <div>
-          <ConsoleHeadline id={id} label={figure.label} figure={figure} reduced={reduce} title={title} period={period} origin={entry?.origin} />
-          {strip.length > 0 && <ConsoleFigureStrip figures={strip} />}
+        <div className="console-expanded-copy">
+          <ConsoleHeadline id={id} label={figure.label} figure={figure} reduced={reduce} title={title} period={period} origin={entry?.origin} redacted={redacted} />
+          {strip.length > 0 && <ConsoleFigureStrip figures={strip} redacted={redacted} />}
         </div>
-        <ConsoleHeroArt id={id} art={art} reduced={reduce} origin={entry?.origin?.art} />
+        <ConsoleHeroArt id={id} art={art} reduced={reduce} origin={entry?.origin?.art} redacted={redacted} />
       </motion.section>
       <div className="console-hub-body">{children}</div>
     </motion.div>

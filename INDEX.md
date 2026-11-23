@@ -599,8 +599,11 @@ implemented but the remaining M6 verification gates are still open.
 
 ### `app/` (Frontend)
 - `src/components/console/ConsoleViewport.tsx` owns the signed-in Console appearance, Home routing,
-  and the persistent scene. `ControlCentre.tsx` owns the modal, keyboard shortcut and focus return. `ConsoleHome.tsx` previews existing Dashboard
-  reports. `ConsoleHub.tsx` provides the shared-entry hero, sticky compact header and modules for
+  and the persistent scene. `ControlCentre.tsx` owns the modal, keyboard shortcut and focus return.
+  `src/views/dashboard/ConsoleDashboardHome.tsx` owns Home previews and route entry.
+  `ConsoleOverviewHub.tsx` owns the Overview modules and scopes its date and account filters to
+  Spending insights. Both read the viewport's warm `DashboardReports.tsx` cache.
+  `ConsoleHub.tsx` provides the shared-entry hero, sticky compact header and modules for
   Income and Overview. The Phase 2 foundation shares appearance preferences, CSS/Framer Motion
   presets, `FocusRing`, `FocusRow` and `GlassSurface` across those views.
   `AmbientBackground.tsx` owns the six-material scene, effects tiers and suspension rules.

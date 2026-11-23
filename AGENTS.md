@@ -82,6 +82,8 @@ hand to find the transfer-linker gap.
 
 ## Recent changes
 
+- 2026-11-23 — Console Phase 3 separates Home and Overview, keeps the Dashboard report cache warm, and moves the phone trend orb beside movement.
+
 - 2026-11-23 — Console Phase 2 adds automatic effects tiers, an opaque start screen and a keyboard-qualified Control Centre.
 
 - 2026-11-22 — Console Phase 2 adds the full ambient scene, opt-in sound and music, and the optional start screen.
@@ -99,5 +101,3 @@ hand to find the transfer-linker gap.
 - 2026-11-20 — Wave 3C.1 adds tenant-scoped portfolio, cash-flow, movement history and split-safe ledger SQL read contracts.
 
 - 2026-11-20 — DataProvider clears session data on identity changes and drops superseded refresh and sync results.
-
-- 2026-11-20 — Provider sync preserves manual edits on read failure and reconciles provider anchors atomically across the full ledger.

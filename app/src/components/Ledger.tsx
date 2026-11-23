@@ -2,8 +2,8 @@ import type { Txn } from '../data'
 import { fmtCents } from '../data'
 import { dayLabel } from '../lib/period'
 
-export default function Ledger({ rows, onEdit, consoleStyle = false }: {
-  rows: Txn[]; onEdit?: (transaction: Txn) => void; consoleStyle?: boolean
+export default function Ledger({ rows, onEdit, consoleStyle = false, redacted = false }: {
+  rows: Txn[]; onEdit?: (transaction: Txn) => void; consoleStyle?: boolean; redacted?: boolean
 }) {
   if (consoleStyle) return <ul className="console-ledger-list">
     {rows.map(transaction => {
@@ -11,12 +11,13 @@ export default function Ledger({ rows, onEdit, consoleStyle = false }: {
         <span><strong>{transaction.merchant || 'Transaction details'}</strong>
           <small><time dateTime={transaction.date}>{dayLabel(transaction.date)}</time>{transaction.cat ? ` · ${transaction.cat}` : ''}{transaction.pending ? ' · Held' : ''}</small>
         </span>
-        <span className="tabular-nums" data-sign={transaction.amount > 0 ? 'positive' : transaction.amount < 0 ? 'negative' : undefined}>
-          {transaction.amount > 0 ? '+' : ''}{fmtCents(transaction.amount)}
-        </span>
+        {redacted ? <span>Amount hidden</span> :
+          <span className="tabular-nums" data-sign={transaction.amount > 0 ? 'positive' : transaction.amount < 0 ? 'negative' : undefined}>
+            {transaction.amount > 0 ? '+' : ''}{fmtCents(transaction.amount)}
+          </span>}
       </>
       return <li key={transaction.id}>
-        {onEdit ? <button type="button" onClick={() => onEdit(transaction)}>{content}</button> : <div>{content}</div>}
+        {onEdit ? <button type="button" data-dashboard-activity={transaction.id} onClick={() => onEdit(transaction)}>{content}</button> : <div>{content}</div>}
       </li>
     })}
   </ul>

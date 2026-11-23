@@ -11,6 +11,7 @@ import {
 } from '../components/AccountSecurity'
 import AuditLogCard from '../components/AuditLogCard'
 import { useUnsavedChanges } from '../hooks/useUnsavedChanges'
+import { useRedactBalances } from '../hooks/useRedactBalances'
 import { ConsoleSettingsControls } from '../components/console/ConsolePreferences'
 
 const ACCENTS = [
@@ -24,7 +25,7 @@ export default function Settings() {
   const { motionOn, setMotionOn, dark, setDark, toast, theme } = useView()
   const { profile, isAdmin, refreshProfile } = useData()
   const { user, signOut: doSignOut } = useAuth()
-  const [redact, setRedact] = useState(false)
+  const redact = useRedactBalances()
   const [accent, setAccent] = useState('Mint')
   
   const [editingCallsign, setEditingCallsign] = useState(false)
@@ -68,9 +69,7 @@ export default function Settings() {
     document.documentElement.style.setProperty('--color-accent-ink', a.ink)
   }
   const toggleRedact = () => {
-    const next = !redact
-    setRedact(next)
-    document.documentElement.classList.toggle('redacted', next)
+    document.documentElement.classList.toggle('redacted', !redact)
   }
 
   return (

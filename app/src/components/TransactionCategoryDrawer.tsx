@@ -61,11 +61,15 @@ function sourceLabel(source: Txn['categorySource']) {
 
 export default function TransactionCategoryDrawer({
   transaction,
+  redacted = false,
   onClose,
+  restoreSelector,
   onChanged,
 }: {
   transaction: Txn | null
+  redacted?: boolean
   onClose: () => void
+  restoreSelector?: string
   onChanged: () => Promise<void>
 }) {
   const { reportRevision } = useData()
@@ -90,7 +94,7 @@ export default function TransactionCategoryDrawer({
   const [classificationSaving, setClassificationSaving] = useState(false)
   const [addingSubcategory, setAddingSubcategory] = useState(false)
   const [customName, setCustomName] = useState('')
-  const dialogRef = useDialogFocus({ active: Boolean(transaction) })
+  const dialogRef = useDialogFocus({ active: Boolean(transaction), restoreSelector })
 
   const audit = useReport(['edit history',transaction?.id,reportRevision], async tenant => {
     const id = transaction!.id
@@ -313,7 +317,8 @@ export default function TransactionCategoryDrawer({
             <div className="mt-6 rounded-xl border border-[var(--hair)] bg-[var(--input-bg)] p-4">
               <div className="flex items-baseline justify-between gap-4">
                 <span className="text-[12px] uppercase tracking-[0.08em] text-muted">Amount</span>
-                <strong className={`font-display text-[22px] tabular-nums ${transaction.amount > 0 ? 'text-pos' : 'text-ink'}`}>{fmtCents(transaction.amount)}</strong>
+                {redacted ? <strong>Hidden</strong> :
+                  <strong className={`font-display text-[22px] tabular-nums ${transaction.amount > 0 ? 'text-pos' : 'text-ink'}`}>{fmtCents(transaction.amount)}</strong>}
               </div>
               <div className="mt-3 border-t border-[var(--hair-soft)] pt-3">
                 <span className="text-[11px] uppercase tracking-[0.08em] text-muted">Original description</span>
@@ -429,7 +434,8 @@ export default function TransactionCategoryDrawer({
               )}
             </section>
 
-            <TransactionSplitEditor transaction={transaction} customSubcategories={customSubcategories} onChanged={onChanged} />
+            {redacted ? <p className="mt-6 text-sm text-muted">Show balances in Settings to view or edit splits.</p> :
+              <TransactionSplitEditor transaction={transaction} customSubcategories={customSubcategories} onChanged={onChanged} />}
 
             <section className="mt-7 border-t border-[var(--hair)] pt-5">
               <h3 className="font-display text-[14px] font-bold text-ink">Classification status</h3>

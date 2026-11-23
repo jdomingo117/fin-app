@@ -187,19 +187,24 @@ test('Master volume changes the live compressor output and zero silences it', as
     AudioNode.prototype.connect = function (this: AudioNode, ...args: unknown[]) {
       const connected = Reflect.apply(connect, this, args)
       if (this instanceof DynamicsCompressorNode && args[0] instanceof AudioDestinationNode) {
-        const analyser = this.context.createAnalyser()
-        Reflect.apply(connect, this, [analyser])
-        const values = new Float32Array(analyser.fftSize)
-        ;(window as AudioReviewWindow).readReviewPeak = async milliseconds => {
+        // Read consecutive audio buffers. Animation-frame snapshots can miss
+        // the short attack on loaded CI runners.
+        const probe = this.context.createScriptProcessor(2048, 2, 2)
+        Reflect.apply(connect, this, [probe])
+        Reflect.apply(connect, probe, [args[0]])
+        ;(window as AudioReviewWindow).readReviewPeak = milliseconds => new Promise(resolve => {
           let peak = 0
-          const end = performance.now() + milliseconds
-          while (performance.now() < end) {
-            await new Promise<number>(resolve => requestAnimationFrame(resolve))
-            analyser.getFloatTimeDomainData(values)
-            for (const value of values) peak = Math.max(peak, Math.abs(value))
+          let frames = 0
+          probe.onaudioprocess = event => {
+            for (let channel = 0; channel < event.inputBuffer.numberOfChannels; channel++) {
+              for (const value of event.inputBuffer.getChannelData(channel)) peak = Math.max(peak, Math.abs(value))
+            }
+            frames += event.inputBuffer.length
+            if (frames / event.inputBuffer.sampleRate * 1000 < milliseconds) return
+            probe.onaudioprocess = null
+            resolve(peak)
           }
-          return peak
-        }
+        })
       }
       return connected
     } as typeof connect

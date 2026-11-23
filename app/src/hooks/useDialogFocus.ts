@@ -42,9 +42,11 @@ export function keepDialogTabFocus(event: Pick<KeyboardEvent, 'key' | 'shiftKey'
 export function useDialogFocus({
   active = true,
   fallbackSelector = '[data-dialog-focus-fallback]',
+  restoreSelector,
 }: {
   active?: boolean
   fallbackSelector?: string
+  restoreSelector?: string
 } = {}): RefObject<HTMLElement> {
   const dialogRef = useRef<HTMLElement>(null)
 
@@ -67,13 +69,14 @@ export function useDialogFocus({
         const anotherDialogIsOpen = [...document.querySelectorAll('[role="dialog"][aria-modal="true"]')]
           .some((candidate) => candidate !== dialog)
         if (anotherDialogIsOpen) return
-        const target = opener?.isConnected
+        const explicitTarget = restoreSelector ? document.querySelector<HTMLElement>(restoreSelector) : null
+        const target = explicitTarget ?? (opener?.isConnected
           ? opener
-          : document.querySelector<HTMLElement>(fallbackSelector)
+          : document.querySelector<HTMLElement>(fallbackSelector))
         target?.focus({ preventScroll: true })
       })
     }
-  }, [active, fallbackSelector])
+  }, [active, fallbackSelector, restoreSelector])
 
   return dialogRef
 }

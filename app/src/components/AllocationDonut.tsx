@@ -45,6 +45,9 @@ export default function AllocationDonut({
         tl.add({ targets: rows[i], opacity: [0, 1], translateX: [8, 0], duration: 380 }, i * STEP + 260)
       })
 
+      // The Console centre and legend are two readings of the same figure.
+      // Keep both exact from first paint while the ring draws in.
+      if (consoleStyle) return [tl]
       const c = { v: 0 }
       const counter = anime({
         targets: c,

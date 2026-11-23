@@ -23,6 +23,7 @@ html[data-theme="console"] {
   --console-glass-filter: blur(24px) saturate(150%);
   --console-sheet-fill: #111824;
   --console-card-width: 300px;
+  --console-overview-phone-art: clamp(70px, 22vw, 94px);
   --tile-l-high: .66;
   --tile-l-mid: .46;
   --tile-l-low: .30;

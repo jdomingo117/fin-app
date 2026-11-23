@@ -92,7 +92,8 @@ async function loginToLedger(page: Page) {
   await page.getByLabel('Password', { exact: true }).fill(PASSWORD)
   await page.getByRole('button', { name: 'Sign in', exact: true }).click()
   await expect(page).toHaveURL('/')
-  await page.getByRole('button', { name: 'Ledger', exact: true }).click()
+  // The attention count can arrive while the Classic navigation is settling.
+  await page.getByRole('button', { name: /^Ledger(?:$| · )/ }).click()
   await expect(page).toHaveURL('/ledger')
   await expect(page.getByRole('heading', { name: 'Ledger' })).toBeVisible()
 }

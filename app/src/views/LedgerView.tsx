@@ -307,8 +307,11 @@ function LedgerWorkspace({ tenant }: { tenant: string }) {
             <option value="">All accounts</option>
             {accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}
           </Select>
-          <Select value={category} onChange={setCategory} ariaLabel="Filter ledger by category" inputClassName="py-3 text-[14px]">
-            <option value="">All categories</option>
+          <Select value={category} onChange={setCategory} ariaLabel="Filter ledger by category"
+            inputClassName={`py-3 text-[14px]${consoleStyle ? ' console-ledger-category' : ''}`}>
+            <option value="" aria-label={consoleStyle ? 'All categories' : undefined}>
+              {consoleStyle ? 'Categories' : 'All categories'}
+            </option>
             {ALL_CATEGORIES.map((candidate) => <option key={candidate} value={candidate}>{categoryDisplayName(candidate)}</option>)}
           </Select>
           <Select value={kind} onChange={setKind} ariaLabel="Filter ledger by transaction kind" inputClassName="py-3 text-[14px]">

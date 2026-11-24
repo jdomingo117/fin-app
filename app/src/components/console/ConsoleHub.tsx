@@ -66,12 +66,13 @@ export function ConsoleHandoff({ box, children }: { box?: ProjectionBox; childre
 export function ConsoleHeadline({ id, label, figure, reduced, title, period, origin, home, redacted }: {
   id: SectionId; label: string; figure?: ConsoleFigure; reduced?: boolean; title?: string; period?: string; origin?: ConsoleEntry['origin']; home?: boolean; redacted?: boolean
 }) {
+  const showBudgetPrompt = home && id === 'budget' && figure?.cents === undefined && !(redacted && figure)
   return <div className="console-headline">
     {title && <h1 className="console-hub-title">{title}</h1>}
-    <ConsoleHandoff box={reduced ? undefined : origin?.label}>
+    {!showBudgetPrompt && <ConsoleHandoff box={reduced ? undefined : origin?.label}>
       <motion.p layoutId={reduced || home ? undefined : `console-${id}-label`} transition={{ layout: consoleProjection }}
         className="console-hero-label" data-console-shared="label">{label}</motion.p>
-    </ConsoleHandoff>
+    </ConsoleHandoff>}
     {period && <p className="console-period">{period}</p>}
     <ConsoleHandoff box={reduced ? undefined : origin?.figure}>
       <motion.p
@@ -81,7 +82,7 @@ export function ConsoleHeadline({ id, label, figure, reduced, title, period, ori
         data-console-shared="figure"
       >
         {redacted && figure ? <span className="console-hero-placeholder">Hidden</span> :
-          figure?.cents === undefined ? <span className="console-hero-placeholder">{id === 'budget' && home ? 'Open to see this period' : 'Unavailable'}</span> : <>
+          figure?.cents === undefined ? <span className="console-hero-placeholder">{showBudgetPrompt ? 'Open to see this period' : 'Unavailable'}</span> : <>
           <span aria-hidden="true">{consoleMoney(figure.cents, figure.signed, true)}</span>
           <span className="sr-only">{consoleMoney(figure.cents, figure.signed)}</span>
         </>}

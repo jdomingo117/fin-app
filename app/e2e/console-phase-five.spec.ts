@@ -102,6 +102,7 @@ async function matrix(page: Page, touch: boolean) {
   await expect(tile(page, 'Budget').locator('[data-layer="edge"]')).toHaveCSS('opacity', '1')
   expect(await anchor()).toEqual(initial)
   await expect(home.getByText('Open to see this period', { exact: true })).toBeVisible()
+  await expect(home.locator('.console-preview .console-hero-label')).toHaveCount(0)
   await scan(page, home, 'home-last-tile')
   const back = () => activeLayer(page).getByRole('button', { name: 'Back to Home' })
   if (touch) {
@@ -136,6 +137,17 @@ async function matrix(page: Page, touch: boolean) {
     else if (ready === 'Ledger transactions') {
       await expect(layer.getByRole('list', { name: ready })).toBeVisible()
       await expect(layer.getByRole('button', { name: new RegExp(longMerchant) }).first()).toBeVisible()
+      const categories = layer.getByRole('combobox', { name: 'Filter ledger by category' })
+      await expect(categories).toHaveValue('')
+      await expect(categories.getByRole('option', { name: 'All categories', exact: true })).toHaveText('Categories')
+      await expect.poll(() => categories.evaluate(node => {
+        const select = node as HTMLSelectElement
+        const style = getComputedStyle(select)
+        const measure = document.createElement('canvas').getContext('2d')!
+        measure.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`
+        const width = select.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight)
+        return measure.measureText(select.selectedOptions[0].text).width <= width
+      })).toBe(true)
       const search = layer.getByRole('textbox', { name: 'Search ledger' })
       await expect(search).toHaveAttribute('placeholder', 'Search transactions')
       await expect.poll(() => search.evaluate(node => {

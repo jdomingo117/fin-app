@@ -113,4 +113,8 @@ cd /Users/joel/Developer/fin-app/app
 node --experimental-strip-types e2e/console-phone-proxy.mjs ../docs/design/traces/console-phase-4c-phone-proxy.json.gz Budget 'Ledger review' Ingestion Transfers Settings Landing
 ```
 
-Stop at Gate 4C for owner review. Phase 5 starts after approval.
+## Approval and follow-up · 24 November 2026
+
+The owner approved Gate 4C with follow-up fixes. Commit `46efe7f` restored the rounded FocusRing for keyboard focus on Home, Settings and portalled controls, and added a keyboard check immediately after the start screen. The wide-tracked wordmark is hidden once its entrance ends. Settings shows speaker mute as status, uses a single row-label size and disables Ambient motion under Reduce effects with an explanation. The rendered audit checks the painted ring and common US spellings. The Ledger view-label proposal remains open.
+
+The follow-up merged into local `main` at `366297a`. Classic kept its first-load default. Phase 5 branches from that merge and records the follow-up’s signed-in evidence. [Follow-up decisions](console-rollout.md#4c--settings-landing-and-workflow-follow-up) · [Phase 5 gate](console-phase-5-review.md).

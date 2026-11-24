@@ -7,16 +7,15 @@
 }
 .console-settings-preferences > :first-child { grid-column: 1 / -1; }
 .console-settings-choices { display: flex; flex-wrap: wrap; gap: 8px; }
-html[data-theme="console"] .console-settings-choices [aria-pressed="true"] {
-  background-color: var(--console-ink);
-  color: var(--console-base);
+@media (forced-colors: none) {
+  html[data-theme="console"] .console-settings-choices [aria-pressed="true"] {
+    background-color: var(--console-ink);
+    color: var(--console-base);
+  }
 }
 @media (min-width: 1150px) {
   .console-settings-preferences { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .console-settings-preferences > :first-child { grid-column: auto; }
-}
-@media (forced-colors: active) {
-  html[data-theme="console"] .console-settings-choices [aria-pressed="true"] { border-color: Highlight; }
 }
 .console-settings-preferences [data-control-kind="switch"] {
   border-block-end: 1px solid var(--console-line);

@@ -1,7 +1,7 @@
 import type { Page, Request } from '@playwright/test'
 
 // Serve fictional replies at the local Auth and report boundaries.
-const origin = 'http://127.0.0.1:5320'
+const origin = process.env.CONSOLE_REVIEW_ORIGIN ?? 'http://127.0.0.1:5320'
 const dataOrigin = 'http://127.0.0.1:54321'
 export const dashboard = origin + '/dashboard'
 const userId = '47800c24-353a-46d7-ba4f-3b28e367f51f'

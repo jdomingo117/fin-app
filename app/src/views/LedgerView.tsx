@@ -32,13 +32,14 @@ import { WorkflowSkeleton, WorkflowStatus } from '../components/console/Workflow
 const PAGE_SIZE = 50
 const CLASSIC_REVIEW_IDS: LedgerReviewFilter[] = ['all', 'needs-attention', 'uncategorized']
 const CONSOLE_REVIEW_IDS: LedgerReviewFilter[] = ['all', 'unresolved', 'needs-attention', 'uncategorized']
-const UNASSIGNED_LABEL = 'Category not assigned'
+const NEVER_CATEGORISED_LABEL = 'Never categorised'
+const ALL_UNCATEGORISED_LABEL = 'All uncategorised'
 const REVIEW_FILTERS: { id: LedgerReviewFilter; label: string }[] = [
   { id: 'all', label: 'All' },
   { id: 'needs-attention', label: 'Needs attention' },
-  { id: 'unresolved', label: UNASSIGNED_LABEL },
+  { id: 'unresolved', label: NEVER_CATEGORISED_LABEL },
   { id: 'needs-review', label: 'Needs review' },
-  { id: 'uncategorized', label: 'Uncategorised' },
+  { id: 'uncategorized', label: ALL_UNCATEGORISED_LABEL },
   { id: 'missing-subcategory', label: 'Missing subcategory' },
   { id: 'ai', label: 'AI' },
   { id: 'bank', label: 'Bank' },
@@ -139,10 +140,15 @@ function LedgerWorkspace({ tenant }: { tenant: string }) {
   const pages = Math.max(1, Math.ceil(matching / PAGE_SIZE))
   const visible = activity.data?.rows ?? []
   const attentionInView = activity.data?.attention_count ?? 0
-  const counts = useReport('review counts', async owner => {
-    const [all, unresolved, eligible] = await Promise.all(['all','unresolved','eligible'].map(p_review =>
-      ledgerPage(owner, { p_review, p_limit: 1 })))
-    return { attention: all.attention_count, unresolved: unresolved.matching_count, eligible: eligible.matching_count }
+  const counts = useReport(['review counts', consoleStyle], async owner => {
+    const [all, unresolved, eligible, uncategorised] = await Promise.all([
+      ledgerPage(owner, { p_review: 'all', p_limit: 1 }),
+      ledgerPage(owner, { p_review: 'unresolved', p_limit: 1 }),
+      ledgerPage(owner, { p_review: 'eligible', p_limit: 1 }),
+      consoleStyle ? ledgerPage(owner, { p_review: 'uncategorized', p_limit: 1 }) : undefined,
+    ])
+    return { attention: all.attention_count, unresolved: unresolved.matching_count,
+      eligible: eligible.matching_count, uncategorised: uncategorised?.matching_count }
   })
   const attention = counts.data?.attention ?? 0
   const editor = useReport(['ledger editor',selectedId], owner => hydrateParents(owner,[selectedId!]), !!selectedId, theme === 'console')
@@ -239,7 +245,7 @@ function LedgerWorkspace({ tenant }: { tenant: string }) {
   const pageLoading = consoleStyle && activity.pending && !activity.data && !activity.error
   return (
     <Screen>
-      {consoleStyle&&<WorkflowStatus label={UNASSIGNED_LABEL}>{counts.data?.unresolved ?? (counts.error ? 'Unavailable' : 'Loading')}</WorkflowStatus>}
+      {consoleStyle&&<WorkflowStatus label={NEVER_CATEGORISED_LABEL}>{counts.data?.unresolved ?? (counts.error ? 'Unavailable' : 'Loading')}</WorkflowStatus>}
       {!consoleStyle&&<div className="flex flex-wrap items-end justify-between gap-4">
         <ViewHeader index={`${navNumber('ledger')} — Ledger`} title="Ledger" sub="Inspect, review and correct every transaction" />
         {rulesAction}
@@ -296,13 +302,16 @@ function LedgerWorkspace({ tenant }: { tenant: string }) {
         {moreViewsOpen && <div id="additional-ledger-views" className="flex flex-wrap gap-2 border-b border-[var(--hair)] py-4" role="group" aria-label="Additional transaction views">{REVIEW_FILTERS.filter((filter) => !primaryReviewIds.includes(filter.id) && (consoleStyle || filter.id !== 'unresolved')).map((filter) => <Chip key={filter.id} active={review === filter.id} onClick={() => setReview(filter.id)} className="min-h-11 px-4 py-2.5 text-[13px]">{filter.label}</Chip>)}</div>}
         {review === 'needs-attention' && <p role="status" className="mt-4 text-[14px] leading-6 text-ink2">{attention === 0 ? 'All caught up. No transactions need attention.' : 'Flagged for review or missing a category.'}</p>}
         <div className={consoleStyle ? 'console-ledger-filters' : 'mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(220px,1fr)_190px_190px_190px]'}>
-          <SearchInput value={query} onChange={setQuery} placeholder="Search merchant or description" ariaLabel="Search ledger" inputClassName="py-3 text-[14px]" />
-          <Select value={accountId} onChange={setAccountId} ariaLabel="Filter ledger by account" inputClassName="py-3 text-[14px]">
+          <SearchInput value={query} onChange={setQuery} placeholder="Search transactions" ariaLabel="Search ledger" className={consoleStyle ? 'console-ledger-search' : undefined} inputClassName="py-3 text-[14px]" />
+          <Select value={accountId} onChange={setAccountId} ariaLabel="Filter ledger by account" className={consoleStyle ? 'console-ledger-account' : undefined} inputClassName="py-3 text-[14px]">
             <option value="">All accounts</option>
             {accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}
           </Select>
-          <Select value={category} onChange={setCategory} ariaLabel="Filter ledger by category" inputClassName="py-3 text-[14px]">
-            <option value="">All categories</option>
+          <Select value={category} onChange={setCategory} ariaLabel="Filter ledger by category"
+            inputClassName={`py-3 text-[14px]${consoleStyle ? ' console-ledger-category' : ''}`}>
+            <option value="" aria-label={consoleStyle ? 'All categories' : undefined}>
+              {consoleStyle ? 'Categories' : 'All categories'}
+            </option>
             {ALL_CATEGORIES.map((candidate) => <option key={candidate} value={candidate}>{categoryDisplayName(candidate)}</option>)}
           </Select>
           <Select value={kind} onChange={setKind} ariaLabel="Filter ledger by transaction kind" inputClassName="py-3 text-[14px]">
@@ -413,8 +422,9 @@ function LedgerWorkspace({ tenant }: { tenant: string }) {
       {consoleStyle&&<aside className="console-workflow-companions" aria-label="Ledger context">
         <ConsoleModule title="Review counts" kind="flat">
           <dl className="console-workflow-facts console-review-counts">
-            <div><dt>{UNASSIGNED_LABEL}</dt><dd>{counts.data?.unresolved ?? 'Unavailable'}</dd><dd>Uncategorised transactions with no recorded category source.</dd></div>
-            <div><dt>Needs attention</dt><dd>{counts.data?.attention ?? 'Unavailable'}</dd><dd>Transactions flagged for review or marked uncategorised, including those above.</dd></div>
+            <div><dt>{NEVER_CATEGORISED_LABEL}</dt><dd>{counts.data?.unresolved ?? 'Unavailable'}</dd><dd>Uncategorised transactions with no recorded category source.</dd></div>
+            <div><dt>{ALL_UNCATEGORISED_LABEL}</dt><dd>{counts.data?.uncategorised ?? 'Unavailable'}</dd><dd>Every transaction in the Uncategorised category, including those with a recorded category source.</dd></div>
+            <div><dt>Needs attention</dt><dd>{counts.data?.attention ?? 'Unavailable'}</dd><dd>Transactions flagged for review or in the Uncategorised category.</dd></div>
             <div><dt>Can be recategorised</dt><dd>{counts.data?.eligible ?? 'Unavailable'}</dd><dd>Transactions Halcyon can suggest categories for. Bank categories, manual choices and system balance adjustments are protected.</dd></div>
           </dl>
         </ConsoleModule>

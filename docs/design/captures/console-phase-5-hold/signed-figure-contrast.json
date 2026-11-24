@@ -1,0 +1,182 @@
+{
+  "dashboard \u00b7 gradient": {
+    "positive": 9.038976185922548,
+    "negative": 6.758319576482924,
+    "brightest": 0.032275760575819934,
+    "darkest": 0.0009418320646378191,
+    "brightestAt": {
+      "x": 1151,
+      "y": 139
+    }
+  },
+  "dashboard \u00b7 figure backgrounds": {
+    "positive": 9.540417855719017,
+    "negative": 7.133240694067865,
+    "brightest": 0.02795136982157406,
+    "darkest": 0.004091970140987027,
+    "brightestAt": {
+      "x": 400,
+      "y": 445
+    }
+  },
+  "accounts cross-fade \u00b7 gradient": {
+    "positive": 9.256408523670762,
+    "negative": 6.920890778634423,
+    "brightest": 0.030343109168282603,
+    "darkest": 0.0011520063133612576,
+    "brightestAt": {
+      "x": 1163,
+      "y": 147
+    }
+  },
+  "accounts cross-fade \u00b7 figure backgrounds": {
+    "positive": 8.638533577194416,
+    "negative": 6.458914083409482,
+    "brightest": 0.03608968569466783,
+    "darkest": 0.004692124595956874,
+    "brightestAt": {
+      "x": 87,
+      "y": 772
+    }
+  },
+  "accounts \u00b7 gradient": {
+    "positive": 8.163997520771625,
+    "negative": 6.104109927064443,
+    "brightest": 0.041093687697887925,
+    "darkest": 0.001087476476658775,
+    "brightestAt": {
+      "x": 1131,
+      "y": 163
+    }
+  },
+  "accounts \u00b7 figure backgrounds": {
+    "positive": 8.638533577194416,
+    "negative": 6.458914083409482,
+    "brightest": 0.03608968569466783,
+    "darkest": 0.005276066004488172,
+    "brightestAt": {
+      "x": 87,
+      "y": 772
+    }
+  },
+  "income cross-fade \u00b7 gradient": {
+    "positive": 8.556348898107984,
+    "negative": 6.397465716455951,
+    "brightest": 0.036916586663261156,
+    "darkest": 0.0013236811752564803,
+    "brightestAt": {
+      "x": 1103,
+      "y": 163
+    }
+  },
+  "income cross-fade \u00b7 figure backgrounds": {
+    "positive": 7.2091350328451895,
+    "negative": 5.390172229667603,
+    "brightest": 0.053159205249342395,
+    "darkest": 0.00568080678939953,
+    "brightestAt": {
+      "x": 105,
+      "y": 772
+    }
+  },
+  "income \u00b7 gradient": {
+    "positive": 7.431285981917352,
+    "negative": 5.556271473339349,
+    "brightest": 0.05007536277477804,
+    "darkest": 0.001366296363746737,
+    "brightestAt": {
+      "x": 1171,
+      "y": 155
+    }
+  },
+  "income \u00b7 figure backgrounds": {
+    "positive": 7.2091350328451895,
+    "negative": 5.390172229667603,
+    "brightest": 0.053159205249342395,
+    "darkest": 0.006686827458946779,
+    "brightestAt": {
+      "x": 105,
+      "y": 772
+    }
+  },
+  "expenses cross-fade \u00b7 gradient": {
+    "positive": 9.232484854706755,
+    "negative": 6.9030033766792585,
+    "brightest": 0.03055129818538142,
+    "darkest": 0.0011711285133248345,
+    "brightestAt": {
+      "x": 1175,
+      "y": 155
+    }
+  },
+  "expenses cross-fade \u00b7 figure backgrounds": {
+    "positive": 8.022657027945003,
+    "negative": 5.998431562615648,
+    "brightest": 0.042698545872401183,
+    "darkest": 0.004650255202504594,
+    "brightestAt": {
+      "x": 105,
+      "y": 772
+    }
+  },
+  "expenses \u00b7 gradient": {
+    "positive": 8.20116040184701,
+    "negative": 6.13189610788008,
+    "brightest": 0.04068090417497665,
+    "darkest": 0.0012137437018150915,
+    "brightestAt": {
+      "x": 1151,
+      "y": 167
+    }
+  },
+  "expenses \u00b7 figure backgrounds": {
+    "positive": 8.022657027945003,
+    "negative": 5.998431562615648,
+    "brightest": 0.042698545872401183,
+    "darkest": 0.005419481315198016,
+    "brightestAt": {
+      "x": 105,
+      "y": 772
+    }
+  },
+  "budget cross-fade \u00b7 gradient": {
+    "positive": 10.107230254626035,
+    "negative": 7.557038616856128,
+    "brightest": 0.02357986528338154,
+    "darkest": 0.0010457509981035762,
+    "brightestAt": {
+      "x": 1167,
+      "y": 139
+    }
+  },
+  "budget cross-fade \u00b7 figure backgrounds": {
+    "positive": 7.387974541228741,
+    "negative": 5.523888098112916,
+    "brightest": 0.05066204700264358,
+    "darkest": 0.003881095947628051,
+    "brightestAt": {
+      "x": 505,
+      "y": 475
+    }
+  },
+  "budget \u00b7 gradient": {
+    "positive": 9.255463164603032,
+    "negative": 6.920183946515073,
+    "brightest": 0.03035131546605841,
+    "darkest": 0.0008048445528267423,
+    "brightestAt": {
+      "x": 1155,
+      "y": 151
+    }
+  },
+  "budget \u00b7 figure backgrounds": {
+    "positive": 6.954187049342778,
+    "negative": 5.199551089347237,
+    "brightest": 0.05694113276601982,
+    "darkest": 0.0043589412763711255,
+    "brightestAt": {
+      "x": 508,
+      "y": 481
+    }
+  }
+}

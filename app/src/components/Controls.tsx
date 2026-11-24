@@ -602,10 +602,12 @@ export function Switch({ on, onToggle, label, disabled, describedBy }: {
     >
       <span className="text-[13px] font-medium text-ink2">{label}</span>
       <span
+        data-switch-track
         className="relative h-[26px] w-[46px] shrink-0 rounded-full transition-colors"
         style={{ background: on ? 'var(--color-ink)' : 'var(--switch-off)' }}
       >
         <motion.span
+          data-switch-thumb
           className="absolute top-[3px] h-5 w-5 rounded-full bg-surface shadow"
           style={{ left: 3 }}
           animate={{ x: on ? 20 : 0 }}

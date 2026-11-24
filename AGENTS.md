@@ -82,6 +82,12 @@ hand to find the transfer-linker gap.
 
 ## Recent changes
 
+- 2026-11-24 — Console Phase 5 records the revised desktop performance gate and completes the narrow Ledger and Budget copy fixes.
+
+- 2026-11-24 — The Console Phase 5 hold follow-up updates activity contrast and Ledger copy, and reduces ambient paint work.
+
+- 2026-11-24 — Console Phase 5 adds the cross-screen qualification matrix and forced-colour control fixes.
+
 - 2026-11-24 — Gate 4C restores Console keyboard focus, settles the start wordmark, and simplifies Settings.
 
 - 2026-11-24 — Console Batch 4C adds Settings and signed-in start entry, fixes the workflow controls and copy, and extends the rendered audit.
@@ -95,10 +101,3 @@ hand to find the transfer-linker gap.
 - 2026-11-23 — Console Phase 3 separates Home and Overview, keeps the Dashboard report cache warm, and moves the phone trend orb beside movement.
 
 - 2026-11-23 — Console Phase 2 adds automatic effects tiers, an opaque start screen and a keyboard-qualified Control Centre.
-
-- 2026-11-22 — Console Phase 2 adds the full ambient scene, opt-in sound and music, and the optional start screen.
-
-- 2026-11-22 — Console Phase 2 foundation shares appearance tokens, motion presets, FocusRing, FocusRow and GlassSurface, with signed-in browser checks.
-
-- 2026-11-22 — Console Phase 2c spikes the shared hero transition, collapsing Income and Overview hubs, Accounts preview and Control Centre review cards.
-

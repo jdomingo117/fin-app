@@ -1,0 +1,815 @@
+{
+  "gate3-60-before": {
+    "browser": "158.0.8127.37",
+    "desktop": true,
+    "headed": true,
+    "full": {
+      "samples": 320,
+      "mean": 4.352953491315489,
+      "p95": 5.916999999999999,
+      "hasWallTimeEstimate": true,
+      "wallTimeLanes": [
+        "Compositor",
+        "CrGpuMain",
+        "CrRendererMain"
+      ]
+    },
+    "reduce": {
+      "samples": 312,
+      "mean": 0.40391666666666676,
+      "p95": 1.6529999999999998,
+      "hasWallTimeEstimate": true,
+      "wallTimeLanes": [
+        "Compositor"
+      ]
+    },
+    "added": {
+      "mean": 3.949036824648822,
+      "p95": 4.263999999999999
+    },
+    "displayLink": {
+      "frames": 320,
+      "medianMs": 16.669,
+      "p95Ms": 17.607
+    },
+    "presentedCadence": {
+      "frames": 320,
+      "medianMs": 16.614,
+      "p95Ms": 18.471
+    },
+    "atDisplayCadence": {
+      "full": {
+        "samples": 320,
+        "mean": 4.3535781249999985,
+        "p95": 5.86011111111111,
+        "hasWallTimeEstimate": true,
+        "wallTimeLanes": [
+          "Compositor",
+          "CrGpuMain",
+          "CrRendererMain"
+        ]
+      },
+      "reduce": {
+        "samples": 312,
+        "mean": 0.40391666666666676,
+        "p95": 1.6529999999999998,
+        "hasWallTimeEstimate": true,
+        "wallTimeLanes": [
+          "Compositor"
+        ]
+      },
+      "added": {
+        "mean": 3.9496614583333316,
+        "p95": 4.207111111111111
+      }
+    },
+    "longestNavigationMs": 14.976,
+    "hiddenObserved": false,
+    "hiddenPaused": "false",
+    "visibleResumed": true
+  },
+  "gate3-60-after": {
+    "browser": "158.0.8127.37",
+    "desktop": true,
+    "headed": true,
+    "full": {
+      "samples": 322,
+      "mean": 3.2055167677012326,
+      "p95": 5.93301593279636,
+      "hasWallTimeEstimate": true,
+      "wallTimeLanes": [
+        "Compositor",
+        "CrGpuMain",
+        "CrRendererMain"
+      ]
+    },
+    "reduce": {
+      "samples": 311,
+      "mean": 0.3873086816720256,
+      "p95": 1.7279999999999998,
+      "hasWallTimeEstimate": true,
+      "wallTimeLanes": [
+        "Compositor"
+      ]
+    },
+    "added": {
+      "mean": 2.818208086029207,
+      "p95": 4.2050159327963605
+    },
+    "displayLink": {
+      "frames": 322,
+      "medianMs": 16.675,
+      "p95Ms": 17.53
+    },
+    "presentedCadence": {
+      "frames": 322,
+      "medianMs": 16.593,
+      "p95Ms": 19.807
+    },
+    "atDisplayCadence": {
+      "full": {
+        "samples": 322,
+        "mean": 3.2116521739130444,
+        "p95": 5.897110088784167,
+        "hasWallTimeEstimate": true,
+        "wallTimeLanes": [
+          "Compositor",
+          "CrGpuMain",
+          "CrRendererMain"
+        ]
+      },
+      "reduce": {
+        "samples": 311,
+        "mean": 0.3873086816720256,
+        "p95": 1.7279999999999998,
+        "hasWallTimeEstimate": true,
+        "wallTimeLanes": [
+          "Compositor"
+        ]
+      },
+      "added": {
+        "mean": 2.824343492241019,
+        "p95": 4.1691100887841674
+      }
+    },
+    "longestNavigationMs": 21.271,
+    "hiddenObserved": false,
+    "hiddenPaused": "false",
+    "visibleResumed": true
+  },
+  "phase5-60-before": {
+    "browser": "158.0.8127.37",
+    "desktop": true,
+    "headed": true,
+    "full": {
+      "samples": 320,
+      "mean": 6.194037499999998,
+      "p95": 8.904000000000003,
+      "hasWallTimeEstimate": true,
+      "wallTimeLanes": [
+        "Compositor",
+        "CrRendererMain"
+      ]
+    },
+    "reduce": {
+      "samples": 310,
+      "mean": 0.4099000000000002,
+      "p95": 1.3879999999999995,
+      "hasWallTimeEstimate": true,
+      "wallTimeLanes": [
+        "Compositor",
+        "CrRendererMain"
+      ]
+    },
+    "added": {
+      "mean": 5.784137499999997,
+      "p95": 7.516000000000004
+    },
+    "displayLink": {
+      "frames": 320,
+      "medianMs": 16.676,
+      "p95Ms": 17.583
+    },
+    "presentedCadence": {
+      "frames": 320,
+      "medianMs": 16.669,
+      "p95Ms": 17.624
+    },
+    "atDisplayCadence": {
+      "full": {
+        "samples": 320,
+        "mean": 6.194037499999998,
+        "p95": 9.223000000000003,
+        "hasWallTimeEstimate": true,
+        "wallTimeLanes": [
+          "Compositor",
+          "CrRendererMain"
+        ]
+      },
+      "reduce": {
+        "samples": 310,
+        "mean": 0.4099000000000001,
+        "p95": 1.3239999999999998,
+        "hasWallTimeEstimate": true,
+        "wallTimeLanes": [
+          "Compositor",
+          "CrRendererMain"
+        ]
+      },
+      "added": {
+        "mean": 5.784137499999997,
+        "p95": 7.899000000000003
+      }
+    },
+    "longestNavigationMs": 49.886,
+    "hiddenObserved": false,
+    "hiddenPaused": "false",
+    "visibleResumed": true
+  },
+  "phase5-60-after": {
+    "browser": "158.0.8127.37",
+    "desktop": true,
+    "headed": true,
+    "full": {
+      "samples": 324,
+      "mean": 3.291675925925926,
+      "p95": 6.11,
+      "hasWallTimeEstimate": true,
+      "wallTimeLanes": [
+        "Compositor",
+        "CrGpuMain",
+        "CrRendererMain"
+      ]
+    },
+    "reduce": {
+      "samples": 311,
+      "mean": 0.4683183279742765,
+      "p95": 1.9189782608695647,
+      "hasWallTimeEstimate": true,
+      "wallTimeLanes": [
+        "Compositor"
+      ]
+    },
+    "added": {
+      "mean": 2.823357597951649,
+      "p95": 4.191021739130436
+    },
+    "displayLink": {
+      "frames": 325,
+      "medianMs": 16.67,
+      "p95Ms": 18.232
+    },
+    "presentedCadence": {
+      "frames": 325,
+      "medianMs": 16.625,
+      "p95Ms": 19.743
+    },
+    "atDisplayCadence": {
+      "full": {
+        "samples": 324,
+        "mean": 3.2916759259259263,
+        "p95": 6.11,
+        "hasWallTimeEstimate": true,
+        "wallTimeLanes": [
+          "Compositor",
+          "CrGpuMain",
+          "CrRendererMain"
+        ]
+      },
+      "reduce": {
+        "samples": 311,
+        "mean": 0.4683183279742765,
+        "p95": 1.7719999999999994,
+        "hasWallTimeEstimate": true,
+        "wallTimeLanes": [
+          "Compositor"
+        ]
+      },
+      "added": {
+        "mean": 2.8233575979516496,
+        "p95": 4.338000000000001
+      }
+    },
+    "longestNavigationMs": 30.594,
+    "hiddenObserved": false,
+    "hiddenPaused": "false",
+    "visibleResumed": true
+  },
+  "optimised-120": {
+    "browser": "158.0.8127.37",
+    "desktop": true,
+    "headed": true,
+    "full": {
+      "samples": 319,
+      "mean": 5.37675235109718,
+      "p95": 8.472000000000001,
+      "hasWallTimeEstimate": true,
+      "wallTimeLanes": [
+        "Compositor",
+        "CrGpuMain",
+        "CrRendererMain"
+      ]
+    },
+    "reduce": {
+      "samples": 311,
+      "mean": 0.45144694533762053,
+      "p95": 1.9309999999999996,
+      "hasWallTimeEstimate": true,
+      "wallTimeLanes": [
+        "Compositor",
+        "CrGpuMain",
+        "VizCompositorThread"
+      ]
+    },
+    "added": {
+      "mean": 4.92530540575956,
+      "p95": 6.541000000000002
+    },
+    "displayLink": {
+      "frames": 640,
+      "medianMs": 8.329,
+      "p95Ms": 8.995
+    },
+    "presentedCadence": {
+      "frames": 640,
+      "medianMs": 8.331,
+      "p95Ms": 8.982
+    },
+    "atDisplayCadence": {
+      "full": {
+        "samples": 640,
+        "mean": 2.685557812499999,
+        "p95": 4.708020833333334,
+        "hasWallTimeEstimate": true,
+        "wallTimeLanes": [
+          "Compositor",
+          "CrGpuMain",
+          "CrRendererMain"
+        ]
+      },
+      "reduce": {
+        "samples": 622,
+        "mean": 0.22568649517684886,
+        "p95": 1.2009999999999998,
+        "hasWallTimeEstimate": true,
+        "wallTimeLanes": [
+          "Compositor",
+          "CrGpuMain",
+          "VizCompositorThread"
+        ]
+      },
+      "added": {
+        "mean": 2.45987131732315,
+        "p95": 3.5070208333333346
+      }
+    },
+    "longestNavigationMs": 43.351,
+    "hiddenObserved": false,
+    "hiddenPaused": "false",
+    "visibleResumed": true
+  },
+  "optimised-headless-shared": {
+    "browser": "158.0.8127.37",
+    "desktop": true,
+    "headed": false,
+    "full": {
+      "samples": 321,
+      "mean": 2.964862928348907,
+      "p95": 5.520999999999998,
+      "hasWallTimeEstimate": true,
+      "wallTimeLanes": [
+        "Compositor",
+        "CrGpuMain",
+        "CrRendererMain"
+      ]
+    },
+    "reduce": {
+      "samples": 311,
+      "mean": 0.340112540192926,
+      "p95": 1.278,
+      "hasWallTimeEstimate": true,
+      "wallTimeLanes": [
+        "Compositor",
+        "CrGpuMain",
+        "VizCompositorThread"
+      ]
+    },
+    "added": {
+      "mean": 2.6247503881559813,
+      "p95": 4.2429999999999986
+    },
+    "presentedCadence": {
+      "frames": 321,
+      "medianMs": 16.608,
+      "p95Ms": 19.511
+    },
+    "atDisplayCadence": {
+      "full": {
+        "samples": 322,
+        "mean": 2.9556552795031057,
+        "p95": 5.710581560283687,
+        "hasWallTimeEstimate": true,
+        "wallTimeLanes": [
+          "Compositor",
+          "CrGpuMain",
+          "CrRendererMain"
+        ]
+      },
+      "reduce": {
+        "samples": 312,
+        "mean": 0.3390224358974358,
+        "p95": 1.4899999999999998,
+        "hasWallTimeEstimate": true,
+        "wallTimeLanes": [
+          "Compositor",
+          "CrGpuMain",
+          "VizCompositorThread"
+        ]
+      },
+      "added": {
+        "mean": 2.61663284360567,
+        "p95": 4.220581560283687
+      }
+    },
+    "longestNavigationMs": 17.083,
+    "hiddenObserved": false,
+    "hiddenPaused": "false",
+    "visibleResumed": true
+  },
+  "gate3-headed": {
+    "browser": "158.0.8127.37",
+    "desktop": true,
+    "headed": true,
+    "full": {
+      "samples": 320,
+      "mean": 4.899790624999995,
+      "p95": 7.1690000000000005,
+      "hasWallTimeEstimate": true
+    },
+    "reduce": {
+      "samples": 308,
+      "mean": 0.3185844155844156,
+      "p95": 1.7329999999999994,
+      "hasWallTimeEstimate": true
+    },
+    "added": {
+      "mean": 4.58120620941558,
+      "p95": 5.436000000000001
+    },
+    "longestNavigationMs": 13.766,
+    "hiddenObserved": false,
+    "hiddenPaused": "false",
+    "visibleResumed": true
+  },
+  "head-headed": {
+    "browser": "158.0.8127.37",
+    "desktop": true,
+    "headed": true,
+    "full": {
+      "samples": 319,
+      "mean": 4.608714733542323,
+      "p95": 6.523000000000001,
+      "hasWallTimeEstimate": true
+    },
+    "reduce": {
+      "samples": 309,
+      "mean": 0.35023624595469255,
+      "p95": 1.3690000000000002,
+      "hasWallTimeEstimate": true
+    },
+    "added": {
+      "mean": 4.25847848758763,
+      "p95": 5.154
+    },
+    "longestNavigationMs": 17.106,
+    "hiddenObserved": false,
+    "hiddenPaused": "false",
+    "visibleResumed": true
+  },
+  "head-repeat": {
+    "browser": "158.0.8127.37",
+    "desktop": true,
+    "headed": true,
+    "full": {
+      "samples": 320,
+      "mean": 7.804403125,
+      "p95": 10.728,
+      "hasWallTimeEstimate": true
+    },
+    "reduce": {
+      "samples": 310,
+      "mean": 0.2980129032258064,
+      "p95": 1.2709999999999997,
+      "hasWallTimeEstimate": true
+    },
+    "added": {
+      "mean": 7.506390221774194,
+      "p95": 9.457
+    },
+    "longestNavigationMs": 23.23,
+    "hiddenObserved": false,
+    "hiddenPaused": "false",
+    "visibleResumed": true
+  },
+  "verified-no-particles": {
+    "browser": "158.0.8127.37",
+    "desktop": true,
+    "headed": true,
+    "full": {
+      "samples": 320,
+      "mean": 4.893406249999999,
+      "p95": 8.359,
+      "hasWallTimeEstimate": true
+    },
+    "reduce": {
+      "samples": 310,
+      "mean": 0.28720322580645163,
+      "p95": 1.385,
+      "hasWallTimeEstimate": true
+    },
+    "added": {
+      "mean": 4.606203024193547,
+      "p95": 6.974
+    },
+    "longestNavigationMs": 18.781,
+    "hiddenObserved": false,
+    "hiddenPaused": "false",
+    "visibleResumed": true
+  },
+  "verified-no-parallax": {
+    "browser": "158.0.8127.37",
+    "desktop": true,
+    "headed": true,
+    "full": {
+      "samples": 319,
+      "mean": 4.609498432601882,
+      "p95": 6.119,
+      "hasWallTimeEstimate": true
+    },
+    "reduce": {
+      "samples": 310,
+      "mean": 0.3056354838709678,
+      "p95": 1.2389055374592834,
+      "hasWallTimeEstimate": true
+    },
+    "added": {
+      "mean": 4.303862948730914,
+      "p95": 4.8800944625407165
+    },
+    "longestNavigationMs": 14.259,
+    "hiddenObserved": false,
+    "hiddenPaused": "false",
+    "visibleResumed": true
+  },
+  "particle-css-native": {
+    "browser": "158.0.8127.37",
+    "desktop": true,
+    "headed": true,
+    "macVsyncTimer": false,
+    "full": {
+      "samples": 319,
+      "mean": 9.422401253918498,
+      "p95": 13.019999999999996,
+      "hasWallTimeEstimate": true,
+      "wallTimeLanes": [
+        "Compositor",
+        "CrGpuMain",
+        "CrRendererMain"
+      ]
+    },
+    "reduce": {
+      "samples": 309,
+      "mean": 0.34202912621359216,
+      "p95": 1.2970000000000002,
+      "hasWallTimeEstimate": true,
+      "wallTimeLanes": [
+        "Compositor",
+        "CrGpuMain",
+        "VizCompositorThread"
+      ]
+    },
+    "added": {
+      "mean": 9.080372127704905,
+      "p95": 11.722999999999995
+    },
+    "displayLink": {
+      "frames": 640,
+      "medianMs": 8.327,
+      "p95Ms": 9.236
+    },
+    "presentedCadence": {
+      "frames": 640,
+      "medianMs": 8.328,
+      "p95Ms": 9.215
+    },
+    "atDisplayCadence": {
+      "full": {
+        "samples": 640,
+        "mean": 4.704070312499999,
+        "p95": 6.816460075595809,
+        "hasWallTimeEstimate": true,
+        "wallTimeLanes": [
+          "Compositor",
+          "CrGpuMain",
+          "CrRendererMain"
+        ]
+      },
+      "reduce": {
+        "samples": 619,
+        "mean": 0.1707722132471729,
+        "p95": 0.8140000000000001,
+        "hasWallTimeEstimate": true,
+        "wallTimeLanes": [
+          "Compositor",
+          "CrGpuMain",
+          "VizCompositorThread"
+        ]
+      },
+      "added": {
+        "mean": 4.533298099252826,
+        "p95": 6.002460075595809
+      }
+    },
+    "longestNavigationMs": 16.266,
+    "hiddenObserved": false,
+    "hiddenPaused": "false",
+    "visibleResumed": true
+  },
+  "final-none-check": {
+    "browser": "158.0.8127.37",
+    "desktop": true,
+    "headed": false,
+    "full": {
+      "samples": 321,
+      "mean": 3.340137071651088,
+      "p95": 6.007728610354222,
+      "hasWallTimeEstimate": true
+    },
+    "reduce": {
+      "samples": 313,
+      "mean": 0.3020894568690097,
+      "p95": 1.184,
+      "hasWallTimeEstimate": true
+    },
+    "added": {
+      "mean": 3.0380476147820783,
+      "p95": 4.823728610354221
+    },
+    "longestNavigationMs": 19.641,
+    "hiddenObserved": false,
+    "hiddenPaused": "false",
+    "visibleResumed": true
+  },
+  "final-home-filters-check": {
+    "browser": "158.0.8127.37",
+    "desktop": true,
+    "headed": false,
+    "full": {
+      "samples": 320,
+      "mean": 2.576193749999999,
+      "p95": 5.4211699271962335,
+      "hasWallTimeEstimate": true
+    },
+    "reduce": {
+      "samples": 313,
+      "mean": 0.32060383386581476,
+      "p95": 1.3989999999999998,
+      "hasWallTimeEstimate": true
+    },
+    "added": {
+      "mean": 2.255589916134184,
+      "p95": 4.0221699271962335
+    },
+    "longestNavigationMs": 20.635,
+    "hiddenObserved": false,
+    "hiddenPaused": "false",
+    "visibleResumed": true
+  },
+  "final-desktop-headed": {
+    "browser": "158.0.8127.37",
+    "desktop": true,
+    "headed": true,
+    "full": {
+      "samples": 320,
+      "mean": 5.15076875,
+      "p95": 8.901000000000003,
+      "hasWallTimeEstimate": true,
+      "wallTimeLanes": [
+        "Compositor",
+        "CrGpuMain",
+        "CrRendererMain"
+      ]
+    },
+    "reduce": {
+      "samples": 312,
+      "mean": 0.4219583333333334,
+      "p95": 1.893,
+      "hasWallTimeEstimate": true,
+      "wallTimeLanes": [
+        "Compositor",
+        "CrGpuMain",
+        "VizCompositorThread"
+      ]
+    },
+    "added": {
+      "mean": 4.728810416666667,
+      "p95": 7.008000000000004
+    },
+    "displayLink": {
+      "frames": 641,
+      "medianMs": 8.324,
+      "p95Ms": 10.026
+    },
+    "presentedCadence": {
+      "frames": 641,
+      "medianMs": 8.323,
+      "p95Ms": 10.022
+    },
+    "atDisplayCadence": {
+      "full": {
+        "samples": 641,
+        "mean": 2.571407176287051,
+        "p95": 5.079826668705102,
+        "hasWallTimeEstimate": true,
+        "wallTimeLanes": [
+          "Compositor",
+          "CrGpuMain",
+          "CrRendererMain"
+        ]
+      },
+      "reduce": {
+        "samples": 626,
+        "mean": 0.21034984025559098,
+        "p95": 1.1306941580756014,
+        "hasWallTimeEstimate": true,
+        "wallTimeLanes": [
+          "Compositor",
+          "CrGpuMain",
+          "VizCompositorThread"
+        ]
+      },
+      "added": {
+        "mean": 2.36105733603146,
+        "p95": 3.9491325106295
+      }
+    },
+    "longestNavigationMs": 42.531,
+    "hiddenObserved": false,
+    "hiddenPaused": "false",
+    "visibleResumed": true,
+    "longestStartupMs": 11.113
+  },
+  "final-phone": {
+    "browser": "158.0.8127.37",
+    "desktop": false,
+    "headed": false,
+    "balanced": {
+      "samples": 300,
+      "mean": 0.9969766666666667,
+      "p95": 2.0949999999999993,
+      "hasWallTimeEstimate": true,
+      "wallTimeLanes": [
+        "Compositor",
+        "CrGpuMain",
+        "CrRendererMain",
+        "VizCompositorThread"
+      ]
+    },
+    "reduce": {
+      "samples": 300,
+      "mean": 0.06786999999999999,
+      "p95": 0.336,
+      "hasWallTimeEstimate": true,
+      "wallTimeLanes": [
+        "Compositor",
+        "CrGpuMain",
+        "CrRendererMain",
+        "VizCompositorThread"
+      ]
+    },
+    "added": {
+      "mean": 0.9291066666666667,
+      "p95": 1.7589999999999992
+    },
+    "presentedCadence": {
+      "frames": 300,
+      "medianMs": 16.668,
+      "p95Ms": 18.442
+    },
+    "atDisplayCadence": {
+      "balanced": {
+        "samples": 300,
+        "mean": 0.9969766666666667,
+        "p95": 2.0949999999999993,
+        "hasWallTimeEstimate": true,
+        "wallTimeLanes": [
+          "Compositor",
+          "CrGpuMain",
+          "CrRendererMain",
+          "VizCompositorThread"
+        ]
+      },
+      "reduce": {
+        "samples": 300,
+        "mean": 0.06786999999999999,
+        "p95": 0.336,
+        "hasWallTimeEstimate": true,
+        "wallTimeLanes": [
+          "Compositor",
+          "CrGpuMain",
+          "CrRendererMain",
+          "VizCompositorThread"
+        ]
+      },
+      "added": {
+        "mean": 0.9291066666666667,
+        "p95": 1.7589999999999992
+      }
+    },
+    "longestNavigationMs": 56.9,
+    "hiddenObserved": false,
+    "hiddenPaused": "false",
+    "visibleResumed": true,
+    "longestStartupMs": 26.376
+  }
+}

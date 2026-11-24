@@ -3,13 +3,19 @@
   inset: 0;
   pointer-events: none;
 }
-.console-scene { overflow: clip; }
+.console-scene {
+  overflow: clip;
+  contain: layout paint;
+  isolation: isolate;
+}
 .console-ambient-plane {
   inset: -4%;
   transform: translate3d(0, 0, 0);
   transition: transform var(--ambient-settle) var(--ease-glide);
 }
-.console-light-plane { inset: -5%; mix-blend-mode: screen; }
+.console-scene[data-tracking="true"] .console-ambient-plane { transition: none; }
+/* White light uses source-over and shares the background's parallax surface. */
+.console-light-plane { position: absolute; inset: -1%; }
 .console-ambient {
   background:
     radial-gradient(65% 68% at 90% 8%, oklch(var(--scene-l-key) var(--scene-c-key) var(--section-hue) / .77), transparent 60%),
@@ -28,8 +34,7 @@
   animation: console-rays var(--dur-rays) linear infinite;
 }
 .console-beam {
-  background: linear-gradient(198deg, rgb(255 255 255 / .14), transparent 45%);
-  filter: blur(38px);
+  background: linear-gradient(198deg, rgb(255 255 255 / .14), rgb(255 255 255 / .03) 36%, rgb(255 255 255 / .005) 45%, transparent 51%);
   animation: console-beam var(--dur-beam) ease-in-out infinite;
 }
 .console-grain {
@@ -55,21 +60,35 @@
 .console-particles {
   position: absolute;
   inset: 0;
-  inline-size: 100%;
-  block-size: 100%;
+}
+.console-particle-band {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: calc(var(--particle-band) * 100% / 7 + var(--particle-offset));
+  block-size: calc(100% / 7);
+  animation: console-particle-drift var(--particle-period) linear var(--particle-drift-delay) infinite,
+    console-particle-twinkle var(--particle-twinkle) ease-in-out var(--particle-drift-delay) infinite;
+}
+.console-particle {
+  position: absolute;
+  inset-inline-start: var(--particle-x);
+  inset-block-start: var(--particle-y);
+  inline-size: var(--particle-size);
+  block-size: var(--particle-size);
+  background: radial-gradient(circle closest-side, white, rgb(245 249 255 / .68) 23%, rgb(227 237 255 / .14) 53%, transparent);
 }
 .console-vignette {
   background:
     radial-gradient(ellipse at 50% 42%, transparent 43%, rgb(2 4 11 / .70)),
     linear-gradient(rgb(2 4 11 / .25), transparent 27% 72%, rgb(2 4 11 / .45));
 }
-.console-scene[data-paused="true"] :is(.console-rays, .console-beam, .console-ribbon, .console-light-circles) {
+.console-scene[data-paused="true"] :is(.console-rays, .console-beam, .console-ribbon, .console-light-circles, .console-particle-band),
+.console-scene[data-static="true"] .console-particle-band {
   animation-play-state: paused;
 }
 .console-scene[data-static="true"] .console-ambient-plane { transform: none !important; transition: none; }
 .console-scene[data-static="true"] :is(.console-rays, .console-beam) { animation: none; }
 .console-scene[data-static="true"] .console-ambient { transition: none; }
-.console-viewport[data-reduce-effects="true"] .console-beam { filter: none; }
 @keyframes console-rays { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg); } }
 @keyframes console-beam { 0%, 100% { opacity: .55; } 50% { opacity: .95; } }
 @keyframes console-ribbon {
@@ -80,6 +99,11 @@
   from { opacity: .25; transform: translate3d(0, 0, 0); }
   to { opacity: .60; transform: translate3d(30px, -46px, 0); }
 }
+@keyframes console-particle-drift {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(60px, -360px, 0); }
+}
+@keyframes console-particle-twinkle { 0%, 100% { opacity: .16; } 50% { opacity: .83; } }
 .console-scene[data-tier="balanced"] :is(.console-ribbon, .console-light-circles) { animation: none; }
 .console-scene[data-tier="balanced"] .console-ribbon { opacity: .62; }
 .console-scene[data-tier="balanced"] .console-light-circles { opacity: .42; }

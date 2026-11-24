@@ -1,0 +1,271 @@
+{
+  "applicationCommit": "972d0ca0aae7e863bbe33e276eb402e5fc539b8b",
+  "displayHz": 60,
+  "deliveryThresholdMs": 20.833333333333332,
+  "runs": [
+    {
+      "run": 1,
+      "browser": "158.0.8127.37",
+      "desktop": true,
+      "headed": true,
+      "full": {
+        "samples": 322,
+        "mean": 3.0220309912775414,
+        "p95": 6.245581688777256,
+        "hasWallTimeEstimate": true,
+        "wallTimeLanes": [
+          "Compositor",
+          "CrGpuMain",
+          "CrRendererMain"
+        ]
+      },
+      "reduce": {
+        "samples": 312,
+        "mean": 0.4094326923076923,
+        "p95": 1.7369999999999994,
+        "hasWallTimeEstimate": true,
+        "wallTimeLanes": [
+          "Compositor",
+          "CrGpuMain",
+          "VizCompositorThread"
+        ]
+      },
+      "added": {
+        "mean": 2.612598298969849,
+        "p95": 4.508581688777257
+      },
+      "displayLink": {
+        "frames": 322,
+        "medianMs": 16.677,
+        "p95Ms": 17.491
+      },
+      "presentedCadence": {
+        "frames": 322,
+        "medianMs": 16.677,
+        "p95Ms": 17.499
+      },
+      "atDisplayCadence": {
+        "full": {
+          "samples": 321,
+          "mean": 3.029919003115264,
+          "p95": 5.935999999999999,
+          "hasWallTimeEstimate": true,
+          "wallTimeLanes": [
+            "Compositor",
+            "CrGpuMain",
+            "CrRendererMain"
+          ]
+        },
+        "reduce": {
+          "samples": 312,
+          "mean": 0.4094326923076922,
+          "p95": 1.7349999999999997,
+          "hasWallTimeEstimate": true,
+          "wallTimeLanes": [
+            "Compositor",
+            "CrGpuMain",
+            "VizCompositorThread"
+          ]
+        },
+        "added": {
+          "mean": 2.6204863108075718,
+          "p95": 4.201
+        }
+      },
+      "longestNavigationMs": 20.532,
+      "hiddenObserved": false,
+      "hiddenPaused": "false",
+      "visibleResumed": true,
+      "longestStartupMs": 14.132,
+      "frameDelivery": {
+        "idle": {
+          "intervals": 319,
+          "onTime": 318,
+          "percent": 99.68652037617555
+        },
+        "navigation": {
+          "intervals": 1314,
+          "onTime": 1252,
+          "percent": 95.28158295281582
+        }
+      }
+    },
+    {
+      "run": 2,
+      "browser": "158.0.8127.37",
+      "desktop": true,
+      "headed": true,
+      "full": {
+        "samples": 322,
+        "mean": 3.7241304347826087,
+        "p95": 6.8740000000000006,
+        "hasWallTimeEstimate": true,
+        "wallTimeLanes": [
+          "Compositor",
+          "CrGpuMain",
+          "CrRendererMain"
+        ]
+      },
+      "reduce": {
+        "samples": 312,
+        "mean": 0.37498717948717936,
+        "p95": 1.4379999999999995,
+        "hasWallTimeEstimate": true,
+        "wallTimeLanes": [
+          "Compositor",
+          "CrGpuMain",
+          "VizCompositorThread"
+        ]
+      },
+      "added": {
+        "mean": 3.3491432552954294,
+        "p95": 5.436000000000001
+      },
+      "displayLink": {
+        "frames": 322,
+        "medianMs": 16.674,
+        "p95Ms": 17.584
+      },
+      "presentedCadence": {
+        "frames": 322,
+        "medianMs": 16.67,
+        "p95Ms": 17.576
+      },
+      "atDisplayCadence": {
+        "full": {
+          "samples": 321,
+          "mean": 3.7317040498442364,
+          "p95": 6.637000000000001,
+          "hasWallTimeEstimate": true,
+          "wallTimeLanes": [
+            "Compositor",
+            "CrGpuMain",
+            "CrRendererMain"
+          ]
+        },
+        "reduce": {
+          "samples": 312,
+          "mean": 0.3760452531415704,
+          "p95": 1.3909999999999998,
+          "hasWallTimeEstimate": true,
+          "wallTimeLanes": [
+            "Compositor",
+            "CrGpuMain",
+            "VizCompositorThread"
+          ]
+        },
+        "added": {
+          "mean": 3.355658796702666,
+          "p95": 5.246000000000001
+        }
+      },
+      "longestNavigationMs": 22.304,
+      "hiddenObserved": false,
+      "hiddenPaused": "false",
+      "visibleResumed": true,
+      "longestStartupMs": 9.354,
+      "frameDelivery": {
+        "idle": {
+          "intervals": 319,
+          "onTime": 317,
+          "percent": 99.3730407523511
+        },
+        "navigation": {
+          "intervals": 1318,
+          "onTime": 1262,
+          "percent": 95.75113808801214
+        }
+      }
+    },
+    {
+      "run": 3,
+      "browser": "158.0.8127.37",
+      "desktop": true,
+      "headed": true,
+      "full": {
+        "samples": 320,
+        "mean": 3.8088343749999978,
+        "p95": 6.6260689593202455,
+        "hasWallTimeEstimate": true,
+        "wallTimeLanes": [
+          "Compositor",
+          "CrGpuMain",
+          "CrRendererMain"
+        ]
+      },
+      "reduce": {
+        "samples": 311,
+        "mean": 0.40273633440514467,
+        "p95": 1.7529999999999994,
+        "hasWallTimeEstimate": true,
+        "wallTimeLanes": [
+          "Compositor"
+        ]
+      },
+      "added": {
+        "mean": 3.406098040594853,
+        "p95": 4.873068959320246
+      },
+      "displayLink": {
+        "frames": 320,
+        "medianMs": 16.672,
+        "p95Ms": 17.561
+      },
+      "presentedCadence": {
+        "frames": 320,
+        "medianMs": 16.672,
+        "p95Ms": 17.549
+      },
+      "atDisplayCadence": {
+        "full": {
+          "samples": 320,
+          "mean": 3.808834374999999,
+          "p95": 6.797619621342513,
+          "hasWallTimeEstimate": true,
+          "wallTimeLanes": [
+            "Compositor",
+            "CrGpuMain",
+            "CrRendererMain"
+          ]
+        },
+        "reduce": {
+          "samples": 311,
+          "mean": 0.402790996784566,
+          "p95": 1.7529999999999994,
+          "hasWallTimeEstimate": true,
+          "wallTimeLanes": [
+            "Compositor"
+          ]
+        },
+        "added": {
+          "mean": 3.406043378215433,
+          "p95": 5.044619621342513
+        }
+      },
+      "longestNavigationMs": 27.925,
+      "hiddenObserved": false,
+      "hiddenPaused": "false",
+      "visibleResumed": true,
+      "longestStartupMs": 11.914,
+      "frameDelivery": {
+        "idle": {
+          "intervals": 320,
+          "onTime": 319,
+          "percent": 99.6875
+        },
+        "navigation": {
+          "intervals": 1310,
+          "onTime": 1245,
+          "percent": 95.0381679389313
+        }
+      }
+    }
+  ],
+  "medians": {
+    "addedMeanMs": 3.3491432552954294,
+    "addedP95Ms": 4.873068959320246,
+    "idleDeliveryPercent": 99.68652037617555,
+    "navigationDeliveryPercent": 95.28158295281582,
+    "longestNavigationMs": 22.304
+  }
+}

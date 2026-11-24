@@ -1,0 +1,1394 @@
+[
+  {
+    "state": "home-first-tile",
+    "checked": {
+      "labels": 7,
+      "moduleTitles": 0,
+      "controls": 0,
+      "accentControls": 0,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 26,
+      "spelling": 22
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "home-last-tile",
+    "checked": {
+      "labels": 6,
+      "moduleTitles": 0,
+      "controls": 0,
+      "accentControls": 0,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 5,
+      "spelling": 12
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "control-centre",
+    "checked": {
+      "labels": 11,
+      "moduleTitles": 0,
+      "controls": 0,
+      "accentControls": 0,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 12,
+      "spelling": 16
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "overview",
+    "checked": {
+      "labels": 17,
+      "moduleTitles": 5,
+      "controls": 0,
+      "accentControls": 0,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 130,
+      "spelling": 83
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "overview-compact",
+    "checked": {
+      "labels": 16,
+      "moduleTitles": 5,
+      "controls": 0,
+      "accentControls": 0,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 120,
+      "spelling": 73
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "accounts",
+    "checked": {
+      "labels": 21,
+      "moduleTitles": 3,
+      "controls": 11,
+      "accentControls": 0,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 118,
+      "spelling": 85
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "accounts-compact",
+    "checked": {
+      "labels": 20,
+      "moduleTitles": 3,
+      "controls": 11,
+      "accentControls": 0,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 104,
+      "spelling": 71
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "income",
+    "checked": {
+      "labels": 17,
+      "moduleTitles": 5,
+      "controls": 0,
+      "accentControls": 0,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 182,
+      "spelling": 83
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "income-compact",
+    "checked": {
+      "labels": 16,
+      "moduleTitles": 5,
+      "controls": 0,
+      "accentControls": 0,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 170,
+      "spelling": 71
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "expenses",
+    "checked": {
+      "labels": 30,
+      "moduleTitles": 6,
+      "controls": 2,
+      "accentControls": 0,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 178,
+      "spelling": 125
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "expenses-compact",
+    "checked": {
+      "labels": 29,
+      "moduleTitles": 6,
+      "controls": 2,
+      "accentControls": 0,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 166,
+      "spelling": 113
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "budget",
+    "checked": {
+      "labels": 48,
+      "moduleTitles": 8,
+      "controls": 1,
+      "accentControls": 1,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 145,
+      "spelling": 165
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "home-first-tile",
+    "checked": {
+      "labels": 7,
+      "moduleTitles": 0,
+      "controls": 0,
+      "accentControls": 0,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 26,
+      "spelling": 22
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "ledger-review",
+    "checked": {
+      "labels": 15,
+      "moduleTitles": 4,
+      "controls": 8,
+      "accentControls": 9,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 115,
+      "spelling": 54
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "home-last-tile",
+    "checked": {
+      "labels": 6,
+      "moduleTitles": 0,
+      "controls": 0,
+      "accentControls": 0,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 5,
+      "spelling": 12
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "ingestion",
+    "checked": {
+      "labels": 5,
+      "moduleTitles": 2,
+      "controls": 1,
+      "accentControls": 0,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 13,
+      "spelling": 15
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "control-centre",
+    "checked": {
+      "labels": 11,
+      "moduleTitles": 0,
+      "controls": 0,
+      "accentControls": 0,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 12,
+      "spelling": 16
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "transfers",
+    "checked": {
+      "labels": 8,
+      "moduleTitles": 2,
+      "controls": 0,
+      "accentControls": 0,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 33,
+      "spelling": 28
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "overview",
+    "checked": {
+      "labels": 17,
+      "moduleTitles": 5,
+      "controls": 0,
+      "accentControls": 0,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 131,
+      "spelling": 84
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "overview-compact",
+    "checked": {
+      "labels": 16,
+      "moduleTitles": 5,
+      "controls": 0,
+      "accentControls": 0,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 121,
+      "spelling": 74
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "settings",
+    "checked": {
+      "labels": 27,
+      "moduleTitles": 8,
+      "controls": 5,
+      "accentControls": 1,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 43,
+      "spelling": 52
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "accounts",
+    "checked": {
+      "labels": 21,
+      "moduleTitles": 3,
+      "controls": 11,
+      "accentControls": 0,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 119,
+      "spelling": 86
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "accounts-compact",
+    "checked": {
+      "labels": 20,
+      "moduleTitles": 3,
+      "controls": 11,
+      "accentControls": 0,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 105,
+      "spelling": 72
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "income",
+    "checked": {
+      "labels": 17,
+      "moduleTitles": 5,
+      "controls": 0,
+      "accentControls": 0,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 183,
+      "spelling": 84
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "start",
+    "checked": {
+      "labels": 2,
+      "moduleTitles": 0,
+      "controls": 0,
+      "accentControls": 0,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 2,
+      "spelling": 3
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "income-compact",
+    "checked": {
+      "labels": 16,
+      "moduleTitles": 5,
+      "controls": 0,
+      "accentControls": 0,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 171,
+      "spelling": 72
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "Home focus after start",
+    "checked": {
+      "labels": 5,
+      "moduleTitles": 0,
+      "controls": 0,
+      "accentControls": 0,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 0,
+      "spelling": 6
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "expenses",
+    "checked": {
+      "labels": 30,
+      "moduleTitles": 6,
+      "controls": 2,
+      "accentControls": 0,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 179,
+      "spelling": 126
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "expenses-compact",
+    "checked": {
+      "labels": 29,
+      "moduleTitles": 6,
+      "controls": 2,
+      "accentControls": 0,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 167,
+      "spelling": 114
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "budget",
+    "checked": {
+      "labels": 48,
+      "moduleTitles": 8,
+      "controls": 1,
+      "accentControls": 1,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 145,
+      "spelling": 165
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "ledger-review",
+    "checked": {
+      "labels": 15,
+      "moduleTitles": 4,
+      "controls": 8,
+      "accentControls": 9,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 115,
+      "spelling": 54
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "home-first-tile",
+    "checked": {
+      "labels": 7,
+      "moduleTitles": 0,
+      "controls": 0,
+      "accentControls": 0,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 26,
+      "spelling": 22
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "ingestion",
+    "checked": {
+      "labels": 5,
+      "moduleTitles": 2,
+      "controls": 1,
+      "accentControls": 0,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 13,
+      "spelling": 15
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "home-last-tile",
+    "checked": {
+      "labels": 6,
+      "moduleTitles": 0,
+      "controls": 0,
+      "accentControls": 0,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 5,
+      "spelling": 12
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "control-centre",
+    "checked": {
+      "labels": 11,
+      "moduleTitles": 0,
+      "controls": 0,
+      "accentControls": 0,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 12,
+      "spelling": 16
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "transfers",
+    "checked": {
+      "labels": 8,
+      "moduleTitles": 2,
+      "controls": 0,
+      "accentControls": 0,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 33,
+      "spelling": 28
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "overview",
+    "checked": {
+      "labels": 17,
+      "moduleTitles": 5,
+      "controls": 0,
+      "accentControls": 0,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 137,
+      "spelling": 90
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "settings",
+    "checked": {
+      "labels": 27,
+      "moduleTitles": 8,
+      "controls": 5,
+      "accentControls": 1,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 43,
+      "spelling": 52
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "overview-compact",
+    "checked": {
+      "labels": 16,
+      "moduleTitles": 5,
+      "controls": 0,
+      "accentControls": 0,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 127,
+      "spelling": 80
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "accounts",
+    "checked": {
+      "labels": 21,
+      "moduleTitles": 3,
+      "controls": 11,
+      "accentControls": 0,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 123,
+      "spelling": 90
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "accounts-compact",
+    "checked": {
+      "labels": 20,
+      "moduleTitles": 3,
+      "controls": 11,
+      "accentControls": 0,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 109,
+      "spelling": 76
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "start",
+    "checked": {
+      "labels": 2,
+      "moduleTitles": 0,
+      "controls": 0,
+      "accentControls": 0,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 2,
+      "spelling": 3
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "income",
+    "checked": {
+      "labels": 17,
+      "moduleTitles": 5,
+      "controls": 0,
+      "accentControls": 0,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 192,
+      "spelling": 93
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "income-compact",
+    "checked": {
+      "labels": 16,
+      "moduleTitles": 5,
+      "controls": 0,
+      "accentControls": 0,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 180,
+      "spelling": 81
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "Home focus after start",
+    "checked": {
+      "labels": 5,
+      "moduleTitles": 0,
+      "controls": 0,
+      "accentControls": 0,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 0,
+      "spelling": 6
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "expenses",
+    "checked": {
+      "labels": 30,
+      "moduleTitles": 6,
+      "controls": 2,
+      "accentControls": 0,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 191,
+      "spelling": 138
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "expenses-compact",
+    "checked": {
+      "labels": 29,
+      "moduleTitles": 6,
+      "controls": 2,
+      "accentControls": 0,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 179,
+      "spelling": 126
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "budget",
+    "checked": {
+      "labels": 48,
+      "moduleTitles": 8,
+      "controls": 1,
+      "accentControls": 1,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 145,
+      "spelling": 165
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "ledger-review",
+    "checked": {
+      "labels": 15,
+      "moduleTitles": 4,
+      "controls": 8,
+      "accentControls": 9,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 133,
+      "spelling": 54
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "ingestion",
+    "checked": {
+      "labels": 5,
+      "moduleTitles": 2,
+      "controls": 1,
+      "accentControls": 0,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 13,
+      "spelling": 15
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "transfers",
+    "checked": {
+      "labels": 8,
+      "moduleTitles": 2,
+      "controls": 0,
+      "accentControls": 0,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 33,
+      "spelling": 28
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "settings",
+    "checked": {
+      "labels": 27,
+      "moduleTitles": 8,
+      "controls": 5,
+      "accentControls": 1,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 43,
+      "spelling": 52
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "start",
+    "checked": {
+      "labels": 2,
+      "moduleTitles": 0,
+      "controls": 0,
+      "accentControls": 0,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 2,
+      "spelling": 3
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "Home focus after start",
+    "checked": {
+      "labels": 5,
+      "moduleTitles": 0,
+      "controls": 0,
+      "accentControls": 0,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 0,
+      "spelling": 6
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "ledger",
+    "checked": {
+      "labels": 15,
+      "moduleTitles": 4,
+      "controls": 8,
+      "accentControls": 9,
+      "focusedElements": 1,
+      "focusRings": 0,
+      "textNodes": 133,
+      "spelling": 54
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "ledger correction",
+    "checked": {
+      "labels": 20,
+      "moduleTitles": 4,
+      "controls": 4,
+      "accentControls": 2,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 48,
+      "spelling": 52
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "ledger",
+    "checked": {
+      "labels": 15,
+      "moduleTitles": 4,
+      "controls": 8,
+      "accentControls": 9,
+      "focusedElements": 1,
+      "focusRings": 0,
+      "textNodes": 115,
+      "spelling": 54
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  },
+  {
+    "state": "ledger correction",
+    "checked": {
+      "labels": 20,
+      "moduleTitles": 4,
+      "controls": 4,
+      "accentControls": 2,
+      "focusedElements": 1,
+      "focusRings": 1,
+      "textNodes": 48,
+      "spelling": 52
+    },
+    "issues": {
+      "casing": [],
+      "moduleTitles": [],
+      "accents": [],
+      "controls": [],
+      "defaultAccents": [],
+      "defaultOutlines": [],
+      "focusRings": [],
+      "dates": [],
+      "spelling": []
+    }
+  }
+]

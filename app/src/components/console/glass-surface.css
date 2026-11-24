@@ -26,7 +26,7 @@
 
 [data-console-surface="activity"] {
   background:
-    radial-gradient(75% 80% at 100% 0%, oklch(var(--card-l-glow) var(--card-chroma) var(--section-hue) / .66), transparent 65%),
+    radial-gradient(75% 55% at 100% 0%, oklch(var(--card-l-glow) var(--card-chroma) var(--section-hue) / .45), transparent 65%),
     linear-gradient(160deg, oklch(var(--card-l-top) var(--card-chroma) var(--section-hue)), oklch(var(--card-l-base) .07 calc(var(--section-hue) + 30)));
 }
 

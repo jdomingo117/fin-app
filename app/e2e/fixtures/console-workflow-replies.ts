@@ -82,6 +82,7 @@ export function workflowReplies({ loseBudgetReceipt = false } = {}) {
       const allRows = fallback.rows.map(row => {
         if (row.id === 'local-fixture-0') return { ...row, category: 'Uncategorized', category_source: null }
         if (row.id === 'local-fixture-1') return { ...row, needs_review: true, category_source: 'ai' }
+        if (row.id === 'local-fixture-2') return { ...row, category: 'Uncategorized', category_source: 'seed' }
         if (row.id === parentId) return { ...row, category, category_source: categoryEdited ? 'user' : 'bank' }
         return { ...row, category_source: 'bank' }
       })

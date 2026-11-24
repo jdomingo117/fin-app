@@ -1,24 +1,28 @@
 import { chromium } from 'playwright'
-import { writeFile } from 'node:fs/promises'
-import { gzipSync } from 'node:zlib'
+import { createWriteStream } from 'node:fs'
+import { Readable } from 'node:stream'
+import { pipeline } from 'node:stream/promises'
+import { createGzip } from 'node:zlib'
 import { dashboard, signInForConsole } from './fixtures/console-review.ts'
 import { workflowReplies } from './fixtures/console-workflow-replies.ts'
 
 const output = process.argv[2]
 if (!output) throw new Error('Pass the output trace filename.')
 const desktop = process.argv.includes('--desktop')
-const targets = process.argv.slice(3).filter(name => name !== '--desktop')
+const headed = process.argv.includes('--headed')
+const targets = process.argv.slice(3).filter(name => name !== '--desktop' && name !== '--headed')
 if (!targets.length) targets.push('Accounts', 'Income', 'Expenses')
 const quickActions = new Set(['Ledger review', 'Ingestion', 'Transfers', 'Settings'])
 const workflows = targets.some(name => name === 'Budget' || quickActions.has(name))
 const traceStartup = targets.includes('Landing')
-const browser = await chromium.launch({ channel: 'chrome' })
+const browser = await chromium.launch({ channel: 'chrome', headless: !headed })
 const context = await browser.newContext({
   viewport: desktop ? { width: 1440, height: 900 } : { width: 390, height: 844 },
   isMobile: !desktop, hasTouch: !desktop, deviceScaleFactor: 1, serviceWorkers: 'block',
   timezoneId: 'Australia/Sydney',
 })
 const page = await context.newPage()
+page.setDefaultTimeout(20_000)
 const cdp = await context.newCDPSession(page)
 const tile = name => page.getByRole('toolbar', { name: 'Sections' }).getByRole('button', { name, exact: true })
 const mark = name => page.evaluate(name => performance.mark(name), 'console.proxy.' + name)
@@ -63,6 +67,7 @@ async function navigate() {
         for (let index = from - 1; index > to; index--) await page.keyboard.press('ArrowLeft')
       }
       for (let index = from + 1; index <= to; index++) await tile(sections[index]).tap()
+      if (from >= to) await target.tap()
       await activate(target)
     }
     await back.waitFor()
@@ -117,6 +122,8 @@ try {
   const hiddenPaused = await page.locator('.console-scene').getAttribute('data-paused')
   await page.bringToFront()
   await other.close()
+  await page.waitForFunction(() =>
+    document.visibilityState === 'visible' && document.querySelector('.console-scene')?.getAttribute('data-paused') === 'false')
   await mark('visibility.end')
   if (traceStartup) {
     await activate(page.getByRole('button', { name: 'Settings', exact: true }))
@@ -132,7 +139,16 @@ try {
   const complete = new Promise(resolve => cdp.once('Tracing.tracingComplete', resolve))
   await cdp.send('Tracing.end')
   await complete
-  await writeFile(output, gzipSync(JSON.stringify({ traceEvents: events })))
+  // Foreground Chrome can produce more trace JSON than V8 can hold in one string.
+  function* traceChunks() {
+    yield '{"traceEvents":['
+    for (let first = 0; first < events.length; first += 10_000) {
+      if (first) yield ','
+      yield JSON.stringify(events.slice(first, first + 10_000)).slice(1, -1)
+    }
+    yield ']}'
+  }
+  await pipeline(Readable.from(traceChunks()), createGzip(), createWriteStream(output))
 
   const marks = new Map(events.filter(event => event.name?.startsWith('console.proxy.')).map(event => [event.name, event]))
   const threads = new Map(events.filter(event => event.name === 'thread_name')
@@ -146,12 +162,11 @@ try {
       && event.ts >= start.ts && event.ts < end.ts)
     return { start, end, tasks }
   }
-  function perFrame(name) {
+  function perFrame(name, frameDuration = 1_000_000 / 60) {
     const { start, end, tasks } = windowEvents(name)
-    const frameDuration = 1_000_000 / 60
     const frames = Array(Math.floor((end.ts - start.ts) / frameDuration)).fill(0)
     const parentEnds = new Map()
-    let hasWallTimeEstimate = false
+    const wallTimeLanes = new Set()
     for (const task of tasks.sort((a, b) => a.ts - b.ts || b.dur - a.dur || (b.tdur ?? 0) - (a.tdur ?? 0))) {
       const key = `${task.pid}:${task.tid}`
       const thread = threads.get(key)
@@ -159,7 +174,7 @@ try {
       if (task.ts + task.dur <= (parentEnds.get(key) ?? 0)) continue
       parentEnds.set(key, task.ts + task.dur)
       const cpu = task.tdur ?? task.dur
-      hasWallTimeEstimate ||= task.tdur === undefined
+      if (task.tdur === undefined) wallTimeLanes.add(thread)
       const first = Math.floor((task.ts - start.ts) / frameDuration)
       const last = Math.min(frames.length - 1, Math.floor((task.ts + task.dur - start.ts) / frameDuration))
       for (let i = first; i <= last; i++) {
@@ -173,21 +188,43 @@ try {
       samples: frames.length,
       mean: frames.reduce((sum, value) => sum + value, 0) / frames.length,
       p95: frames[Math.ceil(frames.length * 0.95) - 1],
-      hasWallTimeEstimate,
+      hasWallTimeEstimate: wallTimeLanes.size > 0,
+      wallTimeLanes: [...wallTimeLanes].sort(),
     }
   }
   const active = perFrame(activeTier)
   const reduce = perFrame('reduce')
+  const activeStart = marks.get(`console.proxy.${activeTier}.start`).ts
+  const activeEnd = marks.get(`console.proxy.${activeTier}.end`).ts
+  function cadence(name) {
+    const timestamps = [...new Set(events.filter(event => event.name === name
+      && event.ts >= activeStart && event.ts < activeEnd).map(event => event.ts))].sort((a, b) => a - b)
+    const deltas = timestamps.slice(1).map((ts, index) => ts - timestamps[index]).sort((a, b) => a - b)
+    return deltas.length ? { frames: timestamps.length, medianMs: deltas[Math.floor(deltas.length / 2)] / 1000,
+      p95Ms: deltas[Math.ceil(deltas.length * .95) - 1] / 1000 } : undefined
+  }
+  const displayLink = cadence('ExternalBeginFrameSourceMac::OnDisplayLinkCallback')
+  const presentedCadence = cadence('Display::DrawAndSwap')
+  const observedFrameDuration = displayLink?.medianMs ?? presentedCadence?.medianMs
+  const atDisplayCadence = observedFrameDuration !== undefined ? {
+    [activeTier]: perFrame(activeTier, observedFrameDuration * 1000),
+    reduce: perFrame('reduce', observedFrameDuration * 1000),
+  } : undefined
   const navigation = windowEvents('navigation')
   function longestMainTask(window) {
     return Math.max(0, ...window.tasks.filter(task => task.pid === window.start.pid && task.tid === window.start.tid)
       .map(task => task.dur / 1000))
   }
   console.log(JSON.stringify({
-    browser: browser.version(), desktop, [activeTier]: active, reduce,
+    browser: browser.version(), desktop, headed, [activeTier]: active, reduce,
     added: { mean: active.mean - reduce.mean, p95: active.p95 - reduce.p95 },
+    displayLink, presentedCadence,
+    ...(atDisplayCadence ? { atDisplayCadence: { ...atDisplayCadence, added: {
+      mean: atDisplayCadence[activeTier].mean - atDisplayCadence.reduce.mean,
+      p95: atDisplayCadence[activeTier].p95 - atDisplayCadence.reduce.p95,
+    } } } : {}),
     longestNavigationMs: longestMainTask(navigation),
-    hiddenObserved, hiddenPaused,
+    hiddenObserved, hiddenPaused, visibleResumed: true,
     ...(traceStartup ? { longestStartupMs: longestMainTask(windowEvents('startup')) } : {}),
   }, null, 2))
 } finally {

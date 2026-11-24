@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import Tile from '../../components/Tile'
-import { fmt, fmtCents, type Glow } from '../../data'
+import { categoryDisplayName, fmt, fmtCents, type Glow } from '../../data'
 import type { cashFlow } from '../../lib/reports'
 import { useView } from '../../router'
 
@@ -118,14 +118,14 @@ function SpendingReadout({
         <button
           type="button"
           onClick={() => onExploreCategory(topCategory.category)}
-          aria-label={consoleStyle ? undefined : `Explore ${topCategory.category} spending for ${period ?? "the last 30 days"}`}
+          aria-label={consoleStyle ? undefined : `Explore ${categoryDisplayName(topCategory.category)} spending for ${period ?? "the last 30 days"}`}
           className="group w-full rounded-[14px] border border-[color-mix(in_srgb,var(--color-accent)_35%,var(--hair))] bg-[var(--accent-wash)] px-4 py-3.5 text-left transition hover:border-accent/60 hover:bg-[color-mix(in_srgb,var(--accent-wash)_72%,var(--surface))] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
         >
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-accent-ink">Largest outflow</p>
               <p className="mt-1.5 max-w-xl text-[17px] font-semibold leading-6 tracking-tight text-ink">
-                <span className={consoleStyle ? undefined : 'text-accent-ink'}>{topCategory.category}</span> was your largest outflow: {money(topCategory.amount)} ({topCategoryShare}% of spending).
+                <span className={consoleStyle ? undefined : 'text-accent-ink'}>{categoryDisplayName(topCategory.category)}</span> was your largest outflow: {money(topCategory.amount)} ({topCategoryShare}% of spending).
               </p>
               <p className="mt-2 body-copy">Explore this category in the Expenses analysis <span className="font-semibold text-accent-ink group-hover:underline">→</span></p>
             </div>
@@ -140,7 +140,7 @@ function SpendingReadout({
           {largestCategoryChange ? (
             <InsightAction
               eyebrow="Period change"
-              sentence={`${largestCategoryChange.category} ${changeDirection} by ${money(Math.abs(largestCategoryChange.delta))} versus ${period ? "the preceding period" : "the prior 30 days"}.`}
+              sentence={`${categoryDisplayName(largestCategoryChange.category)} ${changeDirection} by ${money(Math.abs(largestCategoryChange.delta))} versus ${period ? "the preceding period" : "the prior 30 days"}.`}
               tone={consoleStyle ? 'text-ink' : changeTone}
               action="Explore category →"
               onClick={() => onExploreCategory(largestCategoryChange.category)}

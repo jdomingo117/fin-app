@@ -5,6 +5,12 @@
 
 .console-ledger-table { min-inline-size: 0; container-type: inline-size; }
 .console-ledger-filters { display: grid; gap: 10px; margin-block-start: 16px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.console-ledger-search input { inline-size: 100%; }
+.console-ledger-search input:placeholder-shown { padding-inline-end: 8px; }
+@container (max-width: 380px) {
+  .console-ledger-filters :is(.console-ledger-search, .console-ledger-account) { grid-column: 1 / -1; }
+  .console-ledger-category { padding-inline-end: 28px; }
+}
 .console-ledger-views { display: flex; min-inline-size: 0; flex-wrap: wrap; gap: 7px; padding-block: 5px; }
 .console-ledger-views button { padding-inline: 11px; }
 .console-ledger-views [data-control-kind="chip"]:not([aria-pressed="true"]) { background-color: transparent; }

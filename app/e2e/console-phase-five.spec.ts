@@ -58,7 +58,8 @@ async function capture(page: Page, label: string) {
 async function scan(page: Page, root: Locator, label: string) {
   await expect(root).toBeVisible()
   await expect.poll(() => root.evaluate(node => {
-    const layers = [node, ...node.querySelectorAll('.console-workflow-hub,.workflow-surface')]
+    // Chrome's axe scan checks the settled surface, including chart legend entrances.
+    const layers = [node, ...node.querySelectorAll('.console-workflow-hub,.workflow-surface,.donut-legend-row')]
     return layers.every(element => Number(getComputedStyle(element).opacity) >= .999)
   })).toBe(true)
   const dimensions = await root.evaluate(node => {

@@ -82,6 +82,8 @@ hand to find the transfer-linker gap.
 
 ## Recent changes
 
+- 2026-11-24 — Console Phase 5 records the revised desktop performance gate and completes the narrow Ledger and Budget copy fixes.
+
 - 2026-11-24 — The Console Phase 5 hold follow-up updates activity contrast and Ledger copy, and reduces ambient paint work.
 
 - 2026-11-24 — Console Phase 5 adds the cross-screen qualification matrix and forced-colour control fixes.
@@ -99,5 +101,3 @@ hand to find the transfer-linker gap.
 - 2026-11-23 — Console Phase 3 separates Home and Overview, keeps the Dashboard report cache warm, and moves the phone trend orb beside movement.
 
 - 2026-11-23 — Console Phase 2 adds automatic effects tiers, an opaque start screen and a keyboard-qualified Control Centre.
-
-- 2026-11-22 — Console Phase 2 adds the full ambient scene, opt-in sound and music, and the optional start screen.

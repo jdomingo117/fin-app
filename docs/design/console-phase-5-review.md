@@ -1,6 +1,47 @@
 # Console Phase 5 · Cross-screen qualification
 
-## Hold follow-up · 24 November 2026
+## Final hold checks · 24 November 2026
+
+| Reproduction field | Value |
+| --- | --- |
+| Branch | `codex/console-phase-5` |
+| Application commit for the 60 Hz traces | `972d0ca0aae7e863bbe33e276eb402e5fc539b8b` |
+| Application commit for the UI captures | `d0ad0f0b0d1efa2ea43bce5b755cbcd26d2e1192` |
+| Worktree | `/Users/joel/Developer/fin-app` |
+| Signed-in entry | [http://127.0.0.1:5320/dashboard](http://127.0.0.1:5320/dashboard) |
+
+```sh
+cd /Users/joel/Developer/fin-app/app
+CHOKIDAR_USEPOLLING=1 VITE_BUDGET_V1_ENABLED=true npm run dev -- --host 127.0.0.1 --port 5320 --strictPort --force
+```
+
+![Budget preview on the signed-in Console Home at 320px](captures/console-phase-5-final/320-budget.jpg)
+
+**Desktop Full performance failed under the owner-approved budget.** The median added mean was **3.35 ms/frame** against the 3 ms limit. The median added p95 was **4.87 ms/frame** against the 5 ms limit. All three runs met the frame-delivery and navigation limits.
+
+| Run | Added mean | Added p95 | Idle frames on time | Navigation frames on time | Longest navigation task |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| [1](traces/console-phase-5-final-60hz-1.json.gz) | 2.61 ms | 4.51 ms | 99.69% (318/319) | 95.28% (1252/1314) | 20.53 ms |
+| [2](traces/console-phase-5-final-60hz-2.json.gz) | 3.35 ms | 5.44 ms | 99.37% (317/319) | 95.75% (1262/1318) | 22.30 ms |
+| [3](traces/console-phase-5-final-60hz-3.json.gz) | 3.41 ms | 4.87 ms | 99.69% (319/320) | 95.04% (1245/1310) | 27.93 ms |
+| **Median** | **3.35 ms** | **4.87 ms** | **99.69%** | **95.28%** | **22.30 ms** |
+
+Chrome 158.0.8127.37 ran in the foreground at 1440×900 and 100% zoom with CPU and network throttling off. Each run used the same fictional signed-in fixture, warmed route sequence, 40-point pointer path, and matched Full and Reduce idle windows. The 60 Hz display-link medians ranged from 16.67 to 16.68 ms. The original 120 Hz mode was restored after capture. CPU work uses the existing four trace lanes and 16.67 ms buckets. The summary records every lane that used wall time where CPU duration was unavailable. [Run summaries](captures/console-phase-5-final/performance.json).
+
+Frame delivery uses the app renderer’s Chrome presentation feedback, the end of each `SwapEndToPresentationCompositorFrame` event. Within the marked Full idle and navigation windows, deduplicate presentation timestamps and count successive intervals of at most 20.83 ms. Each window must reach 95% in each run. Chrome estimates the display timestamp on platforms where it lacks the exact value. The Safari owner checklist covers visible stutter on the M1 Air. [Chromium frame trace guide](https://chromium.googlesource.com/chromium/src.git/+/main/docs/life_of_a_frame.md).
+
+```sh
+for run in 1 2 3; do
+  node --experimental-strip-types e2e/console-phone-proxy.mjs "/tmp/console-60hz-$run.json.gz" \
+    --desktop --headed Overview Accounts Income Expenses Budget 'Ledger review' Ingestion Transfers Settings Landing
+done
+```
+
+The Budget Home preview shows **Open to see this period** beneath the tile caption. Ledger displays **Categories** for the unfiltered option and keeps **All categories** as its accessible name. [320px Ledger capture](captures/console-phase-5-final/320-ledger.jpg).
+
+Classic is the first-load default on main. The owner will run the [Safari checklist](console-phase-5-owner-checklist.md) before approving the default switch. If Safari stutters on the M1 Air, the rollout uses Balanced as the desktop Automatic default. [Rollout](console-rollout.md#phase-5-owner-review-and-rollout-decisions).
+
+## Hold follow-up under the previous budget · 24 November 2026
 
 | Reproduction field | Value |
 | --- | --- |

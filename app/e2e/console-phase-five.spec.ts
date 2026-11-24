@@ -267,12 +267,14 @@ test('signed colours against section gradients and figure backgrounds', async ({
   await expect(signs.filter({ hasText: /^\+/ }).first()).toBeAttached()
   await expect(signs.filter({ hasText: /^[-−]/ }).first()).toBeAttached()
   const scene = page.locator('.console-scene')
-  const figure = '.console-home [data-sign], .console-home .console-activity-card strong.tabular-nums, .console-home .console-hero-amount > span:not(.sr-only)'
-  const findings: Record<string, { positive: number; negative: number; brightest: number; darkest: number; brightestAt: { x: number; y: number } }> = {}
+  const figure = '.console-home [data-sign], .console-home .console-activity-card strong.tabular-nums, .console-home .console-hero-amount > span:not(.sr-only):not(.console-hero-placeholder)'
+  const prompt = '.console-home .console-hero-placeholder'
+  const findings: Record<string, { positive: number; negative: number; text?: number; brightest: number; darkest: number; brightestAt: { x: number; y: number } }> = {}
   const style = await page.addStyleTag({ content: '/* Pixel samples */' })
 
-  async function sample(label: string, isolatedGradient: boolean) {
-    const ranges = isolatedGradient ? [] : await page.locator(figure).evaluateAll(elements => elements.flatMap(element => {
+  async function sample(label: string, isolatedGradient: boolean, unsignedPrompt = false) {
+    const selector = unsignedPrompt ? prompt : figure
+    const ranges = isolatedGradient ? [] : await page.locator(selector).evaluateAll(elements => elements.flatMap(element => {
       const rail = element.closest('.console-activity-row')?.getBoundingClientRect()
       const range = document.createRange()
       range.selectNodeContents(element)
@@ -286,7 +288,7 @@ test('signed colours against section gradients and figure backgrounds', async ({
     if (!isolatedGradient) expect(ranges.length, label).toBeGreaterThan(0)
     await style.evaluate((node, rules) => { node.textContent = rules }, isolatedGradient
       ? '.console-topbar,.console-main { opacity:0 !important; } .console-light-plane,.console-ribbon-plane,.console-particles,.console-grain { visibility:hidden !important; }'
-      : figure + ' { color:transparent !important; text-shadow:none !important; }')
+      : selector + ' { color:transparent !important; text-shadow:none !important; }')
     const screenshot = await page.screenshot({ scale: 'css' })
     let mask: Buffer | undefined
     if (!isolatedGradient) {
@@ -296,10 +298,10 @@ test('signed colours against section gradients and figure backgrounds', async ({
         html, body { background:black !important; }
         :where(#root) * { visibility:hidden !important; }
         ${selector} { visibility:visible !important; color:white !important; text-shadow:none !important; }
-      ` }, figure)
+      ` }, selector)
       mask = await page.screenshot({ scale: 'css' })
     }
-    findings[label] = await page.evaluate(async ({ png, mask, ranges }) => {
+    findings[label] = await page.evaluate(async ({ png, mask, ranges, unsignedPrompt }) => {
       const picture = new Image()
       picture.src = 'data:image/png;base64,' + png
       await picture.decode()
@@ -320,6 +322,7 @@ test('signed colours against section gradients and figure backgrounds', async ({
       }
       const positive = swatch('--color-console-pos')
       const negative = swatch('--color-console-neg')
+      const textInk = swatch('--console-ink')
       ctx.drawImage(picture, 0, 0)
       const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data
       let glyphs: Uint8ClampedArray | undefined
@@ -331,6 +334,7 @@ test('signed colours against section gradients and figure backgrounds', async ({
       }
       const contrast = (a: number, b: number) => (Math.max(a, b) + .05) / (Math.min(a, b) + .05)
       let minPositive = Infinity, minNegative = Infinity, darkest = 1, brightest = 0
+      let minText = Infinity
       let brightestAt = { x: 0, y: 0 }
       const areas = ranges.length ? ranges : [{ top: 0, left: 0, bottom: canvas.height, right: canvas.width }]
       for (const area of areas) {
@@ -341,6 +345,7 @@ test('signed colours against section gradients and figure backgrounds', async ({
             const l = luminance(pixels[offset], pixels[offset + 1], pixels[offset + 2])
             minPositive = Math.min(minPositive, contrast(positive, l))
             minNegative = Math.min(minNegative, contrast(negative, l))
+            if (unsignedPrompt) minText = Math.min(minText, contrast(textInk, l))
             if (l > brightest) {
               brightest = l
               brightestAt = { x, y }
@@ -349,10 +354,17 @@ test('signed colours against section gradients and figure backgrounds', async ({
           }
         }
       }
-      return { positive: minPositive, negative: minNegative, brightest, darkest, brightestAt }
-    }, { png: screenshot.toString('base64'), mask: mask?.toString('base64'), ranges })
+      return { positive: minPositive, negative: minNegative, text: unsignedPrompt ? minText : undefined, brightest, darkest, brightestAt }
+    }, { png: screenshot.toString('base64'), mask: mask?.toString('base64'), ranges, unsignedPrompt })
     expect(Number.isFinite(findings[label].negative), label + ' glyph samples').toBe(true)
     await style.evaluate(node => { node.textContent = '' })
+  }
+
+  // Signed figures keep the signed-colour bar. The unsigned hero prompt
+  // ("Open to see this period") renders in console ink, so grade it there.
+  async function sampleFigures(label: string) {
+    if (await page.locator(figure).count()) await sample(label, false)
+    if (await page.locator(prompt).count()) await sample(label + ' · prompt', false, true)
   }
 
   for (const [index, section] of ['dashboard', 'accounts', 'income', 'expenses', 'budget'].entries()) {
@@ -372,7 +384,7 @@ test('signed colours against section gradients and figure backgrounds', async ({
       // midpoint the figure is at rest, so sample its settled text bounds.
       await expect(page.locator('.console-preview')).toHaveCSS('opacity', '1')
       await sample(section + ' cross-fade · gradient', true)
-      await sample(section + ' cross-fade · figure backgrounds', false)
+      await sampleFigures(section + ' cross-fade · figure backgrounds')
       await scene.evaluate(node => {
         for (const fade of node.getAnimations({ subtree: true })) {
           if (fade instanceof CSSTransition && fade.transitionProperty === 'opacity') fade.finish()
@@ -381,11 +393,15 @@ test('signed colours against section gradients and figure backgrounds', async ({
     }
     await expect(page.locator('.console-preview')).toHaveCSS('opacity', '1')
     await sample(section + ' · gradient', true)
-    await sample(section + ' · figure backgrounds', false)
+    await sampleFigures(section + ' · figure backgrounds')
   }
   console.log('Signed figure contrast', JSON.stringify(findings))
   await info.attach('signed-contrast', { body: JSON.stringify(findings, null, 2), contentType: 'application/json' })
   for (const [label, result] of Object.entries(findings)) {
+    if (result.text !== undefined) {
+      expect.soft(result.text, label + ' prompt text').toBeGreaterThanOrEqual(4.5)
+      continue
+    }
     expect.soft(result.positive, label + ' positive').toBeGreaterThanOrEqual(4.5)
     expect.soft(result.negative, label + ' negative').toBeGreaterThanOrEqual(4.5)
   }

@@ -82,6 +82,8 @@ hand to find the transfer-linker gap.
 
 ## Recent changes
 
+- 2026-11-24 — Console CI runs in four shards and the contrast audit grades the Budget prompt against console ink.
+
 - 2026-11-24 — Console Phase 5 records the revised desktop performance gate and completes the narrow Ledger and Budget copy fixes.
 
 - 2026-11-24 — The Console Phase 5 hold follow-up updates activity contrast and Ledger copy, and reduces ambient paint work.
@@ -99,5 +101,3 @@ hand to find the transfer-linker gap.
 - 2026-11-23 — Console Batch 4A gives Accounts, Income and Expenses expanded analysis hubs and adds the throttled phone proxy.
 
 - 2026-11-23 — Console Phase 3 separates Home and Overview, keeps the Dashboard report cache warm, and moves the phone trend orb beside movement.
-
-- 2026-11-23 — Console Phase 2 adds automatic effects tiers, an opaque start screen and a keyboard-qualified Control Centre.

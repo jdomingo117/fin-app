@@ -57,7 +57,10 @@ html[data-theme="console"] :is(h1,h2,h3,h4,h5,h6)[tabindex="-1"]:focus { outline
   isolation: isolate;
   transition: transform var(--dur-micro) var(--ease-settle);
 }
-.console-activity-card .console-focus-decoration { z-index: -1; }
+.console-activity-card .console-focus-decoration {
+  z-index: -1;
+  mask-image: linear-gradient(black 22%, transparent 48%);
+}
 .console-activity-card:is(:hover, :focus-visible):not(:disabled) {
   z-index: 2;
   transform: scale(var(--console-card-focus-scale));

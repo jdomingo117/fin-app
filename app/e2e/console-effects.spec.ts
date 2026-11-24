@@ -36,11 +36,32 @@ test('ambient layers pause underneath Control Centre and Reduce effects survives
   await expect(scene.locator('.console-ribbon')).toHaveCount(4)
   await expect(scene.locator('.console-light-circles')).toHaveAttribute('data-light-count', '9')
   await expect(scene.locator('.console-beam')).toHaveCSS('animation-play-state', 'running')
+  const particles = scene.locator('.console-particles')
+  const runningParticles = () => particles.evaluate(node =>
+    node.getAnimations({ subtree: true }).filter(animation => animation.playState === 'running').length)
+  await expect.poll(runningParticles).toBeGreaterThan(0)
   await page.getByRole('button', { name: centreName, exact: true }).click()
   await expect(page.getByRole('dialog', { name: centreName })).toBeVisible()
   await expect(scene.locator('.console-beam')).toHaveCSS('animation-play-state', 'paused')
+  await expect.poll(runningParticles).toBe(0)
   await page.getByRole('button', { name: 'Close Control Centre' }).click()
   await expect(scene.locator('.console-beam')).toHaveCSS('animation-play-state', 'running')
+  await expect.poll(runningParticles).toBeGreaterThan(0)
+
+  // Chrome automation may keep both tabs visible. Exercise the document's
+  // visibility event and restore its native state before leaving Home.
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'hidden', { configurable: true, value: true })
+    document.dispatchEvent(new Event('visibilitychange'))
+  })
+  await expect(scene).toHaveAttribute('data-paused', 'true')
+  await expect.poll(runningParticles).toBe(0)
+  await page.evaluate(() => {
+    Reflect.deleteProperty(document, 'hidden')
+    document.dispatchEvent(new Event('visibilitychange'))
+  })
+  await expect(scene).toHaveAttribute('data-paused', 'false')
+  await expect.poll(runningParticles).toBeGreaterThan(0)
 
   await page.getByRole('button', { name: 'Settings', exact: true }).click()
   await page.getByRole('combobox', { name: 'Effects tier' }).selectOption('reduce')

@@ -162,12 +162,11 @@ try {
       && event.ts >= start.ts && event.ts < end.ts)
     return { start, end, tasks }
   }
-  function perFrame(name) {
+  function perFrame(name, frameDuration = 1_000_000 / 60) {
     const { start, end, tasks } = windowEvents(name)
-    const frameDuration = 1_000_000 / 60
     const frames = Array(Math.floor((end.ts - start.ts) / frameDuration)).fill(0)
     const parentEnds = new Map()
-    let hasWallTimeEstimate = false
+    const wallTimeLanes = new Set()
     for (const task of tasks.sort((a, b) => a.ts - b.ts || b.dur - a.dur || (b.tdur ?? 0) - (a.tdur ?? 0))) {
       const key = `${task.pid}:${task.tid}`
       const thread = threads.get(key)
@@ -175,7 +174,7 @@ try {
       if (task.ts + task.dur <= (parentEnds.get(key) ?? 0)) continue
       parentEnds.set(key, task.ts + task.dur)
       const cpu = task.tdur ?? task.dur
-      hasWallTimeEstimate ||= task.tdur === undefined
+      if (task.tdur === undefined) wallTimeLanes.add(thread)
       const first = Math.floor((task.ts - start.ts) / frameDuration)
       const last = Math.min(frames.length - 1, Math.floor((task.ts + task.dur - start.ts) / frameDuration))
       for (let i = first; i <= last; i++) {
@@ -189,11 +188,28 @@ try {
       samples: frames.length,
       mean: frames.reduce((sum, value) => sum + value, 0) / frames.length,
       p95: frames[Math.ceil(frames.length * 0.95) - 1],
-      hasWallTimeEstimate,
+      hasWallTimeEstimate: wallTimeLanes.size > 0,
+      wallTimeLanes: [...wallTimeLanes].sort(),
     }
   }
   const active = perFrame(activeTier)
   const reduce = perFrame('reduce')
+  const activeStart = marks.get(`console.proxy.${activeTier}.start`).ts
+  const activeEnd = marks.get(`console.proxy.${activeTier}.end`).ts
+  function cadence(name) {
+    const timestamps = [...new Set(events.filter(event => event.name === name
+      && event.ts >= activeStart && event.ts < activeEnd).map(event => event.ts))].sort((a, b) => a - b)
+    const deltas = timestamps.slice(1).map((ts, index) => ts - timestamps[index]).sort((a, b) => a - b)
+    return deltas.length ? { frames: timestamps.length, medianMs: deltas[Math.floor(deltas.length / 2)] / 1000,
+      p95Ms: deltas[Math.ceil(deltas.length * .95) - 1] / 1000 } : undefined
+  }
+  const displayLink = cadence('ExternalBeginFrameSourceMac::OnDisplayLinkCallback')
+  const presentedCadence = cadence('Display::DrawAndSwap')
+  const observedFrameDuration = displayLink?.medianMs ?? presentedCadence?.medianMs
+  const atDisplayCadence = observedFrameDuration !== undefined ? {
+    [activeTier]: perFrame(activeTier, observedFrameDuration * 1000),
+    reduce: perFrame('reduce', observedFrameDuration * 1000),
+  } : undefined
   const navigation = windowEvents('navigation')
   function longestMainTask(window) {
     return Math.max(0, ...window.tasks.filter(task => task.pid === window.start.pid && task.tid === window.start.tid)
@@ -202,6 +218,11 @@ try {
   console.log(JSON.stringify({
     browser: browser.version(), desktop, headed, [activeTier]: active, reduce,
     added: { mean: active.mean - reduce.mean, p95: active.p95 - reduce.p95 },
+    displayLink, presentedCadence,
+    ...(atDisplayCadence ? { atDisplayCadence: { ...atDisplayCadence, added: {
+      mean: atDisplayCadence[activeTier].mean - atDisplayCadence.reduce.mean,
+      p95: atDisplayCadence[activeTier].p95 - atDisplayCadence.reduce.p95,
+    } } } : {}),
     longestNavigationMs: longestMainTask(navigation),
     hiddenObserved, hiddenPaused, visibleResumed: true,
     ...(traceStartup ? { longestStartupMs: longestMainTask(windowEvents('startup')) } : {}),

@@ -101,6 +101,7 @@ async function matrix(page: Page, touch: boolean) {
   if (touch) await tile(page, 'Budget').press('ArrowRight')
   await expect(tile(page, 'Budget').locator('[data-layer="edge"]')).toHaveCSS('opacity', '1')
   expect(await anchor()).toEqual(initial)
+  await expect(home.getByText('Open to see this period', { exact: true })).toBeVisible()
   await scan(page, home, 'home-last-tile')
   const back = () => activeLayer(page).getByRole('button', { name: 'Back to Home' })
   if (touch) {
@@ -135,6 +136,17 @@ async function matrix(page: Page, touch: boolean) {
     else if (ready === 'Ledger transactions') {
       await expect(layer.getByRole('list', { name: ready })).toBeVisible()
       await expect(layer.getByRole('button', { name: new RegExp(longMerchant) }).first()).toBeVisible()
+      const search = layer.getByRole('textbox', { name: 'Search ledger' })
+      await expect(search).toHaveAttribute('placeholder', 'Search transactions')
+      await expect.poll(() => search.evaluate(node => {
+        const input = node as HTMLInputElement
+        const box = getComputedStyle(input)
+        const ink = getComputedStyle(input, '::placeholder')
+        const measure = document.createElement('canvas').getContext('2d')!
+        measure.font = `${ink.fontWeight} ${ink.fontSize} ${ink.fontFamily}`
+        const width = input.clientWidth - parseFloat(box.paddingLeft) - parseFloat(box.paddingRight)
+        return measure.measureText(input.placeholder).width <= width
+      })).toBe(true)
     } else await expect(layer.getByRole('region', { name: ready })).toBeVisible()
     await back().focus()
     await scan(page, layer, title.toLowerCase().replaceAll(' ', '-'))
@@ -242,23 +254,39 @@ test('signed colours against section gradients and figure backgrounds', async ({
   await expect(signs.filter({ hasText: /^\+/ }).first()).toBeAttached()
   await expect(signs.filter({ hasText: /^[-−]/ }).first()).toBeAttached()
   const scene = page.locator('.console-scene')
-  const figure = '.console-home [data-sign], .console-home .console-hero-amount > span:not(.sr-only)'
-  const findings: Record<string, { positive: number; negative: number; brightest: number; darkest: number }> = {}
+  const figure = '.console-home [data-sign], .console-home .console-activity-card strong.tabular-nums, .console-home .console-hero-amount > span:not(.sr-only)'
+  const findings: Record<string, { positive: number; negative: number; brightest: number; darkest: number; brightestAt: { x: number; y: number } }> = {}
   const style = await page.addStyleTag({ content: '/* Pixel samples */' })
 
   async function sample(label: string, isolatedGradient: boolean) {
     const ranges = isolatedGradient ? [] : await page.locator(figure).evaluateAll(elements => elements.flatMap(element => {
+      const rail = element.closest('.console-activity-row')?.getBoundingClientRect()
       const range = document.createRange()
       range.selectNodeContents(element)
-      return [...range.getClientRects()].map(({ top, left, bottom, right }) => ({ top, left, bottom, right }))
-        .filter(box => box.right > 0 && box.bottom > 0 && box.left < innerWidth && box.top < innerHeight)
+      return [...range.getClientRects()].map(rect => ({
+        top: Math.max(0, rect.top, rail?.top ?? 0),
+        left: Math.max(0, rect.left, rail?.left ?? 0),
+        bottom: Math.min(innerHeight, rect.bottom, rail?.bottom ?? innerHeight),
+        right: Math.min(innerWidth, rect.right, rail?.right ?? innerWidth),
+      })).filter(box => box.right > box.left && box.bottom > box.top)
     }))
     if (!isolatedGradient) expect(ranges.length, label).toBeGreaterThan(0)
     await style.evaluate((node, rules) => { node.textContent = rules }, isolatedGradient
       ? '.console-topbar,.console-main { opacity:0 !important; } .console-light-plane,.console-ribbon-plane,.console-particles,.console-grain { visibility:hidden !important; }'
-      : figure + ' { color:transparent !important; }')
+      : figure + ' { color:transparent !important; text-shadow:none !important; }')
     const screenshot = await page.screenshot({ scale: 'css' })
-    findings[label] = await page.evaluate(async ({ png, ranges }) => {
+    let mask: Buffer | undefined
+    if (!isolatedGradient) {
+      // Compare the paint behind the rendered glyphs. Font rectangles also
+      // include blank leading and can overlap the preceding line's text.
+      await style.evaluate((node, selector) => { node.textContent = `
+        html, body { background:black !important; }
+        :where(#root) * { visibility:hidden !important; }
+        ${selector} { visibility:visible !important; color:white !important; text-shadow:none !important; }
+      ` }, figure)
+      mask = await page.screenshot({ scale: 'css' })
+    }
+    findings[label] = await page.evaluate(async ({ png, mask, ranges }) => {
       const picture = new Image()
       picture.src = 'data:image/png;base64,' + png
       await picture.decode()
@@ -281,29 +309,42 @@ test('signed colours against section gradients and figure backgrounds', async ({
       const negative = swatch('--color-console-neg')
       ctx.drawImage(picture, 0, 0)
       const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data
+      let glyphs: Uint8ClampedArray | undefined
+      if (mask) {
+        picture.src = 'data:image/png;base64,' + mask
+        await picture.decode()
+        ctx.drawImage(picture, 0, 0)
+        glyphs = ctx.getImageData(0, 0, canvas.width, canvas.height).data
+      }
       const contrast = (a: number, b: number) => (Math.max(a, b) + .05) / (Math.min(a, b) + .05)
       let minPositive = Infinity, minNegative = Infinity, darkest = 1, brightest = 0
+      let brightestAt = { x: 0, y: 0 }
       const areas = ranges.length ? ranges : [{ top: 0, left: 0, bottom: canvas.height, right: canvas.width }]
       for (const area of areas) {
         for (let y = Math.max(0, Math.floor(area.top)); y < Math.min(canvas.height, area.bottom); y++) {
           for (let x = Math.max(0, Math.floor(area.left)); x < Math.min(canvas.width, area.right); x++) {
             const offset = (y * canvas.width + x) * 4
+            if (glyphs && glyphs[offset] === 0) continue
             const l = luminance(pixels[offset], pixels[offset + 1], pixels[offset + 2])
             minPositive = Math.min(minPositive, contrast(positive, l))
             minNegative = Math.min(minNegative, contrast(negative, l))
-            brightest = Math.max(brightest, l)
+            if (l > brightest) {
+              brightest = l
+              brightestAt = { x, y }
+            }
             darkest = Math.min(darkest, l)
           }
         }
       }
-      return { positive: minPositive, negative: minNegative, brightest, darkest }
-    }, { png: screenshot.toString('base64'), ranges })
+      return { positive: minPositive, negative: minNegative, brightest, darkest, brightestAt }
+    }, { png: screenshot.toString('base64'), mask: mask?.toString('base64'), ranges })
+    expect(Number.isFinite(findings[label].negative), label + ' glyph samples').toBe(true)
     await style.evaluate(node => { node.textContent = '' })
   }
 
   for (const [index, section] of ['dashboard', 'accounts', 'income', 'expenses', 'budget'].entries()) {
     if (index) {
-      await page.keyboard.press('ArrowRight')
+      await tile(page, ['Overview', 'Accounts', 'Income', 'Expenses'][index - 1]).press('ArrowRight')
       await expect(scene).toHaveAttribute('data-section', section)
       await scene.evaluate(node => {
         const fades = node.getAnimations({ subtree: true }).filter((animation): animation is CSSTransition =>
@@ -314,6 +355,9 @@ test('signed colours against section gradients and figure backgrounds', async ({
           fade.currentTime = Number(fade.effect!.getTiming().duration) / 2
         }
       })
+      // The entrance starts 380 ms before the ambient fade. At the fade's
+      // midpoint the figure is at rest, so sample its settled text bounds.
+      await expect(page.locator('.console-preview')).toHaveCSS('opacity', '1')
       await sample(section + ' cross-fade · gradient', true)
       await sample(section + ' cross-fade · figure backgrounds', false)
       await scene.evaluate(node => {
@@ -345,9 +389,14 @@ test('OS reduction and the in-app tier work independently and together', async (
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await expect(scene).toHaveAttribute('data-static', 'true')
   await expect(scene.locator('.console-beam')).toHaveCSS('animation-name', 'none')
-  const staticParticles = await particles.evaluate(canvas => (canvas as HTMLCanvasElement).toDataURL())
+  const timelines = () => particles.evaluate(node => node.getAnimations({ subtree: true }).map(animation => ({
+    time: animation.currentTime, state: animation.playState,
+  })))
+  const staticParticles = await timelines()
+  expect(staticParticles.length).toBeGreaterThan(0)
+  expect(staticParticles.every(animation => animation.state === 'paused')).toBe(true)
   await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
-  expect(await particles.evaluate(canvas => (canvas as HTMLCanvasElement).toDataURL())).toBe(staticParticles)
+  expect(await timelines()).toEqual(staticParticles)
   await tier.selectOption('reduce')
   await expect(particles).toHaveCount(0)
   await expect(scene.locator('.console-beam')).toHaveCSS('filter', 'none')

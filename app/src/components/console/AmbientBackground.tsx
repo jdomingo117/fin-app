@@ -9,12 +9,8 @@ const particleLimit = 120
 const driftBase = 11000
 const driftStep = 2600
 const twinkle = 2200
-const driftX = 60
-const driftY = 360
 const settling = 1200
-const tau = Math.PI * 2
-const particleSampleInterval = 1000 / 30
-const particleRasterScale = .75
+const pointerQuiet = 160
 
 // Stable coordinates keep the same scene mounted through section and route changes.
 function scatter(index: number, salt: number) {
@@ -22,12 +18,34 @@ function scatter(index: number, salt: number) {
   return hash - Math.floor(hash)
 }
 
-type Particle = { x: number; y: number; size: number; phase: number; period: number }
-function makeParticles(count: number): Particle[] {
-  return Array.from({ length: Math.max(0, Math.min(particleLimit, Math.floor(count))) }, (_, index) => ({
-    x: scatter(index, 1), y: scatter(index, 2), size: 1.5 + scatter(index, 3) * 2.5,
-    phase: scatter(index, 4), period: driftBase + index % 7 * driftStep,
-  }))
+const particleBandCount = 7
+const driftDistance = 360
+
+// Paint the halos once per band. Drift and twinkle share that small surface.
+function makeParticleBands(count: number) {
+  const bounded = Math.max(0, Math.min(particleLimit, Math.floor(count)))
+  const bands = Array.from({ length: Math.min(particleBandCount, bounded) }, (_, band) => {
+    const phase = scatter(band, 4)
+    const period = driftBase + band * driftStep
+    const style = {
+      '--particle-band': band,
+      '--particle-offset': `${phase * driftDistance}px`,
+      '--particle-period': `${period}ms`,
+      '--particle-drift-delay': `${-phase * period}ms`,
+      // End each drift at the dim end of a complete twinkle cycle.
+      '--particle-twinkle': `${period / Math.round(period / twinkle)}ms`,
+    } as CSSProperties
+    const sprites = Array.from({ length: Math.ceil((bounded - band) / particleBandCount) }, (_, index) => {
+      const seed = index * particleBandCount + band
+      return {
+        '--particle-x': `${scatter(seed, 1) * 100}%`,
+        '--particle-y': `${scatter(seed, 2) * 100}%`,
+        '--particle-size': `${(1.5 + scatter(seed, 3) * 2.5) * 3}px`,
+      } as CSSProperties
+    })
+    return { style, sprites }
+  })
+  return { count: bounded, bands }
 }
 
 const circleCount = 9
@@ -55,11 +73,9 @@ export function AmbientBackground({ section, paused, reduced, tier, count = part
   count?: number
 }) {
   const scene = useRef<HTMLDivElement>(null)
-  const field = useRef<HTMLCanvasElement>(null)
-  const elapsed = useRef(0)
   const reduceEffects = tier === 'reduce'
   const budget = tier === 'balanced' ? Math.min(balancedParticleLimit, count) : count
-  const particles = useMemo(() => makeParticles(budget), [budget])
+  const particleBands = useMemo(() => makeParticleBands(budget), [budget])
   const profile = import.meta.env.DEV && new URLSearchParams(location.search).has('profileAmbient')
 
   useEffect(() => {
@@ -71,23 +87,52 @@ export function AmbientBackground({ section, paused, reduced, tier, count = part
 
   useEffect(() => {
     if (!scene.current || paused || reduced) return
-    const planes = Array.from(scene.current.querySelectorAll<HTMLElement>('[data-depth]'))
+    const root = scene.current
+    const planes = Array.from(root.querySelectorAll<HTMLElement>('[data-depth]'))
       .map(node => ({ node, distance: depths[node.dataset.depth as keyof typeof depths] }))
     const pointer = window.matchMedia('(any-pointer: fine)')
     let frame = 0
-    let x = 0, y = 0
-    function paint() {
-      frame = 0
+    let settleTimer = 0
+    let targetX = 0, targetY = 0
+    let currentX = 0, currentY = 0
+    let sampledAt = 0
+    function paint(x: number, y: number) {
       if (profile) performance.mark('console.ambient.pointer.start')
       for (const { node, distance: [dx, dy] } of planes) {
         node.style.transform = `translate3d(${x * dx}px, ${y * dy}px, 0)`
       }
       if (profile) performance.measure('console.ambient.pointer', 'console.ambient.pointer.start')
     }
+    function track(time: number) {
+      frame = 0
+      if (!sampledAt) {
+        // A new gesture can interrupt the tail of the previous glide.
+        const { node, distance: [dx, dy] } = planes[0]
+        const position = new DOMMatrixReadOnly(getComputedStyle(node).transform)
+        currentX = position.m41 / dx
+        currentY = position.m42 / dy
+        root.dataset.tracking = 'true'
+      }
+      const elapsed = sampledAt ? time - sampledAt : 1000 / 60
+      const blend = 1 - Math.exp(-elapsed / pointerQuiet)
+      currentX += (targetX - currentX) * blend
+      currentY += (targetY - currentY) * blend
+      sampledAt = time
+      paint(currentX, currentY)
+    }
     function queue(nextX: number, nextY: number) {
-      x = nextX
-      y = nextY
-      if (!frame) frame = requestAnimationFrame(paint)
+      if (nextX === targetX && nextY === targetY && sampledAt) return
+      targetX = nextX
+      targetY = nextY
+      if (!frame) frame = requestAnimationFrame(track)
+      window.clearTimeout(settleTimer)
+      settleTimer = window.setTimeout(() => {
+        // Only the tail needs a continuous transition. During tracking the
+        // scene follows input samples with one coalesced write per frame.
+        sampledAt = 0
+        delete root.dataset.tracking
+        paint(targetX, targetY)
+      }, pointerQuiet)
     }
     function move(event: PointerEvent) {
       if (event.pointerType === 'touch' || !pointer.matches) {
@@ -102,85 +147,35 @@ export function AmbientBackground({ section, paused, reduced, tier, count = part
     document.documentElement.addEventListener('pointerleave', centre)
     return () => {
       if (frame) cancelAnimationFrame(frame)
+      window.clearTimeout(settleTimer)
+      delete root.dataset.tracking
       window.removeEventListener('pointermove', move)
       document.documentElement.removeEventListener('pointerleave', centre)
     }
   }, [paused, reduced, profile, tier])
-
-  useEffect(() => {
-    const canvas = field.current
-    const context = canvas?.getContext('2d')
-    if (!canvas || !context || !particles.length) return
-    // The halo is rasterised once. The animation only blits small sprites.
-    const sprite = document.createElement('canvas')
-    sprite.width = sprite.height = 16
-    const ink = sprite.getContext('2d')
-    if (!ink) return
-    const halo = ink.createRadialGradient(8, 8, 0, 8, 8, 8)
-    halo.addColorStop(0, 'rgb(255 255 255 / 1)')
-    halo.addColorStop(.23, 'rgb(245 249 255 / .68)')
-    halo.addColorStop(.53, 'rgb(227 237 255 / .14)')
-    halo.addColorStop(1, 'rgb(227 237 255 / 0)')
-    ink.fillStyle = halo
-    ink.fillRect(0, 0, 16, 16)
-
-    let width = 1, height = 1, previous = 0, lastDraw = -Infinity, frame = 0
-    function draw() {
-      if (profile) performance.mark('console.ambient.particles.start')
-      context!.clearRect(0, 0, width, height)
-      for (const { x, y, size, phase, period } of particles) {
-        const progress = (elapsed.current / period + phase) % 1
-        const px = (x * width + progress * driftX + width) % width
-        const py = (y * height - progress * driftY + height * 2) % height
-        const edge = Math.min(1, progress * 8, (1 - progress) * 8)
-        context!.globalAlpha = (.35 + (Math.sin(elapsed.current / twinkle * tau + phase * tau) + 1) * .24) * edge
-        context!.drawImage(sprite, px, py, size * 3, size * 3)
-      }
-      if (profile) performance.measure('console.ambient.particles', 'console.ambient.particles.start')
-    }
-    function tick(time: number) {
-      if (previous) elapsed.current += time - previous
-      previous = time
-      // Particle drift is subpixel between these samples. The surrounding
-      // parallax and material transitions still composite at display rate.
-      if (time - lastDraw >= particleSampleInterval - 1) {
-        draw()
-        lastDraw = time
-      }
-      frame = requestAnimationFrame(tick)
-    }
-    const observer = new ResizeObserver(([entry]) => {
-      width = Math.max(1, entry.contentRect.width)
-      height = Math.max(1, entry.contentRect.height)
-      canvas.width = Math.ceil(width * particleRasterScale)
-      canvas.height = Math.ceil(height * particleRasterScale)
-      context.setTransform(canvas.width / width, 0, 0, canvas.height / height, 0, 0)
-      draw()
-    })
-    observer.observe(canvas)
-    if (!paused && !reduced) frame = requestAnimationFrame(tick)
-    return () => {
-      observer.disconnect()
-      if (frame) cancelAnimationFrame(frame)
-    }
-  }, [particles, paused, reduced, reduceEffects, profile])
 
   return <div ref={scene} className="console-scene" data-paused={paused} data-static={reduced} data-tier={tier} data-section={section}
     aria-hidden="true" style={{ '--ambient-settle': `${settling}ms` } as CSSProperties}>
     <div className="console-ambient-plane" data-depth="background">
       {enabledSections.map(item => <div key={item.id} data-section={item.id} className="console-ambient"
         data-current={item.id === section} />)}
-    </div>
-    <div className="console-ambient-plane console-light-plane" data-depth="background">
-      <div className="console-rays" />
-      <div className="console-beam" />
+      <div className="console-light-plane">
+        <div className="console-rays" />
+        <div className="console-beam" />
+      </div>
     </div>
     {(!reduceEffects && !reduced) && <div className="console-ambient-plane console-ribbon-plane" data-depth={tier === 'full' ? 'ribbons' : undefined}>
       {ribbons.map((style, i) => <i key={i} className="console-ribbon" style={style} />)}
       <div className="console-light-circles" data-light-count={circleCount} style={{ backgroundImage: circlePaint }} />
     </div>}
     {!reduceEffects && <div className="console-ambient-plane" data-depth="particles">
-      <canvas ref={field} className="console-particles" data-particle-count={particles.length} />
+      <div className="console-particles" data-particle-count={particleBands.count}>
+        {particleBands.bands.map(({ style, sprites }, band) => (
+          <div key={band} className="console-particle-band" style={style}>
+            {sprites.map((sprite, index) => <i key={index} className="console-particle" style={sprite} />)}
+          </div>
+        ))}
+      </div>
     </div>}
     <div className="console-vignette" />
     <div className="console-grain" />

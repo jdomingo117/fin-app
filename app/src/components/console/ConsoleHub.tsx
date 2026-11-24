@@ -81,7 +81,7 @@ export function ConsoleHeadline({ id, label, figure, reduced, title, period, ori
         data-console-shared="figure"
       >
         {redacted && figure ? <span className="console-hero-placeholder">Hidden</span> :
-          figure?.cents === undefined ? <span className="console-hero-placeholder">{id === 'budget' ? 'Budget' : 'Unavailable'}</span> : <>
+          figure?.cents === undefined ? <span className="console-hero-placeholder">{id === 'budget' && home ? 'Open to see this period' : 'Unavailable'}</span> : <>
           <span aria-hidden="true">{consoleMoney(figure.cents, figure.signed, true)}</span>
           <span className="sr-only">{consoleMoney(figure.cents, figure.signed)}</span>
         </>}

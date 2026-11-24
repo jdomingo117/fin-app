@@ -52,7 +52,7 @@ A row has one active item and one tab stop. Use genuine buttons or links, a labe
 | `type.body / label` | 16px body, 18px introductory copy, weight 300, intro leading 1.55. Labels 13px, white alpha .75 (metric), .78 (subtitle), .85 (activity), .88 (section label). Intro copy white/.84. |
 | `section.hue` | Reference equivalents are Overview 255°, Accounts 200°, Expenses/Spending 35°, Budget 295°. Income uses 85°. Other routes can inherit the neutral shell until assigned a hub. The section palette is independent of chart and category hues. |
 | `paint.tile(h)` | 145° linear gradient at 0/55/100%, L .66/.46/.30, **C .15 at every stop**, hues h/h+18/h+30. |
-| `paint.activity(h,j)` | 160° linear base from L .42, C .12, hue h+10j to L .22, C .07, hue h+30. Radial 90%×90% at 100% 0%, L .56 C .15 hue h+14j / .90 → transparent at 65%. j is the zero-based index. |
+| `paint.activity(h)` | 160° linear base from L .36 C .12 hue h to L .22 C .07 hue h+30. Income uses L .44/.28 and Spending L .43/.26, both with C .15 at the first stop. Radial 75%×55% at 100% 0%, L .42 at the section’s card chroma and hue h / .45 → transparent at 65%. The focus sweep mask is open through the top 22% of the card and fades to transparent at 48%. |
 | `paint.background(h)` | Back base 175°, L .24 C .08 → L .11 C .04, hue h. Foremost radial 90%×75% at 80% 12%, L .52 C .16 h / .95 → transparent 60%. Middle 60%×60% at 4% 96%, L .36 C .14 h+40 / .90 → transparent 70%. Rear 45%×35% at 45% 55%, L .32 C .10 h−30 / .55 → transparent 80%. Keep one static gradient per enabled section mounted. Only opacity changes at section handoff. |
 | `--color-console-{pos,neg}` | oklch(.87 .14 150), oklch(.82 .12 25). Preserve explicit +/− for signed monetary quantities, plus the existing labels for financial meaning. A decrease in expenditure can be favourable. |
 | `GlassSurface.textScrim` | Require ≥4.5:1 at the brightest and darkest composited points behind every label, also during a sweep or cross-fade. First reposition or cap the glow behind text and measure again. If needed, add a soft local gradient behind the affected text and record the lowest passing opacity with the capture. Keep dense data on its flat reading surface. |
@@ -70,13 +70,13 @@ The production CSS supplies glass, hairlines, a wash and a canvas. These six slo
 | Slot and preset | Paint and movement |
 | --- | --- |
 | 1 · `ambient.section` | Render the section gradients with 4% overscan. Normalise pointer x/y to [−1,1], translate opposite the pointer by 10px/8px at full displacement. Use the export's 1200ms glide for parallax settling. |
-| 2 · `ambient.light` | Conic rays rotate −6°→+6°→−6° over 70s linear. A soft beam at 18° with 38px blur breathes opacity .55→.95→.55 over 9s ease-in-out. Both use screen blending and the background parallax. |
+| 2 · `ambient.light` | Conic rays rotate −6°→+6°→−6° over 70s linear. A soft white beam uses a 198° gradient with alpha .14/.03/.005/0 at 0/36/45/51% and breathes opacity .55→.95→.55 over 9s ease-in-out. The white light uses source-over and shares the background parallax surface. |
 | 3 · `ambient.ribbons` | Ribbons and nine soft circles move 26px/18px. Four ribbon cycles take 18/23/29/35s. Circles drift 30px right and 46px up with opacity .25→.60. Cache their positions for the lifetime of the scene. |
-| 4 · `ambient.particles` | Default 55, clamp to [0,120], size 1.5–4px. Translate group 48px/30px. Per-particle upward drift ends at (60,−360)px, lasts 11s + (index mod 7) × 2.6s. Twinkle over 2.2s by changing opacity on a static halo. |
+| 4 · `ambient.particles` | Default 55, clamp to [0,120], size 1.5–4px. Translate the field 48px/30px. Seven bands of static halos drift to (60,−360)px over 11s + band index × 2.6s. Animate each band’s transform and opacity. Align the twinkle to a whole number of cycles near 2.2s so the drift restarts at its dimmest point. |
 | 5 · `ambient.finish` | Vignette with .70 dark radial edge and .25/.45 top/bottom darkening. Static grain at 6% opacity. |
 | 6 · `glass.console` | Reuse glass structure. Backdrop blur 24px, saturation 150%, 7.5% white fill, 1px white hairline at 14%. Provide an opaque dark fallback for unavailable backdrop filter, Reduce effects and dense reading areas. |
 
-One scene owns pointer sampling. Coalesce writes into one animation frame, centre the field for touch, and freeze both animation progress and frame scheduling on document hidden or when a covering modal opens. Resume only while visible, uncovered and effects-enabled. Keep vignette and page colour visible while paused. Release listeners on theme exit and route unmount where applicable.
+One scene owns pointer sampling. Coalesce writes into one animation frame. Smooth active pointer samples and start the 1200ms glide after 160ms without movement. Centre the field for touch. Freeze animation progress and frame scheduling on document hidden or when a covering modal opens. Resume only while visible, uncovered and effects-enabled. Keep vignette and page colour visible while paused. Release listeners on theme exit and route unmount where applicable.
 
 ## §4.7 · Input and navigation
 

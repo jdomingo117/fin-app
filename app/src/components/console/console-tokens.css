@@ -40,7 +40,7 @@ html[data-theme="console"] {
   --tile-l-mid: .46;
   --tile-l-low: .30;
   --tile-chroma: .15;
-  --card-l-glow: .48;
+  --card-l-glow: .42;
   --card-l-top: .36;
   --card-l-base: .22;
   --card-chroma: .12;
@@ -70,13 +70,13 @@ html[data-theme="console"] {
 .console-viewport [data-section="budget"] { --section-hue: 295; }
 .console-viewport [data-section="income"] {
   --tile-l-high: .74; --tile-l-mid: .60; --tile-l-low: .42; --tile-chroma: .17;
-  --card-l-glow: .59; --card-l-top: .44; --card-l-base: .28; --card-chroma: .15;
+  --card-l-top: .44; --card-l-base: .28; --card-chroma: .15;
   --scene-l-key: .60; --scene-c-key: .18; --scene-l-edge: .42; --scene-c-edge: .16;
   --scene-l-base: .28; --scene-l-floor: .15;
 }
 .console-viewport [data-section="expenses"] {
   --tile-l-high: .73; --tile-l-mid: .57; --tile-l-low: .39; --tile-chroma: .17;
-  --card-l-glow: .58; --card-l-top: .43; --card-l-base: .26; --card-chroma: .15;
+  --card-l-top: .43; --card-l-base: .26; --card-chroma: .15;
   --scene-l-key: .58; --scene-c-key: .18; --scene-l-edge: .41; --scene-c-edge: .16;
   --scene-l-base: .27; --scene-l-floor: .14;
 }

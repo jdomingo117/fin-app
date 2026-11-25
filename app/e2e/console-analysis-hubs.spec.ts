@@ -140,8 +140,11 @@ test('Expenses displays reconciled prior detail and nice-number money ticks', as
 test('the leftovers audit detects casing applied only in the rendered view', async ({ page }) => {
   await page.setContent(`<style>th::after { content: " status"; font-variant-caps: all-small-caps }</style>
     <main><table><thead><tr><th style="text-transform: uppercase">Item</th></tr></thead></table>
-    <button><span style="font-variant-caps: small-caps">Planned</span></button></main>`)
-  expect((await collectConsoleChrome(page.locator('main'))).issues.casing).toEqual(['ITEM', 'STATUS', 'PLANNED'])
+    <button><span style="font-variant-caps: small-caps">Planned</span></button>
+    <div data-console-toast><p>MILESTONE REACHED</p></div>
+    <p data-console-empty-state>no recurring series detected</p></main>`)
+  expect((await collectConsoleChrome(page.locator('main'))).issues.casing)
+    .toEqual(['ITEM', 'STATUS', 'PLANNED', 'MILESTONE REACHED', 'no recurring series detected'])
 })
 
 test('the leftovers audit detects unstyled browser controls and a default focus outline', async ({ page }) => {
@@ -160,10 +163,12 @@ test('the rendered audit rejects an authored outline and US interface spellings'
   await page.setContent(`<main>
     <button style="outline: 2px solid white; outline-offset: 3px; border-radius: 12px">Categorize</button>
     <p aria-label="Color">Cash-flow behavior</p><p data-console-record-label>Favorite Color Café</p>
-    <p>Categorise by colour</p></main>`)
+    <p data-console-toast>Annualized results at the center</p>
+    <p data-console-empty-state>Analyze expenses by color</p>
+    <p>Categorise by colour · Analyse by centre · Resize</p></main>`)
   await page.keyboard.press('Tab')
   const { issues } = await collectConsoleChrome(page.locator('main'))
   expect(issues.defaultOutlines).toEqual([])
   expect(issues.focusRings).toEqual(['Categorize'])
-  expect(issues.spelling).toEqual(['Categorize', 'Color', 'behavior'])
+  expect(issues.spelling).toEqual(['Categorize', 'Color', 'behavior', 'Annualized', 'center', 'Analyze', 'color'])
 })

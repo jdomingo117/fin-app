@@ -415,12 +415,14 @@ test('Investment hero shows the current value and reserves holdings guidance for
   await expect(hero.getByText(/Holdings appear here/)).toBeVisible()
 })
 
-test('Rendered nested Console views use sentence case', async ({ page }) => {
-  await openConsole(page, investmentReply)
+test('Rendered nested Console views, toasts and empty states use Australian sentence case', async ({ page }) => {
+  await openConsole(page, resource => resource === 'update-callsign'
+    ? { status: 422, json: { message: 'The fixture rejected this change.' } } : investmentReply(resource))
   const hub = page.locator('.console-designed-scroll')
   async function check(root: Locator, name: string) {
     const report = await collectConsoleChrome(root)
     expect.soft(report.issues.casing, name).toEqual([])
+    expect.soft(report.issues.spelling, name).toEqual([])
   }
   await page.goto(new URL('/income', dashboard).href)
   await page.getByRole('tab', { name: 'Strategic projections' }).click()
@@ -431,6 +433,8 @@ test('Rendered nested Console views use sentence case', async ({ page }) => {
 
   await page.goto(new URL('/expenses', dashboard).href)
   await page.getByRole('tab', { name: 'Recurring hub' }).click()
+  await expect(page.getByText('Annualised cash burn', { exact: true })).toBeVisible()
+  await expect(page.getByText('No recurring series detected', { exact: true })).toHaveCount(3)
   const directory = page.getByText('Commitments directory', { exact: true })
   await directory.scrollIntoViewIfNeeded()
   await capture(page, '10-recurring-case')
@@ -461,6 +465,17 @@ test('Rendered nested Console views use sentence case', async ({ page }) => {
     node.appendChild(label)
   })
   expect((await collectConsoleChrome(detail)).issues.casing).toContain('AUTHORED CAPS')
+
+  await page.goto(new URL('/settings', dashboard).href)
+  await page.getByRole('button', { name: 'Edit callsign' }).click()
+  const callsign = page.getByRole('textbox', { name: 'Callsign' })
+  await callsign.fill('Fixture reviewer')
+  await callsign.press('Enter')
+  const toast = page.locator('[data-console-toast]')
+  await expect(toast.getByText('Milestone reached', { exact: true })).toHaveCSS('text-transform', 'none')
+  await expect(toast).toHaveCSS('opacity', '1')
+  await capture(page, '10-toast-case')
+  await check(toast, 'Milestone toast')
 })
 
 test('Transaction detail aligns both selects and visibly fills the checked radio', async ({ page }) => {

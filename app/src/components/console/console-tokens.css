@@ -94,6 +94,8 @@ html[data-theme="console"] {
   background: var(--color-surface);
 }
 
+html[data-theme="console"] [data-console-toast] .micro { text-transform: none; }
+
 /* Native controls and shared chips keep their semantics in Console, including
    controls inside portalled forms. The audit reads the applied variant. */
 html[data-theme="console"] :is(.native-select, textarea, input:not([type="checkbox"], [type="radio"], [type="range"], [type="file"], [type="hidden"]), [data-control-kind="chip"]) {

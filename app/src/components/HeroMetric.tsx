@@ -13,12 +13,14 @@ export default function HeroMetric({
   sub,
   tone = 'muted',
   valueClass = '',
+  empty = false,
 }: {
   label: string
   value: string
   sub?: string
   tone?: 'pos' | 'neg' | 'muted'
   valueClass?: string
+  empty?: boolean
 }) {
   const subColor = tone === 'pos' ? 'text-pos' : tone === 'neg' ? 'text-neg' : 'text-muted'
   return (
@@ -33,7 +35,7 @@ export default function HeroMetric({
       >
         {value}
       </motion.div>
-      {sub && <div className={`mt-1.5 text-[14px] font-semibold ${subColor}`}>{sub}</div>}
+      {sub && <div data-console-empty-state={empty ? '' : undefined} className={`mt-1.5 text-[14px] font-semibold ${subColor}`}>{sub}</div>}
     </Tile>
   )
 }

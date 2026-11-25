@@ -22,7 +22,8 @@ export async function collectConsoleChrome(root: Locator) {
     const recordLabel = '[data-console-record-label], .console-ledger-list, .console-activity-card, .react-flow__node, .console-chart-values table'
     const classicAccent = /(?:#(?:11b596|08735f|16c7a4|3ad9bd)\b|rgb\(\s*(?:17,\s*181,\s*150|8,\s*115,\s*95|22,\s*199,\s*164|58,\s*217,\s*189)\s*\))/i
     const date = /\b(?:19|20)\d{2}-(?:0[1-9]|1[0-2])(?:-\d{2})?\b|\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\.? (?:[1-9]|[12]\d|3[01])\b/i
-    const usSpelling = /\b(?:(?:re|un)?categoriz\w*|analyz\w*|behaviors?|favorites?|color(?:s|ed|ing)?|centers?|cancel(?:ed|ing)|label(?:ed|ing)|model(?:ed|ing)|(?:author|custom|initial|local|normal|organ|person|priorit|recogn|special|standard|summar|synchron|visual)iz\w*)\b/gi
+    const usSpelling = /\b(?!(?:(?:cap|down|over|re|up)?siz|priz|seiz)\w*\b)(?:[a-z]+(?:iz|yz)(?:e[ds]?|ing|ations?|ers?|able)|behaviors?|favorites?|(?:re|multi)?color(?:s|ed|ing|ful|less)?|center(?:s|ed|ing)?|cancel(?:ed|ing)|label(?:ed|ing)|model(?:ed|ing))\b/gi
+    const emptyState = '[data-console-empty-state], .console-empty, .console-art-empty'
     const forcedColours = matchMedia('(forced-colors: active)').matches
     const keyTarget = 'button, a, input, select, textarea, summary, [data-focus-ring], [tabindex], [role="button"]'
     function checkSpelling(value: string) {
@@ -153,6 +154,7 @@ export async function collectConsoleChrome(root: Locator) {
         if (match) issues.dates.push(match[0])
         if (!element.closest(recordLabel)) {
           if (!element.closest('kbd')) checkRenderedCase(node.textContent, style)
+          if (element.closest(emptyState) && /^\p{Ll}/u.test(node.textContent.trim())) issues.casing.push(node.textContent.trim())
           checkSpelling(node.textContent)
         }
       }

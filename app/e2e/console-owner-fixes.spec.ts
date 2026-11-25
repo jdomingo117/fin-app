@@ -154,3 +154,30 @@ test('Start does not reappear after a null token refresh or a reload', async ({ 
   await page.goto(dashboard)
   await expect(start).toBeVisible()
 })
+
+test('Date range picker follows its trigger and stays inside both desktop viewports', async ({ page }) => {
+  await openConsole(page)
+  for (const route of ['/income', '/expenses']) {
+    await page.goto(new URL(route, dashboard).href)
+    for (const [width, height] of [[1440, 900], [1024, 768]]) {
+      await page.setViewportSize({ width, height })
+      const trigger = page.locator('.console-hub-dock button[aria-haspopup="dialog"]').first()
+      await trigger.click()
+      const picker = page.getByRole('dialog', { name: 'Select date range' })
+      await expect(picker).toHaveCSS('opacity', '1')
+      if (route === '/income' && width === 1024) await capture(page, '04-date-range')
+      const box = (await picker.boundingBox())!
+      const anchor = (await trigger.boundingBox())!
+      const left = Math.max(8, Math.min(anchor.x, width - box.width - 8))
+      expect.soft(box.x, `${route} at ${width}`).toBeCloseTo(left, 0)
+      expect.soft(box.y).toBeGreaterThanOrEqual(7.5)
+      expect.soft(box.x + box.width).toBeLessThanOrEqual(width - 7.5)
+      expect.soft(box.y + box.height).toBeLessThanOrEqual(height - 7.5)
+      for (const name of ['Range start date', 'Range end date']) {
+        await expect.soft(picker.getByLabel(name)).toBeInViewport({ ratio: .99, timeout: 1500 })
+      }
+      await page.keyboard.press('Escape')
+      await expect(picker).toHaveCount(0)
+    }
+  }
+})

@@ -1,7 +1,8 @@
 import { AnimatePresence, motion } from 'framer-motion'
+import { createPortal } from 'react-dom'
 import { dateRangeLabel } from '../lib/period'
 import { useView } from '../router'
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 
 export function Button({
   children,
@@ -479,14 +480,49 @@ export function DateRangePicker({
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
+  const trigger = useRef<HTMLButtonElement>(null)
+  const popup = useRef<HTMLDivElement>(null)
+  const openedWithKeyboard = useRef(false)
+  const { theme } = useView()
+  const consoleStyle = theme === 'console'
+
+  useLayoutEffect(() => {
+    const button = trigger.current
+    const panel = popup.current
+    if (!open || !consoleStyle || !button || !panel) return
+    const position = () => {
+      const anchor = button.getBoundingClientRect()
+      const margin = 8
+      const below = anchor.bottom + 6
+      const above = anchor.top - panel.offsetHeight - 6
+      const lastTop = window.innerHeight - panel.offsetHeight - margin
+      panel.style.left = `${Math.max(margin, Math.min(anchor.left, window.innerWidth - panel.offsetWidth - margin))}px`
+      panel.style.top = `${Math.max(margin, Math.min(below <= lastTop || above < margin ? below : above, lastTop))}px`
+    }
+    const observer = new ResizeObserver(position)
+    observer.observe(button)
+    observer.observe(panel)
+    window.addEventListener('resize', position)
+    window.addEventListener('scroll', position, true)
+    position()
+    if (openedWithKeyboard.current) panel.querySelector<HTMLElement>('button, input')?.focus({ preventScroll: true })
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('resize', position)
+      window.removeEventListener('scroll', position, true)
+    }
+  }, [open, consoleStyle])
+
   useEffect(() => {
     if (!open) return
     const onDown = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+      const target = e.target as Node
+      if (!ref.current?.contains(target) && !popup.current?.contains(target)) setOpen(false)
     }
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return
       e.preventDefault()
+      if (consoleStyle && popup.current?.contains(document.activeElement)) trigger.current?.focus({ preventScroll: true })
       setOpen(false)
     }
     document.addEventListener('mousedown', onDown)
@@ -495,9 +531,8 @@ export function DateRangePicker({
       document.removeEventListener('mousedown', onDown)
       document.removeEventListener('keydown', onKey)
     }
-  }, [open])
+  }, [open, consoleStyle])
 
-  const { theme } = useView()
   const crossYear = new Date(`${from}T00:00:00`).getFullYear() !== new Date(`${to}T00:00:00`).getFullYear()
   const fmtDay = (s: string) =>
     new Date(`${s}T00:00:00`).toLocaleDateString(undefined, {
@@ -507,14 +542,62 @@ export function DateRangePicker({
     })
   const label = theme === 'console' ? dateRangeLabel(from, to) : `${fmtDay(from)} – ${fmtDay(to)}`
 
+  const picker = <AnimatePresence>
+    {open && (
+      <motion.div
+        ref={popup}
+        initial={{ opacity: 0, y: -4 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -4 }}
+        transition={{ duration: 0.14 }}
+        role="dialog"
+        aria-label="Select date range"
+        className={`${consoleStyle ? 'fixed z-[55] max-h-[calc(100dvh-16px)] max-w-[calc(100vw-16px)] overflow-auto' : 'absolute right-0 z-50 mt-1.5'} w-[320px] rounded-[12px] border border-[var(--hair)] p-3`}
+        style={{
+          background: 'var(--console-popover-paint, var(--toast-bg))',
+          backdropFilter: 'var(--console-popover-filter, blur(22px) saturate(1.2))',
+          WebkitBackdropFilter: 'var(--console-popover-filter, blur(22px) saturate(1.2))',
+          boxShadow: 'var(--shadow-glass)',
+        }}
+      >
+        {presets && presets.length > 0 && (
+          <>
+            <div className="micro mb-2 text-muted">Quick range</div>
+            <div className="flex flex-wrap gap-1.5">
+              {presets.map((p) => (
+                <Chip key={p.id} active={activePreset === p.id} onClick={() => onPreset?.(p.id)}>
+                  {p.label}
+                </Chip>
+              ))}
+            </div>
+            <div className="my-3 border-t border-[var(--hair-soft)]" />
+          </>
+        )}
+        <div className="micro mb-2 text-muted">Custom range</div>
+        <div className="flex items-end gap-2">
+          <label className="grid min-w-0 flex-1 gap-1.5">
+            <span className="micro text-muted">From</span>
+            <DateInput value={from} onChange={onFrom} min={min} max={to} ariaLabel="Range start date" className="w-full" />
+          </label>
+          <span className="pb-2.5 text-[13px] text-muted">→</span>
+          <label className="grid min-w-0 flex-1 gap-1.5">
+            <span className="micro text-muted">To</span>
+            <DateInput value={to} onChange={onTo} min={from} max={max} ariaLabel="Range end date" className="w-full" />
+          </label>
+        </div>
+      </motion.div>
+    )}
+  </AnimatePresence>
+
   return (
     <div ref={ref} className={`relative ${className}`}>
       <button
+        ref={trigger}
         type="button"
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-label={ariaLabel}
-        onClick={() => setOpen((o) => !o)}
+        onClick={event => { openedWithKeyboard.current = event.detail === 0; setOpen(value => !value) }}
         className={`flex w-full items-center justify-between gap-2 rounded-[10px] border bg-[var(--input-bg)] py-2.5 pl-3.5 pr-3 text-[13px] font-medium outline-none transition focus:border-accent focus:ring-4 focus:ring-[var(--accent-wash)] ${
           active ? 'border-accent text-accent-ink' : 'border-[var(--hair)] text-ink'
         }`}
@@ -537,51 +620,7 @@ export function DateRangePicker({
         </svg>
       </button>
 
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.14 }}
-            role="dialog"
-            aria-label="Select date range"
-            className="absolute right-0 z-50 mt-1.5 w-[320px] rounded-[12px] border border-[var(--hair)] p-3"
-            style={{
-              background: 'var(--console-popover-paint, var(--toast-bg))',
-              backdropFilter: 'var(--console-popover-filter, blur(22px) saturate(1.2))',
-              WebkitBackdropFilter: 'var(--console-popover-filter, blur(22px) saturate(1.2))',
-              boxShadow: 'var(--shadow-glass)',
-            }}
-          >
-            {presets && presets.length > 0 && (
-              <>
-                <div className="micro mb-2 text-muted">Quick range</div>
-                <div className="flex flex-wrap gap-1.5">
-                  {presets.map((p) => (
-                    <Chip key={p.id} active={activePreset === p.id} onClick={() => onPreset?.(p.id)}>
-                      {p.label}
-                    </Chip>
-                  ))}
-                </div>
-                <div className="my-3 border-t border-[var(--hair-soft)]" />
-              </>
-            )}
-            <div className="micro mb-2 text-muted">Custom range</div>
-            <div className="flex items-end gap-2">
-              <label className="grid flex-1 gap-1.5">
-                <span className="micro text-muted">From</span>
-                <DateInput value={from} onChange={onFrom} min={min} max={to} ariaLabel="Range start date" className="w-full" />
-              </label>
-              <span className="pb-2.5 text-[13px] text-muted">→</span>
-              <label className="grid flex-1 gap-1.5">
-                <span className="micro text-muted">To</span>
-                <DateInput value={to} onChange={onTo} min={from} max={max} ariaLabel="Range end date" className="w-full" />
-              </label>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {consoleStyle ? createPortal(picker, document.body) : picker}
     </div>
   )
 }

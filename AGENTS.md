@@ -82,6 +82,8 @@ hand to find the transfer-linker gap.
 
 ## Recent changes
 
+- 2026-11-26 — Console owner follow-ups verify settled Home, Australian dates, opaque filters, signed colours, Budget retry, investment trends and fixture counts.
+
 - 2026-11-25 — Console Phase 5 owner fixes qualify Home zoom, hub controls, recovery states and figure readability in Chromium and WebKit.
 
 - 2026-11-24 — Console CI runs in four shards and the contrast audit grades the Budget prompt against console ink.
@@ -99,5 +101,3 @@ hand to find the transfer-linker gap.
 - 2026-11-23 — Console workflow hubs share a status dock and use separate Budget, Ledger, Ingestion and Transfers modules.
 
 - 2026-11-23 — Console Batch 4B adds compact workflow hubs and browser coverage for Budget recovery, Ledger corrections, import staging and transfer confirmation.
-
-- 2026-11-23 — Console Batch 4A gives Accounts, Income and Expenses expanded analysis hubs and adds the throttled phone proxy.

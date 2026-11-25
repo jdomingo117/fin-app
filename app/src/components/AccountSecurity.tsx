@@ -269,7 +269,7 @@ export function DangerZoneCard() {
           <p className="mt-1 text-[12px] text-muted">
             Permanently removes {user?.email ?? 'this account'} and all its financial records
             after a 30-day grace period. Sign in during that window to cancel.
-            Type <span className="font-mono font-medium text-ink">DELETE</span> to confirm.
+            Type <kbd className="font-mono font-medium text-ink">DELETE</kbd> to confirm.
           </p>
           <div className="mt-2 flex items-center gap-2">
             <input

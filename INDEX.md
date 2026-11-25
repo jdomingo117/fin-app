@@ -599,18 +599,18 @@ implemented but the remaining M6 verification gates are still open.
 
 ### `app/` (Frontend)
 - `src/components/console/ConsoleViewport.tsx` owns the signed-in Console appearance, Home routing,
-  and the persistent scene. `ControlCentre.tsx` owns the modal, keyboard shortcut and focus return.
+  and the persistent scene. `ControlCentre.tsx` owns the modal, keyboard shortcut, focus trapping and focus return.
   `src/views/dashboard/ConsoleDashboardHome.tsx` owns Home previews and route entry.
   `ConsoleOverviewHub.tsx` owns the Overview modules and scopes its date and account filters to
   Spending insights. Both read the viewport's warm `DashboardReports.tsx` cache.
   `ConsoleHub.tsx` provides the shared-entry hero, sticky compact header and modules for
-  Income, Overview, Accounts and Expenses. The analysis hubs use their existing reports and keep a single filter instance below the hero on phones. The Phase 2 foundation shares appearance preferences, CSS/Framer Motion
+  Income, Overview, Accounts and Expenses. The hero clips at the dock edge during collapse. The analysis hubs use their existing reports and keep a single filter instance below the hero on phones. The Phase 2 foundation shares appearance preferences, CSS/Framer Motion
   presets, `FocusRing`, `FocusRow` and `GlassSurface` across those views.
   `WorkflowHub.tsx` provides the compact Home pill, route title, data-owned status and skeleton modules for Budget, Ledger, Ingestion and Transfers. Budget reuses cached current-period figures for the Home handoff and keeps the existing interrupted-save checkpoint. Ledger has a reading surface, companion modules and a Console detail sheet. Ingestion's stepper follows the existing bank and investment uploaders. Transfers keeps its queue and scan actions alongside decision guidance. The existing draft-exit, keyboard focus and grouped-confirmation guards remain in their workflow controllers.
-  `AmbientBackground.tsx` owns the six-material scene, effects tiers and suspension rules.
+  `AmbientBackground.tsx` owns the six-material scene, particle cutouts behind figures, effects tiers and suspension rules.
   `SoundEngine.ts` synthesizes cues and music from user gestures. `ConsolePreferences.tsx`
   owns the local preferences and the Console Settings modules for appearance, effects, navigation and sound.
-  `ConsoleStartScreen.tsx` gates signed-in Home entry at `/` and `/dashboard` when enabled. The app retains completion across shell swaps and puts focus on Overview after the dissolve. [Gate 4C](docs/design/console-phase-4c-review.md).
+  `ConsoleStartScreen.tsx` gates signed-in Home entry at `/` and `/dashboard` when enabled. The app retains the shown marker in session storage until Auth sends `SIGNED_OUT` and puts focus on Overview after the dissolve. [Owner fixes](docs/design/console-phase-5-owner-fixes.md).
   The signed-in
   `/dashboard?demo=foundation` route shows the foundation states in development.
   See [the console rollout](docs/design/console-rollout.md) for gate fixtures and checks.

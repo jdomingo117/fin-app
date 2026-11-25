@@ -152,7 +152,7 @@ export async function collectConsoleChrome(root: Locator) {
         const match = node.textContent.match(date)
         if (match) issues.dates.push(match[0])
         if (!element.closest(recordLabel)) {
-          checkRenderedCase(node.textContent, style)
+          if (!element.closest('kbd')) checkRenderedCase(node.textContent, style)
           checkSpelling(node.textContent)
         }
       }

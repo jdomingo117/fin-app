@@ -111,6 +111,7 @@ export async function signInForConsole(page: Page, controlledClock = true, befor
     const key = url.pathname.split('/').at(-1) ?? ''
     await beforeRead?.(key)
     let body = fixtures[key] ?? []
+    let responseHeaders: Record<string, string> = {}
     if (key === 'movement_history') {
       const account = accounts.find(item => item.id === request.postDataJSON().p_account_ids?.[0])
       const balance = account?.balance ?? 0
@@ -133,13 +134,32 @@ export async function signInForConsole(page: Page, controlledClock = true, befor
       }
     }
     if (key === 'reporting_transaction_lines') {
-      const category = url.searchParams.get('category')?.slice(3)
-      const amount = url.searchParams.get('amount')
-      const rows = recent.filter(row => amount === 'gt.0' ? row.amount > 0 : amount === 'lt.0' ? row.amount < 0 : true)
-      body = category ? rows.filter(row=>row.category===category) : rows
+      const params = url.searchParams
+      const matchesValue = (key: string, value: string) => {
+        const filter = params.get(key)
+        if (filter?.startsWith('in.(')) return filter.slice(4, -1).split(',').some(item => item.replace(/^"|"$/g, '') === value)
+        return !filter?.startsWith('eq.') || filter.slice(3) === value
+      }
+      const merchant = params.get('merchant')?.slice(7, -1).replace(/\\([\\%_])/g, '$1').toLowerCase()
+      const matchesRange = <T extends string | number>(key: string, value: T, parse: (input: string) => T) =>
+        params.getAll(key).every(clause => {
+          const [operator, ...parts] = clause.split('.')
+          const boundary = parse(parts.join('.'))
+          return operator === 'gte' ? value >= boundary : operator === 'lte' ? value <= boundary
+            : operator === 'lt' ? value < boundary : operator === 'gt' ? value > boundary : true
+        })
+      const rows = recent.filter(row => matchesValue('account_id', row.account_id) && matchesValue('category', row.category)
+        && matchesValue('subcategory', '') && matchesRange('date', row.date, String) && matchesRange('amount', row.amount, Number)
+        && (!merchant || row.merchant.toLowerCase().includes(merchant)))
+      const limit = Number(params.get('limit') ?? rows.length)
+      const result = rows.slice(0, limit)
+      if (request.headers().prefer?.includes('count=exact')) {
+        responseHeaders = { 'content-range': `${result.length ? `0-${result.length - 1}` : '*'}/${rows.length}` }
+      }
+      body = result
     }
     const response = override?.(key, request, body) ?? { json: body }
-    return route.fulfill({ ...response, headers: { ...cors, 'access-control-expose-headers': 'content-range', ...response.headers } })
+    return route.fulfill({ ...response, headers: { ...cors, 'access-control-expose-headers': 'content-range', ...responseHeaders, ...response.headers } })
   })
   if (controlledClock) await page.addInitScript(anchor => {
     // Shift calendar time while retaining the browser’s own frame and timer scheduler.

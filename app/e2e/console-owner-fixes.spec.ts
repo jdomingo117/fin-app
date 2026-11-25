@@ -555,6 +555,30 @@ test('Transaction detail aligns both selects and visibly fills the checked radio
   expect(await fill(merchant)).toBe('1')
 })
 
+test('Expenses transaction counts match the rendered rows before and after filtering', async ({ page }) => {
+  await openConsole(page)
+  await page.goto(new URL('/expenses', dashboard).href)
+  const transactions = page.getByRole('region', { name: 'Transactions', exact: true })
+  const rows = transactions.locator('.console-ledger-list > li')
+  const count = transactions.getByText(/^Showing \d+ of \d+$/)
+  const empty = transactions.getByText('No transactions match your filters.', { exact: true })
+  await expect(rows).toHaveCount(6)
+  await expect(count).toHaveText(`Showing ${await rows.count()} of 6`)
+  await expect(empty).toHaveCount(0)
+  await count.scrollIntoViewIfNeeded()
+  await capture(page, '13-expense-transactions')
+
+  const search = transactions.getByRole('textbox', { name: 'Search transactions' })
+  await search.fill('Market grocer')
+  await expect(rows).toHaveCount(2)
+  await expect(count).toHaveText(`Showing ${await rows.count()} of 2`)
+  await search.fill('No fixture merchant')
+  await expect(rows).toHaveCount(0)
+  await expect(count).toHaveText('Showing 0 of 0')
+  await expect(empty).toBeVisible()
+  await capture(page, '13-expense-empty')
+})
+
 test('Full effects masks particles behind each visible hero and signed figure', async ({ page }) => {
   await openConsole(page, investmentReply)
   await page.getByRole('button', { name: 'Settings', exact: true }).click()

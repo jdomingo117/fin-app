@@ -149,8 +149,20 @@ test('Start does not reappear after a null token refresh or a reload', async ({ 
   await page.evaluate(() => localStorage.setItem('halcyon-console-preferences', JSON.stringify({ startScreen: true })))
   await page.reload()
   const start = page.getByRole('button', { name: 'Start Halcyon' })
+  const home = page.locator('.console-home')
+  async function expectHomeReady() {
+    await expect(start).toHaveCount(0)
+    await expect(sections(page)).toBeVisible()
+    await expect(home.locator('.console-preview')).toHaveCSS('opacity', '1')
+    await expect(home.locator('.console-hero-amount')).toBeInViewport()
+    await expect(home.locator('.console-hero-amount')).toContainText('$184,320')
+    await expect(home.locator('.console-orb')).toBeInViewport()
+    const activity = home.getByRole('group', { name: 'Transaction cards' })
+    await expect(activity).toBeInViewport()
+    await expect(activity.getByRole('button')).toHaveCount(4)
+  }
   await start.click()
-  await expect(sections(page)).toBeVisible()
+  await expectHomeReady()
 
   const refresh = (withSession: boolean) => page.evaluate(withSession => {
     const key = Object.keys(localStorage).find(key => /^sb-.*-auth-token$/.test(key))!
@@ -163,13 +175,11 @@ test('Start does not reappear after a null token refresh or a reload', async ({ 
   await expect(page).toHaveURL(/\/login$/)
   await refresh(true)
   await expect(page).toHaveURL(dashboard)
-  await expect(start.or(sections(page))).toBeVisible()
+  await expectHomeReady()
   await capture(page, '03-start-refresh')
-  await expect.soft(start).toHaveCount(0, { timeout: 1500 })
   await page.reload()
-  await expect.soft(start).toHaveCount(0, { timeout: 1500 })
-  // Proceed through the baseline prompt too, to check explicit sign-out independently.
-  if (await start.isVisible()) await start.click()
+  await expectHomeReady()
+  await capture(page, '03-start-reload')
   await page.getByRole('button', { name: 'Settings', exact: true }).click()
   await page.getByRole('button', { name: 'Sign out', exact: true }).click()
   await expect(page).toHaveURL(/\/login$/)

@@ -474,8 +474,14 @@ test('Investment orb compares history and pads the fallback value inside the rin
 })
 
 test('Rendered nested Console views, toasts and empty states use Australian sentence case', async ({ page }) => {
-  await openConsole(page, resource => resource === 'update-callsign'
-    ? { status: 422, json: { message: 'The fixture rejected this change.' } } : investmentReply(resource))
+  let category = 'Groceries'
+  await openConsole(page, (resource, request) => {
+    if (resource === 'update-transaction-category') {
+      category = request.postDataJSON().category
+      return { json: { category, subcategory: null, edit_id: 'fixture-edit' } }
+    }
+    return investmentReply(resource)
+  })
   const signedPositive = await page.locator('.console-activity-card [data-sign="positive"]').first()
     .evaluate(node => getComputedStyle(node).color)
   const hub = page.locator('.console-designed-scroll')
@@ -530,12 +536,13 @@ test('Rendered nested Console views, toasts and empty states use Australian sent
   })
   expect((await collectConsoleChrome(detail)).issues.casing).toContain('AUTHORED CAPS')
 
-  await page.goto(new URL('/settings', dashboard).href)
-  await page.getByRole('button', { name: 'Edit callsign' }).click()
-  const callsign = page.getByRole('textbox', { name: 'Callsign' })
-  await callsign.fill('Fixture reviewer')
-  await callsign.press('Enter')
+  await detail.getByRole('combobox', { name: 'Transaction category' }).selectOption('Transport')
+  await detail.getByRole('button', { name: 'Save correction' }).click()
   const toast = page.locator('[data-console-toast]')
+  await expect(toast.getByText('Transaction updated', { exact: true })).toBeVisible()
+  expect(category).toBe('Transport')
+  await detail.getByRole('button', { name: 'Close transaction detail' }).click()
+  await expect(detail).toHaveCount(0)
   await expect(toast.getByText('Milestone reached', { exact: true })).toHaveCSS('text-transform', 'none')
   await expect(toast).toHaveCSS('opacity', '1')
   await capture(page, '10-toast-case')

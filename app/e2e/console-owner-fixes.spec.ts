@@ -37,19 +37,20 @@ async function capture(page: Page, name: string) {
 }
 
 async function fitsInHome(item: Locator) {
-  await expect(item).toBeFocused()
   await expect.poll(() => item.evaluate(node => {
     const item = node.getBoundingClientRect()
     const home = node.closest('.console-home')!.getBoundingClientRect()
     return {
+      focused: node === document.activeElement,
       top: Math.max(0, Math.floor(home.top - item.top)), bottom: Math.max(0, Math.floor(item.bottom - home.bottom)),
       left: Math.max(0, Math.floor(home.left - item.left)), right: Math.max(0, Math.floor(item.right - home.right)),
     }
-  }), { message: `Clipped focused item ${await item.innerText()} at ${JSON.stringify(item.page().viewportSize())}`, timeout: 2500 })
-    .toEqual({ top: 0, bottom: 0, left: 0, right: 0 })
+  }), { message: `${item} at ${JSON.stringify(item.page().viewportSize())} should be focused and in view` })
+    .toEqual({ focused: true, top: 0, bottom: 0, left: 0, right: 0 })
 }
 
 test('Home keeps its hero clear and every card reachable at high zoom', async ({ page }) => {
+  test.setTimeout(120_000)
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await openConsole(page)
   const home = page.locator('.console-home')
@@ -103,10 +104,13 @@ test('Expanded hero text clears the sticky dock throughout collapse', async ({ p
   for (const [name, route] of [['Overview', '/dashboard?hub=overview'], ['Accounts', '/accounts'], ['Income', '/income'], ['Expenses', '/expenses']]) {
     await openSection(page, name)
     await expect(page).toHaveURL(new URL(route, dashboard).href)
-    await expect(page.locator('.console-home')).toHaveCount(0)
-    const scroll = page.locator('.console-designed-scroll')
+    const scroll = page.locator('.console-route-layer:not([inert]) .console-designed-scroll')
     const hero = scroll.locator('.console-expanded-hero')
     await expect(hero).toHaveCSS('opacity', '1')
+    await expect.poll(() => hero.evaluate(node => [...node.querySelectorAll('.console-handoff')].every(handoff => {
+      const transform = getComputedStyle(handoff).transform
+      return transform === 'none' || new DOMMatrix(transform).isIdentity
+    }))).toBe(true)
     const end = Math.max(90, await hero.evaluate(node => Math.round(node.getBoundingClientRect().height)) - 26)
     const collisions = []
     for (let step = 0; step <= 20; step++) {

@@ -112,6 +112,9 @@ html[data-theme="console"] :is(.native-select, textarea, input:not([type="checkb
   color: var(--console-ink);
 }
 html[data-theme="console"] [data-control-kind="chip"] {
+  --console-chip-padding: 10px;
+  padding-inline: var(--console-chip-padding);
+  min-inline-size: calc(var(--console-control-size) + 2 * var(--console-chip-padding));
   border-radius: 999px;
   /* Switch the paired ink and fill together, including on forced-colour changes. */
   transition-property: none;

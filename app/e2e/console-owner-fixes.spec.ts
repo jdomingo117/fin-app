@@ -118,16 +118,16 @@ test('Expanded hero text clears the sticky dock throughout collapse', async ({ p
     const collisions = []
     for (let step = 0; step <= 20; step++) {
       const progress = step / 20
-      const overlap = await scroll.evaluate(async (node, top) => {
+      const { overlap, fade } = await scroll.evaluate(async (node, top) => {
         node.scrollTop = top
         // Let the scroll event and Framer Motion's render pass settle.
         for (let frame = 0; frame < 3; frame++) await new Promise(requestAnimationFrame)
         const hero = node.querySelector<HTMLElement>('.console-expanded-hero')!
         const dock = node.querySelector('.console-hub-dock')!
         const style = getComputedStyle(hero)
-        const clipTop = parseFloat(style.clipPath.match(/^inset\(([-\d.]+)px/)?.[1] ?? '0')
-        const edge = clipTop ? hero.getBoundingClientRect().top + clipTop : -Infinity
-        return [...hero.querySelectorAll('h1, p, dt, dd')].filter(text => {
+        const [start, end] = [...style.maskImage.matchAll(/(-?[\d.]+)px/g)].map(stop => Number(stop[1]))
+        const edge = start === undefined ? -Infinity : hero.getBoundingClientRect().top + start
+        const overlap = [...hero.querySelectorAll('h1, p, dt, dd')].filter(text => {
           if (+style.opacity <= .01) return false
           const range = document.createRange()
           range.selectNodeContents(text)
@@ -135,7 +135,9 @@ test('Expanded hero text clears the sticky dock throughout collapse', async ({ p
             box.bottom > Math.max(edge, dock.getBoundingClientRect().top) + 1
             && Math.max(edge, box.top) < dock.getBoundingClientRect().bottom - 1)
         }).map(text => text.className || text.tagName)
+        return { overlap, fade: end - start }
       }, step === 0 ? 0 : Math.round(20 + progress * end))
+      if (step > 0) expect.soft(fade, `${route} at ${progress}`).toBeCloseTo(20, 1)
       if (route === '/income' && step === 5) await capture(page, '02-expanded-dock')
       if (overlap.length) collisions.push({ progress, overlap })
     }
@@ -297,6 +299,12 @@ test('Graph controls and selected Recurring chips have readable Console contrast
   await capture(page, '05-recurring-chips')
   expect((await collectConsoleChrome(chips.first().locator('../..'))).issues.controlContrast).toEqual([])
   for (const chip of await chips.all()) {
+    const { minWidth, height, padding } = await chip.evaluate(node => {
+      const style = getComputedStyle(node)
+      return { minWidth: parseFloat(style.minInlineSize), height: node.getBoundingClientRect().height,
+        padding: parseFloat(style.paddingInlineStart) + parseFloat(style.paddingInlineEnd) }
+    })
+    expect.soft(minWidth).toBeGreaterThanOrEqual(height + padding)
     await expect.soft(chip).toHaveAttribute('aria-pressed', 'true', { timeout: 1500 })
     await expect.soft(chip).toHaveCSS('background-color', 'rgb(255, 255, 255)')
     await expect.soft(chip).toHaveCSS('color', 'rgb(10, 13, 22)', { timeout: 1500 })
@@ -400,10 +408,16 @@ test('Sound rows align and Master volume has a visible keyboard ring', async ({ 
   const dimensions = await sound.evaluate(node => {
     const rows = [...node.querySelectorAll('[role="switch"], .console-volume')].map(row => row.getBoundingClientRect().height)
     const input = node.querySelector<HTMLInputElement>('input[type="range"]')!
-    const ring = getComputedStyle(input.parentElement!).boxShadow
-    return { difference: Math.max(...rows) - Math.min(...rows), ring }
+    const track = input.parentElement!
+    const ring = getComputedStyle(track).boxShadow
+    const label = document.createRange()
+    label.selectNodeContents(track.previousElementSibling!)
+    const ringEdge = parseFloat(getComputedStyle(track).getPropertyValue('--console-ring-edge'))
+    const gap = track.getBoundingClientRect().left - ringEdge - label.getBoundingClientRect().right
+    return { difference: Math.max(...rows) - Math.min(...rows), ring, gap }
   })
   expect.soft(dimensions.difference).toBeLessThan(1)
+  expect.soft(dimensions.gap).toBeCloseTo(8, 0)
   expect(dimensions.ring).toMatch(/0px 0px 0px 3px.*0px 0px 0px 6px/)
 })
 

@@ -225,13 +225,12 @@ export default function ConsoleHub({ id, title, period, figure, strip, art, filt
   const progress = useTransform(collapseProgress)
   const heroOpacity = useTransform(progress, [0, .3, .75, 1], [1, 1, 0, 0])
   const heroShift = useTransform(() => reduce ? 0 : -22 * collapseProgress())
-  const heroClip = useTransform(() => {
+  const heroMask = useTransform(() => {
     const scrolled = scrollY.get()
-    // At rest the Home handoff may extend outside the hero. Once scrolling,
-    // clip at the dock edge and account for the hero's own upward translation.
-    return scrolled > 0
-      ? `inset(${scrolled + (reduce ? 0 : 22 * collapseProgress())}px -100vw -100vh -100vw)`
-      : 'none'
+    if (scrolled <= 0) return 'none'
+    // Translate the fixed dock edge into the moving hero's coordinates.
+    const edge = scrolled + (reduce ? 0 : 22 * collapseProgress())
+    return `linear-gradient(to bottom, transparent ${edge}px, black ${edge + 20}px)`
   })
   const headerOpacity = useTransform(progress, [0, .30, .75, 1], [0, 0, 1, 1])
   const headerShift = useTransform(progress, [0, 1], [12, 0])
@@ -267,7 +266,7 @@ export default function ConsoleHub({ id, title, period, figure, strip, art, filt
         </div>
         {filters && !filtersBelowHero && <div className="console-hub-filters">{filters}</div>}
       </header>
-      <motion.section ref={hero} className="console-expanded-hero" style={{ opacity: heroOpacity, y: reduce ? 0 : heroShift, clipPath: heroClip }} aria-hidden={compact}>
+      <motion.section ref={hero} className="console-expanded-hero" style={{ opacity: heroOpacity, y: reduce ? 0 : heroShift, maskImage: heroMask }} aria-hidden={compact}>
         <div className="console-expanded-copy">
           <ConsoleHeadline id={id} label={figure.label} figure={figure} reduced={reduce} title={title} period={period} origin={entry?.origin} redacted={redacted} />
           {strip.length > 0 && <ConsoleFigureStrip figures={strip} redacted={redacted} />}

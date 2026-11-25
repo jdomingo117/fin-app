@@ -41,6 +41,7 @@
   gap: 8px;
   padding-inline: 8px;
 }
+.console-volume > span:first-child { margin-inline-end: var(--console-ring-edge); }
 .console-volume-track {
   display: flex;
   border-radius: var(--console-button-radius);

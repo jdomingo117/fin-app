@@ -211,6 +211,23 @@
 .console-analysis-modules .uppercase { text-transform: none; letter-spacing: normal; }
 .console-analysis-modules [data-console-row-item] { min-width: 0; }
 
+html[data-theme="console"] .react-flow__controls-button {
+  background: var(--console-sheet-fill);
+  color: var(--console-ink);
+  border-color: var(--console-line);
+}
+html[data-theme="console"] .react-flow__controls-button svg { fill: currentColor; }
+html[data-theme="console"] .react-flow__controls-button:hover { background: var(--console-base); }
+/* The stack clips its outer edges, so paint the ring inside each button. */
+html[data-theme="console"] .react-flow__controls-button:focus-visible {
+  outline: 2px solid var(--console-ink);
+  outline-offset: -3px;
+  box-shadow: inset 0 0 0 5px var(--console-ring-gap-ink);
+}
+@media (forced-colors: active) {
+  html[data-theme="console"] .react-flow__controls-button:focus-visible { outline-color: Highlight; }
+}
+
 @media (max-width: 1050px) {
   .console-expense-secondary { grid-template-columns: minmax(0, 1fr); }
 }

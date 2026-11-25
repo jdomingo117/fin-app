@@ -6,7 +6,7 @@ export async function collectConsoleChrome(root: Locator) {
   return root.evaluate(scope => {
     const issues = { casing: [] as string[], moduleTitles: [] as string[], accents: [] as string[],
       controls: [] as string[], defaultAccents: [] as string[], defaultOutlines: [] as string[],
-      focusRings: [] as string[], dates: [] as string[], spelling: [] as string[] }
+      focusRings: [] as string[], controlContrast: [] as string[], dates: [] as string[], spelling: [] as string[] }
     const checked = { labels: 0, moduleTitles: 0, controls: 0, accentControls: 0, focusedElements: 0, focusRings: 0, textNodes: 0, spelling: 0 }
     const ignored = '[aria-hidden="true"], [hidden], [inert]'
     const visible = (element: Element) => !element.closest(ignored) && element.getClientRects().length > 0
@@ -30,6 +30,9 @@ export async function collectConsoleChrome(root: Locator) {
       issues.spelling.push(...(value.match(usSpelling) ?? []))
     }
     function hasFocusRing(element: Element, style: CSSStyleDeclaration) {
+      if (element.matches('.react-flow__controls-button')) {
+        return style.outlineStyle === 'solid' && style.outlineWidth === '2px' && style.outlineOffset === '-3px'
+      }
       const tile = element.matches('.console-section')
       const edge = tile ? element.querySelector('.console-focus-decoration[data-layer="edge"]') : element
       if (!edge) return false
@@ -48,6 +51,25 @@ export async function collectConsoleChrome(root: Locator) {
       return rounded && (!tile || Number(ink.opacity) > .99) && !ink.boxShadow.includes('inset')
         && shadows.length === 2 && spread(shadows[0], 3) && spread(shadows[1], 6)
         && shadows[0][1] === 'rgba(6, 8, 16, 0.85)' && shadows[1][1] === 'rgb(255, 255, 255)'
+    }
+    const colorProbe = document.createElement('canvas').getContext('2d', { willReadFrequently: true })!
+    function luminance(color: string) {
+      colorProbe.clearRect(0, 0, 1, 1)
+      colorProbe.fillStyle = color
+      colorProbe.fillRect(0, 0, 1, 1)
+      const [r, g, b, alpha] = colorProbe.getImageData(0, 0, 1, 1).data
+      if (alpha !== 255) return NaN
+      const linear = (channel: number) => channel <= 10.31475 ? channel / 3294.6 : ((channel / 255 + .055) / 1.055) ** 2.4
+      return .2126 * linear(r) + .7152 * linear(g) + .0722 * linear(b)
+    }
+    function checkControlContrast(element: Element, style: CSSStyleDeclaration) {
+      if (forcedColours || element.matches(':disabled')) return
+      const icon = element.matches('.react-flow__controls-button') ? element.querySelector('svg') : null
+      if (!icon && !element.matches('[data-control-kind="chip"][aria-pressed="true"]')) return
+      const ink = luminance(icon ? getComputedStyle(icon).fill : style.color)
+      const fill = luminance(style.backgroundColor)
+      const ratio = (Math.max(ink, fill) + .05) / (Math.min(ink, fill) + .05)
+      if (!(ratio >= (icon ? 3 : 4.5))) issues.controlContrast.push(description(element))
     }
     function checkRenderedCase(value: string, textStyle: CSSStyleDeclaration) {
       const text = value.replace(/\s+/g, ' ').trim()
@@ -72,6 +94,7 @@ export async function collectConsoleChrome(root: Locator) {
     for (const element of [scope, ...scope.querySelectorAll('*')]) {
       if (!visible(element)) continue
       const style = getComputedStyle(element)
+      checkControlContrast(element, style)
       if (!element.closest(recordLabel)) {
         for (const attribute of ['aria-label', 'aria-description', 'placeholder', 'title']) {
           const value = element.getAttribute(attribute)
@@ -152,5 +175,5 @@ export async function auditConsoleChrome(root: Locator, state: string) {
   await test.info().attach(`Console leftovers – ${state}`, { body: JSON.stringify(findings, null, 2), contentType: 'application/json' })
   console.log(`${state} leftovers ${JSON.stringify(findings)}`)
   expect.soft(findings.issues, state).toEqual({ casing: [], moduleTitles: [], accents: [], controls: [],
-    defaultAccents: [], defaultOutlines: [], focusRings: [], dates: [], spelling: [] })
+    defaultAccents: [], defaultOutlines: [], focusRings: [], controlContrast: [], dates: [], spelling: [] })
 }

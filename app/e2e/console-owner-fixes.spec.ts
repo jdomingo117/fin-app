@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
 import { mkdir } from 'node:fs/promises'
 import { resolve } from 'node:path'
+import { collectConsoleChrome } from './fixtures/console-leftovers'
 import { dashboard, signInForConsole } from './fixtures/console-review'
 
 const sections = (page: Page) => page.getByRole('toolbar', { name: 'Sections' })
@@ -179,5 +180,33 @@ test('Date range picker follows its trigger and stays inside both desktop viewpo
       await page.keyboard.press('Escape')
       await expect(picker).toHaveCount(0)
     }
+  }
+})
+
+test('Graph controls and selected Recurring chips have readable Console contrast', async ({ page }) => {
+  await openConsole(page)
+  await page.goto(new URL('/expenses', dashboard).href)
+  const graph = page.locator('.react-flow__controls')
+  const zoom = graph.getByRole('button', { name: 'Zoom in' })
+  await zoom.scrollIntoViewIfNeeded()
+  await capture(page, '05-flow-controls')
+  await expect.soft(zoom).toHaveCSS('background-color', 'rgb(17, 24, 36)', { timeout: 1500 })
+  await expect.soft(zoom.locator('svg')).toHaveCSS('fill', 'rgb(255, 255, 255)')
+  expect((await collectConsoleChrome(graph)).issues.controlContrast).toEqual([])
+  await zoom.hover()
+  await expect.soft(zoom).toHaveCSS('background-color', 'rgb(10, 13, 22)', { timeout: 1500 })
+  await page.keyboard.press('Tab')
+  await zoom.focus()
+  await expect.soft(zoom).toHaveCSS('outline-style', 'solid', { timeout: 1500 })
+  await page.getByRole('tab', { name: 'Recurring hub' }).click()
+  const chips = page.getByRole('button', { name: /^all$/i })
+  await expect(chips).toHaveCount(2)
+  await chips.first().scrollIntoViewIfNeeded()
+  await capture(page, '05-recurring-chips')
+  expect((await collectConsoleChrome(chips.first().locator('../..'))).issues.controlContrast).toEqual([])
+  for (const chip of await chips.all()) {
+    await expect.soft(chip).toHaveAttribute('aria-pressed', 'true', { timeout: 1500 })
+    await expect.soft(chip).toHaveCSS('background-color', 'rgb(255, 255, 255)')
+    await expect.soft(chip).toHaveCSS('color', 'rgb(10, 13, 22)', { timeout: 1500 })
   }
 })

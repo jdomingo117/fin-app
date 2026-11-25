@@ -108,7 +108,9 @@ html[data-theme="console"] [data-control-kind="chip"] {
   border-radius: 999px;
 }
 html[data-theme="console"] [data-control-kind="chip"][aria-pressed="true"] {
-  background-color: var(--accent-wash);
+  background-color: var(--console-ink);
+  border-color: var(--console-ink);
+  color: var(--console-base);
 }
 html[data-theme="console"] {
   accent-color: var(--console-ink);

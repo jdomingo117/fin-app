@@ -143,7 +143,7 @@
 }
 .console-orb-stat strong { font: 200 clamp(26px, 5vw, 52px)/1.1 var(--font-display); color: var(--console-ink); }
 .console-orb-value { max-inline-size: 59.8%; }
-.console-orb-value strong { font-size: min(40px, calc(92cqi / var(--console-orb-value-length))); }
+.console-orb-stat.console-orb-value strong { font-size: min(40px, calc(92cqi / var(--console-orb-value-length))); }
 .console-orb-legend {
   position: absolute;
   inset: 67% 0 auto;

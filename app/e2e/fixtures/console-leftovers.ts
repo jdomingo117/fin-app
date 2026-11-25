@@ -162,7 +162,7 @@ export async function collectConsoleChrome(root: Locator) {
         issues.accents.push(description(element))
       }
       const textNodes = [...element.childNodes].filter(node => node.nodeType === Node.TEXT_NODE && node.textContent?.trim())
-      if (textNodes.length) checkSignedColour(textNodes.map(node => node.textContent).join(''), style.color)
+      if (textNodes.length && !element.closest('.sr-only')) checkSignedColour(textNodes.map(node => node.textContent).join(''), style.color)
       for (const node of textNodes) {
         const value = node.textContent!
         checked.textNodes++

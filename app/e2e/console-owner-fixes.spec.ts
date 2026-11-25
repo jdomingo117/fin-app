@@ -407,24 +407,55 @@ test('Sound rows align and Master volume has a visible keyboard ring', async ({ 
   expect(dimensions.ring).toMatch(/0px 0px 0px 3px.*0px 0px 0px 6px/)
 })
 
-test('Investment hero shows the current value and reserves holdings guidance for zero', async ({ page }) => {
-  await openConsole(page, (resource, _request, payload) => {
+test('Investment orb compares history and pads the fallback value inside the ring', async ({ page }) => {
+  let hasHistory = false
+  await openConsole(page, (resource, request, payload) => {
     if (resource === 'accounts' && Array.isArray(payload)) return { json: [...payload, {
       id: '688ed674-9459-4f75-99c8-1c68efc1e101', name: 'Empty fixture holding', type: 'Invest', balance: 0, balance_source: 'manual',
     }] }
-    if (resource === 'movement_history') return { json: { months: [] } }
-    return undefined
+    const account = new URL(request.url()).searchParams.get('account_id')
+    if (account?.includes('688ed674')) return undefined
+    if (resource === 'investment_account_monthly' && hasHistory) return { json: [
+      { valuation_date: '2026-11-01', value_cents: 9644000, cumulative_contributions_cents: 7820000 },
+      { valuation_date: '2026-10-01', value_cents: 8580000, cumulative_contributions_cents: 7480000 },
+      { valuation_date: '2026-09-01', value_cents: 7820000, cumulative_contributions_cents: 7200000 },
+    ] }
+    return investmentReply(resource)
   })
   await page.goto(new URL('/accounts', dashboard).href)
   const select = page.getByRole('combobox', { name: 'Select account' })
   await select.selectOption({ label: 'Investments (Invest)' })
   const hero = page.locator('.console-expanded-hero')
   await expect(hero.locator('.console-hero-amount')).toContainText('$96,440')
-  await capture(page, '09-investment-hero')
-  await expect.soft(hero.getByText(/Holdings appear here/)).toHaveCount(0, { timeout: 1500 })
-  await expect.soft(hero.getByText('Current investment value', { exact: true })).toBeVisible({ timeout: 1500 })
+  await expect(hero.getByText(/Holdings appear here/)).toHaveCount(0)
+  const fallback = hero.locator('.console-orb-value strong')
+  await expect(fallback).toHaveText('$96,440')
+  for (const [width, height] of [[1440, 900], [390, 844]]) {
+    await page.setViewportSize({ width, height })
+    const padding = await fallback.evaluate(node => {
+      const svg = node.closest('figure')!.querySelector('svg')!.getBoundingClientRect()
+      const diameter = svg.width * 126 / 160
+      const text = document.createRange()
+      text.selectNodeContents(node)
+      const { left, right, top, bottom } = text.getBoundingClientRect()
+      const x = svg.left + svg.width / 2, y = svg.top + svg.height / 2
+      return .5 - Math.max(x - left, right - x, y - top, bottom - y) / diameter
+    })
+    expect(padding, `inner-ring padding at ${width}px`).toBeGreaterThanOrEqual(.12)
+    if (width === 1440) await capture(page, '09-investment-fallback')
+  }
   await select.selectOption({ label: 'Empty fixture holding (Invest)' })
   await expect(hero.getByText(/Holdings appear here/)).toBeVisible()
+  hasHistory = true
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await select.selectOption({ label: 'Investments (Invest)' })
+  const lines = hero.locator('.console-orb-line')
+  await expect(lines).toHaveCount(2)
+  await expect(fallback).toHaveCount(0)
+  await expect(hero.locator('.console-orb figcaption')).toContainText('Investment value vs contributions')
+  expect(await lines.first().getAttribute('points')).not.toBe(await lines.last().getAttribute('points'))
+  await expect(page.getByRole('region', { name: 'Value and contributions' })).toHaveCount(1)
+  await capture(page, '09-investment-hero')
 })
 
 test('Rendered nested Console views, toasts and empty states use Australian sentence case', async ({ page }) => {

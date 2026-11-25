@@ -26,6 +26,7 @@ import ConnectBankModal from '../components/ConnectBankModal'
 import TransactionCategoryDrawer from '../components/TransactionCategoryDrawer'
 import { ledgerPage, activityCategories, hydrateParents, type LedgerCursor } from '../lib/ledgerPage'
 import { useRedactBalances } from '../hooks/useRedactBalances'
+import { useInvestmentOverview } from '../hooks/useInvestmentOverview'
 import { useKeysetPage } from '../hooks/useKeysetPage'
 import { useView } from '../router'
 
@@ -84,6 +85,7 @@ export default function Accounts() {
   const enabled = !!selectedAccount && selectedAccount.type !== 'Invest'
   const flow = useReport([selectedAccount?.id,range,today],tenant=>accountFlow(tenant,selectedAccount.id,range,today),enabled)
   const history = useReport([selectedAccount?.id,today],tenant=>movements(tenant,today,selectedAccount.id),enabled)
+  const investment = useInvestmentOverview(selectedAccount?.type === 'Invest' ? selectedAccount.id : undefined)
   const params = { p_account_ids: [selectedAccount?.id], p_from: range?.from, p_to: range?.to,
     p_category: filterCat === 'All' ? null : filterCat, p_account_search: searchQuery || null,
     p_account_flow: filterFlow === 'All' ? null : filterFlow.toLowerCase(), p_limit: 8 }
@@ -326,6 +328,14 @@ export default function Accounts() {
   if (consoleRoute) {
     const months = history.data?.months.map(month => month.month) ?? []
     const series = [{ label: 'Closing balance', data: trend, color: 'var(--console-chart-ink)' }]
+    const valuations = investment.data?.monthly ?? []
+    const art = selectedAccount.type === 'Invest'
+      ? valuations.length > 1 ? {
+        label: 'Investment value vs contributions',
+        values: valuations.map(point => Number(point.value_cents)),
+        comparison: valuations.map(point => Number(point.cumulative_contributions_cents)),
+      } : selectedAccount.balance !== 0 ? { label: 'Current investment value', value: selectedAccount.balance } : undefined
+      : trend.length ? { label: 'Monthly closing balances', values: trend } : undefined
     return <ConsoleHub id="accounts" title="Accounts" onBack={consoleRoute.back}
       redacted={redacted}
       period={`Balance as of ${fullDayLabel(today)}`}
@@ -335,9 +345,7 @@ export default function Accounts() {
         { label: 'Period spending', cents: -expenses, signed: true },
         { label: 'Net cash flow', cents: netCashFlow, signed: true },
       ] : []}
-      art={selectedAccount.type === 'Invest' && selectedAccount.balance !== 0
-        ? { label: 'Current investment value', value: selectedAccount.balance }
-        : trend.length ? { label: 'Monthly closing balances', values: trend } : undefined}
+      art={art}
       filters={<div className="console-hub-filters console-account-picker" role="group" aria-label="Account controls">
         <Select ariaLabel="Select account" value={selectedAccount.id} onChange={setSelectedAccountId}>
           {accounts.map(account => <option key={account.id} value={account.id}>{account.name} ({account.type})</option>)}
@@ -347,7 +355,7 @@ export default function Accounts() {
         <button type="button" className="console-hub-back" onClick={() => setIsAddingAccount(true)}>Add account</button>
       </div>}>
       <div className="console-analysis-modules">
-        {selectedAccount.type === 'Invest' ? <InvestmentAccountActivity accountId={selectedAccount.id} /> : <>
+        {selectedAccount.type === 'Invest' ? <InvestmentAccountActivity accountId={selectedAccount.id} overview={investment} /> : <>
           <ReportStatus report={flow} label="Account summary" />
           <FocusRow label="Account analysis" className="console-module-grid">
             <ConsoleModule title="Balance history" kind="chart" tools={<div className="console-chart-switch">
@@ -449,7 +457,7 @@ export default function Accounts() {
         className="mt-5 grid grid-cols-1 gap-3.5"
       >
         {selectedAccount.type === 'Invest' ? (
-          <InvestmentAccountActivity accountId={selectedAccount.id} />
+          <InvestmentAccountActivity accountId={selectedAccount.id} overview={investment} />
         ) : <>
 
         <ReportStatus report={flow} label="Account summary" />

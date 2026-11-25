@@ -7,7 +7,7 @@ import { GlassSurface } from './GlassSurface'
 import './console-hub.css'
 
 export type ConsoleFigure = { label: string; cents?: number; signed?: boolean }
-export type ConsoleArt = { label: string; values?: number[]; percent?: number; value?: number }
+export type ConsoleArt = { label: string; values?: number[]; comparison?: number[]; percent?: number; value?: number }
 const sharedParts = ['label', 'figure', 'art'] as const
 type SharedPart = (typeof sharedParts)[number]
 type ProjectionBox = Pick<DOMRect, 'x' | 'y' | 'width' | 'height'>
@@ -106,15 +106,19 @@ export function ConsoleHeroArt({ id, art, reduced, origin, home, redacted }: {
   id: SectionId; art?: ConsoleArt; reduced?: boolean; origin?: ProjectionBox; home?: boolean; redacted?: boolean
 }) {
   const values = redacted ? [] : art?.values ?? []
-  const low = Math.min(...values)
-  const span = Math.max(...values) - low
-  const points = values.length > 0 ? values.map((value, i) => {
-    const x = 22 + i * 116 / Math.max(1, values.length - 1)
+  const comparison = redacted ? undefined : art?.comparison
+  const range = comparison ? [...values, ...comparison] : values
+  const low = Math.min(...range)
+  const span = Math.max(...range) - low
+  const toPoints = (series: number[]) => series.map((value, i) => {
+    const x = (comparison ? 40 : 22) + i * (comparison ? 80 : 116) / Math.max(1, series.length - 1)
     const y = span ? 99 - (value - low) * 42 / span : 79
     return `${x},${y}`
-  }).join(' ') : undefined
+  }).join(' ')
+  const points = values.length ? toPoints(values) : undefined
   const percent = redacted ? undefined : art?.percent
   const value = redacted ? undefined : art?.value
+  const valueText = value === undefined ? undefined : consoleMoney(value, false, true)
   if (!points && percent === undefined && value === undefined && !redacted) {
     if (id === 'accounts') return <p className="console-art-empty">Holdings appear here when accounts have a cash or investment balance.</p>
     if (id === 'dashboard') return <div aria-hidden="true" className="console-orb" />
@@ -132,15 +136,20 @@ export function ConsoleHeroArt({ id, art, reduced, origin, home, redacted }: {
         {percent !== undefined ? <circle className="console-orb-progress" cx="80" cy="80" r="63" pathLength="100"
           stroke="currentColor" strokeWidth="3" strokeLinecap="round" transform="rotate(-90 80 80)"
           strokeDasharray={`${Math.min(100, Math.max(0, percent))} 100`} /> : points && <>
-          <path className="console-orb-area" d={`M22,110 L${points.replaceAll(' ', ' L')} L138,110 Z`} />
+          {comparison ? <polyline className="console-orb-line console-orb-comparison" points={toPoints(comparison)} />
+            : <path className="console-orb-area" d={`M22,110 L${points.replaceAll(' ', ' L')} L138,110 Z`} />}
           <polyline className="console-orb-line" points={points} />
         </>}
       </svg>
       {redacted ? <figcaption className="sr-only">Trend hidden</figcaption> :
-        value !== undefined ? <figcaption className="console-orb-stat">
-          <span>{art?.label}</span>
-          <strong className="tabular-nums" aria-hidden="true">{consoleMoney(value, false, true)}</strong>
-          <span className="sr-only">{consoleMoney(value)}</span>
+        comparison ? <figcaption className="console-orb-legend">
+          <span aria-hidden="true"><span>Value</span><span>Contributions</span></span>
+          <span className="sr-only">{art?.label}. Value {fmtCents(values.at(-1)!)}. Contributions {fmtCents(comparison.at(-1)!)}.</span>
+        </figcaption> :
+        value !== undefined && valueText ? <figcaption className="console-orb-stat console-orb-value"
+          style={{ '--console-orb-value-length': valueText.length } as React.CSSProperties}>
+          <strong className="tabular-nums" aria-hidden="true">{valueText}</strong>
+          <span className="sr-only">{art?.label}: {consoleMoney(value)}</span>
         </figcaption> :
         percent !== undefined ? <>
           <div className="console-orb-stat tabular-nums" aria-hidden="true"><strong>{percent}%</strong></div>

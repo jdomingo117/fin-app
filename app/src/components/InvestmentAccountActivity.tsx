@@ -13,24 +13,7 @@ import Area from './charts/Area'
 import { ConsoleChartValues, ConsoleModule, consoleMoney } from './console/ConsoleHub'
 import InvestmentTaxAwareness from './InvestmentTaxAwareness'
 import { InlineActivity } from './OperationStatus'
-
-interface Summary {
-  holding_id: string
-  instrument_name: string
-  identifier: string
-  calculated_units: string
-  confirmed_units: string | null
-  reconciliation_status: string
-  net_external_contributions_cents: number
-  reinvested_distributions_cents: number
-  activity_count: number
-  value_cents: number | null
-  nav_price: string | null
-  price_date: string | null
-  valuation_status: 'current' | 'stale' | 'partial' | null
-  market_movement_cents: number | null
-  cash_distributions_cents: number
-}
+import type { useInvestmentOverview } from '../hooks/useInvestmentOverview'
 
 interface Activity {
   id: string
@@ -49,13 +32,9 @@ interface CashLink {
   transaction: { account_id: string; date: string; amount: number } | null
 }
 
-interface Monthly {
-  valuation_date: string
-  value_cents: number
-  cumulative_contributions_cents: number
-}
-
-export default function InvestmentAccountActivity({ accountId }: { accountId: string }) {
+export default function InvestmentAccountActivity({ accountId, overview }: {
+  accountId: string; overview: ReturnType<typeof useInvestmentOverview>
+}) {
   const { theme } = useView()
   const { accounts, refreshData } = useData()
   const [error, setError] = useState('')
@@ -72,15 +51,6 @@ export default function InvestmentAccountActivity({ accountId }: { accountId: st
       .eq('tenant_id',tenant).in('activity_id',ids).in('state',['confirmed','auto','suggested'])
     if (error) throw error
     return data as unknown as CashLink[]
-  })
-  const overview = useReport(['investment overview', accountId,refreshKey],async tenant => {
-    const [summary,monthly] = await Promise.all([
-      supabase.from('investment_account_overview').select('*').eq('tenant_id',tenant).eq('account_id',accountId).maybeSingle(),
-      supabase.from('investment_account_monthly').select('valuation_date,value_cents,cumulative_contributions_cents')
-        .eq('tenant_id',tenant).eq('account_id',accountId).order('valuation_date',{ascending:false}).limit(12),
-    ])
-    if (summary.error || monthly.error) throw summary.error ?? monthly.error
-    return { summary:summary.data as Summary | null,monthly:(monthly.data as Monthly[]).reverse() }
   })
   const summary = overview.data?.summary
   const monthly = overview.data?.monthly ?? []

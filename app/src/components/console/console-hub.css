@@ -144,6 +144,30 @@ html[data-theme="console"] :is(.console-designed-scroll, [data-console-date-pick
   text-transform: none;
   letter-spacing: normal;
 }
+@media (forced-colors: none) {
+  .console-transaction-detail input[name="category-scope"] {
+    appearance: none;
+    display: grid;
+    flex: none;
+    place-items: center;
+    inline-size: 16px;
+    block-size: 16px;
+    margin-block-start: 2px;
+    border: 1px solid var(--color-muted);
+    border-radius: 50%;
+    background: var(--console-base);
+  }
+  .console-transaction-detail input[name="category-scope"]::before {
+    content: '';
+    inline-size: 8px;
+    block-size: 8px;
+    border-radius: 50%;
+    background: var(--console-ink);
+    opacity: 0;
+  }
+  .console-transaction-detail input[name="category-scope"]:checked { border-color: var(--console-ink); }
+  .console-transaction-detail input[name="category-scope"]:checked::before { opacity: 1; }
+}
 .console-designed-scroll .allocation-donut__visual svg { max-width: 100%; }
 .console-designed-scroll .allocation-donut .donut-center { font-size: 14px; font-weight: 400; }
 .console-designed-scroll .allocation-donut [aria-pressed="true"] { background: var(--console-fill); }

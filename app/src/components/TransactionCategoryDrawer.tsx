@@ -15,6 +15,7 @@ import { useData } from '../contexts/DataContext'
 import { useBudget } from '../contexts/BudgetContext'
 import TransactionSplitEditor from './TransactionSplitEditor'
 import { useDialogFocus } from '../hooks/useDialogFocus'
+import { useView } from '../router'
 
 interface CategoryEditHistory {
   id: string
@@ -76,6 +77,7 @@ export default function TransactionCategoryDrawer({
   onChanged: () => Promise<void>
 }) {
   const { reportRevision } = useData()
+  const consoleStyle = useView().theme === 'console'
   const { guardTaskNavigation } = useBudget()
   const formatDay = useConsoleDayLabel()
   const taxonomy = useTaxonomy(Boolean(transaction))
@@ -320,7 +322,7 @@ export default function TransactionCategoryDrawer({
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: 30, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 280, damping: 28 }}
-            className={`h-full w-full max-w-[520px] overflow-y-auto border-l border-[var(--hair)] bg-surface p-6 shadow-2xl ${protectDraft ? 'console-ledger-detail' : ''}`}
+            className={`h-full w-full max-w-[520px] overflow-y-auto border-l border-[var(--hair)] bg-surface p-6 shadow-2xl ${consoleStyle ? 'console-transaction-detail' : ''} ${protectDraft ? 'console-ledger-detail' : ''}`}
           >
             <header className="flex items-start justify-between gap-4">
               <div className="min-w-0">
@@ -363,7 +365,7 @@ export default function TransactionCategoryDrawer({
               {isReconciliation ? (
                 <p className="mt-4 rounded-lg border border-[var(--hair)] bg-[var(--hair-soft)] p-3 text-[12.5px] text-ink2">This is a system reconciliation entry and its category is locked.</p>
               ) : (
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <div className="mt-4 grid items-start gap-3 sm:grid-cols-2">
                   <label className="grid gap-1.5 text-[12px] font-semibold text-ink2">
                     Category
                     <Select value={category} onChange={(value) => { setCategory(value); setSubcategory('') }} ariaLabel="Transaction category">

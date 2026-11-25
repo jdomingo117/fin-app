@@ -172,3 +172,11 @@ test('the rendered audit rejects an authored outline and US interface spellings'
   expect(issues.focusRings).toEqual(['Categorize'])
   expect(issues.spelling).toEqual(['Categorize', 'Color', 'behavior', 'Annualized', 'center', 'Analyze', 'color'])
 })
+
+test('the rendered audit detects red and green text without a signed figure', async ({ page }) => {
+  await page.setContent(`<main>
+    <p style="color:#e0635c">Goal shortfall</p><p style="color:#36cf93">$1,000</p>
+    <p style="color:#e0635c">−$50</p><p style="color:#36cf93">+$100 · 2%</p>
+    <p style="color:#f3c450">Check this amount</p></main>`)
+  expect((await collectConsoleChrome(page.locator('main'))).issues.unsignedColour).toEqual(['Goal shortfall', '$1,000'])
+})

@@ -123,8 +123,6 @@
 .console-figures { display: flex; flex-wrap: wrap; gap: 14px 40px; }
 .console-figures dt { font-size: 13px; color: var(--console-label); }
 .console-figures dd { font-size: 28px; font-weight: 200; letter-spacing: -.015em; }
-.console-viewport [data-sign="positive"] { color: var(--color-console-pos); }
-.console-viewport [data-sign="negative"] { color: var(--color-console-neg); }
 .console-orb {
   position: relative;
   display: grid;

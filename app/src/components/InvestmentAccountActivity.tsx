@@ -10,7 +10,7 @@ import { fmtCents, glowColor } from '../data'
 import Tile from './Tile'
 import { useData } from '../contexts/DataContext'
 import Area from './charts/Area'
-import { ConsoleChartValues, ConsoleModule } from './console/ConsoleHub'
+import { ConsoleChartValues, ConsoleModule, consoleMoney } from './console/ConsoleHub'
 import InvestmentTaxAwareness from './InvestmentTaxAwareness'
 import { InlineActivity } from './OperationStatus'
 
@@ -130,7 +130,9 @@ export default function InvestmentAccountActivity({ accountId }: { accountId: st
       <Metric label="Units held" value={summary.calculated_units} />
       <Metric label="Net contributions" value={fmtCents(summary.net_external_contributions_cents)} />
       <Metric label="Reinvested distributions" value={fmtCents(summary.reinvested_distributions_cents)} />
-      <Metric label="Investment return" value={`${totalReturn >= 0 ? '+' : '-'}${fmtCents(Math.abs(totalReturn))} · ${returnPct.toFixed(1)}%`} />
+      <Metric label="Investment return"
+        sign={consoleStyle && totalReturn ? (totalReturn > 0 ? 'positive' : 'negative') : undefined}
+        value={`${consoleStyle ? consoleMoney(totalReturn, true) : `${totalReturn >= 0 ? '+' : '-'}${fmtCents(Math.abs(totalReturn))}`} · ${returnPct.toFixed(1)}%`} />
       <Metric label={summary.price_date ? `NAV · ${consoleStyle ? dayLabel(summary.price_date) : summary.price_date}` : 'NAV'} value={summary.nav_price ? `$${summary.nav_price}` : 'Not priced'} />
     </div>
   </>
@@ -164,6 +166,6 @@ export default function InvestmentAccountActivity({ accountId }: { accountId: st
   </> : <Tile title={summary.instrument_name} tag={description}>{summaryContent}{chart}{activityContent}</Tile>
 }
 
-function Metric({ label, value }: { label: string; value: string }) {
-  return <div><p className="micro text-muted">{label}</p><p className="mt-1 text-[15px] font-semibold tabular-nums">{value}</p></div>
+function Metric({ label, value, sign }: { label: string; value: string; sign?: 'positive' | 'negative' }) {
+  return <div><p className="micro text-muted">{label}</p><p data-sign={sign} className="mt-1 text-[15px] font-semibold tabular-nums">{value}</p></div>
 }

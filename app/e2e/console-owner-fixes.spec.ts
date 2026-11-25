@@ -418,11 +418,14 @@ test('Investment hero shows the current value and reserves holdings guidance for
 test('Rendered nested Console views, toasts and empty states use Australian sentence case', async ({ page }) => {
   await openConsole(page, resource => resource === 'update-callsign'
     ? { status: 422, json: { message: 'The fixture rejected this change.' } } : investmentReply(resource))
+  const signedPositive = await page.locator('.console-activity-card [data-sign="positive"]').first()
+    .evaluate(node => getComputedStyle(node).color)
   const hub = page.locator('.console-designed-scroll')
   async function check(root: Locator, name: string) {
     const report = await collectConsoleChrome(root)
     expect.soft(report.issues.casing, name).toEqual([])
     expect.soft(report.issues.spelling, name).toEqual([])
+    expect.soft(report.issues.unsignedColour, name).toEqual([])
   }
   await page.goto(new URL('/income', dashboard).href)
   await page.getByRole('tab', { name: 'Strategic projections' }).click()
@@ -449,6 +452,9 @@ test('Rendered nested Console views, toasts and empty states use Australian sent
   await page.goto(new URL('/accounts', dashboard).href)
   await page.getByRole('combobox', { name: 'Select account' }).selectOption({ label: 'Investments (Invest)' })
   const price = page.getByRole('button', { name: 'Refresh price', exact: true })
+  const investmentReturn = page.getByText('Investment return', { exact: true }).locator('..').locator('[data-sign="positive"]')
+  await expect(investmentReturn).toHaveText(/^\+\$/)
+  await expect(investmentReturn).toHaveCSS('color', signedPositive)
   await price.scrollIntoViewIfNeeded()
   await capture(page, '10-investment-case')
   await check(hub, 'Investment account')

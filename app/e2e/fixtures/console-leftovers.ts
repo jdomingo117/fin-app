@@ -6,7 +6,7 @@ export async function collectConsoleChrome(root: Locator) {
   return root.evaluate(scope => {
     const issues = { casing: [] as string[], moduleTitles: [] as string[], accents: [] as string[],
       controls: [] as string[], defaultAccents: [] as string[], defaultOutlines: [] as string[],
-      focusRings: [] as string[], controlContrast: [] as string[], dates: [] as string[], spelling: [] as string[] }
+      focusRings: [] as string[], controlContrast: [] as string[], dates: [] as string[], spelling: [] as string[], unsignedColour: [] as string[] }
     const checked = { labels: 0, moduleTitles: 0, controls: 0, accentControls: 0, focusedElements: 0, focusRings: 0, textNodes: 0, spelling: 0 }
     const ignored = '[aria-hidden="true"], [hidden], [inert]'
     const visible = (element: Element) => !element.closest(ignored) && element.getClientRects().length > 0
@@ -55,11 +55,25 @@ export async function collectConsoleChrome(root: Locator) {
         && shadows[0][1] === 'rgba(6, 8, 16, 0.85)' && shadows[1][1] === 'rgb(255, 255, 255)'
     }
     const colorProbe = document.createElement('canvas').getContext('2d', { willReadFrequently: true })!
-    function luminance(color: string) {
+    function rgb(color: string) {
       colorProbe.clearRect(0, 0, 1, 1)
       colorProbe.fillStyle = color
       colorProbe.fillRect(0, 0, 1, 1)
-      const [r, g, b, alpha] = colorProbe.getImageData(0, 0, 1, 1).data
+      return colorProbe.getImageData(0, 0, 1, 1).data
+    }
+    const signColours = new Map<string, boolean>()
+    function checkSignedColour(value: string, colour: string) {
+      if (forcedColours) return
+      if (!signColours.has(colour)) {
+        const [r, g, b, opacity] = rgb(colour)
+        const red = r - g >= 32 && r - b >= 32 && g <= b + 30
+        const green = g - r >= 24 && g - b >= 18
+        signColours.set(colour, opacity > 0 && (red || green))
+      }
+      if (signColours.get(colour) && !/[+−-]\s*(?:[$€£]\s*)?\d/u.test(value)) issues.unsignedColour.push(value.trim())
+    }
+    function luminance(color: string) {
+      const [r, g, b, alpha] = rgb(color)
       if (alpha !== 255) return NaN
       const linear = (channel: number) => channel <= 10.31475 ? channel / 3294.6 : ((channel / 255 + .055) / 1.055) ** 2.4
       return .2126 * linear(r) + .7152 * linear(g) + .0722 * linear(b)
@@ -147,15 +161,17 @@ export async function collectConsoleChrome(root: Locator) {
       if ([style.color, style.backgroundColor, style.borderTopColor, style.outlineColor, style.fill, style.stroke].some(color => classicAccent.test(color))) {
         issues.accents.push(description(element))
       }
-      for (const node of element.childNodes) {
-        if (node.nodeType !== Node.TEXT_NODE || !node.textContent?.trim()) continue
+      const textNodes = [...element.childNodes].filter(node => node.nodeType === Node.TEXT_NODE && node.textContent?.trim())
+      if (textNodes.length) checkSignedColour(textNodes.map(node => node.textContent).join(''), style.color)
+      for (const node of textNodes) {
+        const value = node.textContent!
         checked.textNodes++
-        const match = node.textContent.match(date)
+        const match = value.match(date)
         if (match) issues.dates.push(match[0])
         if (!element.closest(recordLabel)) {
-          if (!element.closest('kbd')) checkRenderedCase(node.textContent, style)
-          if (element.closest(emptyState) && /^\p{Ll}/u.test(node.textContent.trim())) issues.casing.push(node.textContent.trim())
-          checkSpelling(node.textContent)
+          if (!element.closest('kbd')) checkRenderedCase(value, style)
+          if (element.closest(emptyState) && /^\p{Ll}/u.test(value.trim())) issues.casing.push(value.trim())
+          checkSpelling(value)
         }
       }
       if (element.matches(`${designLabel}, [data-label]`) && !element.closest(recordLabel)) {
@@ -166,6 +182,7 @@ export async function collectConsoleChrome(root: Locator) {
           if (content) {
             checkRenderedCase(content, pseudo)
             checkSpelling(content)
+            checkSignedColour(content, pseudo.color)
           }
         }
       }
@@ -179,5 +196,5 @@ export async function auditConsoleChrome(root: Locator, state: string) {
   await test.info().attach(`Console leftovers – ${state}`, { body: JSON.stringify(findings, null, 2), contentType: 'application/json' })
   console.log(`${state} leftovers ${JSON.stringify(findings)}`)
   expect.soft(findings.issues, state).toEqual({ casing: [], moduleTitles: [], accents: [], controls: [],
-    defaultAccents: [], defaultOutlines: [], focusRings: [], controlContrast: [], dates: [], spelling: [] })
+    defaultAccents: [], defaultOutlines: [], focusRings: [], controlContrast: [], dates: [], spelling: [], unsignedColour: [] })
 }

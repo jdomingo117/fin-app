@@ -615,6 +615,12 @@ test('Full effects masks particles behind each visible hero and signed figure', 
     const particles = page.locator('.console-particles')
     await expect(particles).toHaveAttribute('data-particle-count', '55')
     const label = route === '/dashboard' ? 'home' : 'accounts'
+    const hero = page.locator(route === '/dashboard' ? '.console-home .console-preview' : '.console-expanded-hero')
+    await expect(hero).toHaveCSS('opacity', '1')
+    await expect.poll(() => hero.evaluate(node => [node, ...node.querySelectorAll('.console-handoff')].every(part => {
+      const transform = getComputedStyle(part).transform
+      return transform === 'none' || new DOMMatrix(transform).isIdentity
+    }))).toBe(true)
     await expect(page.locator('.console-hero-amount:visible')).toContainText('$')
     await capture(page, `12-particles-${label}`)
     await expect.soft(page.locator('.console-particle-mask')).not.toHaveCSS('mask-image', 'none', { timeout: 1500 })
@@ -643,7 +649,6 @@ test('Full effects masks particles behind each visible hero and signed figure', 
     // The same sprite must paint in open space and disappear beneath a figure.
     const figure = route === '/dashboard' ? page.locator('.console-hero-amount:visible')
       : page.locator('.console-figures [data-sign]').first()
-    const box = (await figure.boundingBox())!
     const layer = page.locator('.console-particle-mask')
     const spriteDelta = async (x: number, y: number) => {
       const clip = { x, y, width: 8, height: 8 }
@@ -672,6 +677,8 @@ test('Full effects masks particles behind each visible hero and signed figure', 
       }, [plain.toString('base64'), trial.toString('base64')])
     }
     expect(await spriteDelta(12, 12)).toBeGreaterThan(25)
+    // Sample the protected point after the open-space control has painted.
+    const box = (await figure.boundingBox())!
     expect(await spriteDelta(Math.floor(box.x + box.width / 2) - 4, Math.floor(box.y + box.height / 2) - 4)).toBeLessThan(3)
     if (route === '/accounts') {
       await page.getByRole('combobox', { name: 'Select account' }).selectOption({ label: 'Investments (Invest)' })

@@ -11,7 +11,11 @@ const driftStep = 2600
 const twinkle = 2200
 const settling = 1200
 const pointerQuiet = 160
-const figureSelector = '.console-hero-amount, [data-sign], .console-activity-card strong.tabular-nums, .console-compact-title strong, .console-orb-stat strong'
+const figureSelector = [
+  '.console-hero-amount', '[data-sign]', '.console-activity-card strong.tabular-nums',
+  '.console-compact-title strong', '.console-orb-stat strong',
+  '.console-hub-body :is([data-console-surface="hub"], .glass) .tabular-nums',
+].join(', ')
 const movingFigureSelector = '.console-handoff, .console-preview, .console-expanded-hero'
 
 function watchParticleMask(scene: HTMLElement, layer: HTMLElement) {
@@ -19,6 +23,7 @@ function watchParticleMask(scene: HTMLElement, layer: HTMLElement) {
   if (!main) return
 
   const padding = 14
+  const moduleRise = Number.parseFloat(getComputedStyle(scene).getPropertyValue('--console-rise')) || 0
   let frame = 0
   let rescan = true
   let figures: Element[] = []
@@ -48,8 +53,9 @@ function watchParticleMask(scene: HTMLElement, layer: HTMLElement) {
     const boxes = figures.flatMap(figure => {
       const { left, right, top, bottom, width, height } = figure.getBoundingClientRect()
       if (!width || !height || right <= area.left || left >= area.right || bottom <= area.top || top >= area.bottom) return []
-      return [[Math.floor(left - area.left) - padding, Math.floor(top - area.top) - padding,
-        Math.ceil(width) + 2 * padding, Math.ceil(height) + 2 * padding]]
+      const blockPadding = padding + (figure.closest('.console-hub-body') ? moduleRise : 0)
+      return [[Math.floor(left - area.left) - padding, Math.floor(top - area.top) - blockPadding,
+        Math.ceil(width) + 2 * padding, Math.ceil(height) + 2 * blockPadding]]
     })
     const geometry = boxes.join('|')
     if (geometry === previous) return
@@ -63,6 +69,7 @@ function watchParticleMask(scene: HTMLElement, layer: HTMLElement) {
 
   const content = new MutationObserver(() => { rescan = true; schedule() })
   content.observe(main, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-sign'] })
+  main.addEventListener('animationend', schedule)
   window.addEventListener('scroll', schedule, { capture: true, passive: true })
   document.addEventListener('visibilitychange', schedule)
   update()
@@ -71,6 +78,7 @@ function watchParticleMask(scene: HTMLElement, layer: HTMLElement) {
     content.disconnect()
     moving.disconnect()
     resize.disconnect()
+    main.removeEventListener('animationend', schedule)
     window.removeEventListener('scroll', schedule, true)
     document.removeEventListener('visibilitychange', schedule)
   }

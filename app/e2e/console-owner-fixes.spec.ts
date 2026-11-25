@@ -7,6 +7,15 @@ import { dashboard, signInForConsole } from './fixtures/console-review'
 
 const sections = (page: Page) => page.getByRole('toolbar', { name: 'Sections' })
 
+const investmentOverview = {
+  holding_id: 'fixture-investment', instrument_name: 'Example index fund', identifier: 'EXF',
+  calculated_units: '12.5', confirmed_units: null, reconciliation_status: 'Confirmed',
+  net_external_contributions_cents: 782000, reinvested_distributions_cents: 14200,
+  activity_count: 0, value_cents: 9644000, nav_price: '12.55', price_date: '2026-11-20',
+  valuation_status: 'current', market_movement_cents: 84000, cash_distributions_cents: 1200,
+}
+const investmentReply = (resource: string) => resource === 'investment_account_overview' ? { json: investmentOverview } : undefined
+
 async function openConsole(page: Page, override?: Parameters<typeof signInForConsole>[3]) {
   await signInForConsole(page, true, undefined, override)
   await expect(page.locator('html')).not.toHaveAttribute('data-theme', 'console')
@@ -325,13 +334,7 @@ test('Investment hero shows the current value and reserves holdings guidance for
 })
 
 test('Rendered nested Console views use sentence case', async ({ page }) => {
-  await openConsole(page, resource => resource === 'investment_account_overview' ? { json: {
-    holding_id: 'fixture-investment', instrument_name: 'Example index fund', identifier: 'EXF',
-    calculated_units: '12.5', confirmed_units: null, reconciliation_status: 'Confirmed',
-    net_external_contributions_cents: 782000, reinvested_distributions_cents: 14200,
-    activity_count: 0, value_cents: 9644000, nav_price: '12.55', price_date: '2026-11-20',
-    valuation_status: 'current', market_movement_cents: 84000, cash_distributions_cents: 1200,
-  } } : undefined)
+  await openConsole(page, investmentReply)
   const hub = page.locator('.console-designed-scroll')
   async function check(root: Locator, name: string) {
     const report = await collectConsoleChrome(root)
@@ -407,7 +410,7 @@ test('Transaction detail aligns both selects and visibly fills the checked radio
 })
 
 test('Full effects masks particles behind each visible hero and signed figure', async ({ page }) => {
-  await openConsole(page)
+  await openConsole(page, investmentReply)
   await page.evaluate(() => localStorage.setItem('halcyon-console-preferences', JSON.stringify({ effectsTier: 'full' })))
   for (const route of ['/dashboard', '/accounts']) {
     await page.goto(new URL(route, dashboard).href)
@@ -474,5 +477,16 @@ test('Full effects masks particles behind each visible hero and signed figure', 
     }
     expect(await spriteDelta(12, 12)).toBeGreaterThan(25)
     expect(await spriteDelta(Math.floor(box.x + box.width / 2) - 4, Math.floor(box.y + box.height / 2) - 4)).toBeLessThan(3)
+    if (route === '/accounts') {
+      await page.getByRole('combobox', { name: 'Select account' }).selectOption({ label: 'Investments (Invest)' })
+      const summary = page.getByRole('region', { name: 'Example index fund' })
+      await expect(summary).toHaveCSS('opacity', '1')
+      const investmentReturn = summary.getByText('Investment return', { exact: true }).locator('..').locator('.tabular-nums')
+      await investmentReturn.scrollIntoViewIfNeeded()
+      await expect(investmentReturn).toBeInViewport({ ratio: 1 })
+      const investmentBox = (await investmentReturn.boundingBox())!
+      expect(await spriteDelta(Math.floor(investmentBox.x + investmentBox.width / 2) - 4,
+        Math.floor(investmentBox.y + investmentBox.height / 2) - 4)).toBeLessThan(3)
+    }
   }
 })

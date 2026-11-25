@@ -77,7 +77,7 @@ export default function InvestmentAccountActivity({ accountId, overview }: {
   if (failed) return <ReportStatus label="Investment activity" report={failed} />
   if (loading) return <Tile title="Investment holding"><div className="flex min-h-20 items-center gap-2 py-5 text-[13px] text-muted" role="status"><InlineActivity label="Loading investment activity" size="compact" />Loading investment activity…</div></Tile>
   if (error) return <Tile title="Investment holding"><p role="alert" className="py-5 text-[13px] text-neg">{error}</p></Tile>
-  if (!summary) return <Tile title="Investment holding"><div className="py-6 text-center"><p className="text-[13px] text-muted">No investment activity has been imported yet.</p><p className="mt-1 text-[12px] text-muted">Open Ingestion and upload a supported investment transaction export.</p></div></Tile>
+  if (!summary) return <Tile title="Investment holding"><div data-console-empty-state className="py-6 text-center"><p className="text-[13px] text-muted">No investment activity has been imported yet.</p><p className="mt-1 text-[12px] text-muted">Open Ingestion and upload a supported investment transaction export.</p></div></Tile>
 
   const totalReturn = (summary.value_cents ?? 0) + Number(summary.cash_distributions_cents ?? 0) - Number(summary.net_external_contributions_cents)
   const returnPct = Number(summary.net_external_contributions_cents) === 0 ? 0 : totalReturn / Number(summary.net_external_contributions_cents) * 100

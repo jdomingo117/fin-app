@@ -171,12 +171,12 @@ export default function TransactionsPanel({
           </footer>
         </>
       ) : facets.length === 0 ? (
-        <div className="grid place-items-center py-12 text-center text-[12.5px] text-muted">
+        <div data-console-empty-state className="grid place-items-center py-12 text-center text-[12.5px] text-muted">
           No transactions in the selected period.
         </div>
       ) : (
         <div className="grid place-items-center gap-2 py-12 text-center">
-          <span className="text-[12.5px] text-muted">No transactions match your filters.</span>
+          <span data-console-empty-state className="text-[12.5px] text-muted">No transactions match your filters.</span>
           <button
             type="button"
             onClick={clearAll}

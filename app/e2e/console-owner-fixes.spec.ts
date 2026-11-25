@@ -591,6 +591,8 @@ test('Expenses transaction counts match the rendered rows before and after filte
   await expect(rows).toHaveCount(0)
   await expect(count).toHaveText('Showing 0 of 0')
   await expect(empty).toBeVisible()
+  const { casing, spelling } = (await collectConsoleChrome(empty)).issues
+  expect({ casing, spelling }).toEqual({ casing: [], spelling: [] })
   await capture(page, '13-expense-empty')
 })
 

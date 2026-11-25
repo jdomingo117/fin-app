@@ -33,7 +33,7 @@ jobs:
           cache: npm
           cache-dependency-path: app/package-lock.json
       - run: npm ci
-      - run: npx playwright install --with-deps chrome
+      - run: npx playwright install --with-deps chrome webkit
       - run: npm run test:browser:typecheck
       - run: npx playwright test --config playwright.console.config.ts --workers=2 --fully-parallel --shard=${{ matrix.shard }}/4
       - uses: actions/upload-artifact@v4

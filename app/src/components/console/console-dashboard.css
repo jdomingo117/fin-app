@@ -17,8 +17,12 @@
   block-size: 100%;
   min-block-size: 0;
   padding: 0 var(--console-gutter) var(--console-section-gap);
+  overflow: hidden auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  scroll-padding-block: 8px;
 }
-.console-switcher { position: relative; }
+.console-switcher { position: relative; flex: none; }
 .console-aperture {
   overflow-x: clip;
   margin-inline: calc(-1 * var(--console-gutter));
@@ -95,14 +99,13 @@
 .console-caption span { font: 300 28px/1.1 var(--font-display); }
 .console-caption small { color: var(--console-label); font-size: 13px; }
 .console-section[data-after="true"] { --advance: 270px; }
-.console-preview { display: flex; flex-direction: column; flex: 1; min-block-size: 0; gap: clamp(12px, 2.2dvh, 24px); }
+.console-preview { display: flex; flex-direction: column; flex: 1 0 auto; gap: clamp(12px, 2.2dvh, 24px); }
 .console-hero {
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 38%);
   align-items: center;
-  flex: 1;
-  min-block-size: 0;
+  flex: 1 0 auto;
 }
 .console-summary { position: relative; z-index: 1; min-inline-size: 0; }
 .console-hero-amount {
@@ -167,6 +170,8 @@
   scroll-snap-type: x proximity;
   scroll-padding-inline: 14px;
 }
+/* Keyboard focus must win when the closest snap point would hide part of a card. */
+.console-activity-row:has(.console-activity-card:focus-visible) { scroll-snap-type: none; }
 .console-activity-card {
   flex: 0 0 var(--console-card-width);
   min-inline-size: 0;

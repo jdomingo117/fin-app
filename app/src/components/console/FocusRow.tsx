@@ -165,7 +165,10 @@ export function SectionFocusRow<Id extends string>({ items, activeId, onPreview,
           aria-pressed={index === active}
           tabIndex={index === active ? 0 : -1}
           onFocus={event => {
-            if (event.currentTarget.matches(':focus-visible') && index !== active) preview(item.id)
+            if (!event.currentTarget.matches(':focus-visible')) return
+            if (index !== active) preview(item.id)
+            // The tile moves horizontally on focus. Use its stationary row for vertical scrolling.
+            event.currentTarget.closest('.console-switcher')?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
           }}
           onPointerEnter={event => hover(event, item.id)}
           onPointerMove={event => hover(event, item.id)}

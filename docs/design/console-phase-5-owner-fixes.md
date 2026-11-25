@@ -39,4 +39,4 @@ Each new regression was run on the before state and against the fix in Chromium 
 
 The expanded casing audit also checks the existing Budget and Settings screens. Budget’s commitments label now uses sentence case. Settings marks the literal deletion confirmation word as keyboard input.
 
-The initial hosted qualification exceeded 12 minutes on shard 2, so the Console browser workflow now uses five shards. The signed-figure pixel test also checks the investment return inside the Accounts hub. The audio regression starts recording on the trusted click so a queued click cannot consume the recording window.
+The initial four-shard qualification took 13m 03s on shard 2. The workflow now uses five shards and spreads the cross-screen qualification cases across all five. The signed-figure pixel test also checks the investment return inside the Accounts hub. The audio regression starts recording on the trusted click so a queued click cannot consume the recording window.

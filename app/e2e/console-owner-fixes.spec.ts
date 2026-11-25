@@ -305,10 +305,14 @@ test('Graph controls and selected Recurring chips have readable Console contrast
 
 test('Budget distinguishes disabled, unreachable and failed save states', async ({ page }) => {
   const fixture = workflowReplies()
+  let saveAttempts = 0
   let denied = true
   await openConsole(page, (resource, request, fallback) => {
     if (resource === 'query-budget' && denied) return { status: 403, json: { error: 'denied' } }
-    if (resource === 'manage-budget') return { status: 422, json: { message: 'The fixture rejected this change.' } }
+    if (resource === 'manage-budget') {
+      saveAttempts++
+      return { status: 422, json: { message: 'The fixture rejected this change.' } }
+    }
     return fixture.reply(resource, request, fallback)
   })
   await page.goto(new URL('/budget', dashboard).href)
@@ -338,11 +342,19 @@ test('Budget distinguishes disabled, unreachable and failed save states', async 
   await amount.blur()
   await form.getByRole('button', { name: 'Review my plan' }).click()
   await form.getByRole('button', { name: 'Save plan changes' }).click()
-  await expect(unavailable).toBeVisible()
+  await expect(unavailable).toHaveCount(1)
+  const failureCopy = "Budget changes couldn't be saved. Your edits are still here."
+  await expect(unavailable).toContainText(failureCopy)
+  await expect(page.getByText(/Your edits are still here/)).toHaveCount(1)
+  await expect(page.getByText('Budget update', { exact: true })).toHaveCount(0)
+  await expect(form.getByRole('button', { name: 'Save plan changes' })).toHaveCount(0)
+  const retry = unavailable.getByRole('button', { name: 'Try again' })
+  await expect(retry).toBeEnabled()
   await unavailable.scrollIntoViewIfNeeded()
   await capture(page, '06-budget-save')
-  await expect.soft(unavailable).toContainText('Budget changes could not be saved.', { timeout: 1500 })
-  await expect(page.getByText(/Your edits are still here/)).toBeVisible()
+  await retry.click()
+  await expect.poll(() => saveAttempts).toBe(2)
+  await expect(unavailable).toContainText(failureCopy)
   await expect(amount).toHaveValue('$1,030.00')
 })
 

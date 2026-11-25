@@ -254,3 +254,32 @@ test('Budget distinguishes disabled, unreachable and failed save states', async 
   await expect(page.getByText(/Your edits are still here/)).toBeVisible()
   await expect(amount).toHaveValue('$1,030.00')
 })
+
+test('Control Centre keeps focus inside when Tab wraps or a focused control blurs', async ({ page }) => {
+  await openConsole(page)
+  const button = page.getByRole('button', { name: 'Control Centre', exact: true })
+  await button.click()
+  const dialog = page.getByRole('dialog', { name: 'Control Centre' })
+  const close = dialog.getByRole('button', { name: 'Close Control Centre' })
+  const last = dialog.getByRole('button', { name: 'Sign out' })
+  await expect(close).toBeFocused()
+  await page.keyboard.press('Shift+Tab')
+  await expect(last).toBeFocused()
+  let visitedQuickAction = false
+  for (let step = 0; step < 12; step++) {
+    await page.keyboard.press('Tab')
+    const location = await dialog.evaluate(node => ({
+      inside: node.contains(document.activeElement),
+      quick: !!document.activeElement?.closest('.console-centre-actions'),
+    }))
+    expect.soft(location.inside, `Tab ${step + 1}`).toBe(true)
+    visitedQuickAction ||= location.quick
+  }
+  expect.soft(visitedQuickAction).toBe(true)
+  await last.focus()
+  await last.evaluate(node => node.blur())
+  await capture(page, '07-centre-focus')
+  await expect.soft(close).toBeFocused({ timeout: 1500 })
+  await page.keyboard.press('Escape')
+  await expect(button).toBeFocused()
+})

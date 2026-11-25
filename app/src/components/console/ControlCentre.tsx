@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useId, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
-import { keepDialogTabFocus } from '../../hooks/useDialogFocus'
+import { focusableElements } from '../../hooks/useDialogFocus'
 import { usePortfolio } from '../../hooks/usePortfolio'
 import { useView } from '../../router'
 import { useConsolePreferences } from './ConsolePreferences'
@@ -26,6 +26,8 @@ export function ControlCentre({ onOpenChange }: { onOpenChange: (open: boolean) 
   const [open, setOpen] = useState(false)
   const [closing, setClosing] = useState(false)
   const dialog = useRef<HTMLDialogElement>(null)
+  const firstBoundary = useRef<HTMLSpanElement>(null)
+  const lastBoundary = useRef<HTMLSpanElement>(null)
   const trigger = useRef<HTMLButtonElement>(null)
   const closeButton = useRef<HTMLButtonElement>(null)
   const opener = useRef<HTMLElement>()
@@ -73,6 +75,43 @@ export function ControlCentre({ onOpenChange }: { onOpenChange: (open: boolean) 
 
   useEffect(() => () => window.clearTimeout(exitTimer.current), [])
 
+  useLayoutEffect(() => {
+    const node = dialog.current
+    if (!open || !node) return
+    let backwards = false
+    const rememberDirection = (event: KeyboardEvent) => {
+      if (event.key === 'Tab') backwards = event.shiftKey
+    }
+    const wrap = (toEnd: boolean) => {
+      const stops = focusableElements(node).filter(stop => stop !== firstBoundary.current && stop !== lastBoundary.current)
+      const next = toEnd ? stops.at(-1) : stops[0]
+      next?.focus({ preventScroll: true })
+    }
+    const wrapIfOutside = () => {
+      if (node.open && !node.contains(document.activeElement)) wrap(backwards)
+    }
+    const entering = (event: FocusEvent) => {
+      if (!node.open) return
+      if (event.target === firstBoundary.current) wrap(true)
+      else if (event.target === lastBoundary.current) wrap(false)
+      else wrapIfOutside()
+    }
+    const leaving = (event: FocusEvent) => {
+      if (node.contains(event.target as Node) && !node.contains(event.relatedTarget as Node | null)) {
+        // A null relatedTarget also covers Safari moving focus to browser chrome.
+        queueMicrotask(wrapIfOutside)
+      }
+    }
+    document.addEventListener('keydown', rememberDirection, true)
+    document.addEventListener('focusin', entering, true)
+    document.addEventListener('focusout', leaving, true)
+    return () => {
+      document.removeEventListener('keydown', rememberDirection, true)
+      document.removeEventListener('focusin', entering, true)
+      document.removeEventListener('focusout', leaving, true)
+    }
+  }, [open])
+
   useEffect(() => {
     if (!preferences.centreShortcut) return
     function shortcut(event: KeyboardEvent) {
@@ -105,8 +144,8 @@ export function ControlCentre({ onOpenChange }: { onOpenChange: (open: boolean) 
     <dialog ref={dialog} id={dialogId} className="console-centre" aria-modal="true" aria-labelledby={headingId}
       data-closing={closing} onClose={finishClose}
       onCancel={event => { event.preventDefault(); close() }}
-      onKeyDown={event => keepDialogTabFocus(event, event.currentTarget)}
       onClick={event => { if (event.target === event.currentTarget) close() }}>
+      <span ref={firstBoundary} className="sr-only" tabIndex={0} />
       <GlassSurface as="div" material="sheet" className="console-centre-sheet">
         <div className="console-centre-inner">
           <header className="console-centre-heading">
@@ -127,18 +166,19 @@ export function ControlCentre({ onOpenChange }: { onOpenChange: (open: boolean) 
             })}
           </FocusRow>
           <div className="console-centre-actions" role="group" aria-label="Quick actions">
-            {actions.map(item => <button key={item.id} type="button" onClick={() => openAction(item.id)}>
+            {actions.map(item => <button key={item.id} type="button" tabIndex={0} onClick={() => openAction(item.id)}>
               <Icon path={item.icon} /><span>{item.title}</span>
             </button>)}
-            <button type="button" aria-label="Ambient music" aria-pressed={preferences.music} onClick={() => toggle('music')}>
+            <button type="button" tabIndex={0} aria-label="Ambient music" aria-pressed={preferences.music} onClick={() => toggle('music')}>
               <Icon className="console-music-icon" path="M9 18V5l11-2v13M9 18a3 2-12 1 1-6 0 3 2-12 0 1 6 0Zm11-2a3 2-12 1 1-6 0 3 2-12 0 1 6 0Z" /><span>Music</span>
             </button>
-            <button type="button" onClick={leave}>
+            <button type="button" tabIndex={0} onClick={leave}>
               <Icon path="M10 5H4v14h6m4-12 5 5-5 5m-6-5h11" /><span>Sign out</span>
             </button>
           </div>
         </div>
       </GlassSurface>
+      <span ref={lastBoundary} className="sr-only" tabIndex={0} />
     </dialog>
   </>
 }

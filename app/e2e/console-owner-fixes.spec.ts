@@ -303,3 +303,23 @@ test('Sound rows align and Master volume has a visible keyboard ring', async ({ 
   expect.soft(dimensions.difference).toBeLessThan(1)
   expect(dimensions.ring).toMatch(/0px 0px 0px 3px.*0px 0px 0px 6px/)
 })
+
+test('Investment hero shows the current value and reserves holdings guidance for zero', async ({ page }) => {
+  await openConsole(page, (resource, _request, payload) => {
+    if (resource === 'accounts' && Array.isArray(payload)) return { json: [...payload, {
+      id: '688ed674-9459-4f75-99c8-1c68efc1e101', name: 'Empty fixture holding', type: 'Invest', balance: 0, balance_source: 'manual',
+    }] }
+    if (resource === 'movement_history') return { json: { months: [] } }
+    return undefined
+  })
+  await page.goto(new URL('/accounts', dashboard).href)
+  const select = page.getByRole('combobox', { name: 'Select account' })
+  await select.selectOption({ label: 'Investments (Invest)' })
+  const hero = page.locator('.console-expanded-hero')
+  await expect(hero.locator('.console-hero-amount')).toContainText('$96,440')
+  await capture(page, '09-investment-hero')
+  await expect.soft(hero.getByText(/Holdings appear here/)).toHaveCount(0, { timeout: 1500 })
+  await expect.soft(hero.getByText('Current investment value', { exact: true })).toBeVisible({ timeout: 1500 })
+  await select.selectOption({ label: 'Empty fixture holding (Invest)' })
+  await expect(hero.getByText(/Holdings appear here/)).toBeVisible()
+})

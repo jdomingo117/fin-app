@@ -7,7 +7,7 @@ import { GlassSurface } from './GlassSurface'
 import './console-hub.css'
 
 export type ConsoleFigure = { label: string; cents?: number; signed?: boolean }
-export type ConsoleArt = { label: string; values?: number[]; percent?: number }
+export type ConsoleArt = { label: string; values?: number[]; percent?: number; value?: number }
 const sharedParts = ['label', 'figure', 'art'] as const
 type SharedPart = (typeof sharedParts)[number]
 type ProjectionBox = Pick<DOMRect, 'x' | 'y' | 'width' | 'height'>
@@ -114,7 +114,8 @@ export function ConsoleHeroArt({ id, art, reduced, origin, home, redacted }: {
     return `${x},${y}`
   }).join(' ') : undefined
   const percent = redacted ? undefined : art?.percent
-  if (!points && percent === undefined && !redacted) {
+  const value = redacted ? undefined : art?.value
+  if (!points && percent === undefined && value === undefined && !redacted) {
     if (id === 'accounts') return <p className="console-art-empty">Holdings appear here when accounts have a cash or investment balance.</p>
     if (id === 'dashboard') return <div aria-hidden="true" className="console-orb" />
     return null
@@ -136,6 +137,11 @@ export function ConsoleHeroArt({ id, art, reduced, origin, home, redacted }: {
         </>}
       </svg>
       {redacted ? <figcaption className="sr-only">Trend hidden</figcaption> :
+        value !== undefined ? <figcaption className="console-orb-stat">
+          <span>{art?.label}</span>
+          <strong className="tabular-nums" aria-hidden="true">{consoleMoney(value, false, true)}</strong>
+          <span className="sr-only">{consoleMoney(value)}</span>
+        </figcaption> :
         percent !== undefined ? <>
           <div className="console-orb-stat tabular-nums" aria-hidden="true"><strong>{percent}%</strong></div>
           <figcaption className="sr-only">{art?.label}: {percent}%</figcaption>

@@ -25,6 +25,7 @@ import EditAccountModal from '../components/EditAccountModal'
 import ConnectBankModal from '../components/ConnectBankModal'
 import TransactionCategoryDrawer from '../components/TransactionCategoryDrawer'
 import { ledgerPage, activityCategories, hydrateParents, type LedgerCursor } from '../lib/ledgerPage'
+import { useRedactBalances } from '../hooks/useRedactBalances'
 import { useKeysetPage } from '../hooks/useKeysetPage'
 import { useView } from '../router'
 
@@ -58,6 +59,7 @@ function timeframeRange(tf: string): { from: string; to: string } | null {
 export default function Accounts() {
   const { accounts, refreshData } = useData()
   const { toast, theme } = useView()
+  const redacted = useRedactBalances()
   const route = useOutletContext<ConsoleOutlet | null>()
   const consoleRoute = theme === 'console' ? route : null
   const requestedAccountId = (useLocation().state as { accountId?: string } | null)?.accountId
@@ -325,6 +327,7 @@ export default function Accounts() {
     const months = history.data?.months.map(month => month.month) ?? []
     const series = [{ label: 'Closing balance', data: trend, color: 'var(--console-chart-ink)' }]
     return <ConsoleHub id="accounts" title="Accounts" onBack={consoleRoute.back}
+      redacted={redacted}
       period={`Balance as of ${fullDayLabel(today)}`}
       figure={{ label: selectedAccount.name, cents: selectedAccount.balance }}
       strip={flow.data ? [
@@ -332,7 +335,9 @@ export default function Accounts() {
         { label: 'Period spending', cents: -expenses, signed: true },
         { label: 'Net cash flow', cents: netCashFlow, signed: true },
       ] : []}
-      art={trend.length ? { label: 'Monthly closing balances', values: trend } : undefined}
+      art={selectedAccount.type === 'Invest' && selectedAccount.balance !== 0
+        ? { label: 'Current investment value', value: selectedAccount.balance }
+        : trend.length ? { label: 'Monthly closing balances', values: trend } : undefined}
       filters={<div className="console-hub-filters console-account-picker" role="group" aria-label="Account controls">
         <Select ariaLabel="Select account" value={selectedAccount.id} onChange={setSelectedAccountId}>
           {accounts.map(account => <option key={account.id} value={account.id}>{account.name} ({account.type})</option>)}

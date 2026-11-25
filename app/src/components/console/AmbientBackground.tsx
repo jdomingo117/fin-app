@@ -1,5 +1,5 @@
 import type { EffectsTier } from './effectsTier'
-import { useEffect, useMemo, useRef, type CSSProperties } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, type CSSProperties } from 'react'
 import { enabledSections, type SectionId } from './sections'
 import './ambient-background.css'
 
@@ -11,6 +11,70 @@ const driftStep = 2600
 const twinkle = 2200
 const settling = 1200
 const pointerQuiet = 160
+const figureSelector = '.console-hero-amount, [data-sign], .console-activity-card strong.tabular-nums, .console-compact-title strong, .console-orb-stat strong'
+const movingFigureSelector = '.console-handoff, .console-preview, .console-expanded-hero'
+
+function watchParticleMask(scene: HTMLElement, layer: HTMLElement) {
+  const main = scene.parentElement?.querySelector('.console-main')
+  if (!main) return
+
+  const padding = 14
+  let frame = 0
+  let rescan = true
+  let figures: Element[] = []
+  let previous = ''
+
+  const schedule = () => {
+    if (!frame && !document.hidden) frame = requestAnimationFrame(update)
+  }
+  const resize = new ResizeObserver(schedule)
+  const moving = new MutationObserver(schedule)
+
+  function update() {
+    frame = 0
+    if (rescan) {
+      rescan = false
+      figures = [...main!.querySelectorAll(figureSelector)]
+      resize.disconnect()
+      resize.observe(scene)
+      for (const figure of figures) resize.observe(figure)
+      moving.disconnect()
+      for (const target of main!.querySelectorAll(movingFigureSelector)) {
+        moving.observe(target, { attributes: true, attributeFilter: ['style'] })
+      }
+    }
+
+    const area = scene.getBoundingClientRect()
+    const boxes = figures.flatMap(figure => {
+      const { left, right, top, bottom, width, height } = figure.getBoundingClientRect()
+      if (!width || !height || right <= area.left || left >= area.right || bottom <= area.top || top >= area.bottom) return []
+      return [[Math.floor(left - area.left) - padding, Math.floor(top - area.top) - padding,
+        Math.ceil(width) + 2 * padding, Math.ceil(height) + 2 * padding]]
+    })
+    const geometry = boxes.join('|')
+    if (geometry === previous) return
+    previous = geometry
+    const solid = 'linear-gradient(white, white)'
+    // Add all exclusions together before subtracting them from the full layer.
+    // Overlapping figure bounds therefore stay cut out.
+    const cutouts = boxes.map(([x, y, width, height]) => `${solid} ${x}px ${y}px / ${width}px ${height}px no-repeat add`)
+    layer.style.mask = cutouts.length ? [`${solid} subtract`, ...cutouts].join(', ') : ''
+  }
+
+  const content = new MutationObserver(() => { rescan = true; schedule() })
+  content.observe(main, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-sign'] })
+  window.addEventListener('scroll', schedule, { capture: true, passive: true })
+  document.addEventListener('visibilitychange', schedule)
+  update()
+  return () => {
+    cancelAnimationFrame(frame)
+    content.disconnect()
+    moving.disconnect()
+    resize.disconnect()
+    window.removeEventListener('scroll', schedule, true)
+    document.removeEventListener('visibilitychange', schedule)
+  }
+}
 
 // Stable coordinates keep the same scene mounted through section and route changes.
 function scatter(index: number, salt: number) {
@@ -73,10 +137,15 @@ export function AmbientBackground({ section, paused, reduced, tier, count = part
   count?: number
 }) {
   const scene = useRef<HTMLDivElement>(null)
+  const particleMask = useRef<HTMLDivElement>(null)
   const reduceEffects = tier === 'reduce'
   const budget = tier === 'balanced' ? Math.min(balancedParticleLimit, count) : count
   const particleBands = useMemo(() => makeParticleBands(budget), [budget])
   const profile = import.meta.env.DEV && new URLSearchParams(location.search).has('profileAmbient')
+
+  useLayoutEffect(() => {
+    if (!reduceEffects && scene.current && particleMask.current) return watchParticleMask(scene.current, particleMask.current)
+  }, [reduceEffects])
 
   useEffect(() => {
     if (!paused || !scene.current) return
@@ -168,14 +237,16 @@ export function AmbientBackground({ section, paused, reduced, tier, count = part
       {ribbons.map((style, i) => <i key={i} className="console-ribbon" style={style} />)}
       <div className="console-light-circles" data-light-count={circleCount} style={{ backgroundImage: circlePaint }} />
     </div>}
-    {!reduceEffects && <div className="console-ambient-plane" data-depth="particles">
-      <div className="console-particles" data-particle-count={particleBands.count}>
-        {particleBands.bands.map(({ style, sprites }, band) => (
-          <div key={band} className="console-particle-band" style={style}>
-            {sprites.map((sprite, index) => <i key={index} className="console-particle" style={sprite} />)}
+    {!reduceEffects && <div ref={particleMask} className="console-particle-mask">
+        <div className="console-ambient-plane" data-depth="particles">
+          <div className="console-particles" data-particle-count={particleBands.count}>
+            {particleBands.bands.map(({ style, sprites }, band) => (
+              <div key={band} className="console-particle-band" style={style}>
+                {sprites.map((sprite, index) => <i key={index} className="console-particle" style={sprite} />)}
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </div>
     </div>}
     <div className="console-vignette" />
     <div className="console-grain" />

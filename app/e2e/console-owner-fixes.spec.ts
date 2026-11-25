@@ -89,7 +89,7 @@ test('Expanded hero text clears the sticky dock throughout collapse', async ({ p
     const scroll = page.locator('.console-designed-scroll')
     const hero = scroll.locator('.console-expanded-hero')
     await expect(hero).toHaveCSS('opacity', '1')
-    const end = Math.max(90, await hero.evaluate(node => node.offsetHeight) - 26)
+    const end = Math.max(90, await hero.evaluate(node => Math.round(node.getBoundingClientRect().height)) - 26)
     const collisions = []
     for (let step = 0; step <= 20; step++) {
       const progress = step / 20
@@ -404,4 +404,75 @@ test('Transaction detail aligns both selects and visibly fills the checked radio
   await expect(merchant).toBeChecked()
   expect.soft(await fill(current)).toBe('0')
   expect(await fill(merchant)).toBe('1')
+})
+
+test('Full effects masks particles behind each visible hero and signed figure', async ({ page }) => {
+  await openConsole(page)
+  await page.evaluate(() => localStorage.setItem('halcyon-console-preferences', JSON.stringify({ effectsTier: 'full' })))
+  for (const route of ['/dashboard', '/accounts']) {
+    await page.goto(new URL(route, dashboard).href)
+    const particles = page.locator('.console-particles')
+    await expect(particles).toHaveAttribute('data-particle-count', '55')
+    const label = route === '/dashboard' ? 'home' : 'accounts'
+    await expect(page.locator('.console-hero-amount:visible')).toContainText('$')
+    await capture(page, `12-particles-${label}`)
+    await expect.soft(page.locator('.console-particle-mask')).not.toHaveCSS('mask-image', 'none', { timeout: 1500 })
+    const coverage = await particles.evaluate(node => {
+      const viewport = node.closest('.console-viewport')!
+      const paint = getComputedStyle(viewport.querySelector('.console-particle-mask')!)
+      const sizes = paint.maskSize.split(',').map(size => size.trim().split(' ').map(parseFloat))
+      const masks = paint.maskPosition.split(',').slice(1).map((position, index) => {
+        const [x, y] = position.trim().split(' ').map(parseFloat)
+        const [w, h] = sizes[index + 1]
+        return { x, y, w, h }
+      })
+      const figures = [...viewport.querySelectorAll('.console-hero-amount, [data-sign]')].filter(figure => {
+        const box = figure.getBoundingClientRect()
+        return box.width && box.height && box.left >= 0 && box.top >= 0 && box.right <= innerWidth
+          && box.bottom <= innerHeight && !figure.closest('[inert]')
+      })
+      return { count: figures.length, uncovered: figures.filter(figure => {
+        const box = figure.getBoundingClientRect()
+        const x = box.left + box.width / 2, y = box.top + box.height / 2
+        return !masks.some(mask => x >= mask.x && x <= mask.x + mask.w && y >= mask.y && y <= mask.y + mask.h)
+      }).map(node => node.getAttribute('data-sign') ?? 'hero') }
+    })
+    expect(coverage.count).toBeGreaterThan(1)
+    expect.soft(coverage.uncovered).toEqual([])
+
+    // Place a deliberately bright fixture sprite in the production mask layer.
+    // The same sprite must paint in open space and disappear beneath a figure.
+    const figure = route === '/dashboard' ? page.locator('.console-hero-amount:visible')
+      : page.locator('.console-figures [data-sign]').first()
+    const box = (await figure.boundingBox())!
+    const layer = page.locator('.console-particle-mask')
+    const spriteDelta = async (x: number, y: number) => {
+      const clip = { x, y, width: 8, height: 8 }
+      const plain = await page.screenshot({ clip, animations: 'disabled', scale: 'css' })
+      await layer.evaluate((node, { x, y }) => {
+        const sprite = document.createElement('i')
+        sprite.dataset.fixtureSprite = ''
+        sprite.style.cssText = `position:absolute;left:${x}px;top:${y}px;width:8px;height:8px;background:#ff00ff`
+        node.append(sprite)
+      }, clip)
+      const trial = await page.screenshot({ clip, animations: 'disabled', scale: 'css' })
+      await page.locator('[data-fixture-sprite]').evaluate(node => node.remove())
+      return page.evaluate(async pictures => {
+        const context = document.createElement('canvas').getContext('2d', { willReadFrequently: true })!
+        const [plain, trial] = await Promise.all(pictures.map(async png => {
+          const image = new Image()
+          image.src = `data:image/png;base64,${png}`
+          await image.decode()
+          return image
+        }))
+        context.drawImage(plain, 0, 0)
+        const baseline = context.getImageData(0, 0, 8, 8).data
+        context.drawImage(trial, 0, 0)
+        const pixels = context.getImageData(0, 0, 8, 8).data
+        return Math.max(...pixels.map((channel, index) => Math.abs(channel - baseline[index])))
+      }, [plain.toString('base64'), trial.toString('base64')])
+    }
+    expect(await spriteDelta(12, 12)).toBeGreaterThan(25)
+    expect(await spriteDelta(Math.floor(box.x + box.width / 2) - 4, Math.floor(box.y + box.height / 2) - 4)).toBeLessThan(3)
+  }
 })

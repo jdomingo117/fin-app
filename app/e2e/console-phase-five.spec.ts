@@ -221,7 +221,7 @@ test('200 percent browser zoom', async ({}, info) => {
   try {
     const context = await chromium.launchPersistentContext(profile, {
       channel: 'chrome', viewport: null, args: ['--window-size=1440,900', '--force-device-scale-factor=1'],
-      timezoneId: 'Australia/Sydney', serviceWorkers: 'block',
+      locale: 'en-AU', timezoneId: 'Australia/Sydney', serviceWorkers: 'block',
     })
     try {
       const settings = context.pages()[0]

@@ -18,6 +18,9 @@ const investmentReply = (resource: string) => resource === 'investment_account_o
 
 async function openConsole(page: Page, override?: Parameters<typeof signInForConsole>[3]) {
   await signInForConsole(page, true, undefined, override)
+  expect(await page.evaluate(() => ({ locale: navigator.language,
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone })))
+    .toEqual({ locale: 'en-AU', timezone: 'Australia/Sydney' })
   await expect(page.locator('html')).not.toHaveAttribute('data-theme', 'console')
   await page.getByRole('button', { name: 'Console', exact: true }).click()
   await expect(sections(page)).toBeVisible()

@@ -11,6 +11,7 @@ export default defineConfig({
   outputDir: './test-results/console',
   use: {
     baseURL: 'http://127.0.0.1:5320',
+    locale: 'en-AU',
     timezoneId: 'Australia/Sydney',
     serviceWorkers: 'block',
     trace: 'retain-on-failure',

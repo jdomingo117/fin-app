@@ -283,3 +283,23 @@ test('Control Centre keeps focus inside when Tab wraps or a focused control blur
   await page.keyboard.press('Escape')
   await expect(button).toBeFocused()
 })
+
+test('Sound rows align and Master volume has a visible keyboard ring', async ({ page }) => {
+  await openConsole(page)
+  await page.goto(new URL('/settings', dashboard).href)
+  const sound = page.getByRole('region', { name: 'Sound', exact: true })
+  const slider = sound.getByRole('slider', { name: 'Master volume' })
+  await slider.press('ArrowRight')
+  await expect(slider).toBeFocused()
+  await expect(slider).toHaveValue('56')
+  await slider.scrollIntoViewIfNeeded()
+  await capture(page, '08-volume-focus')
+  const dimensions = await sound.evaluate(node => {
+    const rows = [...node.querySelectorAll('[role="switch"], .console-volume')].map(row => row.getBoundingClientRect().height)
+    const input = node.querySelector<HTMLInputElement>('input[type="range"]')!
+    const ring = getComputedStyle(input.parentElement!).boxShadow
+    return { difference: Math.max(...rows) - Math.min(...rows), ring }
+  })
+  expect.soft(dimensions.difference).toBeLessThan(1)
+  expect(dimensions.ring).toMatch(/0px 0px 0px 3px.*0px 0px 0px 6px/)
+})

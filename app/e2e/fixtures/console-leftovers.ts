@@ -34,7 +34,8 @@ export async function collectConsoleChrome(root: Locator) {
         return style.outlineStyle === 'solid' && style.outlineWidth === '2px' && style.outlineOffset === '-3px'
       }
       const tile = element.matches('.console-section')
-      const edge = tile ? element.querySelector('.console-focus-decoration[data-layer="edge"]') : element
+      const edge = tile ? element.querySelector('.console-focus-decoration[data-layer="edge"]')
+        : element.closest('.console-volume-track') ?? element
       if (!edge) return false
       const ink = getComputedStyle(edge)
       if (tile && style.outlineStyle !== 'none') return false

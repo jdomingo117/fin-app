@@ -323,3 +323,57 @@ test('Investment hero shows the current value and reserves holdings guidance for
   await select.selectOption({ label: 'Empty fixture holding (Invest)' })
   await expect(hero.getByText(/Holdings appear here/)).toBeVisible()
 })
+
+test('Rendered nested Console views use sentence case', async ({ page }) => {
+  await openConsole(page, resource => resource === 'investment_account_overview' ? { json: {
+    holding_id: 'fixture-investment', instrument_name: 'Example index fund', identifier: 'EXF',
+    calculated_units: '12.5', confirmed_units: null, reconciliation_status: 'Confirmed',
+    net_external_contributions_cents: 782000, reinvested_distributions_cents: 14200,
+    activity_count: 0, value_cents: 9644000, nav_price: '12.55', price_date: '2026-11-20',
+    valuation_status: 'current', market_movement_cents: 84000, cash_distributions_cents: 1200,
+  } } : undefined)
+  const hub = page.locator('.console-designed-scroll')
+  async function check(root: Locator, name: string) {
+    const report = await collectConsoleChrome(root)
+    expect.soft(report.issues.casing, name).toEqual([])
+  }
+  await page.goto(new URL('/income', dashboard).href)
+  await page.getByRole('tab', { name: 'Strategic projections' }).click()
+  const goals = page.getByText('Saved planning goals', { exact: true })
+  await goals.scrollIntoViewIfNeeded()
+  await capture(page, '10-projections-case')
+  await check(hub, 'Strategic projections')
+
+  await page.goto(new URL('/expenses', dashboard).href)
+  await page.getByRole('tab', { name: 'Recurring hub' }).click()
+  const directory = page.getByText('Commitments directory', { exact: true })
+  await directory.scrollIntoViewIfNeeded()
+  await capture(page, '10-recurring-case')
+  await check(hub, 'Recurring hub')
+  await page.getByRole('tab', { name: 'Analytics' }).click()
+  await page.locator('.console-hub-dock button[aria-haspopup="dialog"]').first().click()
+  const picker = page.getByRole('dialog', { name: 'Select date range' })
+  await expect(picker).toBeVisible()
+  await capture(page, '10-date-case')
+  await check(picker, 'Date range picker')
+
+  await page.goto(new URL('/accounts', dashboard).href)
+  await page.getByRole('combobox', { name: 'Select account' }).selectOption({ label: 'Investments (Invest)' })
+  const price = page.getByRole('button', { name: 'Refresh price', exact: true })
+  await price.scrollIntoViewIfNeeded()
+  await capture(page, '10-investment-case')
+  await check(hub, 'Investment account')
+
+  await page.getByRole('combobox', { name: 'Select account' }).selectOption({ label: 'Everyday (Liquid)' })
+  await page.getByRole('region', { name: 'Account activity' }).getByRole('button', { name: /Market grocer/ }).first().click()
+  const detail = page.getByRole('dialog').filter({ has: page.getByRole('button', { name: 'Close transaction detail' }) })
+  await expect(detail).toBeVisible()
+  await capture(page, '10-detail-case')
+  await check(detail, 'Transaction detail')
+  await detail.evaluate(node => {
+    const label = document.createElement('p')
+    label.textContent = 'AUTHORED CAPS'
+    node.appendChild(label)
+  })
+  expect((await collectConsoleChrome(detail)).issues.casing).toContain('AUTHORED CAPS')
+})

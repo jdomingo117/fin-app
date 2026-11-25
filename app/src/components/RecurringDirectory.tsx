@@ -523,7 +523,7 @@ export default function RecurringDirectory({
                     : 'text-muted hover:text-ink'
                 }`}
               >
-                {st}
+                {{ all: 'All', active: 'Active', dormant: 'Dormant' }[st]}
               </button>
             ))}
             </div>
@@ -543,7 +543,7 @@ export default function RecurringDirectory({
                     : 'text-muted hover:text-ink'
                 }`}
               >
-                {kd}
+                {{ all: 'All', fixed: 'Fixed', variable: 'Variable' }[kd]}
               </button>
             ))}
             </div>

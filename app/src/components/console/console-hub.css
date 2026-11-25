@@ -140,7 +140,10 @@
 .console-holdings { display: grid; gap: 7px; }
 .console-holdings li { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 14px; }
 .console-holdings small { display: block; color: var(--console-label); }
-.console-designed-scroll :is([aria-label="Spending insights"],.allocation-donut) .uppercase { text-transform: none; letter-spacing: normal; }
+html[data-theme="console"] :is(.console-designed-scroll, [data-console-date-picker]) :is(.micro, .uppercase, .field-label) {
+  text-transform: none;
+  letter-spacing: normal;
+}
 .console-designed-scroll .allocation-donut__visual svg { max-width: 100%; }
 .console-designed-scroll .allocation-donut .donut-center { font-size: 14px; font-weight: 400; }
 .console-designed-scroll .allocation-donut [aria-pressed="true"] { background: var(--console-fill); }
@@ -208,7 +211,6 @@
   box-shadow: none;
   backdrop-filter: none;
 }
-.console-analysis-modules .uppercase { text-transform: none; letter-spacing: normal; }
 .console-analysis-modules [data-console-row-item] { min-width: 0; }
 
 html[data-theme="console"] .react-flow__controls-button {

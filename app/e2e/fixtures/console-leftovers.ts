@@ -78,7 +78,8 @@ export async function collectConsoleChrome(root: Locator) {
       const principal = words.filter(word => !allowedAcronyms.has(word))
       if (!principal.length) return
       const transforms = textStyle.textTransform.split(' ')
-      if (transforms.includes('uppercase') || /(?:small|petite)-caps/.test(textStyle.fontVariantCaps)) {
+      if (principal.every(word => /^[A-Z]{2,}$/.test(word)) || transforms.includes('uppercase')
+        || /(?:small|petite)-caps/.test(textStyle.fontVariantCaps)) {
         issues.casing.push(text.toUpperCase())
       } else if (transforms.includes('capitalize') && principal.length > 1) {
         issues.casing.push(text.replace(/\b\p{L}/gu, letter => letter.toUpperCase()))

@@ -143,7 +143,7 @@ export default function RecurringHub() {
               }}
               className="text-[12px] font-bold text-accent-ink hover:underline cursor-pointer border-none bg-transparent"
             >
-              Clear Focus
+              Clear focus
             </button>
           )}
         </div>

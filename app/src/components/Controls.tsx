@@ -552,6 +552,7 @@ export function DateRangePicker({
         transition={{ duration: 0.14 }}
         role="dialog"
         aria-label="Select date range"
+        data-console-date-picker={consoleStyle ? '' : undefined}
         className={`${consoleStyle ? 'fixed z-[55] max-h-[calc(100dvh-16px)] max-w-[calc(100vw-16px)] overflow-auto' : 'absolute right-0 z-50 mt-1.5'} w-[320px] rounded-[12px] border border-[var(--hair)] p-3`}
         style={{
           background: 'var(--console-popover-paint, var(--toast-bg))',

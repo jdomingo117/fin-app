@@ -56,6 +56,7 @@ export default function Budget() {
   const { theme } = useView()
   const redacted = useRedactBalances()
   const {snapshot:s,draft,editing,setEditing,loading,busy,error,notice,pending,canWrite}=budget
+  const unavailable = theme==='console' && budget.errorKind!=='save' && (error || (!BUDGET_ENABLED && "Budget isn't available for this account yet."))
   const presentation=budgetPresentation(s,budget.readState,{pendingWrite:!!pending})
   const [view,setView]=useState<BudgetView>('overview')
   const [assisting,setAssisting]=useState(false),[assistanceBase,setAssistanceBase]=useState<Setup|null>(null)
@@ -91,11 +92,11 @@ export default function Budget() {
     {theme==='console'&&<WorkflowStatus label={s?.plan ? 'Left for everyday spending' : 'Spending plan'}>
       {redacted ? 'Hidden' : s?.plan ? <BudgetValue value={presentation.everyday.remaining}/> : loading ? 'Loading' : s ? 'No active plan' : 'Unavailable'}
     </WorkflowStatus>}
-    <BudgetPageHeader presentation={presentation} view={view} onView={setView} onSettings={()=>setSettingsOpen(true)}/>
+    {(theme!=='console'||s)&&<BudgetPageHeader presentation={presentation} view={view} onView={setView} onSettings={()=>setSettingsOpen(true)}/>}
     {settingsOpen&&s?.plan&&<BudgetSettings onClose={()=>setSettingsOpen(false)}/>}
     {coverageOpen&&s&&!s.plan&&role==='owner'&&<BudgetTaskPanel title="Account history coverage" onClose={()=>setCoverageOpen(false)} resetKey={s.source_revision} completion="recovery"><BudgetHistoryCoverage/></BudgetTaskPanel>}
     {!tenantId&&<OperationStatusPanel state="failed" title="Your workspace isn’t available yet" description="We haven’t loaded a workspace membership, so no Budget information has been read or changed." action={<Button variant="ghost" onClick={()=>void refreshMembership()}>Retry workspace connection</Button>} className="mt-4"/>}
-    {!BUDGET_ENABLED&&<p className="outcome-panel mt-4">The Budget preview is not enabled on this build. Saved data and interrupted-save recovery remain available here.</p>}
+    {!BUDGET_ENABLED&&theme!=='console'&&<p className="outcome-panel mt-4">The Budget preview is not enabled on this build. Saved data and interrupted-save recovery remain available here.</p>}
     {loading&&!budget.preparation&&(theme==='console'&&!s ? <WorkflowSkeleton label="Loading your saved budget"/> : <OperationStatusPanel state="working" title="Loading your saved budget" description="Reading your saved plan and account scope." className="mt-4"/>)}
     {budget.preparation&&<section aria-label="Preparing budget history" className="outcome-panel mt-4 space-y-3" aria-busy={loading}>
       <h3 className="font-semibold">Checking your budget history</h3><p className="body-copy" role="status">{budget.preparation.completed} of {budget.preparation.total} saved budgets checked. We’ll show updated balances when the full history is ready. Your plan and transactions are unchanged.</p>
@@ -103,7 +104,14 @@ export default function Budget() {
       {!loading&&<Button onClick={()=>void budget.refresh()}>Continue loading history</Button>}
       {s&&<p className="body-copy text-warn">Previously loaded figures below may be out of date. Changes are paused until this check finishes.</p>}
     </section>}
-    {error&&<div role="alert" className="outcome-panel mt-4 text-neg">{error}<p className="detail-copy mt-1">{s?(budget.readState==='ready'&&!pending?'Your last successfully loaded budget remains below.':'Previously loaded figures remain below; they may be out of date.'):'No Budget figures could be loaded. Missing information is not zero.'}</p></div>}
+    {unavailable ? <div role="alert" className="outcome-panel mt-4 flex flex-wrap items-center gap-3">
+      <div className="min-w-0 grow"><p>{unavailable}</p>{s&&<p className="detail-copy mt-1 text-muted">Previously loaded figures may be out of date.</p>}</div>
+      <Button disabled={loading||busy} onClick={()=>void budget.refresh()}>Refresh</Button>
+    </div> : error&&<div role="alert" className="outcome-panel mt-4 text-neg">
+      {budget.errorKind==='save'&&<p className="font-semibold">Budget changes could not be saved.</p>}
+      <p>{error}</p>
+      {budget.errorKind==='read'&&<p className="detail-copy mt-1">{s?'Previously loaded figures may be out of date.':'No Budget figures could be loaded.'}</p>}
+    </div>}
     {budget.impactPreparation&&<section aria-label="Preparing budget effects" aria-busy="true" className="outcome-panel mt-4 space-y-3">
       <h2 className="font-display text-xl font-bold">Checking the budget effects</h2>
       <p role="status" className="body-copy">We’re checking the complete budget before and after your choices. No budget change has been saved.</p>
@@ -205,6 +213,7 @@ function BudgetEditor({setup,active,onAssistance}:{setup:Setup;active:boolean;on
   const moduleTitle = theme === 'console' ? 'console-module-title' : 'font-semibold'
   // Review validates the draft; activation remains a separate saved-draft action.
   return <form ref={form} onSubmit={e=>e.preventDefault()} onInvalidCapture={e=>{for(let node=(e.target as HTMLElement).parentElement;node&&node!==form.current;node=node.parentElement)if(node instanceof HTMLDetailsElement)node.open=true}} className={`${active?'mt-5':'budget-setup'} space-y-4`} aria-label={active?'Adjust allocation plan':'Manual budget setup'} aria-busy={b.busy}>
+    {changed&&b.errorKind==='save'&&<p role="status" className="body-copy">Your edits are still here.</p>}
     {!active&&<SetupProgress current={0}/>}
     <fieldset disabled={!b.canWrite} className="space-y-4 min-w-0">
     {staleAssistance&&<div className="outcome-panel text-warn space-y-2"><p>The account history behind these suggestions changed. Review the suggestions again or save your amounts and goal as your own estimates.</p><Button variant="ghost" onClick={()=>change(convertAssistanceToManual(setup))}>Keep as manual estimates</Button></div>}

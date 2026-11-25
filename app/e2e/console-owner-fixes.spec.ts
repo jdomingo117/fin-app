@@ -1,7 +1,8 @@
-import { expect, test, type Locator, type Page } from '@playwright/test'
+import { expect, test, type Locator, type Page, type Route } from '@playwright/test'
 import { mkdir } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { collectConsoleChrome } from './fixtures/console-leftovers'
+import { workflowReplies } from './fixtures/console-workflow-replies'
 import { dashboard, signInForConsole } from './fixtures/console-review'
 
 const sections = (page: Page) => page.getByRole('toolbar', { name: 'Sections' })
@@ -209,4 +210,47 @@ test('Graph controls and selected Recurring chips have readable Console contrast
     await expect.soft(chip).toHaveCSS('background-color', 'rgb(255, 255, 255)')
     await expect.soft(chip).toHaveCSS('color', 'rgb(10, 13, 22)', { timeout: 1500 })
   }
+})
+
+test('Budget distinguishes disabled, unreachable and failed save states', async ({ page }) => {
+  const fixture = workflowReplies()
+  let denied = true
+  await openConsole(page, (resource, request, fallback) => {
+    if (resource === 'query-budget' && denied) return { status: 403, json: { error: 'denied' } }
+    if (resource === 'manage-budget') return { status: 422, json: { message: 'The fixture rejected this change.' } }
+    return fixture.reply(resource, request, fallback)
+  })
+  await page.goto(new URL('/budget', dashboard).href)
+  const unavailable = page.getByRole('alert')
+  await expect(unavailable).toBeVisible()
+  await capture(page, '06-budget-disabled')
+  await expect.soft(unavailable).toContainText("Budget isn't available for this account yet.", { timeout: 1500 })
+  await expect.soft(unavailable).not.toContainText(/your edits are still here/i, { timeout: 1500 })
+
+  denied = false
+  const unreachable = (route: Route) => route.request().method() === 'POST' ? route.abort('failed') : route.fallback()
+  await page.route('**/functions/v1/query-budget', unreachable)
+  await page.getByRole('button', { name: /refresh/i }).first().click()
+  await expect(unavailable).toBeVisible()
+  await capture(page, '06-budget-network')
+  await expect.soft(unavailable).toContainText("Couldn't reach Budget. Check your connection, then refresh.", { timeout: 1500 })
+  await expect.soft(unavailable).not.toContainText(/your edits are still here/i, { timeout: 1500 })
+  await expect.soft(unavailable.getByRole('button', { name: 'Refresh', exact: true })).toHaveAttribute('data-shared-button', 'primary', { timeout: 1500 })
+  await page.unroute('**/functions/v1/query-budget', unreachable)
+  await page.getByRole('button', { name: /refresh/i }).first().click()
+  await page.locator('summary').filter({ hasText: 'Income & allocations' }).click()
+  await page.getByRole('button', { name: /Change my plan/ }).click()
+  const form = page.getByRole('form', { name: 'Adjust allocation plan' })
+  const amount = form.getByRole('textbox', { name: /Everyday spending/ })
+  await amount.focus()
+  await amount.fill('1030.00')
+  await amount.blur()
+  await form.getByRole('button', { name: 'Review my plan' }).click()
+  await form.getByRole('button', { name: 'Save plan changes' }).click()
+  await expect(unavailable).toBeVisible()
+  await unavailable.scrollIntoViewIfNeeded()
+  await capture(page, '06-budget-save')
+  await expect.soft(unavailable).toContainText('Budget changes could not be saved.', { timeout: 1500 })
+  await expect(page.getByText(/Your edits are still here/)).toBeVisible()
+  await expect(amount).toHaveValue('$1,030.00')
 })

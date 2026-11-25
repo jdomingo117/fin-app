@@ -10,7 +10,7 @@ const sections = (page: Page) => page.getByRole('toolbar', { name: 'Sections' })
 const investmentOverview = {
   holding_id: 'fixture-investment', instrument_name: 'Example index fund', identifier: 'EXF',
   calculated_units: '12.5', confirmed_units: null, reconciliation_status: 'Confirmed',
-  net_external_contributions_cents: 782000, reinvested_distributions_cents: 14200,
+  net_external_contributions_cents: 7820000, reinvested_distributions_cents: 14200,
   activity_count: 0, value_cents: 9644000, nav_price: '12.55', price_date: '2026-11-20',
   valuation_status: 'current', market_movement_cents: 84000, cash_distributions_cents: 1200,
 }
@@ -468,6 +468,7 @@ test('Investment orb compares history and pads the fallback value inside the rin
   await expect(fallback).toHaveCount(0)
   await expect(hero.locator('.console-orb figcaption')).toContainText('Investment value vs contributions')
   expect(await lines.first().getAttribute('points')).not.toBe(await lines.last().getAttribute('points'))
+  await expect(page.getByText('Net contributions', { exact: true }).locator('..')).toContainText('$78,200.00')
   await expect(page.getByRole('region', { name: 'Value and contributions' })).toHaveCount(1)
   await capture(page, '09-investment-hero')
 })

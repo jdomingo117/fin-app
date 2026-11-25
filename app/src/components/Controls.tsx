@@ -555,9 +555,9 @@ export function DateRangePicker({
         data-console-date-picker={consoleStyle ? '' : undefined}
         className={`${consoleStyle ? 'fixed z-[55] max-h-[calc(100dvh-16px)] max-w-[calc(100vw-16px)] overflow-auto' : 'absolute right-0 z-50 mt-1.5'} w-[320px] rounded-[12px] border border-[var(--hair)] p-3`}
         style={{
-          background: 'var(--console-popover-paint, var(--toast-bg))',
-          backdropFilter: 'var(--console-popover-filter, blur(22px) saturate(1.2))',
-          WebkitBackdropFilter: 'var(--console-popover-filter, blur(22px) saturate(1.2))',
+          background: consoleStyle ? 'var(--color-surface)' : 'var(--toast-bg)',
+          backdropFilter: consoleStyle ? 'none' : 'blur(22px) saturate(1.2)',
+          WebkitBackdropFilter: consoleStyle ? 'none' : 'blur(22px) saturate(1.2)',
           boxShadow: 'var(--shadow-glass)',
         }}
       >

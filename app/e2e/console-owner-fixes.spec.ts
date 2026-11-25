@@ -221,6 +221,60 @@ test('Date range picker follows its trigger and stays inside both desktop viewpo
   }
 })
 
+test('Date range picker obscures high-contrast text beneath its surface', async ({ page }) => {
+  await openConsole(page)
+  await page.getByRole('button', { name: 'Settings', exact: true }).click()
+  await page.getByRole('combobox', { name: 'Effects tier' }).selectOption('full')
+  await page.goto(new URL('/income', dashboard).href)
+  await page.locator('.console-hub-dock button[aria-haspopup="dialog"]').first().click()
+  const picker = page.getByRole('dialog', { name: 'Select date range' })
+  await expect(picker).toHaveCSS('opacity', '1')
+  const bounds = (await picker.boundingBox())!
+  const clip = { x: Math.ceil(bounds.x) + 16, y: Math.ceil(bounds.y) + 16, width: 240, height: 80 }
+  await page.evaluate(({ x, y, width, height }) => {
+    const probe = document.createElement('div')
+    probe.id = 'fixture-under-picker'
+    probe.style.cssText = `position:fixed;z-index:54;left:${x}px;top:${y}px;width:${width}px;height:${height}px;`
+      + 'background:#000;color:#fff;font:bold 48px/1.2 sans-serif;pointer-events:none'
+    probe.textContent = 'Behind text'
+    document.body.append(probe)
+  }, clip)
+  async function sample(style = '') {
+    const picture = await page.screenshot({ clip, animations: 'disabled', scale: 'css', style })
+    return picture.toString('base64')
+  }
+  const covered = await sample()
+  const noText = await sample('#fixture-under-picker { color: transparent !important; }')
+  const open = await sample('[data-console-date-picker] { visibility: hidden !important; }')
+  const openNoText = await sample('[data-console-date-picker] { visibility: hidden !important; } #fixture-under-picker { color: transparent !important; }')
+  const ratios = await page.evaluate(async ({ pictures, width, height }) => {
+    const context = document.createElement('canvas').getContext('2d', { willReadFrequently: true })!
+    context.canvas.width = width
+    context.canvas.height = height
+    const pixels = await Promise.all(pictures.map(async png => {
+      const image = new Image()
+      image.src = `data:image/png;base64,${png}`
+      await image.decode()
+      context.drawImage(image, 0, 0)
+      return context.getImageData(0, 0, width, height).data
+    }))
+    const linear = (channel: number) => channel <= 10 ? channel / 3294.6 : ((channel / 255 + .055) / 1.055) ** 2.4
+    const luminance = (rgb: Uint8ClampedArray, i: number) =>
+      .2126 * linear(rgb[i]) + .7152 * linear(rgb[i + 1]) + .0722 * linear(rgb[i + 2])
+    function maxContrast(a: Uint8ClampedArray, b: Uint8ClampedArray) {
+      let max = 1
+      for (let i = 0; i < a.length; i += 4) {
+        const first = luminance(a, i) + .05, second = luminance(b, i) + .05
+        max = Math.max(max, Math.max(first, second) / Math.min(first, second))
+      }
+      return max
+    }
+    return { covered: maxContrast(pixels[0], pixels[1]), uncovered: maxContrast(pixels[2], pixels[3]) }
+  }, { ...clip, pictures: [covered, noText, open, openNoText] })
+  expect(ratios.uncovered).toBeGreaterThan(7)
+  expect(ratios.covered).toBeLessThan(1.03)
+})
+
 test('Graph controls and selected Recurring chips have readable Console contrast', async ({ page }) => {
   await openConsole(page)
   await page.goto(new URL('/expenses', dashboard).href)

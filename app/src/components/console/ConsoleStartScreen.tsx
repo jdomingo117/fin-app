@@ -2,6 +2,19 @@ import { useLayoutEffect, useRef, useState } from 'react'
 import { consoleDuration } from './motion'
 import './console-start-screen.css'
 
+const startSeenKey = 'halcyon-console-start-seen'
+
+export function readConsoleStartSeen() {
+  try { return sessionStorage.getItem(startSeenKey) === 'true' } catch { return false }
+}
+
+export function writeConsoleStartSeen(seen: boolean) {
+  try {
+    if (seen) sessionStorage.setItem(startSeenKey, 'true')
+    else sessionStorage.removeItem(startSeenKey)
+  } catch { /* The in-memory entry marker still applies. */ }
+}
+
 export function ConsoleStartScreen({ reduced, onStart, onFinish }: {
   reduced: boolean
   onStart: () => void

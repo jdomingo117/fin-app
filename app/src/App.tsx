@@ -11,7 +11,9 @@ import { RequireAnon, RequireAuth, RequireOnboarded } from './components/Guards'
 import ViewDataBoundary, { ViewLoadingState } from './components/ViewDataBoundary'
 import SceneBackground from './three/SceneBackground'
 import ConsoleViewport from './components/console/ConsoleViewport'
+import { readConsoleStartSeen, writeConsoleStartSeen } from './components/console/ConsoleStartScreen'
 import { useAppearanceDocument, useAppearancePreferences } from './components/console/appearance'
+import { supabase } from './lib/supabaseClient'
 import Shell from './components/Shell'
 import ThemeToggle from './components/ThemeToggle'
 import Boot from './components/Boot'
@@ -98,10 +100,15 @@ function AppFrame({
   const location = useLocation()
   const view = pathToView(location.pathname)
   const { session, recoveryError, retryAccountRecovery } = useAuth()
-  const startEntrySeen = useRef(false)
+  const [startEntrySeen] = useState(() => ({ current: readConsoleStartSeen() }))
   useLayoutEffect(() => {
-    if (!session) startEntrySeen.current = false
-  }, [session])
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(event => {
+      if (event !== 'SIGNED_OUT') return
+      startEntrySeen.current = false
+      writeConsoleStartSeen(false)
+    })
+    return () => subscription.unsubscribe()
+  }, [startEntrySeen])
   const consoleEntry = theme === 'console'
     && view !== 'login' && view !== 'onboarding' && view !== 'operation-status'
     && !location.pathname.startsWith('/auth/')

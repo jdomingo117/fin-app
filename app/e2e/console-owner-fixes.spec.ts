@@ -116,3 +116,41 @@ test('Expanded hero text clears the sticky dock throughout collapse', async ({ p
     await expect(scroll).toHaveAttribute('data-hero-state', 'compact')
   }
 })
+
+test('Start does not reappear after a null token refresh or a reload', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await openConsole(page)
+  await page.evaluate(() => localStorage.setItem('halcyon-console-preferences', JSON.stringify({ startScreen: true })))
+  await page.reload()
+  const start = page.getByRole('button', { name: 'Start Halcyon' })
+  await start.click()
+  await expect(sections(page)).toBeVisible()
+
+  const refresh = (withSession: boolean) => page.evaluate(withSession => {
+    const key = Object.keys(localStorage).find(key => /^sb-.*-auth-token$/.test(key))!
+    const channel = new BroadcastChannel(key)
+    const session = withSession ? JSON.parse(localStorage.getItem(key)!) : null
+    channel.postMessage({ event: 'TOKEN_REFRESHED', session })
+    channel.close()
+  }, withSession)
+  await refresh(false)
+  await expect(page).toHaveURL(/\/login$/)
+  await refresh(true)
+  await expect(page).toHaveURL(dashboard)
+  await expect(start.or(sections(page))).toBeVisible()
+  await capture(page, '03-start-refresh')
+  await expect.soft(start).toHaveCount(0, { timeout: 1500 })
+  await page.reload()
+  await expect.soft(start).toHaveCount(0, { timeout: 1500 })
+  // Proceed through the baseline prompt too, to check explicit sign-out independently.
+  if (await start.isVisible()) await start.click()
+  await page.getByRole('button', { name: 'Settings', exact: true }).click()
+  await page.getByRole('button', { name: 'Sign out', exact: true }).click()
+  await expect(page).toHaveURL(/\/login$/)
+  await page.locator('input[type="email"]').fill('console-review@example.invalid')
+  await page.locator('input[type="password"]').fill('fictional-password-not-a-credential')
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click()
+  await expect(page).toHaveURL(/\/settings$/)
+  await page.goto(dashboard)
+  await expect(start).toBeVisible()
+})

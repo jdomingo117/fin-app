@@ -38,3 +38,5 @@ Home was exercised at 1440 × 780, 1152 × 624, 960 × 520, 720 × 390, 1512 × 
 Each new regression was run on the before state and against the fix in Chromium and WebKit. The particle regression also samples real pixels from the browser compositor where a fixture sprite crosses a protected figure. The normal figure contrast check keeps the live particle layer enabled.
 
 The expanded casing audit also checks the existing Budget and Settings screens. Budget’s commitments label now uses sentence case. Settings marks the literal deletion confirmation word as keyboard input.
+
+The initial hosted qualification exceeded 12 minutes on shard 2, so the Console browser workflow now uses five shards. The signed-figure pixel test also checks the investment return inside the Accounts hub. The audio regression starts recording on the trusted click so a queued click cannot consume the recording window.

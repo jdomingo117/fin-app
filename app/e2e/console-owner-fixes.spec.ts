@@ -23,6 +23,12 @@ async function openConsole(page: Page, override?: Parameters<typeof signInForCon
   await expect(sections(page)).toBeVisible()
 }
 
+async function openSection(page: Page, name: string) {
+  await sections(page).getByRole('button', { name, exact: true }).focus()
+  await page.keyboard.press('Enter')
+  await expect(sections(page)).toHaveCount(0)
+}
+
 async function capture(page: Page, name: string) {
   const directory = process.env.CONSOLE_OWNER_CAPTURE_DIR
   if (!directory || test.info().project.name !== 'WebKit') return
@@ -92,9 +98,12 @@ test('Home keeps its hero clear and every card reachable at high zoom', async ({
 })
 
 test('Expanded hero text clears the sticky dock throughout collapse', async ({ page }) => {
+  test.setTimeout(120_000)
   await openConsole(page)
-  for (const route of ['/dashboard?hub=overview', '/accounts', '/income', '/expenses']) {
-    await page.goto(new URL(route, dashboard).href)
+  for (const [name, route] of [['Overview', '/dashboard?hub=overview'], ['Accounts', '/accounts'], ['Income', '/income'], ['Expenses', '/expenses']]) {
+    await openSection(page, name)
+    await expect(page).toHaveURL(new URL(route, dashboard).href)
+    await expect(page.locator('.console-home')).toHaveCount(0)
     const scroll = page.locator('.console-designed-scroll')
     const hero = scroll.locator('.console-expanded-hero')
     await expect(hero).toHaveCSS('opacity', '1')
@@ -125,6 +134,8 @@ test('Expanded hero text clears the sticky dock throughout collapse', async ({ p
     }
     expect.soft(collisions, route).toEqual([])
     await expect(scroll).toHaveAttribute('data-hero-state', 'compact')
+    await scroll.getByRole('button', { name: 'Back to Home' }).click()
+    await expect(sections(page)).toBeVisible()
   }
 })
 
@@ -411,16 +422,20 @@ test('Transaction detail aligns both selects and visibly fills the checked radio
 
 test('Full effects masks particles behind each visible hero and signed figure', async ({ page }) => {
   await openConsole(page, investmentReply)
-  await page.evaluate(() => localStorage.setItem('halcyon-console-preferences', JSON.stringify({ effectsTier: 'full' })))
+  await page.getByRole('button', { name: 'Settings', exact: true }).click()
+  await page.getByRole('combobox', { name: 'Effects tier' }).selectOption('full')
+  await page.getByRole('button', { name: 'Back to Home' }).click()
+  await expect(sections(page)).toBeVisible()
   for (const route of ['/dashboard', '/accounts']) {
-    await page.goto(new URL(route, dashboard).href)
+    if (route === '/accounts') await openSection(page, 'Accounts')
+    await expect(page).toHaveURL(new URL(route, dashboard).href)
     const particles = page.locator('.console-particles')
     await expect(particles).toHaveAttribute('data-particle-count', '55')
     const label = route === '/dashboard' ? 'home' : 'accounts'
     await expect(page.locator('.console-hero-amount:visible')).toContainText('$')
     await capture(page, `12-particles-${label}`)
     await expect.soft(page.locator('.console-particle-mask')).not.toHaveCSS('mask-image', 'none', { timeout: 1500 })
-    const coverage = await particles.evaluate(node => {
+    await expect.poll(() => particles.evaluate(node => {
       const viewport = node.closest('.console-viewport')!
       const paint = getComputedStyle(viewport.querySelector('.console-particle-mask')!)
       const sizes = paint.maskSize.split(',').map(size => size.trim().split(' ').map(parseFloat))
@@ -434,14 +449,12 @@ test('Full effects masks particles behind each visible hero and signed figure', 
         return box.width && box.height && box.left >= 0 && box.top >= 0 && box.right <= innerWidth
           && box.bottom <= innerHeight && !figure.closest('[inert]')
       })
-      return { count: figures.length, uncovered: figures.filter(figure => {
+      return { multipleFigures: figures.length > 1, uncovered: figures.filter(figure => {
         const box = figure.getBoundingClientRect()
         const x = box.left + box.width / 2, y = box.top + box.height / 2
         return !masks.some(mask => x >= mask.x && x <= mask.x + mask.w && y >= mask.y && y <= mask.y + mask.h)
       }).map(node => node.getAttribute('data-sign') ?? 'hero') }
-    })
-    expect(coverage.count).toBeGreaterThan(1)
-    expect.soft(coverage.uncovered).toEqual([])
+    })).toEqual({ multipleFigures: true, uncovered: [] })
 
     // Place a deliberately bright fixture sprite in the production mask layer.
     // The same sprite must paint in open space and disappear beneath a figure.

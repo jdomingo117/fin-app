@@ -12,13 +12,13 @@ permissions:
 
 jobs:
   console-browser:
-    name: Console Playwright and Classic smoke (${{ matrix.shard }}/4)
+    name: Console Playwright and Classic smoke (${{ matrix.shard }}/5)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4]
+        shard: [1, 2, 3, 4, 5]
     defaults:
       run:
         working-directory: app
@@ -35,7 +35,7 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chrome webkit
       - run: npm run test:browser:typecheck
-      - run: npx playwright test --config playwright.console.config.ts --workers=2 --fully-parallel --shard=${{ matrix.shard }}/4
+      - run: npx playwright test --config playwright.console.config.ts --workers=2 --fully-parallel --shard=${{ matrix.shard }}/5
       - uses: actions/upload-artifact@v4
         if: failure()
         with:

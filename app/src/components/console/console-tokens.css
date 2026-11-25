@@ -106,6 +106,8 @@ html[data-theme="console"] :is(.native-select, textarea, input:not([type="checkb
 }
 html[data-theme="console"] [data-control-kind="chip"] {
   border-radius: 999px;
+  /* Switch the paired ink and fill together, including on forced-colour changes. */
+  transition-property: none;
 }
 html[data-theme="console"] [data-control-kind="chip"][aria-pressed="true"] {
   background-color: var(--console-ink);

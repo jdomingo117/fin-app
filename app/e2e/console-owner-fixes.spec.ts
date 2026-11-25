@@ -1,7 +1,7 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
 import { mkdir } from 'node:fs/promises'
 import { resolve } from 'node:path'
-import { signInForConsole } from './fixtures/console-review'
+import { dashboard, signInForConsole } from './fixtures/console-review'
 
 const sections = (page: Page) => page.getByRole('toolbar', { name: 'Sections' })
 
@@ -77,5 +77,42 @@ test('Home keeps its hero clear and every card reachable at high zoom', async ({
       await tile.focus()
       await fitsInHome(tile)
     }
+  }
+})
+
+test('Expanded hero text clears the sticky dock throughout collapse', async ({ page }) => {
+  await openConsole(page)
+  for (const route of ['/dashboard?hub=overview', '/accounts', '/income', '/expenses']) {
+    await page.goto(new URL(route, dashboard).href)
+    const scroll = page.locator('.console-designed-scroll')
+    const hero = scroll.locator('.console-expanded-hero')
+    await expect(hero).toHaveCSS('opacity', '1')
+    const end = Math.max(90, await hero.evaluate(node => node.offsetHeight) - 26)
+    const collisions = []
+    for (let step = 0; step <= 20; step++) {
+      const progress = step / 20
+      const overlap = await scroll.evaluate(async (node, top) => {
+        node.scrollTop = top
+        // Let the scroll event and Framer Motion's render pass settle.
+        for (let frame = 0; frame < 3; frame++) await new Promise(requestAnimationFrame)
+        const hero = node.querySelector<HTMLElement>('.console-expanded-hero')!
+        const dock = node.querySelector('.console-hub-dock')!
+        const style = getComputedStyle(hero)
+        const clipTop = parseFloat(style.clipPath.match(/^inset\(([-\d.]+)px/)?.[1] ?? '0')
+        const edge = clipTop ? hero.getBoundingClientRect().top + clipTop : -Infinity
+        return [...hero.querySelectorAll('h1, p, dt, dd')].filter(text => {
+          if (+style.opacity <= .01) return false
+          const range = document.createRange()
+          range.selectNodeContents(text)
+          return [...range.getClientRects()].some(box =>
+            box.bottom > Math.max(edge, dock.getBoundingClientRect().top) + 1
+            && Math.max(edge, box.top) < dock.getBoundingClientRect().bottom - 1)
+        }).map(text => text.className || text.tagName)
+      }, step === 0 ? 0 : Math.round(20 + progress * end))
+      if (route === '/income' && step === 5) await capture(page, '02-expanded-dock')
+      if (overlap.length) collisions.push({ progress, overlap })
+    }
+    expect.soft(collisions, route).toEqual([])
+    await expect(scroll).toHaveAttribute('data-hero-state', 'compact')
   }
 })

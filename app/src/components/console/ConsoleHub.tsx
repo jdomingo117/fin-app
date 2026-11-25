@@ -202,13 +202,22 @@ export default function ConsoleHub({ id, title, period, figure, strip, art, filt
   const heading = useRef<HTMLHeadingElement>(null)
   const height = useMotionValue(280)
   const { scrollY } = useScroll({ container: scroll })
-  const progress = useTransform(() => {
+  const collapseProgress = () => {
     const end = Math.max(90, height.get() - 26)
     const value = Math.max(0, Math.min(1, (scrollY.get() - 20) / end))
     return reduce ? +(value >= .58) : value
-  })
+  }
+  const progress = useTransform(collapseProgress)
   const heroOpacity = useTransform(progress, [0, .3, .75, 1], [1, 1, 0, 0])
-  const heroShift = useTransform(progress, [0, 1], [0, -22])
+  const heroShift = useTransform(() => reduce ? 0 : -22 * collapseProgress())
+  const heroClip = useTransform(() => {
+    const scrolled = scrollY.get()
+    // At rest the Home handoff may extend outside the hero. Once scrolling,
+    // clip at the dock edge and account for the hero's own upward translation.
+    return scrolled > 0
+      ? `inset(${scrolled + (reduce ? 0 : 22 * collapseProgress())}px -100vw -100vh -100vw)`
+      : 'none'
+  })
   const headerOpacity = useTransform(progress, [0, .30, .75, 1], [0, 0, 1, 1])
   const headerShift = useTransform(progress, [0, 1], [12, 0])
   const [compact, setCompact] = useState(false)
@@ -243,7 +252,7 @@ export default function ConsoleHub({ id, title, period, figure, strip, art, filt
         </div>
         {filters && !filtersBelowHero && <div className="console-hub-filters">{filters}</div>}
       </header>
-      <motion.section ref={hero} className="console-expanded-hero" style={{ opacity: heroOpacity, y: reduce ? 0 : heroShift }} aria-hidden={compact}>
+      <motion.section ref={hero} className="console-expanded-hero" style={{ opacity: heroOpacity, y: reduce ? 0 : heroShift, clipPath: heroClip }} aria-hidden={compact}>
         <div className="console-expanded-copy">
           <ConsoleHeadline id={id} label={figure.label} figure={figure} reduced={reduce} title={title} period={period} origin={entry?.origin} redacted={redacted} />
           {strip.length > 0 && <ConsoleFigureStrip figures={strip} redacted={redacted} />}

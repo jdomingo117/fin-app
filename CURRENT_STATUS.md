@@ -21,18 +21,23 @@ related:
 
 ## Resume here — 26 November 2026
 
-Console is the default appearance on branch `codex/console-default-switch`.
-The owner approved the switch on 26 November 2026 after the Phase 5 review.
-A profile with no saved appearance now opens Console. Saved Classic and Console
-choices are kept, and Classic stays selectable in Settings. Sign-in, recovery
-and onboarding still use the Classic screens. The
-[Console Phase 5 owner fixes](docs/design/console-phase-5-owner-fixes.md)
-merged in PR #9.
+Console is the default appearance on `main`. The owner approved the switch on
+26 November 2026, and PR #12 merged it as `c2fd2a0`. A profile with no saved
+appearance opens Console. Saved Classic and Console choices are kept, and
+Classic stays selectable in Settings. Sign-in, recovery and onboarding still use
+the Classic screens. Tags `console-default-switch` and
+`console-pre-default-switch` mark the rollback releases.
 
-Next, merge the standalone default-switch commit. Then observe the default for
-two weeks, including one month-end cycle, per step 2 of the
-[rollout plan](docs/design/console-rollout.md#proposed-default-switch-and-classic-removal).
-Classic removal needs separate owner approval after the observation period.
+**Observation** runs from 26 November to 10 December 2026, including the
+30 November month-end. The checklist and log are in
+[Default-switch observation](docs/design/console-rollout.md#default-switch-observation).
+Classic removal needs separate owner approval after the window.
+
+**Next work: Console Phase 6**, which integrates the remaining prototype ideas.
+The [Phase 6 plan](docs/design/console-phase-6-plan.md) is proposed, not
+approved. Batch 6A (Home cards, ring and key hints) and Batch 6B (Control Centre
+notices) use existing data. Batch 6C (Money and Plan rows) waits on the owner's
+open decisions listed in the plan.
 
 ## Wave 1–3C audit handoff — 21 November 2026
 

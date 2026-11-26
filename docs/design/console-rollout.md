@@ -115,7 +115,23 @@ The owner runs the [read-only Safari checklist](console-phase-5-owner-checklist.
 
 The owner signs off on Safari before the default switch. Classic removal requires separate approval after observation.
 
-**26 November 2026.** The owner approved the default switch. Step 1 is the standalone commit on `codex/console-default-switch`. `initialAppearance()` maps a missing or unrecognised preference to Console and keeps a saved Classic choice. Classic-driven browser suites start from an explicit Classic choice: the Console fixture seeds one, and the golden and default Playwright configs set it in `storageState`. New foundation cases cover a fresh profile opening Console, an explicit Classic choice persisting, Classic sign-in after sign-out, and blocked preference storage. Observation (step 2) starts once the commit merges.
+**26 November 2026.** The owner approved the default switch. Step 1 is the standalone commit on `codex/console-default-switch`. `initialAppearance()` maps a missing or unrecognised preference to Console and keeps a saved Classic choice. Classic-driven browser suites start from an explicit Classic choice: the Console fixture seeds one, and the golden and default Playwright configs set it in `storageState`. New foundation cases cover a fresh profile opening Console, an explicit Classic choice persisting, Classic sign-in after sign-out, and blocked preference storage. PR #12 merged it as `c2fd2a0`.
+
+### Default-switch observation
+
+- **Window.** 26 November to 10 December 2026, including the 30 November month-end.
+- **Rollback releases.** Tag `console-default-switch` marks `c2fd2a0`, and tag `console-pre-default-switch` marks the previous release, `a74c30a`. To revert the default for everyone without a saved choice, revert `b6b8bf1` or redeploy the pre-switch tag. Individual users can choose Classic in Settings.
+- **During the window.**
+  - Repeat the [Safari checklist](console-phase-5-owner-checklist.md) on the M1 Air after the month-end.
+  - Rerun the matched desktop trace against the Phase 5 limits.
+  - Record any route that needed a switch back to Classic.
+  - Run the full Console browser suite in CI, including WebKit.
+- **Phase 6 batches** from the [Phase 6 plan](console-phase-6-plan.md) can be built and gated during the window. A batch merges during the window only with owner approval and must be added to the log below.
+- **Exit.** The owner reviews this log after 10 December. Classic removal (step 3) needs separate approval.
+
+| Date | Event | Notes |
+| --- | --- | --- |
+| 26 Nov 2026 | Default switch merged (`c2fd2a0`) and rollback tags pushed | Window opens |
 
 Anime.js v4 dependency and chart parity work are tracked as a separate follow-up. Framer Motion 11 and CSS consume the same console motion tokens while the chart adapter stays on v3.
 

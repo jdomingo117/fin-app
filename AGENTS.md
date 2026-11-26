@@ -82,6 +82,8 @@ hand to find the transfer-linker gap.
 
 ## Recent changes
 
+- 2026-11-26 — Console default-switch observation opens with rollback tags; Console Phase 6 prototype-integration plan proposed.
+
 - 2026-11-26 — Console becomes the default appearance for profiles without a saved choice; Classic stays selectable.
 
 - 2026-11-26 — Console owner follow-ups verify settled Home, Australian dates, opaque filters, signed colours, Budget retry, investment trends and fixture counts.
@@ -100,5 +102,4 @@ hand to find the transfer-linker gap.
 
 - 2026-11-24 — Console Batch 4C adds Settings and signed-in start entry, fixes the workflow controls and copy, and extends the rendered audit.
 
-- 2026-11-23 — Console workflow hubs share a status dock and use separate Budget, Ledger, Ingestion and Transfers modules.
 

@@ -50,7 +50,7 @@ Classic removal needs separate owner approval after the window.
   all-caught-up state. Quick actions add Quiet alerts and Rest. No new write
   path. See the [6B review](docs/design/console-phase-6b-review.md). On 27
   November the owner chose to let error toasts through Quiet alerts and kept
-  the notice order. Still open: target-reached as the only goal milestone, and
+  the notice order, with target reached as the only goal milestone. Still open:
   whether the batch merges during observation.
 - **Batch 6C** (Money and Plan rows) waits on the owner's open decisions.
 

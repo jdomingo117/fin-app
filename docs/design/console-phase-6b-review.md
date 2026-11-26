@@ -39,7 +39,7 @@ Nothing was listening on 5320, so the suites ran with `CI=1` and started their o
 ## Decisions for the owner
 
 1. **Notice order. Settled on 27 November 2026: kept as built.** The plan asks for a fixed order without setting one. The order is: money already at risk (Budget), money about to leave (Bills), the review queues (Ledger, then Transfers), then good news (Goals). The plan's list order would have put Goals third.
-2. **Goal milestones.** Halcyon keeps no history of when a goal crossed 25%, 50% or 75%, so a crossing can't be detected honestly. The gate uses **target reached** only. Earlier milestones would need recorded progress.
+2. **Goal milestones. Settled on 27 November 2026: target reached only.** Halcyon keeps no history of when a goal crossed 25%, 50% or 75%, so a crossing can't be detected honestly. So the notice fires only at **target reached**. Earlier milestones would need recorded progress.
 3. **Quiet alerts and error toasts. Settled on 27 November 2026: errors get through.** Toasts had no severity, so the gate build dropped errors too: a failed callsign save in Settings reports only by toast. Toasts now take an optional `tone: 'error'`. The failure toasts in Settings, Account security, sign-out, sign-in and onboarding use it, and Quiet alerts never hides them.
 4. **Merging during observation.** If you approve, the merge goes in the [observation log](console-rollout.md#default-switch-observation).
 
@@ -92,7 +92,7 @@ Every toast, error or not, shows a tick and the label **Milestone reached**. Thi
 
 **Stopped for owner review.** 6B isn't merged, and 6C hasn't started. To finish the gate:
 
-- the decisions above;
+- decision 4 above (decisions 1 to 3 are settled);
 - the WebKit result from CI on the PR.
 
 The first CI run on the PR failed one Desktop case, the Phase 5 `768px matrix`: an ArrowRight didn't select Expenses. The test doesn't open Control Centre, passed in both full local runs and passed five repeats locally. The same matrix test has failed intermittently in CI on earlier branches, at 320 and with reduced motion. It's treated as that known flake unless the rerun fails again.

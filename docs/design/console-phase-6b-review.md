@@ -41,7 +41,7 @@ Nothing was listening on 5320, so the suites ran with `CI=1` and started their o
 1. **Notice order. Settled on 27 November 2026: kept as built.** The plan asks for a fixed order without setting one. The order is: money already at risk (Budget), money about to leave (Bills), the review queues (Ledger, then Transfers), then good news (Goals). The plan's list order would have put Goals third.
 2. **Goal milestones. Settled on 27 November 2026: target reached only.** Halcyon keeps no history of when a goal crossed 25%, 50% or 75%, so a crossing can't be detected honestly. So the notice fires only at **target reached**. Earlier milestones would need recorded progress.
 3. **Quiet alerts and error toasts. Settled on 27 November 2026: errors get through.** Toasts had no severity, so the gate build dropped errors too: a failed callsign save in Settings reports only by toast. Toasts now take an optional `tone: 'error'`. The failure toasts in Settings, Account security, sign-out, sign-in and onboarding use it, and Quiet alerts never hides them.
-4. **Merging during observation.** If you approve, the merge goes in the [observation log](console-rollout.md#default-switch-observation).
+4. **Merging during observation. Approved on 27 November 2026, once CI is green.** The merge goes in the [observation log](console-rollout.md#default-switch-observation).
 
 ## Captures
 

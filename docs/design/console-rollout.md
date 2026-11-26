@@ -132,7 +132,8 @@ The owner signs off on Safari before the default switch. Classic removal require
 | Date | Event | Notes |
 | --- | --- | --- |
 | 26 Nov 2026 | Default switch merged (`c2fd2a0`) and rollback tags pushed | Window opens |
-| 26 Nov 2026 | Phase 6A gated on `codex/console-phase-6a` ([PR #14](https://github.com/jdomingo117/fin-app/pull/14)), not merged | Home cards, goal ring and key hints. [Review](console-phase-6a-review.md). If the owner approves a merge during the window, record its merge commit here. |
+| 26 Nov 2026 | Phase 6A gated on `codex/console-phase-6a` ([PR #14](https://github.com/jdomingo117/fin-app/pull/14)) | Home cards, goal ring and key hints. [Review](console-phase-6a-review.md). |
+| 27 Nov 2026 | Owner approved merging Phase 6A during the window | Ring goal per device and Budget's own card order settled first. A regression from this date can come from 6A: Budget, Expenses and Overview Home previews, the Overview ring setting and the key hints. The merge commit is recorded once [PR #14](https://github.com/jdomingo117/fin-app/pull/14) merges. |
 
 Anime.js v4 dependency and chart parity work are tracked as a separate follow-up. Framer Motion 11 and CSS consume the same console motion tokens while the chart adapter stays on v3.
 

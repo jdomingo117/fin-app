@@ -1,4 +1,5 @@
-.console-scene, .console-ambient-plane, .console-ambient, .console-rays, .console-beam, .console-grain, .console-vignette {
+.console-scene, .console-ambient-plane, .console-ambient, .console-rays, .console-beam, .console-grain, .console-vignette,
+.console-particle-mask {
   position: absolute;
   inset: 0;
   pointer-events: none;

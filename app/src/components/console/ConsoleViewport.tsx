@@ -11,7 +11,7 @@ import { enabledSections, type SectionId } from './sections'
 import { captureConsoleOrigin, type ConsoleEntry } from './ConsoleHub'
 import { ControlCentre } from './ControlCentre'
 import { WorkflowHub } from './WorkflowHub'
-import { ConsoleStartScreen } from './ConsoleStartScreen'
+import { ConsoleStartScreen, writeConsoleStartSeen } from './ConsoleStartScreen'
 import FoundationDemo from './FoundationDemo'
 import { consoleDuration, consoleMotionStyle, consoleTransition, useConsoleReducedMotion } from './motion'
 
@@ -95,11 +95,16 @@ function ConsoleViewportContent({ visible, startEntrySeen }: { visible: boolean;
     return () => { delete root.dataset.consoleEffects }
   }, [effectsTier])
 
-  const finishStartup = useCallback(() => {
+  useLayoutEffect(() => {
+    if (!startupVisible) return
     startEntrySeen.current = true
+    writeConsoleStartSeen(true)
+  }, [startEntrySeen, startupVisible])
+
+  const finishStartup = useCallback(() => {
     setFinishedStart(true)
     setRestoreFocus(true)
-  }, [startEntrySeen])
+  }, [])
 
   function select(id: SectionId) {
     if (id !== active) audio.play('move', enabledSections.findIndex(section => section.id === id))

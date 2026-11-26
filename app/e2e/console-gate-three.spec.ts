@@ -179,7 +179,10 @@ test('the reduced startup uses a stable prompt and a 150ms fade', async ({ page 
   await expect(sections(page)).toBeVisible()
 })
 
-type AudioReviewWindow = Window & { readReviewPeak?: (milliseconds: number) => Promise<number> }
+type AudioReviewWindow = Window & {
+  readReviewPeak?: (milliseconds: number) => Promise<number>
+  pendingReviewPeak?: Promise<number>
+}
 
 test('Master volume changes the live compressor output and zero silences it', async ({ page }, testInfo) => {
   await page.addInitScript(() => {
@@ -218,9 +221,17 @@ test('Master volume changes the live compressor output and zero silences it', as
     await volume.fill(level)
     await expect(volume).toHaveValue(level)
     await page.waitForTimeout(3200) // Allow the 2.8-second reverb tail to finish.
-    const peak = page.evaluate(() => (window as AudioReviewWindow).readReviewPeak!(1000))
-    await trigger(page).click()
-    const levelPeak = await peak
+    const opener = trigger(page)
+    // Start the probe on the trusted click before React starts the cue. A loaded
+    // runner can spend the entire sample window waiting for a Playwright click.
+    await opener.evaluate(button => {
+      button.addEventListener('click', () => {
+        const review = window as AudioReviewWindow
+        review.pendingReviewPeak = review.readReviewPeak!(1000)
+      }, { capture: true, once: true })
+    })
+    await opener.click()
+    const levelPeak = await page.evaluate(() => (window as AudioReviewWindow).pendingReviewPeak!)
     await centre(page).getByRole('button', { name: 'Close Control Centre' }).click()
     await expect(centre(page)).toHaveCount(0)
     return levelPeak

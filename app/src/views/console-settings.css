@@ -28,19 +28,36 @@
   color: var(--color-ink2);
 }
 .console-settings-preferences [data-control-kind="switch"]:last-child { border-block-end: 0; }
-.console-settings-preferences .console-volume input {
-  inline-size: 100%;
-  min-block-size: var(--console-control-size);
+.console-settings-preferences [aria-label="Sound"] {
+  --console-sound-row: 56px;
+}
+.console-settings-preferences [aria-label="Sound"] :is([data-control-kind="switch"], .console-volume) {
+  min-block-size: var(--console-sound-row);
+}
+.console-volume {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) 4ch;
+  align-items: center;
+  gap: 8px;
+  padding-inline: 8px;
+}
+.console-volume > span:first-child { margin-inline-end: var(--console-ring-edge); }
+.console-volume-track {
+  display: flex;
   border-radius: var(--console-button-radius);
 }
+.console-volume-track input {
+  inline-size: 100%;
+  min-inline-size: 0;
+  min-block-size: var(--console-control-size);
+}
+.console-volume output { font-variant-numeric: tabular-nums; text-align: end; }
 .console-settings-preferences .console-effects-setting > span:last-child {
   flex: 1 1 11rem;
   max-inline-size: 17rem;
 }
 @media (max-width: 720px) {
   .console-settings-preferences { grid-template-columns: minmax(0, 1fr); }
-  .console-settings-preferences .console-volume { grid-template-columns: minmax(0, 1fr) 4ch; }
-  .console-settings-preferences .console-volume > span { grid-column: 1 / -1; }
 }
 
 .console-effects-setting {

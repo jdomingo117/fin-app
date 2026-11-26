@@ -17,8 +17,12 @@
   block-size: 100%;
   min-block-size: 0;
   padding: 0 var(--console-gutter) var(--console-section-gap);
+  overflow: hidden auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  scroll-padding-block: 8px;
 }
-.console-switcher { position: relative; }
+.console-switcher { position: relative; flex: none; }
 .console-aperture {
   overflow-x: clip;
   margin-inline: calc(-1 * var(--console-gutter));
@@ -95,14 +99,13 @@
 .console-caption span { font: 300 28px/1.1 var(--font-display); }
 .console-caption small { color: var(--console-label); font-size: 13px; }
 .console-section[data-after="true"] { --advance: 270px; }
-.console-preview { display: flex; flex-direction: column; flex: 1; min-block-size: 0; gap: clamp(12px, 2.2dvh, 24px); }
+.console-preview { display: flex; flex-direction: column; flex: 1 0 auto; gap: clamp(12px, 2.2dvh, 24px); }
 .console-hero {
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 38%);
   align-items: center;
-  flex: 1;
-  min-block-size: 0;
+  flex: 1 0 auto;
 }
 .console-summary { position: relative; z-index: 1; min-inline-size: 0; }
 .console-hero-amount {
@@ -120,14 +123,13 @@
 .console-figures { display: flex; flex-wrap: wrap; gap: 14px 40px; }
 .console-figures dt { font-size: 13px; color: var(--console-label); }
 .console-figures dd { font-size: 28px; font-weight: 200; letter-spacing: -.015em; }
-.console-viewport [data-sign="positive"] { color: var(--color-console-pos); }
-.console-viewport [data-sign="negative"] { color: var(--color-console-neg); }
 .console-orb {
   position: relative;
   display: grid;
   place-items: center;
   inline-size: min(100%, 36dvh, 360px);
   aspect-ratio: 1;
+  container-type: inline-size;
   justify-self: center;
   color: oklch(.89 .075 var(--section-hue));
 }
@@ -140,6 +142,27 @@
   color: var(--console-label);
 }
 .console-orb-stat strong { font: 200 clamp(26px, 5vw, 52px)/1.1 var(--font-display); color: var(--console-ink); }
+.console-orb-value { max-inline-size: 59.8%; }
+.console-orb-stat.console-orb-value strong { font-size: min(40px, calc(92cqi / var(--console-orb-value-length))); }
+.console-orb-legend {
+  position: absolute;
+  inset: 67% 0 auto;
+  display: grid;
+  justify-content: center;
+  color: var(--console-label);
+  font-size: clamp(6px, 6cqi, 12px);
+  line-height: 1.15;
+}
+.console-orb-legend [aria-hidden] { display: grid; }
+.console-orb-legend [aria-hidden] > span::before {
+  content: '';
+  display: inline-block;
+  inline-size: .75em;
+  margin-inline-end: .35em;
+  border-block-start: 1px solid currentColor;
+  vertical-align: middle;
+}
+.console-orb-legend [aria-hidden] > span + span::before { border-block-start-style: dashed; }
 .console-orb-progress { filter: drop-shadow(0 0 5px currentColor); }
 .console-art-empty { justify-self: center; max-width: 200px; color: var(--console-label); font-size: 13px; }
 .redacted .console-orb-progress { visibility: hidden; }
@@ -152,6 +175,7 @@
 }
 .console-orb-area { fill: currentColor; opacity: .14; }
 .console-orb-line { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; filter: drop-shadow(0 0 5px currentColor); }
+.console-orb-line.console-orb-comparison { stroke: var(--console-label); stroke-dasharray: 3 2; filter: none; }
 .redacted .console-orb-line, .redacted .console-orb-area { visibility: hidden; }
 .redacted .console-orb figcaption:not(.sr-only) { display: none; }
 
@@ -167,6 +191,8 @@
   scroll-snap-type: x proximity;
   scroll-padding-inline: 14px;
 }
+/* Keyboard focus must win when the closest snap point would hide part of a card. */
+.console-activity-row:has(.console-activity-card:focus-visible) { scroll-snap-type: none; }
 .console-activity-card {
   flex: 0 0 var(--console-card-width);
   min-inline-size: 0;
@@ -286,15 +312,6 @@
 @keyframes console-fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes console-fade-out { from { opacity: 1; } to { opacity: 0; } }
 
-.console-volume {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) 4ch;
-  align-items: center;
-  gap: 14px;
-  padding-block: 12px;
-}
-.console-volume input { min-inline-size: 0; }
-.console-volume output { font-variant-numeric: tabular-nums; text-align: end; }
 .console-viewport[data-reduce-effects="true"] :is(.console-orb-progress, .console-orb-line, .console-area-line, .console-tile-art svg) {
   filter: none;
 }

@@ -10,6 +10,7 @@ import {isPreparing,historyRequest,type HistoryPreparation,type PreparingWorkspa
 import {prepareImpact,type ImpactPreparation} from '../lib/budgetImpact'
 import type {AssistanceRequest,AssistanceResult} from '../lib/budgetAssistance'
 import { useBudgetNavigationGuard, type BudgetNavigationGuard } from '../hooks/useBudgetNavigationGuard'
+import { FunctionsFetchError } from '@supabase/supabase-js'
 
 class BudgetApiError extends Error {
   constructor(message:string,readonly definitive:boolean,readonly code?:string,readonly retryAfter?:number){super(message)}
@@ -27,7 +28,11 @@ async function invoke<T>(name:string,body:unknown):Promise<T> {
       throw new BudgetApiError('Budget had too many requests in the last minute. Wait a minute, then refresh.',true,'rate_limited',Number.isFinite(wait)&&wait>0?wait:undefined)
     }
     const definitive=!!response && ([400,401,403,404,409,413,422].includes(response.status)||detail?.code==='disabled')
-    throw new BudgetApiError(detail?.message??'We couldn’t confirm the result. Your edits are still here.',definitive,detail?.code)
+    if(name==='query-budget') {
+      if(response?.status===403||detail?.code==='disabled')throw new BudgetApiError("Budget isn't available for this account yet.",true,'disabled')
+      if(error instanceof FunctionsFetchError)throw new BudgetApiError("Couldn't reach Budget. Check your connection, then refresh.",false,'unreachable')
+    }
+    throw new BudgetApiError(detail?.message??(name==='query-budget'?'Budget could not load. Please refresh.':'We couldn’t confirm the save result.'),definitive,detail?.code)
   }
   if(!data||typeof data!=='object')throw new BudgetApiError('The Budget response was incomplete. Please check again.',false)
   return data as T
@@ -35,6 +40,7 @@ async function invoke<T>(name:string,body:unknown):Promise<T> {
 type Workspace = {
   snapshot:Snapshot|null; draft:Draft|null; editing:Setup|null; setEditing:(s:Setup|null)=>void;
   loading:boolean; busy:boolean; error:string; notice:string; pending:Command|null; canWrite:boolean;
+  errorKind:'read'|'save'|undefined;
   readState:BudgetReadState;
   preparation:HistoryPreparation|null;
   impactPreparation:ImpactPreparation|null;
@@ -68,7 +74,7 @@ function BudgetSession({children,identity,tenantId,owner,guardResolver,requestNa
   const [snapshot,setSnapshot]=useState<Snapshot|null>(null),[draft,setDraft]=useState<Draft|null>(null)
   const [editing,setEditing]=useState<Setup|null>(null),[loading,setLoading]=useState(false),[busy,setBusy]=useState(false)
   const [readState,setReadState]=useState<BudgetReadState>('idle')
-  const [error,setError]=useState(''),[notice,setNotice]=useState('')
+  const [failure,setFailure]=useState<{kind:'read'|'save';message:string}|null>(null),[notice,setNotice]=useState('')
   const [preparation,setPreparation]=useState<HistoryPreparation|null>(null)
   const [impactPreparation,setImpactPreparation]=useState<ImpactPreparation|null>(null)
   const [selectedPeriod,setSelectedPeriod]=useState<string|null>(()=>new URLSearchParams(window.location.search).get('budgetPeriod'))
@@ -133,10 +139,10 @@ function BudgetSession({children,identity,tenantId,owner,guardResolver,requestNa
       }
       if(!mounted.current||generation!==sequence.current)return
       if(next.tenant_id!==tenantId)throw new Error('Your workspace changed. Sign in again before continuing.')
-      setDraft(nextDraft);setError('')
+      setDraft(nextDraft);setFailure(null)
       if(isPreparing(next)){setPreparation(next.preparation);setReadState('preparing');return}
       setSnapshot(next as Snapshot);setPreparation(null);setReadState('ready')
-    }catch(e){if(mounted.current&&generation===sequence.current){setReadState('failed');setError(checkingHistory&&!(e instanceof BudgetApiError&&e.definitive)?'We couldn’t finish checking your history. Completed batches are saved. Continue loading when the connection is ready.':e instanceof Error?e.message:'Budget could not load.')}}
+    }catch(e){if(mounted.current&&generation===sequence.current){setReadState('failed');setFailure({kind:'read',message:checkingHistory&&!(e instanceof BudgetApiError&&(e.definitive||e.code==='unreachable'))?'We couldn’t finish checking your history. Completed batches are saved. Continue loading when the connection is ready.':e instanceof Error?e.message:'Budget could not load.'})}}
     finally{if(mounted.current&&generation===sequence.current)setLoading(false)}
   },[identity,owner,tenantId,selectedPeriod])
   // Load only when the Budget page requests it, not on every authenticated route.
@@ -149,7 +155,7 @@ function BudgetSession({children,identity,tenantId,owner,guardResolver,requestNa
   }
   async function execute(command:Command,recovery:boolean):Promise<Receipt|null> {
     if(working.current||!owner)return null
-    working.current=true;setBusy(true);setError('');setNotice(recovery?'Checking the saved result…':'Saving your budget…')
+    working.current=true;setBusy(true);setFailure(null);setNotice(recovery?'Checking the saved result…':'Saving your budget…')
     try {
       // Refuse to send if a reload-safe checkpoint cannot be stored.
       checkpoint(command)
@@ -163,9 +169,9 @@ function BudgetSession({children,identity,tenantId,owner,guardResolver,requestNa
     }catch(e){
       if(mounted.current) {
         if(e instanceof BudgetApiError&&['budget_stale_source','budget_stale_plan','budget_stale_method'].includes(e.code??''))setReadState('invalidated')
-        if(e instanceof BudgetApiError&&e.definitive){checkpoint(null);setNotice('No new change was saved by this request. Your edits are still here.')}
+        if(e instanceof BudgetApiError&&e.definitive){checkpoint(null);setNotice('No new change was saved by this request.')}
         else setNotice('The result is not confirmed. Check the saved result before making another change.')
-        setError(e instanceof Error?e.message:'Budget could not be saved.')
+        setFailure({kind:'save',message:e instanceof Error?e.message:'Please try again.'})
       }
       return null
     }finally{working.current=false;if(mounted.current)setBusy(false)}
@@ -186,7 +192,7 @@ function BudgetSession({children,identity,tenantId,owner,guardResolver,requestNa
     try{return await prepareImpact<T>(body,b=>invoke<T|ImpactPreparation>('query-budget',b),p=>{if(mounted.current)setImpactPreparation(p)},()=>mounted.current&&generation===sequence.current)}
     catch(e){if(e instanceof BudgetApiError&&!e.definitive)throw Error('We couldn’t finish checking the budget effects. Completed checks are saved. Review the effects again to continue; no budget change has been saved.');throw e}
   }
-  return <BudgetContext.Provider value={{snapshot,draft,editing,setEditing,loading,busy,error,notice,pending,readState,preparation,impactPreparation,canWrite:BUDGET_ENABLED&&owner&&!!snapshot?.write_enabled&&!pending&&!preparation&&!busy&&!loading,
+  return <BudgetContext.Provider value={{snapshot,draft,editing,setEditing,loading,busy,error:failure?.message??'',errorKind:failure?.kind,notice,pending,readState,preparation,impactPreparation,canWrite:BUDGET_ENABLED&&owner&&!!snapshot?.write_enabled&&!pending&&!preparation&&!busy&&!loading,
     refresh,run,sources,coverage,accountActivity,
     months:async()=>{
       // Read-only; skipped while a write, history preparation or refresh could make the window inconsistent.

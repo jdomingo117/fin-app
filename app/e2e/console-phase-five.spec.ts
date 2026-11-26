@@ -221,7 +221,7 @@ test('200 percent browser zoom', async ({}, info) => {
   try {
     const context = await chromium.launchPersistentContext(profile, {
       channel: 'chrome', viewport: null, args: ['--window-size=1440,900', '--force-device-scale-factor=1'],
-      timezoneId: 'Australia/Sydney', serviceWorkers: 'block',
+      locale: 'en-AU', timezoneId: 'Australia/Sydney', serviceWorkers: 'block',
     })
     try {
       const settings = context.pages()[0]
@@ -288,10 +288,7 @@ test('signed colours against section gradients and figure backgrounds', async ({
     if (!isolatedGradient) expect(ranges.length, label).toBeGreaterThan(0)
     await style.evaluate((node, rules) => { node.textContent = rules }, isolatedGradient
       ? '.console-topbar,.console-main { opacity:0 !important; } .console-light-plane,.console-ribbon-plane,.console-particles,.console-grain { visibility:hidden !important; }'
-      // Particles are small sprites that drift and twinkle indefinitely. Where one sits
-      // depends on run timing, so a speck passing behind a glyph is not the text's
-      // background. Grade figures against the surfaces and gradient beneath them.
-      : selector + ' { color:transparent !important; text-shadow:none !important; } .console-particles { visibility:hidden !important; }')
+      : selector + ' { color:transparent !important; text-shadow:none !important; }')
     const screenshot = await page.screenshot({ scale: 'css' })
     let mask: Buffer | undefined
     if (!isolatedGradient) {

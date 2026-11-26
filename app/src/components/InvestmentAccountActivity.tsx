@@ -10,27 +10,10 @@ import { fmtCents, glowColor } from '../data'
 import Tile from './Tile'
 import { useData } from '../contexts/DataContext'
 import Area from './charts/Area'
-import { ConsoleChartValues, ConsoleModule } from './console/ConsoleHub'
+import { ConsoleChartValues, ConsoleModule, consoleMoney } from './console/ConsoleHub'
 import InvestmentTaxAwareness from './InvestmentTaxAwareness'
 import { InlineActivity } from './OperationStatus'
-
-interface Summary {
-  holding_id: string
-  instrument_name: string
-  identifier: string
-  calculated_units: string
-  confirmed_units: string | null
-  reconciliation_status: string
-  net_external_contributions_cents: number
-  reinvested_distributions_cents: number
-  activity_count: number
-  value_cents: number | null
-  nav_price: string | null
-  price_date: string | null
-  valuation_status: 'current' | 'stale' | 'partial' | null
-  market_movement_cents: number | null
-  cash_distributions_cents: number
-}
+import type { useInvestmentOverview } from '../hooks/useInvestmentOverview'
 
 interface Activity {
   id: string
@@ -49,13 +32,9 @@ interface CashLink {
   transaction: { account_id: string; date: string; amount: number } | null
 }
 
-interface Monthly {
-  valuation_date: string
-  value_cents: number
-  cumulative_contributions_cents: number
-}
-
-export default function InvestmentAccountActivity({ accountId }: { accountId: string }) {
+export default function InvestmentAccountActivity({ accountId, overview }: {
+  accountId: string; overview: ReturnType<typeof useInvestmentOverview>
+}) {
   const { theme } = useView()
   const { accounts, refreshData } = useData()
   const [error, setError] = useState('')
@@ -72,15 +51,6 @@ export default function InvestmentAccountActivity({ accountId }: { accountId: st
       .eq('tenant_id',tenant).in('activity_id',ids).in('state',['confirmed','auto','suggested'])
     if (error) throw error
     return data as unknown as CashLink[]
-  })
-  const overview = useReport(['investment overview', accountId,refreshKey],async tenant => {
-    const [summary,monthly] = await Promise.all([
-      supabase.from('investment_account_overview').select('*').eq('tenant_id',tenant).eq('account_id',accountId).maybeSingle(),
-      supabase.from('investment_account_monthly').select('valuation_date,value_cents,cumulative_contributions_cents')
-        .eq('tenant_id',tenant).eq('account_id',accountId).order('valuation_date',{ascending:false}).limit(12),
-    ])
-    if (summary.error || monthly.error) throw summary.error ?? monthly.error
-    return { summary:summary.data as Summary | null,monthly:(monthly.data as Monthly[]).reverse() }
   })
   const summary = overview.data?.summary
   const monthly = overview.data?.monthly ?? []
@@ -107,7 +77,7 @@ export default function InvestmentAccountActivity({ accountId }: { accountId: st
   if (failed) return <ReportStatus label="Investment activity" report={failed} />
   if (loading) return <Tile title="Investment holding"><div className="flex min-h-20 items-center gap-2 py-5 text-[13px] text-muted" role="status"><InlineActivity label="Loading investment activity" size="compact" />Loading investment activity…</div></Tile>
   if (error) return <Tile title="Investment holding"><p role="alert" className="py-5 text-[13px] text-neg">{error}</p></Tile>
-  if (!summary) return <Tile title="Investment holding"><div className="py-6 text-center"><p className="text-[13px] text-muted">No investment activity has been imported yet.</p><p className="mt-1 text-[12px] text-muted">Open Ingestion and upload a supported investment transaction export.</p></div></Tile>
+  if (!summary) return <Tile title="Investment holding"><div data-console-empty-state className="py-6 text-center"><p className="text-[13px] text-muted">No investment activity has been imported yet.</p><p className="mt-1 text-[12px] text-muted">Open Ingestion and upload a supported investment transaction export.</p></div></Tile>
 
   const totalReturn = (summary.value_cents ?? 0) + Number(summary.cash_distributions_cents ?? 0) - Number(summary.net_external_contributions_cents)
   const returnPct = Number(summary.net_external_contributions_cents) === 0 ? 0 : totalReturn / Number(summary.net_external_contributions_cents) * 100
@@ -130,7 +100,9 @@ export default function InvestmentAccountActivity({ accountId }: { accountId: st
       <Metric label="Units held" value={summary.calculated_units} />
       <Metric label="Net contributions" value={fmtCents(summary.net_external_contributions_cents)} />
       <Metric label="Reinvested distributions" value={fmtCents(summary.reinvested_distributions_cents)} />
-      <Metric label="Investment return" value={`${totalReturn >= 0 ? '+' : '-'}${fmtCents(Math.abs(totalReturn))} · ${returnPct.toFixed(1)}%`} />
+      <Metric label="Investment return"
+        sign={consoleStyle && totalReturn ? (totalReturn > 0 ? 'positive' : 'negative') : undefined}
+        value={`${consoleStyle ? consoleMoney(totalReturn, true) : `${totalReturn >= 0 ? '+' : '-'}${fmtCents(Math.abs(totalReturn))}`} · ${returnPct.toFixed(1)}%`} />
       <Metric label={summary.price_date ? `NAV · ${consoleStyle ? dayLabel(summary.price_date) : summary.price_date}` : 'NAV'} value={summary.nav_price ? `$${summary.nav_price}` : 'Not priced'} />
     </div>
   </>
@@ -164,6 +136,6 @@ export default function InvestmentAccountActivity({ accountId }: { accountId: st
   </> : <Tile title={summary.instrument_name} tag={description}>{summaryContent}{chart}{activityContent}</Tile>
 }
 
-function Metric({ label, value }: { label: string; value: string }) {
-  return <div><p className="micro text-muted">{label}</p><p className="mt-1 text-[15px] font-semibold tabular-nums">{value}</p></div>
+function Metric({ label, value, sign }: { label: string; value: string; sign?: 'positive' | 'negative' }) {
+  return <div><p className="micro text-muted">{label}</p><p data-sign={sign} className="mt-1 text-[15px] font-semibold tabular-nums">{value}</p></div>
 }

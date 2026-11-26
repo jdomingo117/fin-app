@@ -51,6 +51,9 @@ html[data-theme="console"] :where(button, a, input, select, textarea, summary, [
   box-shadow: var(--console-ring);
 }
 html[data-theme="console"] :is(h1,h2,h3,h4,h5,h6)[tabindex="-1"]:focus { outline: none; }
+/* Native range controls can suppress their own shadow in WebKit. */
+html[data-theme="console"] .console-volume-track > input:focus-visible { outline: none; box-shadow: none; }
+html[data-theme="console"] .console-volume-track:has(> input:focus-visible) { box-shadow: var(--console-ring); }
 
 .console-activity-card {
   position: relative;
@@ -84,6 +87,10 @@ html[data-theme="console"] :is(h1,h2,h3,h4,h5,h6)[tabindex="-1"]:focus { outline
 @media (forced-colors: active) {
   .console-section:is([data-active="true"], :focus-visible) .console-focus-decoration[data-layer="edge"],
   html[data-theme="console"] :where(button, a, input, select, textarea, summary, [data-focus-ring], [tabindex], [role="button"]):focus-visible:not(:where(.console-section, h1, h2, h3, h4, h5, h6)) {
+    outline: 2px solid Highlight;
+    outline-offset: 3px;
+  }
+  html[data-theme="console"] .console-volume-track:has(> input:focus-visible) {
     outline: 2px solid Highlight;
     outline-offset: 3px;
   }

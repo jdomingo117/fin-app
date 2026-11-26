@@ -67,6 +67,9 @@ async function openIncome(page: Page, touch: boolean) {
 
 test('Home and hubs render from the signed-in entry and pass axe', async ({ page, hasTouch }) => {
   await signInForConsole(page)
+  expect(await page.evaluate(() => ({ locale: navigator.language,
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone })))
+    .toEqual({ locale: 'en-AU', timezone: 'Australia/Sydney' })
   await enterConsole(page)
   await stopDecorations(page)
   await expect(page.locator('.console-route-layer')).toHaveCount(1)

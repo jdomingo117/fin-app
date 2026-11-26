@@ -7,7 +7,7 @@ import { GlassSurface } from './GlassSurface'
 import './console-hub.css'
 
 export type ConsoleFigure = { label: string; cents?: number; signed?: boolean }
-export type ConsoleArt = { label: string; values?: number[]; percent?: number }
+export type ConsoleArt = { label: string; values?: number[]; comparison?: number[]; percent?: number; value?: number }
 const sharedParts = ['label', 'figure', 'art'] as const
 type SharedPart = (typeof sharedParts)[number]
 type ProjectionBox = Pick<DOMRect, 'x' | 'y' | 'width' | 'height'>
@@ -106,15 +106,20 @@ export function ConsoleHeroArt({ id, art, reduced, origin, home, redacted }: {
   id: SectionId; art?: ConsoleArt; reduced?: boolean; origin?: ProjectionBox; home?: boolean; redacted?: boolean
 }) {
   const values = redacted ? [] : art?.values ?? []
-  const low = Math.min(...values)
-  const span = Math.max(...values) - low
-  const points = values.length > 0 ? values.map((value, i) => {
-    const x = 22 + i * 116 / Math.max(1, values.length - 1)
+  const comparison = redacted ? undefined : art?.comparison
+  const range = comparison ? [...values, ...comparison] : values
+  const low = Math.min(...range)
+  const span = Math.max(...range) - low
+  const toPoints = (series: number[]) => series.map((value, i) => {
+    const x = (comparison ? 40 : 22) + i * (comparison ? 80 : 116) / Math.max(1, series.length - 1)
     const y = span ? 99 - (value - low) * 42 / span : 79
     return `${x},${y}`
-  }).join(' ') : undefined
+  }).join(' ')
+  const points = values.length ? toPoints(values) : undefined
   const percent = redacted ? undefined : art?.percent
-  if (!points && percent === undefined && !redacted) {
+  const value = redacted ? undefined : art?.value
+  const valueText = value === undefined ? undefined : consoleMoney(value, false, true)
+  if (!points && percent === undefined && value === undefined && !redacted) {
     if (id === 'accounts') return <p className="console-art-empty">Holdings appear here when accounts have a cash or investment balance.</p>
     if (id === 'dashboard') return <div aria-hidden="true" className="console-orb" />
     return null
@@ -131,11 +136,21 @@ export function ConsoleHeroArt({ id, art, reduced, origin, home, redacted }: {
         {percent !== undefined ? <circle className="console-orb-progress" cx="80" cy="80" r="63" pathLength="100"
           stroke="currentColor" strokeWidth="3" strokeLinecap="round" transform="rotate(-90 80 80)"
           strokeDasharray={`${Math.min(100, Math.max(0, percent))} 100`} /> : points && <>
-          <path className="console-orb-area" d={`M22,110 L${points.replaceAll(' ', ' L')} L138,110 Z`} />
+          {comparison ? <polyline className="console-orb-line console-orb-comparison" points={toPoints(comparison)} />
+            : <path className="console-orb-area" d={`M22,110 L${points.replaceAll(' ', ' L')} L138,110 Z`} />}
           <polyline className="console-orb-line" points={points} />
         </>}
       </svg>
       {redacted ? <figcaption className="sr-only">Trend hidden</figcaption> :
+        comparison ? <figcaption className="console-orb-legend">
+          <span aria-hidden="true"><span>Value</span><span>Contributions</span></span>
+          <span className="sr-only">{art?.label}. Value {fmtCents(values.at(-1)!)}. Contributions {fmtCents(comparison.at(-1)!)}.</span>
+        </figcaption> :
+        value !== undefined && valueText ? <figcaption className="console-orb-stat console-orb-value"
+          style={{ '--console-orb-value-length': valueText.length } as React.CSSProperties}>
+          <strong className="tabular-nums" aria-hidden="true">{valueText}</strong>
+          <span className="sr-only">{art?.label}: {consoleMoney(value)}</span>
+        </figcaption> :
         percent !== undefined ? <>
           <div className="console-orb-stat tabular-nums" aria-hidden="true"><strong>{percent}%</strong></div>
           <figcaption className="sr-only">{art?.label}: {percent}%</figcaption>
@@ -202,13 +217,21 @@ export default function ConsoleHub({ id, title, period, figure, strip, art, filt
   const heading = useRef<HTMLHeadingElement>(null)
   const height = useMotionValue(280)
   const { scrollY } = useScroll({ container: scroll })
-  const progress = useTransform(() => {
+  const collapseProgress = () => {
     const end = Math.max(90, height.get() - 26)
     const value = Math.max(0, Math.min(1, (scrollY.get() - 20) / end))
     return reduce ? +(value >= .58) : value
-  })
+  }
+  const progress = useTransform(collapseProgress)
   const heroOpacity = useTransform(progress, [0, .3, .75, 1], [1, 1, 0, 0])
-  const heroShift = useTransform(progress, [0, 1], [0, -22])
+  const heroShift = useTransform(() => reduce ? 0 : -22 * collapseProgress())
+  const heroMask = useTransform(() => {
+    const scrolled = scrollY.get()
+    if (scrolled <= 0) return 'none'
+    // Translate the fixed dock edge into the moving hero's coordinates.
+    const edge = scrolled + (reduce ? 0 : 22 * collapseProgress())
+    return `linear-gradient(to bottom, transparent ${edge}px, black ${edge + 20}px)`
+  })
   const headerOpacity = useTransform(progress, [0, .30, .75, 1], [0, 0, 1, 1])
   const headerShift = useTransform(progress, [0, 1], [12, 0])
   const [compact, setCompact] = useState(false)
@@ -243,7 +266,7 @@ export default function ConsoleHub({ id, title, period, figure, strip, art, filt
         </div>
         {filters && !filtersBelowHero && <div className="console-hub-filters">{filters}</div>}
       </header>
-      <motion.section ref={hero} className="console-expanded-hero" style={{ opacity: heroOpacity, y: reduce ? 0 : heroShift }} aria-hidden={compact}>
+      <motion.section ref={hero} className="console-expanded-hero" style={{ opacity: heroOpacity, y: reduce ? 0 : heroShift, maskImage: heroMask }} aria-hidden={compact}>
         <div className="console-expanded-copy">
           <ConsoleHeadline id={id} label={figure.label} figure={figure} reduced={reduce} title={title} period={period} origin={entry?.origin} redacted={redacted} />
           {strip.length > 0 && <ConsoleFigureStrip figures={strip} redacted={redacted} />}

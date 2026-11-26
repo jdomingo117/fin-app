@@ -13,6 +13,7 @@ export default function MilestoneToast({ toast }: { toast: ToastData | null }) {
         {toast && (
           <motion.div
             key={toast.id}
+            data-console-toast
             initial={{ y: -24, opacity: 0, scale: 0.96 }}
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: -16, opacity: 0 }}
@@ -26,7 +27,7 @@ export default function MilestoneToast({ toast }: { toast: ToastData | null }) {
               </svg>
             </span>
             <div>
-              <div className="micro text-accent-ink">Milestone reached</div>
+              <div data-console-label className="micro text-accent-ink">Milestone reached</div>
               <div className="font-display text-[15px] font-bold">{toast.title}</div>
               <div className="text-[12px] text-muted">{toast.sub}</div>
             </div>

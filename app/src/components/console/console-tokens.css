@@ -94,6 +94,13 @@ html[data-theme="console"] {
   background: var(--color-surface);
 }
 
+html[data-theme="console"] [data-console-toast] .micro { text-transform: none; }
+
+/* Console uses sign colours only on explicitly signed figures. */
+html[data-theme="console"] :is(.text-pos, .text-neg) { color: var(--color-ink); }
+html[data-theme="console"] [data-sign="positive"] { color: var(--color-console-pos); }
+html[data-theme="console"] [data-sign="negative"] { color: var(--color-console-neg); }
+
 /* Native controls and shared chips keep their semantics in Console, including
    controls inside portalled forms. The audit reads the applied variant. */
 html[data-theme="console"] :is(.native-select, textarea, input:not([type="checkbox"], [type="radio"], [type="range"], [type="file"], [type="hidden"]), [data-control-kind="chip"]) {
@@ -105,10 +112,17 @@ html[data-theme="console"] :is(.native-select, textarea, input:not([type="checkb
   color: var(--console-ink);
 }
 html[data-theme="console"] [data-control-kind="chip"] {
+  --console-chip-padding: 10px;
+  padding-inline: var(--console-chip-padding);
+  min-inline-size: calc(var(--console-control-size) + 2 * var(--console-chip-padding));
   border-radius: 999px;
+  /* Switch the paired ink and fill together, including on forced-colour changes. */
+  transition-property: none;
 }
 html[data-theme="console"] [data-control-kind="chip"][aria-pressed="true"] {
-  background-color: var(--accent-wash);
+  background-color: var(--console-ink);
+  border-color: var(--console-ink);
+  color: var(--console-base);
 }
 html[data-theme="console"] {
   accent-color: var(--console-ink);

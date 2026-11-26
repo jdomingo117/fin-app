@@ -12,7 +12,7 @@ export function wrappedFocusIndex(currentIndex: number, count: number, backwards
   return (currentIndex + (backwards ? -1 : 1) + count) % count
 }
 
-function focusableElements(dialog: HTMLElement) {
+export function focusableElements(dialog: HTMLElement) {
   return [...dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)]
     .filter((element) => element.tabIndex >= 0 && !element.matches(':disabled') && element.getClientRects().length > 0 && element.getAttribute('aria-hidden') !== 'true')
 }

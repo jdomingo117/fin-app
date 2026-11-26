@@ -53,16 +53,17 @@ export function ForecastReadout({
         value={!scenarioVisible ? 'Scenario off' : mode === 'byDate' ? `${scenarioDelta >= 0 ? '+' : '−'}${fmt(Math.abs(scenarioDelta))}` : timing ? timing.split('.').at(0) ?? 'Compared with baseline' : 'Compared with baseline'}
         detail={!scenarioVisible ? 'Turn on a what-if change to compare it with the baseline.' : mode === 'byDate' ? 'Difference at the forecast endpoint versus the baseline.' : timing ?? 'Compare the scenario with the baseline trajectory.'}
         tone={!scenarioVisible ? 'text-muted' : scenarioDelta >= 0 || (targetTimingDelta !== null && targetTimingDelta < 0) ? 'text-pos' : 'text-neg'}
+        sign={scenarioVisible && mode === 'byDate' && scenarioDelta ? (scenarioDelta > 0 ? 'positive' : 'negative') : undefined}
       />
     </section>
   )
 }
 
-function ForecastInsight({ label, value, detail, tone }: { label: string; value: string; detail: string; tone: string }) {
+function ForecastInsight({ label, value, detail, tone, sign }: { label: string; value: string; detail: string; tone: string; sign?: 'positive' | 'negative' }) {
   return (
     <div className="border-[var(--hair-soft)] px-0 py-2.5 first:pt-0 sm:border-r sm:px-4 sm:py-0 sm:first:pl-0 sm:last:border-r-0 sm:last:pr-0">
       <div className="text-[11.5px] font-bold uppercase tracking-[0.1em] text-muted">{label}</div>
-      <div className={`mt-1.5 text-[16px] font-bold tabular-nums ${tone}`}>{value}</div>
+      <div data-sign={sign} className={`mt-1.5 text-[16px] font-bold tabular-nums ${tone}`}>{value}</div>
       <p className="mt-2 text-[14px] leading-6 text-muted">{detail}</p>
     </div>
   )

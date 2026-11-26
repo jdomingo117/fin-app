@@ -8,7 +8,7 @@ import BudgetValue from '../BudgetValue'
 export default function BudgetCommitments({items,presentation:p,renderItem,onAddBill,onFindBills}:{items:BudgetItem[];presentation:BudgetPresentation;renderItem:(item:BudgetItem)=>ReactNode;onAddBill?:()=>void;onFindBills?:()=>void}){
   const formatDay = useConsoleDayLabel()
  const groups=[{kind:'fixed',title:'Bills & regular payments',hint:'Payment dates and matched activity.'},{kind:'reserve',title:'Upcoming costs',hint:'Money set aside in your plan for later costs.'},{kind:'contribution',title:'Planned transfers',hint:'Planned contributions and separate funding evidence.'}]
- return <section className="budget-commitments" aria-label="Your commitments"><div className="budget-commitments-heading"><p className="micro text-muted">ALREADY IN YOUR PLAN</p><h3>Bills & commitments</h3></div>
+ return <section className="budget-commitments" aria-label="Your commitments"><div className="budget-commitments-heading"><p className="micro text-muted">Already in your plan</p><h3>Bills & commitments</h3></div>
   {p.coverage!=='complete'&&<p className="budget-commitment-notice">{p.coverage==='none'?'Manual plan · recorded payments are unavailable.':p.coverage==='unknown'?'Selected-account activity is unavailable.':'Known activity only · missing history can change matched amounts and balances.'}</p>}
   {p.phase==='future'&&<p className="budget-commitment-notice">Future plan · recorded payments are unavailable for these dates.</p>}
   {p.everyday.remaining.freshness==='stale'&&<p className="budget-commitment-notice">Previously loaded figures · refresh or check the saved result before relying on them.</p>}

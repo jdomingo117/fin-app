@@ -12,19 +12,20 @@ permissions:
 
 jobs:
   console-browser:
-    name: Console Playwright and Classic smoke (${{ matrix.shard }}/4)
+    name: Console Playwright and Classic smoke (${{ matrix.shard }}/5)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4]
+        shard: [1, 2, 3, 4, 5]
     defaults:
       run:
         working-directory: app
     env:
       VITE_SUPABASE_URL: http://127.0.0.1:54321
       VITE_SUPABASE_ANON_KEY: fictional-console-ci-key
+      CONSOLE_QUALIFICATION_SPEC: 'console-phase-five\.spec\.ts'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -33,9 +34,12 @@ jobs:
           cache: npm
           cache-dependency-path: app/package-lock.json
       - run: npm ci
-      - run: npx playwright install --with-deps chrome
+      - run: npx playwright install --with-deps chrome webkit
       - run: npm run test:browser:typecheck
-      - run: npx playwright test --config playwright.console.config.ts --workers=2 --fully-parallel --shard=${{ matrix.shard }}/4
+      - name: Run Console and Classic regression shard
+        run: npx playwright test --config playwright.console.config.ts --workers=2 --fully-parallel --shard=${{ matrix.shard }}/5 --grep-invert "$CONSOLE_QUALIFICATION_SPEC"
+      - name: Run cross-screen qualification shard
+        run: npx playwright test --config playwright.console.config.ts --workers=2 --fully-parallel --shard=${{ matrix.shard }}/5 --grep "$CONSOLE_QUALIFICATION_SPEC"
       - uses: actions/upload-artifact@v4
         if: failure()
         with:

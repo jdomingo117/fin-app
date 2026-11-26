@@ -474,7 +474,7 @@ export default function StrategicProjections() {
                     <>
                       <div className="mt-1.5 text-[19px] font-bold tabular-nums text-ink">
                         {fmt(scenarioValueAtEndpoint)}
-                        <span className={`ml-2 text-[13px] ${scenarioDeltaAtEndpoint >= 0 ? 'text-pos' : 'text-neg'}`}>{scenarioDeltaAtEndpoint >= 0 ? '+' : '−'}{fmt(Math.abs(scenarioDeltaAtEndpoint))}</span>
+                        <span data-sign={scenarioDeltaAtEndpoint ? (scenarioDeltaAtEndpoint > 0 ? 'positive' : 'negative') : undefined} className={`ml-2 text-[13px] ${scenarioDeltaAtEndpoint >= 0 ? 'text-pos' : 'text-neg'}`}>{scenarioDeltaAtEndpoint >= 0 ? '+' : '−'}{fmt(Math.abs(scenarioDeltaAtEndpoint))}</span>
                       </div>
                       <div className="mt-2 text-[15px] leading-6 text-muted">
                         {scenarioGap >= 0 ? `${fmt(scenarioGap)} headroom` : `${fmt(Math.abs(scenarioGap))} shortfall`} against the {fmt(target)} goal by {dateLabel(targetDate)}.

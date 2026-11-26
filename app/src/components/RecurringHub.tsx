@@ -114,7 +114,7 @@ export default function RecurringHub() {
   const none = r.active.length === 0
 
   const mix = none
-    ? 'no recurring series detected'
+    ? 'No recurring series detected'
     : `${plural(r.active.length, 'commitment')} · ${fixed} fixed · ${variable} variable`
 
   const burnGap = r.annualBurn - r.trailingActual
@@ -143,7 +143,7 @@ export default function RecurringHub() {
               }}
               className="text-[12px] font-bold text-accent-ink hover:underline cursor-pointer border-none bg-transparent"
             >
-              Clear Focus
+              Clear focus
             </button>
           )}
         </div>
@@ -154,11 +154,13 @@ export default function RecurringHub() {
           label="Monthly commitment"
           value={none ? '—' : fmt(r.monthlyCommitment)}
           sub={mix}
+          empty={none}
         />
         <HeroMetric
-          label="Annualized cash burn"
+          label="Annualised cash burn"
           value={none ? '—' : fmt(r.annualBurn)}
           sub={none ? mix : burnGap === 0 ? 'Matches trailing actual spend' : `${fmt(Math.abs(burnGap))} ${burnGap > 0 ? 'above' : 'below'} trailing actual spend`}
+          empty={none}
           tone={none || Math.abs(burnGap) < 1 ? 'muted' : burnGap > 0 ? 'neg' : 'pos'}
         />
         <HeroMetric
@@ -166,18 +168,20 @@ export default function RecurringHub() {
           value={pressurePct === null ? '—' : `${pressurePct}%`}
           sub={
             pressurePct === null
-              ? 'no outflow in the last 30 days'
+              ? 'No outflow in the last 30 days'
               : `${fmt(r.pressure.recurring)} of ${fmt(r.pressure.total)} spent in the last 30 days`
           }
+          empty={pressurePct === null}
         />
         <HeroMetric
           label="Active commitments"
           value={String(r.active.length)}
           sub={
             none
-              ? 'no recurring series detected'
+              ? mix
               : `${fixed} fixed · ${variable} variable${r.dormant.length ? ` · ${r.dormant.length} dormant` : ''}`
           }
+          empty={none}
         />
       </div>
 

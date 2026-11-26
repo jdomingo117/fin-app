@@ -514,6 +514,8 @@ export default function RecurringDirectory({
             {(['all', 'active', 'dormant'] as const).map((st) => (
               <button
                 key={st}
+                data-control-kind="chip"
+                aria-pressed={statusFilter === st}
                 onClick={() => setStatusFilter(st)}
                 className={`rounded px-2 py-1 text-[11px] font-bold uppercase tracking-wider transition cursor-pointer border-none ${
                   statusFilter === st
@@ -521,7 +523,7 @@ export default function RecurringDirectory({
                     : 'text-muted hover:text-ink'
                 }`}
               >
-                {st}
+                {{ all: 'All', active: 'Active', dormant: 'Dormant' }[st]}
               </button>
             ))}
             </div>
@@ -532,6 +534,8 @@ export default function RecurringDirectory({
             {(['all', 'fixed', 'variable'] as const).map((kd) => (
               <button
                 key={kd}
+                data-control-kind="chip"
+                aria-pressed={kindFilter === kd}
                 onClick={() => setKindFilter(kd)}
                 className={`rounded px-2 py-1 text-[11px] font-bold uppercase tracking-wider transition cursor-pointer border-none ${
                   kindFilter === kd
@@ -539,7 +543,7 @@ export default function RecurringDirectory({
                     : 'text-muted hover:text-ink'
                 }`}
               >
-                {kd}
+                {{ all: 'All', fixed: 'Fixed', variable: 'Variable' }[kd]}
               </button>
             ))}
             </div>

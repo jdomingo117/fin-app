@@ -159,10 +159,10 @@ export function ConsoleSettingsControls({ redact, toggleRedact }: { redact: bool
       <Switch on={preferences.music} onToggle={() => toggle('music')} label="Ambient music" />
       <label className="console-volume">
         <span>Master volume</span>
-        <input aria-label="Master volume" type="range" min={0} max={100} value={preferences.volume} onChange={event => {
+        <span className="console-volume-track"><input aria-label="Master volume" type="range" min={0} max={100} value={preferences.volume} onChange={event => {
           update({ volume: event.currentTarget.valueAsNumber })
           unlock()
-        }} />
+        }} /></span>
         <output aria-hidden="true">{preferences.volume}%</output>
       </label>
     </ConsoleModule>

@@ -5,6 +5,7 @@
 | Branch | `codex/console-phase-6b` |
 | Application commits | `999e945` (notice derivations), `cec8ba4` (Control Centre, Quiet alerts, Rest) |
 | Test commit | `bef9c0b` |
+| Error toasts through Quiet alerts | `76b1c76` (app), `be4c8f7` (test) |
 | Main base | `b5487ff`, the PR #15 merge |
 | Worktree | `/Users/joel/Developer/fin-app` |
 | Signed-in entry | [http://127.0.0.1:5320/dashboard](http://127.0.0.1:5320/dashboard) |
@@ -29,7 +30,7 @@ Nothing was listening on 5320, so the suites ran with `CI=1` and started their o
 | Goals notice | Active planning goals whose current value has reached the target, using the same value as Strategic projections. It opens Income on the **Strategic projections** tab. | `goalRing()` |
 | Reads | Recurring bills and planning goals are read on the first open of Control Centre and kept for the session. Nothing new is read before then. | `useRecurrence`, `usePlanning` |
 | Empty and incomplete | With no notices and nothing failed, the strip reads **All caught up**. An unopened Budget is named under it. If a source failed, the strip reads **Nothing to show** and names what couldn't be checked, so a failure is never reported as clear. While any source is loading, it reads **Checking for notices…** | `consoleNotices()`, `noticeGapText()` |
-| Quiet alerts | A quick action, pressed or not. While it's on, Console toasts are dropped for this signed-in visit. It turns off on sign-out or reload, and doesn't affect Classic. | `App.tsx`, `useView().quietAlerts` |
+| Quiet alerts | A quick action, pressed or not. While it's on, routine Console toasts are dropped for this signed-in visit. Toasts that report a failure carry `tone: 'error'` and always show. It turns off on sign-out or reload, and doesn't affect Classic. | `App.tsx`, `useView().quietAlerts`, `MilestoneToast.tsx` |
 | Rest | A quick action shown only while **Show start screen** is on. From Home it brings back the start screen. From a hub it goes Home first, through the normal Back path and its unsaved-changes guard. **Start Halcyon** returns Home with focus restored. | `ConsoleViewport.tsx` |
 | Actions layout | Desktop keeps one row, now of seven or eight actions. Phones wrap to rows of four, with labels below. | `control-centre.css` |
 
@@ -39,7 +40,7 @@ Nothing was listening on 5320, so the suites ran with `CI=1` and started their o
 
 1. **Notice order.** The plan asks for a fixed order without setting one. I used: money already at risk (Budget), money about to leave (Bills), the review queues (Ledger, then Transfers), then good news (Goals). The plan's list order would put Goals third.
 2. **Goal milestones.** Halcyon keeps no history of when a goal crossed 25%, 50% or 75%, so a crossing can't be detected honestly. The gate uses **target reached** only. Earlier milestones would need recorded progress.
-3. **Quiet alerts and error toasts.** Toasts carry no severity, so Quiet alerts drops errors too. For example, a failed callsign save in Settings reports only by toast, and the regression shows it's hidden while Quiet alerts is on. The edit stays open, but the reason isn't shown. Options are to keep this, to let error toasts through (which needs a severity on toasts), or to drop Quiet alerts.
+3. **Quiet alerts and error toasts. Settled on 27 November 2026: errors get through.** Toasts had no severity, so the gate build dropped errors too: a failed callsign save in Settings reports only by toast. Toasts now take an optional `tone: 'error'`. The failure toasts in Settings, Account security, sign-out, sign-in and onboarding use it, and Quiet alerts never hides them.
 4. **Merging during observation.** If you approve, the merge goes in the [observation log](console-rollout.md#default-switch-observation).
 
 ## Captures
@@ -62,6 +63,7 @@ All states use fictional data. The 320 and 390 widths use the Phone project, wit
 | `npm run build` | Pass, with the existing chunk-size advisory |
 | Full Console Playwright suite, Desktop and Phone, `CI=1`, three shards | 149 passed, 17 skipped by project or capture-only conditions, 0 failed |
 | `console-phase-six-b.spec.ts` with captures | 23 passed, 1 skipped |
+| After letting errors through Quiet alerts: types, browser types, `npm test` (748), build, the full Console suite (149 passed, 17 skipped, 0 failed) and `console-phase-six-b.spec.ts` (17 passed, 7 capture-only skips) | Pass |
 | WebKit | **Not run locally.** Only Chromium is installed, and I didn't download WebKit. The WebKit project now includes `console-phase-six-b.spec.ts`, so CI runs the 6B regressions and the owner-fixes focus regression in WebKit. |
 
 The new regressions cover the following:
@@ -73,7 +75,7 @@ The new regressions cover the following:
 - **All caught up.** With and without Budget opened.
 - **Failure.** A failed goals read reads "Nothing to show … Couldn’t check goals." rather than "All caught up".
 - **Keyboard.** Shift+Tab from Close wraps to Sign out. Tab reaches the notices, arrows rove between them, Tab moves on to the quick actions, and Escape returns focus to the opener.
-- **Quiet alerts.** Pressed state, a hidden toast while on, and the toast back once off.
+- **Quiet alerts.** Pressed state. A routine **Transaction updated** toast stays hidden while it's on, and a failed callsign save still shows, marked as an error. It turns off from the same action.
 - **Rest.** Absent until **Show start screen** is on. Rest from Home and from a hub shows the start screen, and Start returns Home.
 
 The existing gate-three Control Centre test now looks for the **Notices** group and waits for it before tabbing, since notices appear once their reads settle. The owner-fixes focus and Safari wrap regressions passed unchanged in Chromium.
@@ -82,9 +84,15 @@ The existing gate-three Control Centre test now looks for the **Notices** group 
 
 [Audit and axe output](captures/console-phase-6b/audit.txt). The leftover audit checked 6 Control Centre states on Desktop and Phone: two notices, three notices, one notice, all caught up with and without Budget opened, and Quiet alerts on. Every issue list was empty. All 12 axe scans of the Control Centre (WCAG 2.0/2.1 A and AA) reported no violations.
 
+## Found in passing
+
+Every toast, error or not, shows a tick and the label **Milestone reached**. This was already the case before 6B and also affects Classic, so it isn't changed here. With `tone` in place, a later fix could give error toasts their own icon and label.
+
 ## Gate
 
 **Stopped for owner review.** 6B isn't merged, and 6C hasn't started. To finish the gate:
 
 - the decisions above;
 - the WebKit result from CI on the PR.
+
+The first CI run on the PR failed one Desktop case, the Phase 5 `768px matrix`: an ArrowRight didn't select Expenses. The test doesn't open Control Centre, passed in both full local runs and passed five repeats locally. The same matrix test has failed intermittently in CI on earlier branches, at 320 and with reduced motion. It's treated as that known flake unless the rerun fails again.

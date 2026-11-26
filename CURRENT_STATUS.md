@@ -9,7 +9,7 @@ tags:
 type: handoff
 status: current
 project: Halcyon
-updated: 2026-11-21
+updated: 2026-11-26
 related:
   - "[[README]]"
   - "[[INDEX]]"
@@ -19,7 +19,16 @@ related:
 
 # Halcyon — Current status
 
-## Resume here — 21 November 2026
+## Resume here — 26 November 2026
+
+Console is on `main` as an opt-in appearance. Classic remains the default.
+The [Console Phase 5 owner fixes](docs/design/console-phase-5-owner-fixes.md)
+merged in PR #9.
+
+Next, the owner checks Console smoothness on the physical 2020 M1 MacBook Air.
+Once the owner signs off, switch the default appearance to Console.
+
+## Wave 1–3C audit handoff — 21 November 2026
 
 The authorized Wave 1–3C audit implementation is complete on
 `feat/wave-3c-4-retire-global-refresh`, based on Wave 3C.3 `b175f80`.

@@ -213,7 +213,68 @@
 .console-empty { margin-top: 10px; color: var(--console-label); }
 .console-home-activity { --console-home-card-height: calc(var(--console-card-width) * 10 / 16 + 28px); }
 .console-activity-placeholder { box-sizing: border-box; margin: 0; min-block-size: var(--console-home-card-height); padding-block: 14px; }
-.console-activity-spacer { min-block-size: var(--console-home-card-height); }
+/* Budget limits and Expenses category shares reuse the activity card. Their meters carry exact ratios, never a fabricated zero. */
+.console-budget-card { grid-template-rows: auto minmax(0, 1fr) auto auto; }
+.console-budget-card strong { align-self: end; }
+.console-activity-card strong.console-card-unavailable { font-size: 22px; color: var(--console-label); }
+.console-card-meter {
+  position: relative;
+  display: block;
+  block-size: 4px;
+  margin-block-start: 6px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: var(--console-line);
+}
+.console-card-meter > span { display: block; block-size: 100%; border-radius: inherit; background: var(--console-ink); }
+.console-budget-card[data-over] .console-card-meter > span { background: var(--color-console-neg); }
+.console-category-card { grid-template-rows: auto minmax(0, 1fr); }
+.console-category-list { display: grid; align-content: end; gap: 8px; min-block-size: 0; }
+.console-category-share { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 10px; font-size: 14px; line-height: 1.25; }
+.console-category-share .console-card-meter { grid-column: 1 / -1; margin-block-start: 4px; }
+.console-category-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.console-category-figure { color: var(--console-label); }
+/* A long goal name wraps to two lines inside the ring, then ends with an ellipsis. */
+.console-orb-caption {
+  display: -webkit-box;
+  max-inline-size: 70cqi;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow-wrap: anywhere;
+  color: var(--console-label);
+  font-size: clamp(9px, 7cqi, 14px);
+  line-height: 1.15;
+}
+/* Keyboard hints only help a fine pointer. A touch or stylus layout keeps its height. */
+.console-key-hints { display: none; }
+@media (hover: hover) and (pointer: fine) {
+  .console-key-hints {
+    display: flex;
+    flex: none;
+    flex-wrap: wrap;
+    gap: 6px 22px;
+    margin-block-start: 10px;
+    color: var(--console-label);
+    font-size: 13px;
+  }
+}
+.console-key-hints kbd {
+  display: inline-block;
+  min-inline-size: 1.9em;
+  padding: 1px 6px;
+  border: 1px solid var(--console-line);
+  border-radius: 6px;
+  background: var(--console-fill);
+  color: var(--console-ink);
+  font: inherit;
+  text-align: center;
+}
+@media (forced-colors: active) {
+  .console-card-meter { border: 1px solid CanvasText; background: Canvas; }
+  .console-card-meter > span { forced-color-adjust: none; background: CanvasText; }
+}
 .console-preview-report { margin-block-start: 6px; }
 @media (max-height: 720px) { .console-home-activity { --console-home-card-height: 161px; } }
 
@@ -295,6 +356,9 @@
   .console-activity-row { padding-block: 8px; }
   .console-activity-card { max-block-size: 145px; padding-block: 12px; }
   .console-card-emblem { inline-size: 30px; block-size: 30px; }
+  .console-category-list { gap: 4px; }
+  .console-category-share { font-size: 13px; }
+  .console-key-hints { margin-block-start: 4px; }
   .console-home .console-orb { inline-size: 66px; }
   .console-home .console-orb-stat strong { font-size: 20px; }
 }

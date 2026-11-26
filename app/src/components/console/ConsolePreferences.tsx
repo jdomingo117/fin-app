@@ -5,6 +5,7 @@ import { ConsoleModule } from './ConsoleHub'
 import { SoundEngine, type ConsoleCue } from './SoundEngine'
 import { effectsTiers, useDefaultEffectsTier, type EffectsTier } from './effectsTier'
 import { useSystemReducedMotion } from './systemMotion'
+import { usePlanning } from '../../hooks/usePlanning'
 
 type Preferences = {
   sound: boolean
@@ -15,11 +16,13 @@ type Preferences = {
   effectsTier: EffectsTier | null
   centreShortcut: boolean
   startScreen: boolean
+  /** A planning goal ID for the Overview ring on this device, or null for the net worth trend. */
+  overviewGoal: string | null
 }
 
 const defaults: Preferences = {
   sound: false, muted: false, music: false, volume: 55,
-  reducedSound: false, effectsTier: null, centreShortcut: true, startScreen: false,
+  reducedSound: false, effectsTier: null, centreShortcut: true, startScreen: false, overviewGoal: null,
 }
 const key = 'halcyon-console-preferences'
 
@@ -37,6 +40,7 @@ function readPreferences(): Preferences {
         : value?.reduceEffects === true ? 'reduce' : null,
       centreShortcut: value?.centreShortcut !== false,
       startScreen: value?.startScreen === true,
+      overviewGoal: typeof value?.overviewGoal === 'string' && value.overviewGoal ? value.overviewGoal : null,
     }
   } catch {
     return defaults
@@ -115,6 +119,29 @@ export function useConsolePreferences() {
   return useContext(ConsoleContext)
 }
 
+/** Chooses what the Overview ring on Home shows on this device. Only active goals can be tracked. */
+function OverviewRingSetting({ goalId, onChange }: { goalId: string | null; onChange: (goalId: string | null) => void }) {
+  const planning = usePlanning()
+  const goals = planning.data?.planningGoals.filter(goal => goal.status === 'active')
+  const chosen = goals?.find(goal => goal.id === goalId)
+  const status = planning.error ? 'Goals couldn’t load, so the ring shows the net worth trend.'
+    : !goals ? undefined
+    : goalId && !chosen ? 'The chosen goal isn’t active any more, so the ring shows the net worth trend.'
+    : !goals.length ? 'Create a goal in Income, Strategic projections, to track its progress here.'
+    : undefined
+  return <>
+    <label className="console-effects-setting">
+      <span>Overview ring</span>
+      <Select value={chosen?.id ?? ''} disabled={!goals && !planning.error} describedBy={status ? 'console-overview-ring-status' : undefined}
+        onChange={value => onChange(value || null)}>
+        <option value="">{!goals && !planning.error ? 'Loading goals' : 'Net worth trend'}</option>
+        {goals?.map(goal => <option key={goal.id} value={goal.id}>{goal.name}</option>)}
+      </Select>
+    </label>
+    {status && <p id="console-overview-ring-status" className="detail-copy">{status}</p>}
+  </>
+}
+
 export function ConsoleSettingsControls({ redact, toggleRedact }: { redact: boolean; toggleRedact: () => void }) {
   const audio = useConsolePreferences()
   const { setTheme, motionOn, setMotionOn } = useView()
@@ -131,6 +158,10 @@ export function ConsoleSettingsControls({ redact, toggleRedact }: { redact: bool
         <Chip active={false} onClick={() => setTheme('classic')}>Classic</Chip>
       </div>
       <Switch on={redact} onToggle={toggleRedact} label="Redact balances" />
+      <OverviewRingSetting goalId={preferences.overviewGoal} onChange={overviewGoal => {
+        update({ overviewGoal })
+        playFromGesture('tab')
+      }} />
     </ConsoleModule>
     <ConsoleModule title="Effects and navigation" kind="flat">
       <label className="console-effects-setting">

@@ -7,7 +7,11 @@ import { GlassSurface } from './GlassSurface'
 import './console-hub.css'
 
 export type ConsoleFigure = { label: string; cents?: number; signed?: boolean }
-export type ConsoleArt = { label: string; values?: number[]; comparison?: number[]; percent?: number; value?: number }
+export type ConsoleArt = {
+  label: string; values?: number[]; comparison?: number[]; percent?: number; value?: number
+  /** A short visible name under a percent ring, such as the tracked goal. */
+  caption?: string
+}
 const sharedParts = ['label', 'figure', 'art'] as const
 type SharedPart = (typeof sharedParts)[number]
 type ProjectionBox = Pick<DOMRect, 'x' | 'y' | 'width' | 'height'>
@@ -152,7 +156,8 @@ export function ConsoleHeroArt({ id, art, reduced, origin, home, redacted }: {
           <span className="sr-only">{art?.label}: {consoleMoney(value)}</span>
         </figcaption> :
         percent !== undefined ? <>
-          <div className="console-orb-stat tabular-nums" aria-hidden="true"><strong>{percent}%</strong></div>
+          <div className="console-orb-stat tabular-nums" aria-hidden="true"><strong>{percent}%</strong>
+            {art?.caption && <span className="console-orb-caption">{art.caption}</span>}</div>
           <figcaption className="sr-only">{art?.label}: {percent}%</figcaption>
         </> :
         <figcaption className="sr-only">{art?.label}. First value {fmtCents(values[0])}. Last value {fmtCents(values[values.length - 1])}.</figcaption>}

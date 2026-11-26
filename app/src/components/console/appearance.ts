@@ -14,10 +14,13 @@ function writePreference(key: string, value: string) {
   try { localStorage.setItem(key, value) } catch { /* The selection still applies to this tab. */ }
 }
 
+/** Console is the default. Only an explicitly saved Classic choice keeps the fallback appearance. */
+export function initialAppearance(saved: string | null): Appearance {
+  return saved === 'classic' ? 'classic' : 'console'
+}
+
 export function useAppearancePreferences() {
-  const [theme, setAppearance] = useState<Appearance>(() =>
-    readPreference(appearanceKey) === 'console' ? 'console' : 'classic',
-  )
+  const [theme, setAppearance] = useState<Appearance>(() => initialAppearance(readPreference(appearanceKey)))
   const [dark, setClassicDark] = useState(() => readPreference(classicThemeKey) === 'dark')
   const setTheme = useCallback((appearance: Appearance) => {
     if (appearance === theme || !confirmAppearanceChange()) return

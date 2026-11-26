@@ -19,6 +19,8 @@ export default defineConfig({
   reporter: [['line'], ['html', { outputFolder: reviewReportDir ? `${reviewReportDir}/report` : 'playwright-report-golden', open: 'never' }]],
   outputDir: reviewReportDir ? `${reviewReportDir}/results` : 'test-results/golden',
   use: {
+    // These suites drive the Classic interface, so they start from an explicit Classic choice.
+    storageState: { cookies: [], origins: [{ origin: baseURL, localStorage: [{ name: 'halcyon-appearance', value: 'classic' }] }] },
     baseURL,
     viewport: { width: 1440, height: 1000 },
     trace: 'retain-on-failure',

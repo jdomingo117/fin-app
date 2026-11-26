@@ -9,6 +9,8 @@ export default defineConfig({
   reporter: [['line'], ['html', { open: 'never' }]],
   outputDir: 'test-results',
   use: {
+    // These suites drive the Classic interface, so they start from an explicit Classic choice.
+    storageState: { cookies: [], origins: [{ origin: 'http://localhost:5300', localStorage: [{ name: 'halcyon-appearance', value: 'classic' }] }] },
     baseURL: 'http://localhost:5300',
     viewport: { width: 1440, height: 1000 },
     trace: 'retain-on-failure',

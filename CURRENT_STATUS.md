@@ -21,12 +21,18 @@ related:
 
 ## Resume here — 26 November 2026
 
-Console is on `main` as an opt-in appearance. Classic remains the default.
-The [Console Phase 5 owner fixes](docs/design/console-phase-5-owner-fixes.md)
+Console is the default appearance on branch `codex/console-default-switch`.
+The owner approved the switch on 26 November 2026 after the Phase 5 review.
+A profile with no saved appearance now opens Console. Saved Classic and Console
+choices are kept, and Classic stays selectable in Settings. Sign-in, recovery
+and onboarding still use the Classic screens. The
+[Console Phase 5 owner fixes](docs/design/console-phase-5-owner-fixes.md)
 merged in PR #9.
 
-Next, the owner checks Console smoothness on the physical 2020 M1 MacBook Air.
-Once the owner signs off, switch the default appearance to Console.
+Next, merge the standalone default-switch commit. Then observe the default for
+two weeks, including one month-end cycle, per step 2 of the
+[rollout plan](docs/design/console-rollout.md#proposed-default-switch-and-classic-removal).
+Classic removal needs separate owner approval after the observation period.
 
 ## Wave 1–3C audit handoff — 21 November 2026
 

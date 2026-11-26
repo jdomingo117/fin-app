@@ -5,6 +5,7 @@
 | Branch | `codex/console-phase-6a` |
 | Application commit | `b4d2655858e03b967917b94e4494b8988e810f85` |
 | Test commit | `39c0c9c52331a3c904860aef1575e45925903d89` |
+| Budget order change | `62f5793f427e8c81d1ed9cab2c9d4dc16852c9de` |
 | Main base | `9152de5`, the PR #13 merge |
 | Worktree | `/Users/joel/Developer/fin-app` |
 | Signed-in entry | [http://127.0.0.1:5320/dashboard](http://127.0.0.1:5320/dashboard) |
@@ -22,7 +23,7 @@ The 5320 listener served Vite from this worktree's `app/` directory. Before each
 
 | Area | Behaviour | Source |
 | --- | --- | --- |
-| Budget preview | The spacer is replaced by up to four category-limit cards. Each card shows the amount spent of the amount allocated, in exact cents, with a bar. The categories closest to their limit come first. If there are more than four, a line says how many are shown. | `HomeCards.tsx`, `lib/consoleHome.ts` |
+| Budget preview | The spacer is replaced by up to four category-limit cards. Each card shows the amount spent of the amount allocated, in exact cents, with a bar. Cards follow Budget's own category order, the same as its table. If there are more than four, a line says how many are shown. | `HomeCards.tsx`, `lib/consoleHome.ts` |
 | Budget data | Home reads the workspace the Budget session has already loaded. Home never starts a Budget read. If this session hasn't opened Budget, the preview says so. The cold, loading, failed, no-plan, unsupported-method, other-period, no-limits, unavailable-details and refreshing states each have their own text. A missing usage figure reads **Unavailable**, has no bar and is never shown as `$0.00`. | `budgetHomeCards()` |
 | Expenses preview | A **Top categories** card leads the activity row. It shows the three largest categories, with each one's amount and share of gross outflow. It uses the category facets in Home's existing cash-flow report, summed and ranked the same way as the Expenses hub. Selecting it opens the hub for the same 30-day window. | `topExpenseCategories()` |
 | Overview ring | Settings can point the ring at one active planning goal. The choice is stored on the device as a Console preference. Progress uses the Strategic projections current value. The ring falls back to the net worth trend when no goal is chosen or the chosen one can't be measured. Planning goals are read only after a goal is chosen. The Overview hub keeps the trend art. | `goalRing()`, `ConsolePreferences.tsx` |
@@ -33,7 +34,7 @@ No new write path, migration or Edge Function is involved. Money goes through `f
 ## Decisions for the owner
 
 1. **How to choose the ring's goal (open decision 3). Approved as built on 27 November 2026.** Nothing in Halcyon could nominate a goal, and Phase 6 allows no new write path. The ring therefore uses a per-device Console preference with **Net worth trend** as the default. Syncing the choice across devices would need a new write path and a fresh decision.
-2. **Budget card order.** Cards are ranked by share spent, so the most pressing limits come first. Budget's own order would match the hub's table instead.
+2. **Budget card order. Settled on 27 November 2026: Budget's own order.** The gate build ranked cards by share spent. The owner chose Budget's order, so the cards match the hub's table. The `Showing 4 of 5` line now ends **in Budget’s order**, and the Budget card captures were retaken.
 3. **Merging during observation.** If you approve, the merge goes in the [observation log](console-rollout.md#default-switch-observation) so that a regression can be traced to this batch.
 
 ## Captures
@@ -66,12 +67,13 @@ The cold Budget state appears once per project, because loading Budget for the n
 | `npm run build` | Pass, with the existing chunk-size advisory |
 | Console Playwright suite, Desktop and Phone, against the verified 5320 listener | 130 passed, 10 skipped by project or capture-only conditions, 0 failed |
 | `console-phase-six.spec.ts` after adding the redaction regression | 16 passed (8 Desktop, 8 Phone) |
+| After the Budget order change (`CI=1`, the suite's own listener): types, unused declarations, budget configs, browser types, `npm test` (742), build, and `console-phase-six.spec.ts` | All pass, 16 passed |
 | WebKit | **Not run locally.** Only Chromium is installed, and I didn't download WebKit. The WebKit project now includes `console-phase-six.spec.ts`. CI run [45810991346](https://github.com/jdomingo117/fin-app/actions/runs/45810991346) on `563923b` passed all eight 6A regressions in WebKit; the capture-only test is skipped there by design. |
 
 The new regressions cover the following:
 
 - **Cold Budget preview.** It sends no `query-budget` request and shows its cold text.
-- **Ranked limits.** The four limits appear in order, in exact cents, with bar widths and the "4 of 5" line.
+- **Budget order.** The first four limits appear in Budget's own order, in exact cents, with bar widths and the "4 of 5" line.
 - **Missing data.** Missing usage shows no `$0.00` and no bar. A plan without category limits shows its own text.
 - **Expenses reconciliation.** The Expenses shares (Housing $1,635.00 · 52%, Transport $620.00 · 20%, Groceries $555.00 · 18%) are checked against the hub's $3,140 gross outflow and its category flow totals.
 - **Goal ring.** The ring tracks the goal (58%, `58 100` dash) and keeps it after a reload. It returns to the trend, and makes no planning read before a goal is chosen. The Overview hub keeps the trend. A goal that's gone falls back to the trend, with an explanation in Settings.
@@ -124,5 +126,5 @@ For the baseline, run the same command from a `9152de5` worktree with `CONSOLE_R
 
 **Stopped for owner review.** 6A isn't merged, and 6B hasn't started. To finish the gate:
 
-- decisions 2 and 3 above (decision 1 is approved);
+- decision 3 above (decisions 1 and 2 are settled);
 - a 60 Hz trace rerun, if you want the Phase 5 comparison on the same display mode.

@@ -41,8 +41,8 @@ Classic removal needs separate owner approval after the window.
   card, an optional goal for the Overview ring and Home key hints. It uses
   existing reads only. See the [6A review](docs/design/console-phase-6a-review.md).
   On 27 November 2026 the owner approved the ring's goal as a per-device
-  Settings choice. Still open: the Budget card order and whether the batch
-  merges during observation. A merge is added to the observation log.
+  Settings choice and chose Budget's own order for the Home cards. Still
+  open: whether the batch merges during observation. A merge is added to the observation log.
 - **Batch 6B** (Control Centre notices) starts after the 6A decision.
 - **Batch 6C** (Money and Plan rows) waits on the owner's open decisions.
 

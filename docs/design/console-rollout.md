@@ -132,6 +132,7 @@ The owner signs off on Safari before the default switch. Classic removal require
 | Date | Event | Notes |
 | --- | --- | --- |
 | 26 Nov 2026 | Default switch merged (`c2fd2a0`) and rollback tags pushed | Window opens |
+| 26 Nov 2026 | Phase 6A gated on `codex/console-phase-6a`, not merged | Home cards, goal ring and key hints. [Review](console-phase-6a-review.md). If the owner approves a merge during the window, record its merge commit here. |
 
 Anime.js v4 dependency and chart parity work are tracked as a separate follow-up. Framer Motion 11 and CSS consume the same console motion tokens while the chart adapter stays on v3.
 

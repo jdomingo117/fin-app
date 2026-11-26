@@ -36,6 +36,16 @@ Uses existing data only. Start here.
 - Add a key-hint strip on Home, shown for fine pointers only, with labels that match the actual bindings. Hide it while C is turned off in Settings, or label the shortcut as off.
 - Gate: Home captures for each section at 320, 390, 768, 1024 and 1440, the rendered leftover audit, axe, and a matched Full and Reduce effects desktop trace against the Phase 5 limits.
 
+#### 6A as built
+
+Built on `codex/console-phase-6a` and stopped at its gate on 26 November 2026. See the [6A review](console-phase-6a-review.md). It isn't merged.
+
+- **Budget cards.** The spacer is gone. Budget's Home preview reads the Budget session's loaded workspace. If this session hasn't opened Budget, it says so and sends no request. Each card shows a category limit as the amount spent of the amount allocated, in exact cents, with a bar. The categories closest to their limit come first, and Budget's own order breaks ties. When there are more than four, a line says how many are shown. The cold, loading, failed, no-plan, unsupported-method, other-period, no-limits, unavailable-details and refreshing states each have their own text. A category without recorded spending says **Unavailable** and has no bar. Spending over the limit fills the bar, uses the negative colour and says **over the limit** in text. Redaction hides the amounts and the bars.
+- **Expenses shares.** One **Top categories** card leads the activity row. It shows the three largest categories, with each one's amount and its share of gross outflow. The figures come from the category facets in Home's existing cash-flow report. Home sums and ranks them the same way as the Expenses hub, using the hub's gross outflow as the denominator. A regression checks that the figures match the hub. The card opens the Expenses hub for the same 30-day window.
+- **Overview ring.** *Decision taken for the gate (open decision 3):* nothing in Halcyon could nominate a goal, and the plan allows no new write path. So the owner chooses the goal in **Settings › Appearance › Overview ring**, which is stored on the device with the other Console preferences. The default is **Net worth trend**. Only active goals can be chosen. Progress uses the same current value as Strategic projections: the balances of the goal's accounts for its metric, as a share of the target from 0 to 100%. If the goal is missing or no longer active, has no positive target, or has an account missing from the directory, the ring shows the trend instead. Home reads planning goals only after a goal has been chosen. The Overview hub keeps the trend art.
+- **Key hints.** The strip reads **← → Navigate · Enter Open · C Control Centre** and appears only with a fine pointer. When the C shortcut is off in Settings, the last item reads **Control Centre shortcut off**.
+- The Console WebKit project now also runs the 6A regressions in CI.
+
 ### 6B · Control Centre notices and actions
 
 - Build notice cards from real signals only:

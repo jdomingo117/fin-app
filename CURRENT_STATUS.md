@@ -33,11 +33,17 @@ the Classic screens. Tags `console-default-switch` and
 [Default-switch observation](docs/design/console-rollout.md#default-switch-observation).
 Classic removal needs separate owner approval after the window.
 
-**Next work: Console Phase 6**, which integrates the remaining prototype ideas.
-The [Phase 6 plan](docs/design/console-phase-6-plan.md) is proposed, not
-approved. Batch 6A (Home cards, ring and key hints) and Batch 6B (Control Centre
-notices) use existing data. Batch 6C (Money and Plan rows) waits on the owner's
-open decisions listed in the plan.
+**Console Phase 6** integrates the remaining prototype ideas. See the
+[Phase 6 plan](docs/design/console-phase-6-plan.md).
+
+- **Batch 6A is at its gate.** It's on `codex/console-phase-6a` and is not
+  merged. The batch adds Budget category-limit cards, an Expenses top-category
+  card, an optional goal for the Overview ring and Home key hints. It uses
+  existing reads only. See the [6A review](docs/design/console-phase-6a-review.md).
+  The owner reviews the batch and decides whether it merges during
+  observation. A merge is added to the observation log.
+- **Batch 6B** (Control Centre notices) starts after the 6A decision.
+- **Batch 6C** (Money and Plan rows) waits on the owner's open decisions.
 
 ## Wave 1–3C audit handoff — 21 November 2026
 

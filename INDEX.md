@@ -602,6 +602,11 @@ implemented but the remaining M6 verification gates are still open.
 - `src/components/console/ConsoleViewport.tsx` owns the signed-in Console appearance, Home routing,
   and the persistent scene. `ControlCentre.tsx` owns the modal, keyboard shortcut, focus trapping and focus return.
   `src/views/dashboard/ConsoleDashboardHome.tsx` owns Home previews and route entry.
+  `HomeCards.tsx` renders the Budget category-limit cards, the Expenses top-category card and the
+  fine-pointer key-hint strip. `src/lib/consoleHome.ts` derives them, and the Overview goal ring, from
+  data Home already holds: the Budget session's loaded workspace (Home never starts a Budget read),
+  the Home cash-flow report's category facets (the same totals the Expenses hub uses) and the planning
+  goal chosen as the local `overviewGoal` Console preference. [Phase 6A](docs/design/console-phase-6a-review.md).
   `ConsoleOverviewHub.tsx` owns the Overview modules and scopes its date and account filters to
   Spending insights. Both read the viewport's warm `DashboardReports.tsx` cache.
   `ConsoleHub.tsx` provides the shared-entry hero, sticky compact header and modules for

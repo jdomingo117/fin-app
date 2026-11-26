@@ -82,6 +82,8 @@ hand to find the transfer-linker gap.
 
 ## Recent changes
 
+- 2026-11-26 — Console Phase 6A adds Budget category limits, Expenses category shares, an optional Overview goal ring and Home key hints.
+
 - 2026-11-26 — Console default-switch observation opens with rollback tags; Console Phase 6 prototype-integration plan proposed.
 
 - 2026-11-26 — Console becomes the default appearance for profiles without a saved choice; Classic stays selectable.
@@ -99,7 +101,3 @@ hand to find the transfer-linker gap.
 - 2026-11-24 — Console Phase 5 adds the cross-screen qualification matrix and forced-colour control fixes.
 
 - 2026-11-24 — Gate 4C restores Console keyboard focus, settles the start wordmark, and simplifies Settings.
-
-- 2026-11-24 — Console Batch 4C adds Settings and signed-in start entry, fixes the workflow controls and copy, and extends the rendered audit.
-
-

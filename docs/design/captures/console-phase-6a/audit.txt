@@ -1,0 +1,43 @@
+budget-home-cold leftovers {"checked":{"labels":7,"moduleTitles":0,"controls":0,"accentControls":0,"focusedElements":1,"focusRings":1,"textNodes":12,"spelling":19},"issues":{"casing":[],"moduleTitles":[],"accents":[],"controls":[],"defaultAccents":[],"defaultOutlines":[],"focusRings":[],"controlContrast":[],"dates":[],"spelling":[],"unsignedColour":[]}}
+budget-home-cold axe []
+budget-home-cards leftovers {"checked":{"labels":7,"moduleTitles":0,"controls":0,"accentControls":0,"focusedElements":1,"focusRings":0,"textNodes":29,"spelling":25},"issues":{"casing":[],"moduleTitles":[],"accents":[],"controls":[],"defaultAccents":[],"defaultOutlines":[],"focusRings":[],"controlContrast":[],"dates":[],"spelling":[],"unsignedColour":[]}}
+budget-home-cards axe []
+  ✓   1 [Desktop] › e2e/console-phase-six.spec.ts:112:1 › Budget Home stays cold without a Budget read, then shows four category limits in exact cents (13.7s)
+  ✓   2 [Desktop] › e2e/console-phase-six.spec.ts:139:1 › Budget Home shows missing usage and a pool-only plan without a zero (12.2s)
+  ✓   3 [Desktop] › e2e/console-phase-six.spec.ts:149:1 › Budget Home explains a plan without category limits (12.1s)
+expenses-home-categories leftovers {"checked":{"labels":7,"moduleTitles":0,"controls":0,"accentControls":0,"focusedElements":1,"focusRings":1,"textNodes":48,"spelling":28},"issues":{"casing":[],"moduleTitles":[],"accents":[],"controls":[],"defaultAccents":[],"defaultOutlines":[],"focusRings":[],"controlContrast":[],"dates":[],"spelling":[],"unsignedColour":[]}}
+expenses-home-categories axe []
+  ✓   4 [Desktop] › e2e/console-phase-six.spec.ts:156:1 › Expenses Home category shares reconcile with the Expenses hub (10.9s)
+settings-overview-ring leftovers {"checked":{"labels":28,"moduleTitles":8,"controls":6,"accentControls":1,"focusedElements":1,"focusRings":0,"textNodes":44,"spelling":53},"issues":{"casing":[],"moduleTitles":[],"accents":[],"controls":[],"defaultAccents":[],"defaultOutlines":[],"focusRings":[],"controlContrast":[],"dates":[],"spelling":[],"unsignedColour":[]}}
+settings-overview-ring axe []
+overview-goal-ring leftovers {"checked":{"labels":7,"moduleTitles":0,"controls":0,"accentControls":0,"focusedElements":1,"focusRings":0,"textNodes":30,"spelling":26},"issues":{"casing":[],"moduleTitles":[],"accents":[],"controls":[],"defaultAccents":[],"defaultOutlines":[],"focusRings":[],"controlContrast":[],"dates":[],"spelling":[],"unsignedColour":[]}}
+overview-goal-ring axe []
+  ✓   5 [Desktop] › e2e/console-phase-six.spec.ts:185:1 › Overview ring tracks a chosen goal and the trend stays the default (12.2s)
+  ✓   6 [Desktop] › e2e/console-phase-six.spec.ts:221:1 › Overview ring falls back to the trend when the chosen goal is gone (8.7s)
+budget-home-redacted leftovers {"checked":{"labels":7,"moduleTitles":0,"controls":0,"accentControls":0,"focusedElements":1,"focusRings":0,"textNodes":30,"spelling":26},"issues":{"casing":[],"moduleTitles":[],"accents":[],"controls":[],"defaultAccents":[],"defaultOutlines":[],"focusRings":[],"controlContrast":[],"dates":[],"spelling":[],"unsignedColour":[]}}
+budget-home-redacted axe []
+  ✓   7 [Desktop] › e2e/console-phase-six.spec.ts:232:1 › Redaction hides the new card amounts, bars and goal progress (16.8s)
+home-key-hints leftovers {"checked":{"labels":7,"moduleTitles":0,"controls":0,"accentControls":0,"focusedElements":1,"focusRings":0,"textNodes":28,"spelling":26},"issues":{"casing":[],"moduleTitles":[],"accents":[],"controls":[],"defaultAccents":[],"defaultOutlines":[],"focusRings":[],"controlContrast":[],"dates":[],"spelling":[],"unsignedColour":[]}}
+home-key-hints axe []
+  ✓   8 [Desktop] › e2e/console-phase-six.spec.ts:253:1 › Key hints match the Home bindings and follow the C shortcut preference (13.6s)
+budget-home-cold leftovers {"checked":{"labels":7,"moduleTitles":0,"controls":0,"accentControls":0,"focusedElements":1,"focusRings":1,"textNodes":6,"spelling":13},"issues":{"casing":[],"moduleTitles":[],"accents":[],"controls":[],"defaultAccents":[],"defaultOutlines":[],"focusRings":[],"controlContrast":[],"dates":[],"spelling":[],"unsignedColour":[]}}
+budget-home-cold axe []
+budget-home-cards leftovers {"checked":{"labels":7,"moduleTitles":0,"controls":0,"accentControls":0,"focusedElements":1,"focusRings":0,"textNodes":23,"spelling":19},"issues":{"casing":[],"moduleTitles":[],"accents":[],"controls":[],"defaultAccents":[],"defaultOutlines":[],"focusRings":[],"controlContrast":[],"dates":[],"spelling":[],"unsignedColour":[]}}
+budget-home-cards axe []
+  ✓  10 [Phone] › e2e/console-phase-six.spec.ts:112:1 › Budget Home stays cold without a Budget read, then shows four category limits in exact cents (13.7s)
+  ✓  11 [Phone] › e2e/console-phase-six.spec.ts:139:1 › Budget Home shows missing usage and a pool-only plan without a zero (11.1s)
+  ✓  12 [Phone] › e2e/console-phase-six.spec.ts:149:1 › Budget Home explains a plan without category limits (11.6s)
+expenses-home-categories leftovers {"checked":{"labels":7,"moduleTitles":0,"controls":0,"accentControls":0,"focusedElements":1,"focusRings":1,"textNodes":42,"spelling":22},"issues":{"casing":[],"moduleTitles":[],"accents":[],"controls":[],"defaultAccents":[],"defaultOutlines":[],"focusRings":[],"controlContrast":[],"dates":[],"spelling":[],"unsignedColour":[]}}
+expenses-home-categories axe []
+  ✓  13 [Phone] › e2e/console-phase-six.spec.ts:156:1 › Expenses Home category shares reconcile with the Expenses hub (11.3s)
+settings-overview-ring leftovers {"checked":{"labels":28,"moduleTitles":8,"controls":6,"accentControls":1,"focusedElements":1,"focusRings":0,"textNodes":44,"spelling":53},"issues":{"casing":[],"moduleTitles":[],"accents":[],"controls":[],"defaultAccents":[],"defaultOutlines":[],"focusRings":[],"controlContrast":[],"dates":[],"spelling":[],"unsignedColour":[]}}
+settings-overview-ring axe []
+overview-goal-ring leftovers {"checked":{"labels":7,"moduleTitles":0,"controls":0,"accentControls":0,"focusedElements":1,"focusRings":0,"textNodes":24,"spelling":20},"issues":{"casing":[],"moduleTitles":[],"accents":[],"controls":[],"defaultAccents":[],"defaultOutlines":[],"focusRings":[],"controlContrast":[],"dates":[],"spelling":[],"unsignedColour":[]}}
+overview-goal-ring axe []
+  ✓  14 [Phone] › e2e/console-phase-six.spec.ts:185:1 › Overview ring tracks a chosen goal and the trend stays the default (12.6s)
+  ✓  15 [Phone] › e2e/console-phase-six.spec.ts:221:1 › Overview ring falls back to the trend when the chosen goal is gone (8.7s)
+budget-home-redacted leftovers {"checked":{"labels":7,"moduleTitles":0,"controls":0,"accentControls":0,"focusedElements":1,"focusRings":0,"textNodes":24,"spelling":20},"issues":{"casing":[],"moduleTitles":[],"accents":[],"controls":[],"defaultAccents":[],"defaultOutlines":[],"focusRings":[],"controlContrast":[],"dates":[],"spelling":[],"unsignedColour":[]}}
+budget-home-redacted axe []
+  ✓  16 [Phone] › e2e/console-phase-six.spec.ts:232:1 › Redaction hides the new card amounts, bars and goal progress (16.2s)
+  ✓  17 [Phone] › e2e/console-phase-six.spec.ts:253:1 › Key hints match the Home bindings and follow the C shortcut preference (8.5s)
+  16 passed (3.3m)

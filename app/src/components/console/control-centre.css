@@ -66,9 +66,33 @@
 }
 .console-centre-cards span { font-size: 13px; color: var(--console-label); }
 .console-centre-cards strong { font: 200 25px/1.1 var(--font-display); }
+.console-centre-cards small {
+  font-size: 13px;
+  line-height: 1.3;
+  color: var(--console-label);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.console-centre-status {
+  display: grid;
+  gap: 4px;
+  min-height: 118px;
+  align-content: center;
+  margin: 0 0 12px;
+  padding: 15px;
+  border: 1px solid var(--console-line);
+  border-radius: var(--console-card-radius);
+  background: var(--centre-attention-paint);
+  font-size: 15px;
+  color: var(--console-label);
+}
+.console-centre-status strong { font: 200 25px/1.1 var(--font-display); color: var(--console-ink); }
+.console-centre-note { margin: -4px 0 14px; font-size: 13px; color: var(--console-label); }
 .console-centre-actions {
   display: grid;
-  grid-template-columns: repeat(6, var(--centre-action-size));
+  grid-template-columns: repeat(var(--centre-action-count, 6), var(--centre-action-size));
   justify-content: center;
   gap: clamp(4px, 1.5vw, 18px);
   padding: 26px 0 4px;
@@ -93,6 +117,8 @@
 .console-centre-actions button:nth-child(4) { --action-index: 3; }
 .console-centre-actions button:nth-child(5) { --action-index: 4; }
 .console-centre-actions button:nth-child(6) { --action-index: 5; }
+.console-centre-actions button:nth-child(7) { --action-index: 6; }
+.console-centre-actions button:nth-child(8) { --action-index: 7; }
 .console-centre-actions button span {
   position: absolute;
   inset-block-end: calc(100% + 5px);
@@ -107,6 +133,7 @@
 .console-centre-actions button:is(:hover, :focus-visible) span { opacity: 1; }
 .console-centre-actions button[aria-pressed="true"] { background: rgb(255 255 255 / .20); }
 .console-centre-actions button[aria-pressed="true"] .console-music-icon { fill: currentColor; }
+.console-centre-actions button[aria-pressed="true"] { border-color: var(--console-ink); }
 
 @media (min-width: 768px) and (pointer: fine) {
   .console-centre-actions { justify-content: start; }
@@ -125,6 +152,8 @@
 }
 @media (max-width: 600px) {
   .console-centre { --centre-action-size: clamp(44px, 12vw, 60px); }
+  /* Seven or eight actions wrap to two rows of four, with room for the labels below. */
+  .console-centre-actions { grid-template-columns: repeat(var(--centre-action-phone-columns, 4), var(--centre-action-size)); row-gap: 40px; column-gap: clamp(18px, 7vw, 36px); }
   .console-centre-actions button span { font-size: 11px; }
 }
 @media (max-width: 360px) {

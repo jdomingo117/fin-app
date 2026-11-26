@@ -69,6 +69,9 @@ interface Ctx {
       a useful focus, without turning ephemeral UI context into a permanent URL. */
   go: (v: View, options?: { state?: unknown }) => void
   toast: (a: { title: string; sub: string }) => void
+  /** Console Quiet alerts: toasts are dropped for this signed-in visit. */
+  quietAlerts: boolean
+  setQuietAlerts: (on: boolean) => void
   motionOn: boolean
   setMotionOn: (on: boolean) => void
   theme: Appearance
@@ -80,6 +83,8 @@ export const ViewContext = createContext<Ctx>({
   view: 'landing',
   go: () => {},
   toast: () => {},
+  quietAlerts: false,
+  setQuietAlerts: () => {},
   motionOn: true,
   setMotionOn: () => {},
   theme: 'classic',

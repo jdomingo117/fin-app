@@ -1,7 +1,8 @@
 import {reportParent} from '../lib/reportParent'
 import { FocusRow } from '../components/console/FocusRow'
 import { useMemo, useState, useEffect, type ReactNode } from 'react'
-import { useOutletContext } from 'react-router-dom'
+import { useLocation, useOutletContext } from 'react-router-dom'
+import { noticeTab } from '../lib/consoleNotices'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Screen, ViewHeader } from '../components/Screen'
 import Tile from '../components/Tile'
@@ -35,7 +36,12 @@ const TABS = [
 ]
 
 export default function Income() {
-  const [view, setView] = useState('analyzer')
+  const location = useLocation()
+  const tabRequest = noticeTab(location.state, TABS)
+  const [view, setView] = useState(tabRequest ?? 'analyzer')
+  // A Control Centre notice can open a tab. Apply it once per navigation entry.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (tabRequest) setView(tabRequest) }, [location.key])
   const { theme } = useView()
   const audio = useConsolePreferences()
   const consoleRoute = useOutletContext<ConsoleOutlet | null>()

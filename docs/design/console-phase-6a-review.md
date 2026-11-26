@@ -66,7 +66,7 @@ The cold Budget state appears once per project, because loading Budget for the n
 | `npm run build` | Pass, with the existing chunk-size advisory |
 | Console Playwright suite, Desktop and Phone, against the verified 5320 listener | 130 passed, 10 skipped by project or capture-only conditions, 0 failed |
 | `console-phase-six.spec.ts` after adding the redaction regression | 16 passed (8 Desktop, 8 Phone) |
-| WebKit | **Not run locally.** Only Chromium is installed, and I didn't download WebKit. The WebKit project now includes `console-phase-six.spec.ts`, so CI runs the 6A regressions in WebKit along with the owner-fixes suite. |
+| WebKit | **Not run locally.** Only Chromium is installed, and I didn't download WebKit. The WebKit project now includes `console-phase-six.spec.ts`. CI run [45810991346](https://github.com/jdomingo117/fin-app/actions/runs/45810991346) on `563923b` passed all eight 6A regressions in WebKit; the capture-only test is skipped there by design. |
 
 The new regressions cover the following:
 
@@ -125,5 +125,4 @@ For the baseline, run the same command from a `9152de5` worktree with `CONSOLE_R
 **Stopped for owner review.** 6A isn't merged, and 6B hasn't started. To finish the gate:
 
 - decisions 2 and 3 above (decision 1 is approved);
-- the WebKit result from CI on the PR;
 - a 60 Hz trace rerun, if you want the Phase 5 comparison on the same display mode.

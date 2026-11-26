@@ -11,6 +11,10 @@ import { useRedactBalances } from '../../hooks/useRedactBalances'
 import { expenseEffectCents, isEarnedIncome } from '../../lib/classification'
 import { dateRangeLabel, fullDayLabel } from '../../lib/period'
 import { useView } from '../../router'
+import { usePlanning } from '../../hooks/usePlanning'
+import { useConsolePreferences } from '../../components/console/ConsolePreferences'
+import { budgetHomeCards, goalRing, topExpenseCategories } from '../../lib/consoleHome'
+import { fmtCents } from '../../data'
 import { useDashboardTransaction } from './DashboardActivity'
 
 export default function ConsoleDashboardHome({ route }: { route: ConsoleOutlet }) {
@@ -18,6 +22,11 @@ export default function ConsoleDashboardHome({ route }: { route: ConsoleOutlet }
   const { go } = useView()
   const { snapshot, readState, pending } = useBudget()
   const budgetPreview = snapshot?.plan ? budgetPresentation(snapshot, readState, { pendingWrite: !!pending }) : undefined
+  const budgetCards = budgetHomeCards(!!snapshot, readState, budgetPreview)
+  // The ring reads planning goals only after this device has chosen one in Settings.
+  const overviewGoal = useConsolePreferences()?.preferences.overviewGoal ?? null
+  const planning = usePlanning(!!overviewGoal)
+  const ring = goalRing(planning.data?.planningGoals, overviewGoal, accounts)
   const remaining = budgetPreview?.phase === 'current' && budgetPreview.everyday.remaining.freshness !== 'stale'
     ? budgetPreview.everyday.remaining : undefined
   const navigate = useNavigate()
@@ -45,8 +54,12 @@ export default function ConsoleDashboardHome({ route }: { route: ConsoleOutlet }
     expenses: [{ label: 'Net spending', cents: flow.data?.periods.current.expense_cents }],
     ...(remaining?.availability === 'known' ? { budget: [{ label: 'Left for everyday spending', cents: remaining.cents }] } : {}),
   }
+  const trendArt: ConsoleArt = { label: 'Monthly net worth', values: history.data?.map(point => point.value) ?? [] }
   const previewArt: Partial<Record<typeof active, ConsoleArt>> = {
-    dashboard: { label: 'Monthly net worth', values: history.data?.map(point => point.value) ?? [] },
+    dashboard: ring ? {
+      label: `Progress toward ${ring.name}, ${fmtCents(ring.valueCents)} of ${fmtCents(ring.targetCents)}`,
+      percent: ring.percent, caption: ring.name,
+    } : trendArt,
     ...(cash + investments > 0 ? { accounts: { label: 'Cash share of assets', percent: Math.round(cash / (cash + investments) * 100) } } : {}),
     income: { label: 'Cumulative inflow for this period', values: cumulativeValues(flow.data?.buckets.map(point => point.earned_cents) ?? []) },
     expenses: { label: 'Cumulative gross outflow for this period', values: cumulativeValues(flow.data?.buckets.map(point => point.gross_cents) ?? []) },
@@ -72,8 +85,11 @@ export default function ConsoleDashboardHome({ route }: { route: ConsoleOutlet }
       openTransaction={editor.edit}
       figures={previewFigures}
       trends={previewArt}
+      budgetCards={budgetCards}
+      expenseCategories={topExpenseCategories(flow.data?.categories, flow.data?.periods.current.gross_cents)}
       open={(section, accountId) => {
-        route.begin({ id: section, headline: previewFigures[section]?.[0], art: previewArt[section] })
+        // The Overview hub draws the net worth trend, so it receives that art rather than the goal ring.
+        route.begin({ id: section, headline: previewFigures[section]?.[0], art: section === 'dashboard' ? trendArt : previewArt[section] })
         if (section === 'dashboard') {
           navigate('/dashboard?hub=overview')
         } else if (section === 'accounts' && accountId) {

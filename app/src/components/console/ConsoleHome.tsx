@@ -8,6 +8,8 @@ import { FocusRing } from './FocusRing'
 import { useConsolePreferences } from './ConsolePreferences'
 import { GlassSurface } from './GlassSurface'
 import ReportStatus from '../ReportStatus'
+import type { BudgetHomeCards, ExpenseCategoryShare } from '../../lib/consoleHome'
+import { BudgetCategoryCards, ConsoleKeyHints, ExpenseCategoriesCard } from './HomeCards'
 import './console-dashboard.css'
 
 type Props = {
@@ -19,6 +21,10 @@ type Props = {
   period: string
   latestDate?: string
   trends: Partial<Record<SectionId, ConsoleArt>>
+  /** Budget category limits from the session's loaded workspace. Home never starts a Budget read. */
+  budgetCards: BudgetHomeCards
+  /** Category shares from the Home cash-flow report, or undefined until it has figures. */
+  expenseCategories?: ExpenseCategoryShare[]
   activeId: SectionId
   selectSection: (section: SectionId) => void
   restoreFocus: boolean
@@ -29,8 +35,8 @@ type Props = {
 }
 
 export default function ConsoleHome({
-  figures, activity, activityReport, figureReport, accounts, period, latestDate, trends, activeId, selectSection, restoreFocus,
-  covered, redacted, open, openTransaction,
+  figures, activity, activityReport, figureReport, accounts, period, latestDate, trends, budgetCards, expenseCategories,
+  activeId, selectSection, restoreFocus, covered, redacted, open, openTransaction,
 }: Props) {
   const reduce = useConsoleReducedMotion()
   const audio = useConsolePreferences()
@@ -38,6 +44,7 @@ export default function ConsoleHome({
   const [headline, ...secondary] = figures[section.id] ?? []
   const cards = activity?.slice(0, 4)
   const isFlow = section.id === 'income' || section.id === 'expenses'
+  const categories = section.id === 'expenses' && expenseCategories?.length ? expenseCategories : undefined
 
   return (
     <section className="console-home" aria-label="Dashboard section previews" data-paused={covered}>
@@ -78,8 +85,12 @@ export default function ConsoleHome({
         </div>}
         {(section.id === 'dashboard' || isFlow) ? <div className="console-activity console-home-activity">
           <h2>{isFlow ? 'Activity in this period' : 'Recent activity'}</h2>
-          {cards?.length ? <FocusRow label="Transaction cards" className="console-activity-row">
-            {cards.map(transaction => {
+          {cards?.length || categories ? <FocusRow label={categories ? 'Category and transaction cards' : 'Transaction cards'} className="console-activity-row">
+            {categories && <ExpenseCategoriesCard categories={categories} redacted={redacted} onOpen={() => {
+              audio?.play('select')
+              open('expenses')
+            }} />}
+            {cards?.map(transaction => {
               const category = transaction.cat || 'Transaction'
               const merchant = transaction.merchant || 'Transaction details'
               const amount = consoleMoney(transaction.amount, true)
@@ -102,11 +113,18 @@ export default function ConsoleHome({
               {isFlow ? 'No matching transactions in the recent preview.' : 'No recent transactions yet.'}
             </p>}
           </div>}
-          {!!cards?.length && activityReport.error && <div className="console-preview-report">
+          {categories && !cards?.length && !activityReport.pending && !activityReport.error && <p className="console-asof">
+            No matching transactions in the recent preview.
+          </p>}
+          {(!!cards?.length || categories) && activityReport.error && <div className="console-preview-report">
             <ReportStatus report={activityReport} label="Recent activity" />
           </div>}
-        </div> : section.id === 'budget' ? <div aria-hidden="true" className="console-home-activity console-activity-spacer" /> : null}
+        </div> : section.id === 'budget' ? <BudgetCategoryCards budget={budgetCards} redacted={redacted} onOpen={() => {
+          audio?.play('select')
+          open('budget')
+        }} /> : null}
       </motion.div>
+      <ConsoleKeyHints centreShortcut={audio?.preferences.centreShortcut ?? true} />
     </section>
   )
 }

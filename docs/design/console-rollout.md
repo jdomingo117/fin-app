@@ -115,6 +115,8 @@ The owner runs the [read-only Safari checklist](console-phase-5-owner-checklist.
 
 The owner signs off on Safari before the default switch. Classic removal requires separate approval after observation.
 
+**26 November 2026.** The owner approved the default switch. Step 1 is the standalone commit on `codex/console-default-switch`. `initialAppearance()` maps a missing or unrecognised preference to Console and keeps a saved Classic choice. Classic-driven browser suites start from an explicit Classic choice: the Console fixture seeds one, and the golden and default Playwright configs set it in `storageState`. New foundation cases cover a fresh profile opening Console, an explicit Classic choice persisting, Classic sign-in after sign-out, and blocked preference storage. Observation (step 2) starts once the commit merges.
+
 Anime.js v4 dependency and chart parity work are tracked as a separate follow-up. Framer Motion 11 and CSS consume the same console motion tokens while the chart adapter stays on v3.
 
 

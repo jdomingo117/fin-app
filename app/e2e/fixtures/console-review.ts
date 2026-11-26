@@ -87,9 +87,22 @@ const fixturePassword = 'fictional-password-not-a-credential'
 
 type FixtureResponse = { json: unknown; status?: number; headers?: Record<string, string> }
 
+/**
+ * `classic` saves an explicit Classic choice before the app loads, so a suite can exercise the
+ * appearance switch into Console. `fresh` leaves the preference unset to load the Console default.
+ */
+export type FixtureAppearance = 'classic' | 'fresh'
+
 export async function signInForConsole(page: Page, controlledClock = true, beforeRead?: (resource: string) => void | Promise<void>,
-  override?: (resource: string, request: Request, body: unknown) => FixtureResponse | undefined) {
+  override?: (resource: string, request: Request, body: unknown) => FixtureResponse | undefined,
+  appearance: FixtureAppearance = 'classic') {
   const context = page.context()
+  if (appearance === 'classic') await page.addInitScript(() => {
+    // Seed only a missing preference so a switch made during the test survives reloads.
+    try {
+      if (localStorage.getItem('halcyon-appearance') === null) localStorage.setItem('halcyon-appearance', 'classic')
+    } catch { /* Blocked storage leaves the app on its default appearance. */ }
+  })
   await context.route('**/*', async route => {
     const request = route.request()
     const url = new URL(request.url())
@@ -179,6 +192,7 @@ export async function signInForConsole(page: Page, controlledClock = true, befor
   await page.locator('input[type="password"]').fill(fixturePassword)
   await page.getByRole('button', { name: 'Sign in', exact: true }).click()
   await page.waitForURL(dashboard)
-  await page.getByRole('button', { name: 'Console', exact: true }).waitFor()
+  if (appearance === 'classic') await page.getByRole('button', { name: 'Console', exact: true }).waitFor()
+  else await page.locator('.console-viewport').waitFor()
   await page.evaluate(() => document.fonts.ready)
 }

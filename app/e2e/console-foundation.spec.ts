@@ -138,7 +138,7 @@ test('Home and hubs render from the signed-in entry and pass axe', async ({ page
   await takeCapture(page, 'overview-expanded')
 })
 
-test('appearance persists, with a Classic render and navigation smoke check', async ({ page }) => {
+test('an explicit Classic choice persists, with a Classic render and navigation smoke check', async ({ page }) => {
   const errors: string[] = []
   page.on('pageerror', error => errors.push(error.message))
   page.on('console', entry => { if (entry.type() === 'error') errors.push(entry.text()) })
@@ -179,6 +179,41 @@ test('appearance switch confirms before discarding a reported edit', async ({ pa
   await expect(page.locator('html')).not.toHaveAttribute('data-theme', 'console')
 })
 
+test('a fresh profile opens Console and keeps an explicit Classic choice', async ({ page }) => {
+  const errors: string[] = []
+  page.on('pageerror', error => errors.push(error.message))
+  page.on('console', entry => { if (entry.type() === 'error') errors.push(entry.text()) })
+  await signInForConsole(page, true, undefined, undefined, 'fresh')
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'console')
+  await expect(tile(page, 'Overview')).toBeVisible()
+  await expect(page.getByText('Session secured', { exact: true })).toHaveCount(0)
+  expect(await page.evaluate(() => localStorage.getItem('halcyon-appearance'))).toBeNull()
+
+  await page.goto(new URL('/accounts', dashboard).href)
+  await expect(page.getByRole('heading', { name: 'Accounts hub' })).toBeVisible()
+  await page.getByRole('button', { name: 'Settings', exact: true }).click()
+  await page.getByRole('group', { name: 'Appearance' }).getByRole('button', { name: 'Classic', exact: true }).click()
+  await expect(page.locator('html')).not.toHaveAttribute('data-theme', 'console')
+  expect(await page.evaluate(() => localStorage.getItem('halcyon-appearance'))).toBe('classic')
+  await page.reload()
+  await expect(page.locator('html')).not.toHaveAttribute('data-theme', 'console')
+  await expect(page.getByRole('heading', { name: 'Settings', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Switch to Console' })).toBeVisible()
+  expect(errors).toEqual([])
+})
+
+test('signed-out entry keeps the Classic sign-in screen on a fresh profile', async ({ page }) => {
+  await signInForConsole(page, true, undefined, undefined, 'fresh')
+  await page.locator('.console-topbar').getByRole('button', { name: 'Settings' }).click()
+  await page.getByRole('button', { name: 'Sign out', exact: true }).click()
+  await expect(page).toHaveURL(/\/login$/)
+  await expect(page.locator('html')).not.toHaveAttribute('data-theme', 'console')
+  await expect(page.locator('input[type="email"]')).toBeVisible()
+  await page.goto(new URL('/accounts', dashboard).href)
+  await expect(page).toHaveURL(/\/login$/)
+  await expect(page.locator('html')).not.toHaveAttribute('data-theme', 'console')
+})
+
 test('a tab can switch appearance when preference storage is unavailable', async ({ page }) => {
   await page.addInitScript(() => {
     const { getItem, setItem } = Storage.prototype
@@ -192,11 +227,14 @@ test('a tab can switch appearance when preference storage is unavailable', async
       setItem.call(this, key, value)
     }
   })
-  await signInForConsole(page)
-  await enterConsole(page)
-  await page.reload()
-  await expect(page.getByRole('heading', { name: 'Dashboard', exact: true })).toBeVisible()
+  await signInForConsole(page, true, undefined, undefined, 'fresh')
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'console')
+  await page.getByRole('button', { name: 'Settings', exact: true }).click()
+  await page.getByRole('group', { name: 'Appearance' }).getByRole('button', { name: 'Classic', exact: true }).click()
   await expect(page.locator('html')).not.toHaveAttribute('data-theme', 'console')
+  await page.goto(dashboard)
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'console')
+  await expect(tile(page, 'Overview')).toBeVisible()
 })
 
 test('the foundation demo shows disabled, full and reduced states', async ({ page }) => {

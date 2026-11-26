@@ -598,6 +598,7 @@ what-if. The fictional concept remains the design reference; the production M6 f
 implemented but the remaining M6 verification gates are still open.
 
 ### `app/` (Frontend)
+- `src/components/console/appearance.ts` owns the appearance preference. Console is the default when none is saved, and a saved Classic choice is kept.
 - `src/components/console/ConsoleViewport.tsx` owns the signed-in Console appearance, Home routing,
   and the persistent scene. `ControlCentre.tsx` owns the modal, keyboard shortcut, focus trapping and focus return.
   `src/views/dashboard/ConsoleDashboardHome.tsx` owns Home previews and route entry.

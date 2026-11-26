@@ -82,6 +82,8 @@ hand to find the transfer-linker gap.
 
 ## Recent changes
 
+- 2026-11-26 — Console becomes the default appearance for profiles without a saved choice; Classic stays selectable.
+
 - 2026-11-26 — Console owner follow-ups verify settled Home, Australian dates, opaque filters, signed colours, Budget retry, investment trends and fixture counts.
 
 - 2026-11-25 — Console Phase 5 owner fixes qualify Home zoom, hub controls, recovery states and figure readability in Chromium and WebKit.
@@ -100,4 +102,3 @@ hand to find the transfer-linker gap.
 
 - 2026-11-23 — Console workflow hubs share a status dock and use separate Budget, Ledger, Ingestion and Transfers modules.
 
-- 2026-11-23 — Console Batch 4B adds compact workflow hubs and browser coverage for Budget recovery, Ledger corrections, import staging and transfer confirmation.

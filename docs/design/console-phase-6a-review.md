@@ -32,7 +32,7 @@ No new write path, migration or Edge Function is involved. Money goes through `f
 
 ## Decisions for the owner
 
-1. **How to choose the ring's goal (open decision 3).** Nothing in Halcyon could nominate a goal, and Phase 6 allows no new write path. The gate therefore uses a per-device Console preference with **Net worth trend** as the default. If you'd rather keep one fixed goal, or sync the choice across devices, that needs a decision. Syncing would need a new write path.
+1. **How to choose the ring's goal (open decision 3). Approved as built on 27 November 2026.** Nothing in Halcyon could nominate a goal, and Phase 6 allows no new write path. The ring therefore uses a per-device Console preference with **Net worth trend** as the default. Syncing the choice across devices would need a new write path and a fresh decision.
 2. **Budget card order.** Cards are ranked by share spent, so the most pressing limits come first. Budget's own order would match the hub's table instead.
 3. **Merging during observation.** If you approve, the merge goes in the [observation log](console-rollout.md#default-switch-observation) so that a regression can be traced to this batch.
 
@@ -124,6 +124,6 @@ For the baseline, run the same command from a `9152de5` worktree with `CONSOLE_R
 
 **Stopped for owner review.** 6A isn't merged, and 6B hasn't started. To finish the gate:
 
-- the decisions above;
+- decisions 2 and 3 above (decision 1 is approved);
 - the WebKit result from CI on the PR;
 - a 60 Hz trace rerun, if you want the Phase 5 comparison on the same display mode.

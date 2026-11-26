@@ -47,7 +47,7 @@ export default function Settings() {
       await refreshProfile()
       setEditingCallsign(false)
     } catch (error) {
-      toast({ title: 'Error updating callsign', sub: error instanceof Error ? error.message : 'Could not refresh your profile.' })
+      toast({ title: 'Error updating callsign', sub: error instanceof Error ? error.message : 'Could not refresh your profile.', tone: 'error' })
     } finally {
       setIsSaving(false)
     }

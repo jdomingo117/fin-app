@@ -57,7 +57,7 @@ export default function Login() {
       return
     }
 
-    toast({ title: 'Sign-in failed', sub: result.message })
+    toast({ title: 'Sign-in failed', sub: result.message, tone: 'error' })
     // Offer the recovery paths after any failure. Showing them only for
     // specific errors would itself hint at which part was wrong.
     if (!isSignUp) setShowFallback(true)
@@ -71,7 +71,7 @@ export default function Login() {
     setLoading(true)
     const result = await fn()
     setLoading(false)
-    toast({ title: result.ok ? 'Check your inbox' : 'Not sent', sub: result.message })
+    toast({ title: result.ok ? 'Check your inbox' : 'Not sent', sub: result.message, tone: result.ok ? undefined : 'error' })
     if (result.ok) setShowFallback(false)
   }
 
@@ -80,7 +80,7 @@ export default function Login() {
     const result = await signInWithOAuth(provider)
     if (!result.ok) {
       setLoading(false)
-      toast({ title: 'Provider unavailable', sub: result.message })
+      toast({ title: 'Provider unavailable', sub: result.message, tone: 'error' })
     }
     // On success the browser navigates away; leave the button disabled.
   }

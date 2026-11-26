@@ -1,3 +1,4 @@
+import type { ToastInput } from './components/MilestoneToast'
 import type { Appearance } from './components/console/appearance'
 import { createContext, useContext } from 'react'
 import { BUDGET_ENABLED } from './lib/budgetWorkspace'
@@ -68,8 +69,8 @@ interface Ctx {
   /** Optional state lets a dashboard observation open the relevant view with
       a useful focus, without turning ephemeral UI context into a permanent URL. */
   go: (v: View, options?: { state?: unknown }) => void
-  toast: (a: { title: string; sub: string }) => void
-  /** Console Quiet alerts: toasts are dropped for this signed-in visit. */
+  toast: (a: ToastInput) => void
+  /** Console Quiet alerts: toasts other than errors are dropped for this signed-in visit. */
   quietAlerts: boolean
   setQuietAlerts: (on: boolean) => void
   motionOn: boolean

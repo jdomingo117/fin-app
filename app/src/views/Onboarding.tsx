@@ -47,7 +47,7 @@ export default function Onboarding() {
       
       setStep(2)
     } catch (err: any) {
-      toast({ title: 'Error', sub: err.message })
+      toast({ title: 'Error', sub: err.message, tone: 'error' })
     } finally {
       setLoading(false)
     }
@@ -71,7 +71,7 @@ export default function Onboarding() {
       await refreshData()
       go('dashboard')
     } catch (err: any) {
-      toast({ title: 'Error', sub: err.message })
+      toast({ title: 'Error', sub: err.message, tone: 'error' })
     } finally {
       setLoading(false)
     }

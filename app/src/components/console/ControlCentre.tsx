@@ -212,7 +212,7 @@ export function ControlCentre({ onOpenChange, onRest }: { onOpenChange: (open: b
   }
 
   function leave() {
-    close(() => void signOut().catch(() => toast({ title: 'Sign out failed', sub: 'Try again from the Control Centre.' })))
+    close(() => void signOut().catch(() => toast({ title: 'Sign out failed', sub: 'Try again from the Control Centre.', tone: 'error' })))
   }
 
   return <>

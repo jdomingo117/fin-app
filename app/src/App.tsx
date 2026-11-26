@@ -17,7 +17,7 @@ import { supabase } from './lib/supabaseClient'
 import Shell from './components/Shell'
 import ThemeToggle from './components/ThemeToggle'
 import Boot from './components/Boot'
-import MilestoneToast, { type ToastData } from './components/MilestoneToast'
+import MilestoneToast, { type ToastData, type ToastInput } from './components/MilestoneToast'
 import ProviderSyncNotice from './components/ProviderSyncNotice'
 import Login from './views/Login'
 import AuthCallback from './views/AuthCallback'
@@ -73,7 +73,7 @@ function ViewBridge({
   theme: Appearance; setTheme: (theme: Appearance) => void
   dark: boolean; setDark: (on: boolean) => void
   motionOn: boolean; setMotionOn: (on: boolean) => void
-  fireToast: (a: { title: string; sub: string }) => void
+  fireToast: (a: ToastInput) => void
   quiet: QuietAlerts
 }) {
   const navigate = useNavigate()
@@ -98,7 +98,7 @@ function AppFrame({
   dark: boolean; setDark: (on: boolean) => void
   motionOn: boolean; setMotionOn: (on: boolean) => void
   toast: ToastData | null
-  fireToast: (a: { title: string; sub: string }) => void
+  fireToast: (a: ToastInput) => void
   quiet: QuietAlerts
 }) {
   const location = useLocation()
@@ -223,9 +223,9 @@ export default function App() {
   }, [])
   const quiet = useMemo(() => ({ on: quietAlerts, set: setQuietAlerts }), [quietAlerts, setQuietAlerts])
 
-  const fireToast = useCallback((a: { title: string; sub: string }) => {
-    // Quiet alerts only applies while Console is the appearance.
-    if (quietRef.current.on && quietRef.current.console) return
+  const fireToast = useCallback((a: ToastInput) => {
+    // Quiet alerts only applies while Console is the appearance, and never hides a failure.
+    if (quietRef.current.on && quietRef.current.console && a.tone !== 'error') return
     toastId.current += 1
     setToast({ id: toastId.current, ...a })
     window.clearTimeout(timer.current)

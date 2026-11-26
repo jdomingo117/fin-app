@@ -29,7 +29,9 @@ test('Control Centre is full width, traps focus and restores the keyboard opener
   await expect(lastAction).toBeFocused()
   await page.keyboard.press('Tab')
   await expect(closeButton).toBeFocused()
-  const attention = dialog.getByRole('group', { name: 'Attention cards' })
+  // Notices arrive once their reads settle. Then they're the first stop after Close.
+  const attention = dialog.getByRole('group', { name: 'Notices' })
+  await expect(attention.getByRole('button', { name: /Ledger review/ })).toBeVisible()
   await page.keyboard.press('Tab')
   await expect(attention.getByRole('button', { name: /Ledger review/ })).toBeFocused()
   await page.keyboard.press('ArrowRight')

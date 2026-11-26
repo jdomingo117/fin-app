@@ -64,6 +64,15 @@ Built on `codex/console-phase-6a` and stopped at its gate on 26 November 2026. S
 - Keep the existing focus trap, focus return, Escape, shortcut guards and Safari wrap regression green.
 - Gate: Control Centre captures with zero, one and three notices at desktop and phone widths, keyboard and touch walkthroughs, and the Phase 5 owner-fixes focus regression in Chromium and WebKit.
 
+#### 6B as built
+
+Built on `codex/console-phase-6b` and stopped at its gate on 27 November 2026. See the [6B review](console-phase-6b-review.md). It isn't merged.
+
+- **Notices.** Up to three, in the order Budget, Bills, Ledger review, Transfers, Goals. Budget uses the loaded workspace's active checks and is never read from Control Centre. Bills are active recurring series due in the next 14 days. Goals are active goals at their target. Bills and goals are read on the first open and kept for the session. A source that's loading, unopened or failed never counts as zero: the strip reads **Checking for notices…**, names an unopened Budget, or reads **Nothing to show** and names what couldn't be checked. **All caught up** appears only when nothing failed.
+- **Opening a notice.** Budget opens Budget, Bills opens Expenses on the Recurring hub tab, Ledger review opens the needs-review list, Transfers opens Transfers, and Goals opens Income on Strategic projections.
+- **Quick actions.** **Quiet alerts** drops Console toasts for the signed-in visit. **Rest** appears while **Show start screen** is on and brings back the start screen, going Home first from a hub. **Add transaction** isn't added because manual entry has no Edge Function path.
+- Open for the owner: the notice order, target-reached as the only goal milestone, and whether Quiet alerts should also hide error toasts.
+
 ### 6C · Money and Plan rows
 
 Needs the owner's decisions first.

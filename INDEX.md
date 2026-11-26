@@ -601,6 +601,13 @@ implemented but the remaining M6 verification gates are still open.
 - `src/components/console/appearance.ts` owns the appearance preference. Console is the default when none is saved, and a saved Classic choice is kept.
 - `src/components/console/ConsoleViewport.tsx` owns the signed-in Console appearance, Home routing,
   and the persistent scene. `ControlCentre.tsx` owns the modal, keyboard shortcut, focus trapping and focus return.
+  Its notice strip comes from `src/lib/consoleNotices.ts`: Budget checks from the Budget session's
+  loaded workspace (Control Centre never starts a Budget read), recurring bills due in the next 14
+  days and planning goals at their target (both read on the first open and kept for the session),
+  and the portfolio's Ledger review and transfer counts. A notice opens its hub; `noticeState()`
+  asks Expenses or Income for its Recurring hub or Strategic projections tab. Quiet alerts is
+  session-only state in `App.tsx`, exposed as `useView().quietAlerts`. Rest shows the start screen
+  again through `ConsoleViewport`. [Phase 6B](docs/design/console-phase-6b-review.md).
   `src/views/dashboard/ConsoleDashboardHome.tsx` owns Home previews and route entry.
   `HomeCards.tsx` renders the Budget category-limit cards, the Expenses top-category card and the
   fine-pointer key-hint strip. `src/lib/consoleHome.ts` derives them, and the Overview goal ring, from

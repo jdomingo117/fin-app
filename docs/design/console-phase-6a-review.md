@@ -5,7 +5,8 @@
 | Branch | `codex/console-phase-6a` |
 | Application commit | `b4d2655858e03b967917b94e4494b8988e810f85` |
 | Test commit | `39c0c9c52331a3c904860aef1575e45925903d89` |
-| Budget order change | `62f5793f427e8c81d1ed9cab2c9d4dc16852c9de` |
+| Merged | PR #14 as `66ac87e`, from head `8da71ce` |
+| Budget order change | `ae0303c`, in a follow-up PR from `main` |
 | Main base | `9152de5`, the PR #13 merge |
 | Worktree | `/Users/joel/Developer/fin-app` |
 | Signed-in entry | [http://127.0.0.1:5320/dashboard](http://127.0.0.1:5320/dashboard) |
@@ -35,7 +36,7 @@ No new write path, migration or Edge Function is involved. Money goes through `f
 
 1. **How to choose the ring's goal (open decision 3). Approved as built on 27 November 2026.** Nothing in Halcyon could nominate a goal, and Phase 6 allows no new write path. The ring therefore uses a per-device Console preference with **Net worth trend** as the default. Syncing the choice across devices would need a new write path and a fresh decision.
 2. **Budget card order. Settled on 27 November 2026: Budget's own order.** The gate build ranked cards by share spent. The owner chose Budget's order, so the cards match the hub's table. The `Showing 4 of 5` line now ends **in Budget’s order**, and the Budget card captures were retaken.
-3. **Merging during observation.** If you approve, the merge goes in the [observation log](console-rollout.md#default-switch-observation) so that a regression can be traced to this batch.
+3. **Merging during observation. Approved on 27 November 2026.** The merge is in the [observation log](console-rollout.md#default-switch-observation) so that a regression can be traced to this batch.
 
 ## Captures
 
@@ -124,7 +125,4 @@ For the baseline, run the same command from a `9152de5` worktree with `CONSOLE_R
 
 ## Gate
 
-**Stopped for owner review.** 6A isn't merged, and 6B hasn't started. To finish the gate:
-
-- decision 3 above (decisions 1 and 2 are settled);
-- a 60 Hz trace rerun, if you want the Phase 5 comparison on the same display mode.
+**Passed.** The owner settled all three decisions on 27 November 2026 and approved merging during observation. PR #14 merged as `66ac87e` from head `8da71ce`, which still had the closest-to-limit card order. The Budget order change and these notes follow in a separate PR from `main`. 6B hasn't started. A 60 Hz trace rerun is still open if you want the Phase 5 comparison on the same display mode.

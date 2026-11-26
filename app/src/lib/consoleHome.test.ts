@@ -71,7 +71,7 @@ describe('Console Home Budget cards', () => {
     expect(budgetHomeCards(true, 'loading', budgetPresentation(s, 'loading'))).toEqual({ state: 'refreshing' })
     expect(budgetHomeCards(true, 'failed', budgetPresentation(s, 'failed'))).toEqual({ state: 'failed' })
   })
-  it('ranks up to four categories by share spent and measures exact cents', () => {
+  it('keeps Budget order for up to four categories and measures exact cents', () => {
     const p = budgetPresentation(snapshot([
       limit('groceries', 80000, 40000), limit('dining', 30000, 33001), limit('transport', 20000, 19999),
       limit('fun', 10000), limit('home', 0, 500),
@@ -81,9 +81,9 @@ describe('Console Home Budget cards', () => {
     if (result.state !== 'cards') return
     expect(result.total).toBe(5)
     expect(result.cards.map(card => [card.name, card.progress, card.over])).toEqual([
-      ['Dining', 100, true], ['Transport', 99, false], ['Groceries', 50, false], ['Entertainment', undefined, false],
+      ['Groceries', 50, false], ['Dining', 100, true], ['Transport', 99, false], ['Entertainment', undefined, false],
     ])
-    expect(result.cards[0].spent).toMatchObject({ availability: 'known', cents: 33001 })
+    expect(result.cards[1].spent).toMatchObject({ availability: 'known', cents: 33001 })
     // Missing usage stays unavailable rather than becoming a zero.
     expect(result.cards[3].spent.availability).toBe('unavailable')
   })

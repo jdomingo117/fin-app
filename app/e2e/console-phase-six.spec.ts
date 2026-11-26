@@ -120,14 +120,14 @@ test('Budget Home stays cold without a Budget read, then shows four category lim
   await loadBudget(page)
   const cards = home(page).getByRole('group', { name: 'Budget category cards' }).getByRole('button')
   await expect(cards).toHaveCount(4)
-  // Closest to the limit first: over, 69%, 80%, 24%, then Gifts at 10% is left for Budget.
-  await expect(cards.nth(0)).toContainText('Dining out$312.40of $300.00 · over the limit')
-  await expect(cards.nth(0)).toHaveAttribute('data-over', 'true')
-  await expect(cards.nth(1)).toContainText('$120.00of $150.00 · 80%')
-  await expect(cards.nth(2)).toContainText('Groceries$555.50of $800.00 · 69%')
-  await expect(cards.nth(3)).toContainText('Transport$62.00of $250.00 · 24%')
-  await expect(home(page).getByText('Showing 4 of 5 categories, closest to their limit first.')).toBeVisible()
-  expect(await cards.nth(2).locator('.console-card-meter > span').evaluate(node => node.style.inlineSize)).toBe('69%')
+  // Budget's own order: the first four limits, with Gifts left for the Budget hub.
+  await expect(cards.nth(0)).toContainText('Groceries$555.50of $800.00 · 69%')
+  await expect(cards.nth(1)).toContainText('Dining out$312.40of $300.00 · over the limit')
+  await expect(cards.nth(1)).toHaveAttribute('data-over', 'true')
+  await expect(cards.nth(2)).toContainText('Transport$62.00of $250.00 · 24%')
+  await expect(cards.nth(3)).toContainText('$120.00of $150.00 · 80%')
+  await expect(home(page).getByText('Showing 4 of 5 categories, in Budget’s order.')).toBeVisible()
+  expect(await cards.nth(0).locator('.console-card-meter > span').evaluate(node => node.style.inlineSize)).toBe('69%')
   await scan(page, home(page), 'budget-home-cards')
 
   await cards.nth(1).click()

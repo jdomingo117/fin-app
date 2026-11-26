@@ -52,17 +52,15 @@ export function budgetHomeCards(loaded: boolean, readState: BudgetReadState, pre
   if (readState === 'failed') return { state: 'failed' }
   if (readState !== 'ready') return { state: 'refreshing' }
   if (preview.categoryMode === 'pool' || !preview.categories.length) return { state: 'no-limits' }
-  const cards = preview.categories.map((row, index) => {
+  // Budget's own order, matching its category table, so a card is easy to find on the hub.
+  const cards = preview.categories.map((row): BudgetHomeCard => {
     const { planned, spent } = row
     const measured = planned.availability === 'known' && spent.availability === 'known' && planned.cents > 0
     const progress = measured ? Math.max(0, Math.min(100, Math.floor(spent.cents * 100 / planned.cents))) : undefined
-    const ratio = measured ? spent.cents / planned.cents : -Infinity
-    return { card: { id: row.id, categoryId: row.categoryId, name: categoryDisplayName(row.name), planned, spent, progress,
-      over: measured && spent.cents > planned.cents }, ratio, index }
+    return { id: row.id, categoryId: row.categoryId, name: categoryDisplayName(row.name), planned, spent, progress,
+      over: measured && spent.cents > planned.cents }
   })
-  // The categories closest to (or past) their allocation lead. Budget order breaks ties.
-  cards.sort((a, b) => b.ratio - a.ratio || a.index - b.index)
-  return { state: 'cards', cards: cards.slice(0, limit).map(({ card }) => card), total: cards.length }
+  return { state: 'cards', cards: cards.slice(0, limit), total: cards.length }
 }
 
 export type GoalRing = { goalId: string; name: string; percent: number; valueCents: number; targetCents: number }

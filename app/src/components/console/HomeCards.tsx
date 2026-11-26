@@ -45,7 +45,7 @@ export function BudgetCategoryCards({ budget, redacted, onOpen }: { budget: Budg
         })}
       </FocusRow>
       {budget.total > budget.cards.length && <p className="console-asof">
-        Showing {budget.cards.length} of {budget.total} categories, closest to their limit first.
+        Showing {budget.cards.length} of {budget.total} categories, in Budget’s order.
       </p>}
     </>}
   </div>

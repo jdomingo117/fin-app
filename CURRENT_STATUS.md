@@ -36,14 +36,15 @@ Classic removal needs separate owner approval after the window.
 **Console Phase 6** integrates the remaining prototype ideas. See the
 [Phase 6 plan](docs/design/console-phase-6-plan.md).
 
-- **Batch 6A is at its gate.** It's on `codex/console-phase-6a` and is not
-  merged. The batch adds Budget category-limit cards, an Expenses top-category
+- **Batch 6A is merged.** PR #14 merged it into `main` as `66ac87e` on 27
+  November 2026, during observation with owner approval. The batch adds Budget category-limit cards, an Expenses top-category
   card, an optional goal for the Overview ring and Home key hints. It uses
   existing reads only. See the [6A review](docs/design/console-phase-6a-review.md).
   On 27 November 2026 the owner approved the ring's goal as a per-device
-  Settings choice. Still open: the Budget card order and whether the batch
-  merges during observation. A merge is added to the observation log.
-- **Batch 6B** (Control Centre notices) starts after the 6A decision.
+  Settings choice and chose Budget's own order for the Home cards. That order
+  landed after the merge, in a follow-up PR from `main`
+  (`codex/console-phase-6a-budget-order`). The merge is in the observation log.
+- **Batch 6B** (Control Centre notices) is next. It hasn't started.
 - **Batch 6C** (Money and Plan rows) waits on the owner's open decisions.
 
 ## Wave 1–3C audit handoff — 21 November 2026

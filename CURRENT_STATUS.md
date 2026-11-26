@@ -49,9 +49,9 @@ Classic removal needs separate owner approval after the window.
   in 14 days, Ledger review, transfers and goals at their target, with an
   all-caught-up state. Quick actions add Quiet alerts and Rest. No new write
   path. See the [6B review](docs/design/console-phase-6b-review.md). On 27
-  November the owner chose to let error toasts through Quiet alerts. Still open:
-  the notice order, target-reached as the only goal milestone, and whether the
-  batch merges during observation.
+  November the owner chose to let error toasts through Quiet alerts and kept
+  the notice order. Still open: target-reached as the only goal milestone, and
+  whether the batch merges during observation.
 - **Batch 6C** (Money and Plan rows) waits on the owner's open decisions.
 
 ## Wave 1–3C audit handoff — 21 November 2026

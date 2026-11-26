@@ -235,8 +235,26 @@ test('Notices keep the focus trap, roving arrows and focus return', async ({ pag
   await expect(overview).toBeFocused()
 })
 
-test('Quiet alerts mutes Console toasts for the session', async ({ page }) => {
-  await openConsole(page, replies({ failCallsign: true }))
+test('Quiet alerts hides routine Console toasts but lets errors through', async ({ page }) => {
+  const parentId = 'local-fixture-8'
+  let category = 'Groceries'
+  const fixture = replies({ failCallsign: true })
+  await signInForConsole(page, true, undefined, (resource, request, body) => {
+    if (resource === 'transactions_analytic') return { json: {
+      id: parentId, date: '2026-11-21', merchant: 'Market grocer', merchant_key: 'market-grocer',
+      kind: 'expense', pending: false, category, amount: -31500, account_id: everyday,
+    } }
+    if (resource === 'update-transaction-category') {
+      category = request.postDataJSON().category
+      return { json: { category, subcategory: null, edit_id: 'fixture-edit' } }
+    }
+    if (resource === 'reporting_transaction_lines' && Array.isArray(body)) {
+      return { json: body.map(row => row.parent_id === parentId ? { ...row, category } : row) }
+    }
+    return fixture.reply(resource, request, body)
+  }, 'fresh')
+  await expect(sectionRow(page)).toBeVisible()
+  await expect(page.getByText('Session secured', { exact: true })).toHaveCount(0)
   await openCentre(page)
   const quiet = quick(page, 'Quiet alerts')
   await expect(quiet).toHaveAttribute('aria-pressed', 'false')
@@ -244,28 +262,37 @@ test('Quiet alerts mutes Console toasts for the session', async ({ page }) => {
   await expect(quiet).toHaveAttribute('aria-pressed', 'true')
   await scan(page, centre(page), 'centre-quiet-on')
   await page.keyboard.press('Escape')
+  await expect(centre(page)).toBeHidden()
 
-  async function saveCallsign() {
-    await expect(centre(page)).toBeHidden()
-    await page.getByRole('button', { name: 'Settings', exact: true }).click()
-    await page.getByRole('button', { name: 'Edit callsign' }).click()
-    const edit = page.getByRole('textbox', { name: 'Callsign' })
-    await edit.fill('Reviewer two')
-    await edit.press('Enter')
-  }
-  await saveCallsign()
+  // A routine confirmation stays quiet.
+  await tile(page, 'Overview').focus()
+  await page.keyboard.press('Enter')
+  await expect(page).toHaveURL(dashboard + '?hub=overview')
+  const row = page.getByRole('region', { name: 'Recent activity' }).getByRole('button', { name: /Market grocer.*21 Nov/ })
+  await row.focus()
+  await page.keyboard.press('Enter')
+  const editor = page.getByRole('dialog', { name: 'Market grocer' })
+  await editor.getByRole('combobox', { name: 'Transaction category' }).selectOption('Transport')
+  await editor.getByRole('button', { name: 'Save correction' }).click()
+  await expect(row).toContainText('Transport')
   await page.waitForTimeout(800)
-  await expect(page.getByText('Error updating callsign')).toHaveCount(0)
+  await expect(page.getByText('Transaction updated', { exact: true })).toHaveCount(0)
+  await editor.getByRole('button', { name: 'Close transaction detail' }).click()
 
+  // A failure still shows.
+  await page.getByRole('button', { name: 'Settings', exact: true }).click()
+  await page.getByRole('button', { name: 'Edit callsign' }).click()
+  const edit = page.getByRole('textbox', { name: 'Callsign' })
+  await edit.fill('Reviewer two')
+  await edit.press('Enter')
+  const toast = page.locator('[data-console-toast]')
+  await expect(toast).toContainText('Error updating callsign')
+  await expect(toast).toHaveAttribute('data-tone', 'error')
+
+  // It turns off from the same action.
   await openCentre(page)
   await quiet.click()
   await expect(quiet).toHaveAttribute('aria-pressed', 'false')
-  await page.keyboard.press('Escape')
-  await expect(centre(page)).toBeHidden()
-  const edit = page.getByRole('textbox', { name: 'Callsign' })
-  await expect(edit, 'a failed save keeps the edit open').toBeVisible()
-  await edit.press('Enter')
-  await expect(page.getByText('Error updating callsign')).toBeVisible()
 })
 
 test('Rest is offered only while the start screen is on', async ({ page, hasTouch }) => {

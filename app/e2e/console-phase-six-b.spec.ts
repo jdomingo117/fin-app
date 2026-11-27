@@ -7,7 +7,7 @@ import { dashboard, signInForConsole } from './fixtures/console-review'
 import { workflowReplies } from './fixtures/console-workflow-replies'
 
 // Phase 6B: Control Centre notices, Quiet alerts and Rest. Every case starts from the Console default.
-const sectionRow = (page: Page) => page.getByRole('toolbar', { name: 'Sections' })
+const sectionRow = (page: Page) => page.getByRole('toolbar', { name: 'Money sections' })
 const tile = (page: Page, name: string) => sectionRow(page).getByRole('button', { name, exact: true })
 const preview = (page: Page) => page.locator('.console-route-layer:not([inert]) .console-preview')
 const trigger = (page: Page) => page.getByRole('button', { name: 'Control Centre', exact: true })

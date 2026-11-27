@@ -5,7 +5,7 @@ import { resolve } from 'node:path'
 import { dashboard, signInForConsole } from './fixtures/console-review'
 
 function sections(page: Page) {
-  return page.getByRole('toolbar', { name: 'Sections' })
+  return page.getByRole('toolbar', { name: 'Money sections' })
 }
 
 function tile(page: Page, name: string) {
@@ -283,7 +283,7 @@ test('Home reserves its hero and returns warm with zero layout shift or text ove
     await expect(home.getByRole('group', { name: 'Transaction cards' })).toBeVisible()
     expect(await top()).toBeCloseTo(coldTop, 0)
 
-    const openingTile = page.getByRole('toolbar', { name: 'Sections' }).getByRole('button', { name: 'Overview' })
+    const openingTile = page.getByRole('toolbar', { name: 'Money sections' }).getByRole('button', { name: 'Overview' })
     await openingTile.focus()
     await page.keyboard.press('Enter')
     await page.waitForURL('**/dashboard?hub=overview')

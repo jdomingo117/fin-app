@@ -7,7 +7,7 @@ import { dashboard, signInForConsole } from './fixtures/console-review'
 import { workflowReplies } from './fixtures/console-workflow-replies'
 
 // Phase 6A: Home cards, the Overview goal ring and key hints. Every case starts from the Console default.
-const sectionRow = (page: Page) => page.getByRole('toolbar', { name: 'Sections' })
+const sectionRow = (page: Page) => page.getByRole('toolbar', { name: 'Money sections' })
 const tile = (page: Page, name: string) => sectionRow(page).getByRole('button', { name, exact: true })
 const home = (page: Page) => page.locator('.console-home')
 const preview = (page: Page) => page.locator('.console-route-layer:not([inert]) .console-preview')

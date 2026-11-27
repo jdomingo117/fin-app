@@ -5,7 +5,7 @@ import { collectConsoleChrome } from './fixtures/console-leftovers'
 import { workflowReplies } from './fixtures/console-workflow-replies'
 import { dashboard, signInForConsole } from './fixtures/console-review'
 
-const sections = (page: Page) => page.getByRole('toolbar', { name: 'Sections' })
+const sections = (page: Page) => page.getByRole('toolbar', { name: 'Money sections' })
 
 const investmentOverview = {
   holding_id: 'fixture-investment', instrument_name: 'Example index fund', identifier: 'EXF',

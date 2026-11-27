@@ -7,7 +7,7 @@ import { dashboard, signInForConsole } from './fixtures/console-review'
 
 const layer = (page: Page) => page.locator('.console-route-layer:not([inert])')
 const topbar = (page: Page) => page.locator('.console-topbar')
-const sections = (page: Page) => page.getByRole('toolbar', { name: 'Sections' })
+const sections = (page: Page) => page.getByRole('toolbar', { name: 'Money sections' })
 const settings = (page: Page) => topbar(page).getByRole('button', { name: 'Settings' })
 const start = (page: Page) => page.getByRole('dialog', { name: 'Halcyon start screen' })
 

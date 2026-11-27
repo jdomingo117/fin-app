@@ -5,7 +5,7 @@
 | Branch | `codex/console-phase-6c` |
 | Application commits | `315cff4` (shared Plan reads), `e675cc5` (rows, Goals and Bills hubs), `3942347` (goal and bill forms), `95c47f6` (compact dock label) |
 | Test commits | `94360e8` (6C spec, Phase 5 matrix, renamed row toolbar), `f8d17d1` (walkthrough timing) |
-| Main base | `a9293a2`, the PR #16 merge |
+| Main base | `a9293a2`, the PR #16 merge. Brought up to date with `main` at `35e8c83` (PRs #19 and #17) by merge `f293c2d` on 28 November 2026 |
 | Pull request | [PR #18](https://github.com/jdomingo117/fin-app/pull/18), ready, not merged |
 | Worktree | `/Users/joel/Developer/fin-app` |
 | Signed-in entry | [http://127.0.0.1:5320/dashboard](http://127.0.0.1:5320/dashboard) |
@@ -97,7 +97,7 @@ Each hub also has a compact capture beside it in the folder (`*-goals-compact.jp
 | `npm run test:browser:typecheck` | Pass |
 | `npm test` | 755 passed, including 7 new `lib/consolePlan.test.ts` cases |
 | `npm run build` | Pass, with the existing chunk-size advisory |
-| Full Console Playwright suite, Desktop and Phone, `CI=1`, three shards | 168 passed, 22 skipped; one pre-existing failure on the first pass. See [Final suite](#final-suite) |
+| Full Console Playwright suite, Desktop and Phone, `CI=1`, three shards | 168 passed, 22 skipped; one pre-existing failure on the first pass, since fixed on `main`. After merging `main`: 168 passed, 22 skipped, no failures. See [Final suite](#final-suite) |
 | `console-phase-six-c.spec.ts` | 21 passed with captures on, 3 skipped (the walkthrough recording, and the Classic check outside Desktop) |
 | Full Phase 5 matrix (`console-phase-five.spec.ts`) after the last fix | 13 passed, 7 skipped by project |
 | WebKit | **Not run locally.** Only Chromium is installed, and I didn't download WebKit. The WebKit project now includes `console-phase-six-c.spec.ts`, so CI runs the 6C regressions in WebKit. |
@@ -114,6 +114,21 @@ At the final code head (`f8d17d1`), `CI=1`, Desktop and Phone, in three foregrou
 | 3/3, rerun | 44 | 15 | 0 |
 
 So the suite is 168 passed and 22 skipped, with that one failure on the first pass of shard 3.
+
+### After merging `main` (28 November 2026)
+
+At `f293c2d`, the merge of `main` at `35e8c83` (PR #19's focus fix and PR #17's 6B record), from a detached worktree with its own `npm ci` and a placeholder `app/.env`. All six tsc configs and `npm run test:browser:typecheck` pass, `npm test` passes 757 (the 755 above plus PR #19's two `useDialogFocus` cases), and `npm run build` passes with the chunk-size advisory. `CI=1`, Desktop and Phone, three shards:
+
+| Shard | Passed | Skipped | Failed |
+| --- | ---: | ---: | ---: |
+| 1/3 | 62 | 2 | 0 |
+| 2/3 | 62 | 5 | 0 |
+| 3/3 | 44 | 15 | 0 |
+| 3/3, three more runs | 44 each | 15 each | 0 |
+
+So the suite is 168 passed and 22 skipped, with no failures on the first pass. The Overview focus case below passed on Phone in all four shard-3 runs and in three more runs of `console-phase-three`, `console-phase-six-b` and `console-phase-six-c` together on Phone (22 passed, 7 skipped each), the load that failed 2 of 3 before.
+
+On PR #18's CI for `f293c2d`, shards 1 to 4 passed and shard 5 failed one WebKit case, `console-owner-fixes` "Full effects masks particles behind each visible hero and signed figure": the Home preview's opacity read 0 instead of 1. The same case passed on `main` at `35e8c83` and on this PR's previous head. A rerun of shard 5 passed, so it's treated as another intermittent WebKit failure like those in the status note.
 
 The new regressions cover the following:
 
@@ -169,14 +184,14 @@ For the baseline, run main's own harness from an `a9293a2` worktree with `CONSOL
 
 ## Found in passing
 
-- **Overview hub focus on Phone, pre-existing.** `console-phase-three` "recent activity edits and reloads the full parent" failed on Phone in two of three shard-3 runs: after the transaction editor closes, focus lands on the page body instead of the edited row. It passes 12 of 12 on its own, even with six workers. With the 6B and 6C Phone specs running alongside, it failed 2 of 3 repeats. **`main` (`a9293a2`) fails the same way**: with the 6A and 6B Phone specs alongside, 3 of 4 repeats ended with focus on the body. So it's a load-sensitive focus return in the Overview hub's editor that predates 6C, and the extra 6C spec only makes the load more likely. It isn't fixed here.
+- **Overview hub focus on Phone, pre-existing.** `console-phase-three` "recent activity edits and reloads the full parent" failed on Phone in two of three shard-3 runs: after the transaction editor closes, focus lands on the page body instead of the edited row. It passes 12 of 12 on its own, even with six workers. With the 6B and 6C Phone specs running alongside, it failed 2 of 3 repeats. **`main` (`a9293a2`) fails the same way**: with the 6A and 6B Phone specs alongside, 3 of 4 repeats ended with focus on the body. So it's a load-sensitive focus return in the Overview hub's editor that predates 6C, and the extra 6C spec only makes the load more likely. **Fixed on `main`** by PR #19 (`38fe946`): closing a dialog now skips a matching row in an exiting, inert route layer and focuses the live one. After merging `main`, the case passed in every loaded run; see [After merging `main`](#after-merging-main-28-november-2026).
 - **Bill headline rounding.** Like every Console hero, the Bills headline shows whole dollars ($20) with the exact amount ($19.99) for screen readers and in the compact dock. It's the existing hero convention, so it isn't changed here.
-- **PR #17.** The 6B merge record is still open on `codex/console-phase-6b-merge-log` and edits the same status lines. This branch describes 6B as merged using the same wording, so whichever merges first, the other resolves to the same text.
+- **PR #17.** The 6B merge record merged into `main` as `35e8c83` on 28 November 2026. This branch already described 6B as merged in the same wording, so the merge of `main` records it once.
 
 ## Gate
 
 **Stopped for owner review.** 6C isn't merged. To finish the gate:
 
 - the owner's review of the rows, hubs and captures;
-- the WebKit result from CI on the PR;
+- the WebKit result from CI on the PR (green on `f293c2d` after one rerun of shard 5, above);
 - a decision on merging during observation, which would add a row to the observation log.

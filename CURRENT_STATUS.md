@@ -67,9 +67,11 @@ Classic removal needs separate owner approval after the window.
   own tab stop and remembered tile. The Goals and Bills hubs share one
   planning and one recurrence read for the session and edit only through
   `manage-planning` and `manage-recurring-series`. No migration or new write
-  path. See the [6C review](docs/design/console-phase-6c-review.md). It waits
-  on the owner's review, CI's WebKit result and a merge decision. Nothing
-  beyond 6C has started.
+  path. See the [6C review](docs/design/console-phase-6c-review.md). After
+  the merge of `main`, PR #18's CI (WebKit included) is green on `f293c2d`
+  after one shard-5 rerun, and the review's pre-existing Overview focus failure
+  is fixed by PR #19. It waits on the owner's review and a merge decision.
+  Nothing beyond 6C has started.
 - **CI note.** WebKit has crashed during `page.goto` in three recent CI runs
   ("Page crashed" or "internal error"), on different tests. It's a browser
   failure, not an assertion, but it makes WebKit results noisy.

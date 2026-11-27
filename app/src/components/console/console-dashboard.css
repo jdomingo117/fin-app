@@ -56,14 +56,23 @@
   .console-row-tabs [role="tab"] { opacity: 1; }
   .console-row-tabs [role="tab"]::after { background: CanvasText; }
 }
-.console-switcher { position: relative; flex: none; }
+.console-switcher {
+  /* The previous tile peeks past the row's left edge, as in the prototype:
+     gutter minus gap, so 23px at 1024 and 40px at 1440. On phones that would
+     leave about 2px, so there the selected tile moves in just far enough to
+     show --console-tile-peek of it (see the 600px query). */
+  --console-tile-anchor: 0px;
+  position: relative;
+  flex: none;
+}
 .console-aperture {
   overflow-x: clip;
   margin-inline: calc(-1 * var(--console-gutter));
   margin-block: -64px;
   padding-block: 64px;
   pointer-events: none;
-  mask-image: linear-gradient(90deg, transparent 0, black calc(var(--console-gutter) - 8px), black 97%, transparent);
+  /* Only the right edge fades. The left edge clips the peeking previous tile hard, as in the prototype. */
+  mask-image: linear-gradient(90deg, black 0, black 97%, transparent);
 }
 @media (min-width: 1100px) {
   /* The complete tile row fits here. Its own opacity handles the exit. */
@@ -72,7 +81,7 @@
 .console-track {
   position: relative;
   block-size: clamp(180px, 24dvh, 215px);
-  margin-inline-start: var(--console-gutter);
+  margin-inline-start: calc(var(--console-gutter) + var(--console-tile-anchor));
   touch-action: pan-y;
   pointer-events: auto;
 }
@@ -91,7 +100,6 @@
   transform: translateX(calc(var(--offset) * (var(--console-tile) + var(--console-tile-gap)) + var(--advance)));
   transition: transform var(--dur-track) var(--ease-settle), opacity var(--dur-track) var(--ease-fade);
 }
-.console-section[data-before="true"] { opacity: 0; pointer-events: none; }
 .console-section[data-after="true"] { --advance: calc(var(--console-tile-active) - var(--console-tile)); }
 .console-section[data-active="true"] { z-index: 1; inline-size: var(--console-tile-active); }
 .console-section:focus-visible { outline: none; }
@@ -104,7 +112,11 @@
   block-size: var(--console-tile);
   transform-origin: left center;
   opacity: .78;
-  transition: transform var(--dur-focus) var(--ease-settle), opacity var(--dur-focus) var(--ease-fade);
+  transition: transform var(--dur-focus) var(--ease-settle), opacity var(--dur-focus) var(--ease-fade), filter var(--dur-focus) var(--ease-fade);
+}
+/* Hover lights a tile without selecting it, as in the prototype. */
+@media (hover: hover) {
+  .console-section:hover .console-tile-art { filter: brightness(1.15); }
 }
 .console-tile-rest, .console-tile-active { position: absolute; inset: 0; }
 .console-tile-rest, .console-tile-active {
@@ -128,7 +140,7 @@
 
 
 
-.console-selection { position: absolute; inset-inline-start: calc(var(--console-tile-active) + 26px); inset-block-start: 74px; }
+.console-selection { position: absolute; inset-inline-start: calc(var(--console-tile-anchor) + var(--console-tile-active) + 26px); inset-block-start: 74px; }
 .console-caption { display: grid; max-inline-size: 190px; animation: console-label var(--dur-label) var(--ease-glide) both; }
 .console-caption span { font: 300 28px/1.1 var(--font-display); }
 .console-caption small { color: var(--console-label); font-size: 13px; }
@@ -355,9 +367,13 @@
 
 @media (max-width: 959px) {
   .console-section[data-after="true"] { --advance: calc(var(--console-tile-active) - var(--console-tile)); }
-  .console-selection { position: static; margin: -7px 0 8px; }
+  .console-selection { position: static; margin: -7px 0 8px var(--console-tile-anchor); }
 }
 @media (max-width: 600px) {
+  .console-switcher {
+    --console-tile-peek: 28px;
+    --console-tile-anchor: max(0px, calc(var(--console-tile-gap) + var(--console-tile-peek) - var(--console-gutter)));
+  }
   .console-topbar { padding-inline: 14px; }
   .console-utilities { gap: 3px; }
   .console-brand strong { display: none; }

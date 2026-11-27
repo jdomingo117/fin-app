@@ -14,20 +14,24 @@ const SaveGoal = z.object({
   target_date: IsoDate.nullable(),
   status: z.enum(['active', 'paused', 'archived']),
   account_ids: z.array(z.string().uuid()).min(1).max(100),
-}).superRefine((body, ctx) => {
-  if (new Set(body.account_ids).size !== body.account_ids.length) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Duplicate accounts' })
-  }
 })
 const Undo = z.object({ action: z.literal('undo'), event_id: z.string().uuid(), scope: z.enum(['goal', 'scenario', 'rebaseline']).default('goal') })
 const SaveScenario = z.object({ action: z.literal('save_scenario'), goal_id: z.string().uuid(), scenario_id: z.string().uuid().nullable(), name: z.string().trim().min(1).max(120), annual_return_bps: z.number().int().min(-5000).max(5000), include_recurring: z.boolean(), status: z.enum(['active', 'archived']) })
-const SaveEvent = z.object({ action: z.literal('save_event'), scenario_id: z.string().uuid(), event_id: z.string().uuid().nullable(), name: z.string().trim().min(1).max(120), amount_cents: z.number().int().min(-1_000_000_000).max(1_000_000_000).refine((value) => value !== 0), cadence: z.enum(['once', 'monthly']), start_date: IsoDate, end_date: IsoDate.nullable() }).superRefine((body, ctx) => {
-  if (body.cadence === 'once' && body.end_date) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'One-off events cannot have an end date' })
-  if (body.end_date && body.end_date < body.start_date) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'End date must follow start date' })
-})
+const SaveEvent = z.object({ action: z.literal('save_event'), scenario_id: z.string().uuid(), event_id: z.string().uuid().nullable(), name: z.string().trim().min(1).max(120), amount_cents: z.number().int().min(-1_000_000_000).max(1_000_000_000).refine((value) => value !== 0), cadence: z.enum(['once', 'monthly']), start_date: IsoDate, end_date: IsoDate.nullable() })
 const DuplicateScenario = z.object({ action: z.literal('duplicate_scenario'), scenario_id: z.string().uuid(), name: z.string().trim().min(1).max(120) })
 const Rebaseline = z.object({ action: z.literal('rebaseline'), scenario_id: z.string().uuid(), effective_month: IsoDate })
-const Payload = z.discriminatedUnion('action', [SaveGoal, SaveScenario, SaveEvent, DuplicateScenario, Rebaseline, Undo])
+// Refine the union, not one of its members: discriminatedUnion requires plain
+// ZodObjects so it can inspect their action discriminators at startup. A
+// refined member made this module throw on load, so every action failed.
+const Payload = z.discriminatedUnion('action', [SaveGoal, SaveScenario, SaveEvent, DuplicateScenario, Rebaseline, Undo]).superRefine((body, ctx) => {
+  if (body.action === 'save_goal' && new Set(body.account_ids).size !== body.account_ids.length) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Duplicate accounts' })
+  }
+  if (body.action === 'save_event') {
+    if (body.cadence === 'once' && body.end_date) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'One-off events cannot have an end date' })
+    if (body.end_date && body.end_date < body.start_date) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'End date must follow start date' })
+  }
+})
 
 Deno.serve(withAuth({ schema: Payload, requireRole: 'member' }, async (ctx) => {
   if (ctx.body.action === 'undo') {

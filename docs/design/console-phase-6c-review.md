@@ -188,10 +188,24 @@ For the baseline, run main's own harness from an `a9293a2` worktree with `CONSOL
 - **Bill headline rounding.** Like every Console hero, the Bills headline shows whole dollars ($20) with the exact amount ($19.99) for screen readers and in the compact dock. It's the existing hero convention, so it isn't changed here.
 - **PR #17.** The 6B merge record merged into `main` as `35e8c83` on 28 November 2026. This branch already described 6B as merged in the same wording, so the merge of `main` records it once.
 
+## Owner review, 28 November 2026
+
+The owner reviewed the rows and the Goals hub in the signed-in app and reported three problems. Ingestion is still to be reviewed.
+
+- **Arrows did nothing until a tile was clicked.** The row's arrow handler sat on the toolbar, so with nothing focused on Home the keys went nowhere. Now, with focus on the page itself, Left and Right move the selection and focus the tile, as in the prototype. A focused control keeps its own arrow keys, and an inert or hidden Home doesn't respond.
+- **Hover ran the row to its end.** Hovering a tile selected it, which slid the track, put the next tile under the pointer, and selected that one in turn, until the last tile. Tiles before the selection are hidden, so the ones passed couldn't be clicked. Now hover only brightens a tile (`brightness(1.15)`) and plays the hover cue. A click on an unselected tile selects it, and a click on the selected tile opens it, as in the [design demo](https://claude.ai/artifact/CCoZELkASem7EW8GkN9aj3). Touch keeps tap to select, then tap to open. The [specification](console-spec.md) row for pointer preview is updated.
+- **Saving a goal failed with "Edge Function returned a non-2xx status code".** `manage-planning` built its payload with `z.discriminatedUnion`, and two members (`SaveGoal`, `SaveEvent`) were wrapped in `.superRefine`. Zod 3.22 reads each member's `.shape` when the union is built, so the module threw on load and every planning action failed. This predates 6C (it's in the initial import) and affects Classic's Strategic projections too; the browser suites didn't catch it because their fixtures answer `manage-planning` themselves. The refinements now run on the union, as `manage-recurring-series` already does. A local unauthenticated request now gets the expected 401 instead of a worker crash. `src/lib/edgeFunctionSchemas.test.ts` fails if any Edge Function's discriminated union has a wrapped member.
+
+- **The previous tile vanished** (second pass). Tiles before the selection were `opacity: 0; pointer-events: none`, so the row lost its sense of position. They now stay at the usual unselected opacity (.78) and the previous tile peeks past the row's left edge with a hard clip, as in the prototype; a click or tap on it selects it. The peek is the gutter minus the tile gap (about 13px at 768, 23px at 1024 and 40px at 1440). At 600px and below that would be about 2px, so there the selected tile, its glow and caption move in 26px to show 28px of the previous tile. The left-edge fade below 1100px is gone.
+
+  Three subagents checked this. A tester ran the type checks, unit tests, build and full Console suite (169 passed, 23 skipped, no failures). A validator measured 320, 390, 768, 1024, 1246 and 1440: the anchor stays put across selections, the glow lines up exactly, the peek hit-tests to its own button, nothing overlaps and there's no horizontal scroll; its one finding, a 9–19px misalignment with the headline at tablet widths from an earlier anchor rule, led to limiting the shift to phones. A design critic compared it with the prototype and found nothing blocking; its suggestions (prototype opacity, no left fade, a smaller phone peek, a regression test, a spec note) are applied. The new case "The previous tile peeks past the row edge" runs on Desktop and Phone. On the final version the full Console suite, `CI=1`, Desktop and Phone, three shards, passed 171 with 23 skipped and no failures, and the type checks and build pass.
+
+Checks after the fixes, from a detached worktree with a placeholder `app/.env`: tsc for `tsconfig.json` and the unused-declarations check pass; `npm test` passes 681 there (the worktree has no sample corpus, so its 25 corpus cases skip). The new 6C case, "Home row follows the prototype", fails against the old row code and passes now. Full Console suite, `CI=1`, Desktop and Phone, three shards: 62, 63 and 44 passed (169), 23 skipped, no failures. Goal saving still needs the owner to confirm in the signed-in app; no agent signs in or writes to the personal database.
+
 ## Gate
 
 **Stopped for owner review.** 6C isn't merged. To finish the gate:
 
-- the owner's review of the rows, hubs and captures;
+- the owner's review of the rows, hubs and captures (rows and Goals reviewed on 28 November, with the fixes above; Ingestion still to review);
 - the WebKit result from CI on the PR (green on `f293c2d` after one rerun of shard 5, above);
 - a decision on merging during observation, which would add a row to the observation log.

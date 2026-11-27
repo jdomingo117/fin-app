@@ -70,7 +70,13 @@ Classic removal needs separate owner approval after the window.
   path. See the [6C review](docs/design/console-phase-6c-review.md). After
   the merge of `main`, PR #18's CI (WebKit included) is green on `f293c2d`
   after one shard-5 rerun, and the review's pre-existing Overview focus failure
-  is fixed by PR #19. It waits on the owner's review and a merge decision.
+  is fixed by PR #19. On 28 November the owner's review found three
+  problems, now fixed on the branch: arrows didn't work until a tile was
+  clicked, hovering selected tiles and ran the row to its end, and saving a
+  goal failed because `manage-planning` threw on load (pre-existing). A second
+  pass made the previous tile peek past the row's edge, as in the prototype. It waits
+  on the owner's re-check, the Ingestion review and a merge decision. After 6C
+  the owner expects more prototype integration before Classic removal.
   Nothing beyond 6C has started.
 - **CI note.** WebKit has crashed during `page.goto` in three recent CI runs
   ("Page crashed" or "internal error"), on different tests. It's a browser

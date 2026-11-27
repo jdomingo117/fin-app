@@ -214,6 +214,72 @@ test('Home rows switch from a visible tab control, each with its own tab stop an
   expect(fixture.count('recurrence_scope_summary')).toBe(0)
 })
 
+test('Home row follows the prototype: arrows work before focus, hover never moves it, a click selects and a second click opens', async ({ page, hasTouch }) => {
+  test.skip(hasTouch, 'Mouse and keyboard only. Touch keeps tap to select, then tap to open.')
+  await openConsole(page)
+  const [overview, accounts, income] = ['Overview', 'Accounts', 'Income'].map(name => tile(page, 'Money', name))
+  await expect(overview).toHaveAttribute('aria-pressed', 'true')
+
+  // Nothing has focus yet: the arrows still browse the row and put focus on the tile.
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur())
+  await expect.poll(() => page.evaluate(() => document.activeElement === document.body)).toBe(true)
+  await page.keyboard.press('ArrowRight')
+  await expect(accounts).toHaveAttribute('aria-pressed', 'true')
+  await expect(accounts).toBeFocused()
+  await page.keyboard.press('ArrowLeft')
+  await expect(overview).toHaveAttribute('aria-pressed', 'true')
+  await settle(page)
+
+  // Sweeping the pointer along the row lights tiles but never selects one, so nothing slides away.
+  const track = row(page, 'Money')
+  const anchor = await track.boundingBox()
+  for (const name of ['Accounts', 'Income', 'Expenses', 'Budget', 'Income', 'Accounts']) {
+    const box = (await tile(page, 'Money', name).boundingBox())!
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2, { steps: 6 })
+  }
+  await expect(overview).toHaveAttribute('aria-pressed', 'true')
+  expect(await track.boundingBox()).toEqual(anchor)
+  await expect(page).toHaveURL(dashboard)
+
+  // A click selects; a click on the selected tile opens it.
+  await income.click()
+  await expect(income).toHaveAttribute('aria-pressed', 'true')
+  await expect(page).toHaveURL(dashboard)
+  await settle(page)
+  await income.click()
+  await expect(page).toHaveURL(/\/income(?:\?|$)/)
+})
+
+test('The previous tile peeks past the row edge and selects on click, as in the prototype', async ({ page, hasTouch }) => {
+  await openConsole(page)
+  const [overview, accounts, income] = ['Overview', 'Accounts', 'Income'].map(name => tile(page, 'Money', name))
+  const anchor = (await accounts.boundingBox())!.x
+  await overview.focus()
+  await page.keyboard.press('ArrowRight')
+  await expect(accounts).toHaveAttribute('aria-pressed', 'true')
+  await settle(page)
+  await expect.poll(async () => (await accounts.boundingBox())!.x).toBeLessThan(anchor)
+  const peek = (await overview.boundingBox())!
+  const shown = peek.x + peek.width
+  // At least 28px of the previous tile shows, clipped at the edge, and it isn't hidden or covered.
+  expect(shown).toBeGreaterThanOrEqual(28)
+  expect(shown).toBeLessThan(peek.width)
+  await expect(overview.locator('.console-tile-art')).toHaveCSS('opacity', '0.78')
+  const midY = peek.y + peek.height / 2
+  expect(await page.evaluate(([x, y]) => document.elementFromPoint(x, y)?.closest('button')?.getAttribute('aria-label'), [8, midY])).toBe('Overview')
+  // Only one tile peeks.
+  await page.keyboard.press('ArrowRight')
+  await expect(income).toHaveAttribute('aria-pressed', 'true')
+  await settle(page)
+  await expect.poll(async () => { const box = (await overview.boundingBox())!; return box.x + box.width }).toBeLessThanOrEqual(0)
+  // A click or tap on the peeking tile selects it without opening it.
+  const back = (await accounts.boundingBox())!
+  if (hasTouch) await page.touchscreen.tap(8, back.y + back.height / 2)
+  else await page.mouse.click(8, back.y + back.height / 2)
+  await expect(accounts).toHaveAttribute('aria-pressed', 'true')
+  await expect(page).toHaveURL(dashboard)
+})
+
 test('Goals hub reads planning once, shows progress in exact cents and Back returns to the Goals tile', async ({ page, hasTouch }) => {
   const fixture = await openConsole(page, replies({ goals: true }))
   await openTile(page, 'Plan', 'Goals', hasTouch)

@@ -13,7 +13,7 @@
 }
 .console-section:is([data-active="true"], :focus-visible) .console-focus-decoration[data-layer="edge"] { opacity: 1; }
 .console-focus-decoration[data-layer="glow"] {
-  inset: 20px auto auto 0;
+  inset: 20px auto auto var(--console-tile-anchor, 0px);
   inline-size: var(--console-tile-active);
   block-size: var(--console-tile-active);
   border-radius: var(--console-active-radius);

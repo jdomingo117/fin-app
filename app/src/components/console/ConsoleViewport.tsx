@@ -76,7 +76,10 @@ function ConsoleViewportContent({ visible, startEntrySeen }: { visible: boolean;
   const audio = useConsolePreferences()!
   const [showStart] = useState(() => home && !demo && !startEntrySeen.current && audio.preferences.startScreen)
   const [finishedStart, setFinishedStart] = useState(false)
-  const startupVisible = showStart && !finishedStart && home
+  // Rest from Control Centre shows the start screen again, on Home only.
+  const [resting, setResting] = useState(false)
+  const restAfterBack = useRef(false)
+  const startupVisible = ((showStart && !finishedStart) || resting) && home
   const paused = !visible || centreOpen || overlay || startupVisible
   const effectsTier = audio.effectsTier
   const [clock, setClock] = useState(() => new Date())
@@ -103,6 +106,7 @@ function ConsoleViewportContent({ visible, startEntrySeen }: { visible: boolean;
 
   const finishStartup = useCallback(() => {
     setFinishedStart(true)
+    setResting(false)
     setRestoreFocus(true)
   }, [])
 
@@ -146,6 +150,9 @@ function ConsoleViewportContent({ visible, startEntrySeen }: { visible: boolean;
     }
     wasHome.current = home
     setClosing(false)
+    // A navigation guard can keep a hub open. Rest then waits for the next request.
+    if (home && restAfterBack.current) setResting(true)
+    restAfterBack.current = false
   }, [home, location.pathname])
 
   useEffect(() => {
@@ -159,6 +166,20 @@ function ConsoleViewportContent({ visible, startEntrySeen }: { visible: boolean;
     }, duration)
     return () => window.clearTimeout(timer)
   }, [closing, navigate, reduce])
+
+  const centreChanged = useCallback((open: boolean) => {
+    // A Rest that a navigation guard held back doesn't carry over to a later trip Home.
+    if (open) restAfterBack.current = false
+    setCentreOpen(open)
+  }, [])
+
+  function rest() {
+    if (home) setResting(true)
+    else {
+      restAfterBack.current = true
+      requestBack()
+    }
+  }
 
   function requestBack() {
     if (closing) return
@@ -203,7 +224,7 @@ function ConsoleViewportContent({ visible, startEntrySeen }: { visible: boolean;
             onClick={audio.toggleTopbarSound}>
             <VolumeIcon on={audio.soundAllowed && !audio.preferences.muted} />
           </button>
-          <ControlCentre onOpenChange={setCentreOpen} />
+          <ControlCentre onOpenChange={centreChanged} onRest={audio.preferences.startScreen ? rest : undefined} />
           <button type="button" className="console-utility" aria-label="Settings" onClick={() => go('settings')}>
             <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm0-5v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.2 2.2m8.4 8.4 2.2 2.2m0-12.8-2.2 2.2m-8.4 8.4-2.2 2.2" /></svg>
           </button>

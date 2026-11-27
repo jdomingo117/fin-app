@@ -1,9 +1,14 @@
 import { AnimatePresence, motion } from 'framer-motion'
 
-export interface ToastData {
-  id: number
+/** `error` marks a failure. Quiet alerts lets these through. */
+export interface ToastInput {
   title: string
   sub: string
+  tone?: 'error'
+}
+
+export interface ToastData extends ToastInput {
+  id: number
 }
 
 export default function MilestoneToast({ toast }: { toast: ToastData | null }) {
@@ -14,6 +19,7 @@ export default function MilestoneToast({ toast }: { toast: ToastData | null }) {
           <motion.div
             key={toast.id}
             data-console-toast
+            data-tone={toast.tone}
             initial={{ y: -24, opacity: 0, scale: 0.96 }}
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: -16, opacity: 0 }}

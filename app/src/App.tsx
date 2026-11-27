@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { lazy, Suspense, useCallback, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import {
   BrowserRouter, Navigate, Outlet, Route, Routes, useLocation, useNavigate,
@@ -17,7 +17,7 @@ import { supabase } from './lib/supabaseClient'
 import Shell from './components/Shell'
 import ThemeToggle from './components/ThemeToggle'
 import Boot from './components/Boot'
-import MilestoneToast, { type ToastData } from './components/MilestoneToast'
+import MilestoneToast, { type ToastData, type ToastInput } from './components/MilestoneToast'
 import ProviderSyncNotice from './components/ProviderSyncNotice'
 import Login from './views/Login'
 import AuthCallback from './views/AuthCallback'
@@ -64,14 +64,17 @@ function BareLayout() {
  * Bridges the router to the pre-existing `useView()` API so Shell, Landing
  * and Onboarding keep calling `go('dashboard')` without modification.
  */
+type QuietAlerts = { on: boolean; set: (on: boolean) => void }
+
 function ViewBridge({
-  children, theme, setTheme, dark, setDark, motionOn, setMotionOn, fireToast,
+  children, theme, setTheme, dark, setDark, motionOn, setMotionOn, fireToast, quiet,
 }: {
   children: React.ReactNode
   theme: Appearance; setTheme: (theme: Appearance) => void
   dark: boolean; setDark: (on: boolean) => void
   motionOn: boolean; setMotionOn: (on: boolean) => void
-  fireToast: (a: { title: string; sub: string }) => void
+  fireToast: (a: ToastInput) => void
+  quiet: QuietAlerts
 }) {
   const navigate = useNavigate()
   const location = useLocation()
@@ -80,7 +83,7 @@ function ViewBridge({
 
   return (
     <ViewContext.Provider
-      value={{ view, go, toast: fireToast, motionOn, setMotionOn, theme, setTheme, dark, setDark }}
+      value={{ view, go, toast: fireToast, quietAlerts: quiet.on, setQuietAlerts: quiet.set, motionOn, setMotionOn, theme, setTheme, dark, setDark }}
     >
       {children}
     </ViewContext.Provider>
@@ -88,14 +91,15 @@ function ViewBridge({
 }
 
 function AppFrame({
-  booted, setBooted, theme, setTheme, dark, setDark, motionOn, setMotionOn, toast, fireToast,
+  booted, setBooted, theme, setTheme, dark, setDark, motionOn, setMotionOn, toast, fireToast, quiet,
 }: {
   booted: boolean; setBooted: (b: boolean) => void
   theme: Appearance; setTheme: (theme: Appearance) => void
   dark: boolean; setDark: (on: boolean) => void
   motionOn: boolean; setMotionOn: (on: boolean) => void
   toast: ToastData | null
-  fireToast: (a: { title: string; sub: string }) => void
+  fireToast: (a: ToastInput) => void
+  quiet: QuietAlerts
 }) {
   const location = useLocation()
   const view = pathToView(location.pathname)
@@ -104,11 +108,12 @@ function AppFrame({
   useLayoutEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(event => {
       if (event !== 'SIGNED_OUT') return
+      quiet.set(false)
       startEntrySeen.current = false
       writeConsoleStartSeen(false)
     })
     return () => subscription.unsubscribe()
-  }, [startEntrySeen])
+  }, [startEntrySeen, quiet.set])
   const consoleEntry = theme === 'console'
     && view !== 'login' && view !== 'onboarding' && view !== 'operation-status'
     && !location.pathname.startsWith('/auth/')
@@ -129,6 +134,7 @@ function AppFrame({
       dark={effectiveDark} setDark={setDark}
       motionOn={motionOn} setMotionOn={setMotionOn}
       fireToast={fireToast}
+      quiet={quiet}
     >
       {!consoleViewport && <SceneBackground view={view} motionOn={motionOn} dark={dark} />}
 
@@ -204,7 +210,22 @@ export default function App() {
   const toastId = useRef(0)
   const timer = useRef<number | undefined>(undefined)
 
-  const fireToast = useCallback((a: { title: string; sub: string }) => {
+  const [quietAlerts, setQuietState] = useState(false)
+  const quietRef = useRef({ on: false, console: false })
+  quietRef.current = { on: quietAlerts, console: theme === 'console' }
+  const setQuietAlerts = useCallback((on: boolean) => {
+    setQuietState(on)
+    quietRef.current.on = on
+    if (on) {
+      window.clearTimeout(timer.current)
+      setToast(null)
+    }
+  }, [])
+  const quiet = useMemo(() => ({ on: quietAlerts, set: setQuietAlerts }), [quietAlerts, setQuietAlerts])
+
+  const fireToast = useCallback((a: ToastInput) => {
+    // Quiet alerts only applies while Console is the appearance, and never hides a failure.
+    if (quietRef.current.on && quietRef.current.console && a.tone !== 'error') return
     toastId.current += 1
     setToast({ id: toastId.current, ...a })
     window.clearTimeout(timer.current)
@@ -221,7 +242,7 @@ export default function App() {
               theme={theme} setTheme={setTheme}
               dark={dark} setDark={setDark}
               motionOn={motionOn} setMotionOn={setMotionOn}
-              toast={toast} fireToast={fireToast}
+              toast={toast} fireToast={fireToast} quiet={quiet}
             />
           </BudgetProvider>
         </DataProvider>

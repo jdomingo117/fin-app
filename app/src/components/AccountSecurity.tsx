@@ -37,7 +37,7 @@ export function PasswordCard() {
     setSaving(false)
 
     if (!result.ok) {
-      toast({ title: 'Not changed', sub: result.message })
+      toast({ title: 'Not changed', sub: result.message, tone: 'error' })
       return
     }
     setCurrent(''); setNext(''); setConfirm('')
@@ -103,7 +103,7 @@ export function EmailCard() {
     setSaving(true)
     const result = await changeEmail(email)
     setSaving(false)
-    toast({ title: result.ok ? 'Confirmation sent' : 'Not changed', sub: result.message })
+    toast({ title: result.ok ? 'Confirmation sent' : 'Not changed', sub: result.message, tone: result.ok ? undefined : 'error' })
     if (result.ok) setEmail('')
   }
 
@@ -161,12 +161,12 @@ export function SessionsCard() {
     // sessions; the table below is the user-visible record of them.
     const { error } = await supabase.auth.signOut({ scope: 'others' })
     if (error) {
-      toast({ title: 'Could not sign out other devices', sub: 'Try again in a moment.' })
+      toast({ title: 'Could not sign out other devices', sub: 'Try again in a moment.', tone: 'error' })
       return
     }
     const { error: recordError } = await supabase.functions.invoke('revoke-other-session-records', { body: {} })
     if (recordError) {
-      toast({ title: 'Sessions were signed out, but the session list could not update', sub: 'Refresh the page in a moment.' })
+      toast({ title: 'Sessions were signed out, but the session list could not update', sub: 'Refresh the page in a moment.', tone: 'error' })
       return
     }
     toast({ title: 'Other devices signed out', sub: 'They will need to sign in again.' })
@@ -245,7 +245,7 @@ export function DangerZoneCard() {
     })
     setBusy(false)
     if (error) {
-      toast({ title: 'Could not delete account', sub: 'Try again, or contact support.' })
+      toast({ title: 'Could not delete account', sub: 'Try again, or contact support.', tone: 'error' })
       return
     }
     toast({ title: 'Account scheduled for deletion', sub: 'You have been signed out.' })

@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect, useRef, type ReactNode } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useLocation, useOutletContext } from 'react-router-dom'
+import { noticeTab } from '../lib/consoleNotices'
 import { DateRangePicker, MultiSelect } from '../components/Controls'
 import ConsoleHub, { ConsoleModule, cumulativeValues, type ConsoleEntry } from '../components/console/ConsoleHub'
 import { FocusRow } from '../components/console/FocusRow'
@@ -46,7 +47,9 @@ const TABS = [
 ]
 
 export default function Expenses() {
-  const [view, setView] = useState('analytics')
+  const location = useLocation()
+  const tabRequest = noticeTab(location.state, TABS)
+  const [view, setView] = useState(tabRequest ?? 'analytics')
   const { theme } = useView()
   const route = useOutletContext<ConsoleOutlet | null>()
   const audio = useConsolePreferences()
@@ -54,7 +57,6 @@ export default function Expenses() {
   const { preset, from, to, applyPreset, changeFrom, changeTo } = usePeriodRange(undefined,
     theme === 'console' ? { from: iso(addDays(today, -29)), to: iso(today) } : undefined)
   const { accounts: dbAccounts } = useData()
-  const location = useLocation()
   const dashboardFocus = location.state as { source?: string; category?: string; from?: string; to?: string } | null
 
   const OUTFLOW_ACCOUNTS = useMemo(() => {
@@ -76,6 +78,9 @@ export default function Expenses() {
       setAccounts(dbAccounts.map(a => a.id))
     }
   }, [dbAccounts])
+
+  // A Control Centre notice can open a tab. Apply it once per navigation entry.
+  useEffect(() => { if (tabRequest) setView(tabRequest) }, [location.key])
 
   // Dashboard insight links carry an intentional, one-off investigation
   // context. Apply it only for this history entry; changing the filter bar

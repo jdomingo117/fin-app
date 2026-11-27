@@ -97,7 +97,7 @@ export default function Shell({ children }: { children: ReactNode }) {
 
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut()
-    if (error) toast({ title: 'Sign out failed', sub: error.message })
+    if (error) toast({ title: 'Sign out failed', sub: error.message, tone: 'error' })
   }
 
   const getInitials = (name: string) => {

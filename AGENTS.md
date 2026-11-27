@@ -82,6 +82,8 @@ hand to find the transfer-linker gap.
 
 ## Recent changes
 
+- 2026-11-27 — Console Phase 6B adds Control Centre notices, Quiet alerts and Rest.
+
 - 2026-11-27 — Console Phase 6A merges during observation; its Budget Home cards follow Budget’s own order.
 
 - 2026-11-26 — Console Phase 6A adds Budget category limits, Expenses category shares, an optional Overview goal ring and Home key hints.
@@ -99,5 +101,3 @@ hand to find the transfer-linker gap.
 - 2026-11-24 — Console Phase 5 records the revised desktop performance gate and completes the narrow Ledger and Budget copy fixes.
 
 - 2026-11-24 — The Console Phase 5 hold follow-up updates activity contrast and Ledger copy, and reduces ambient paint work.
-
-- 2026-11-24 — Console Phase 5 adds the cross-screen qualification matrix and forced-colour control fixes.

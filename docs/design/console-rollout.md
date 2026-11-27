@@ -134,7 +134,9 @@ The owner signs off on Safari before the default switch. Classic removal require
 | 26 Nov 2026 | Default switch merged (`c2fd2a0`) and rollback tags pushed | Window opens |
 | 26 Nov 2026 | Phase 6A gated on `codex/console-phase-6a` ([PR #14](https://github.com/jdomingo117/fin-app/pull/14)) | Home cards, goal ring and key hints. [Review](console-phase-6a-review.md). |
 | 27 Nov 2026 | Phase 6A merged (`66ac87e`, [PR #14](https://github.com/jdomingo117/fin-app/pull/14)) with owner approval | A regression from this date can come from 6A: the Budget, Expenses and Overview Home previews, the Overview ring setting and the key hints. The merge used head `8da71ce`, with Budget cards ordered closest to their limit. |
-| 27 Nov 2026 | Budget Home cards switched to Budget's own order | Owner's decision. Follow-up PR from `main` on `codex/console-phase-6a-budget-order`; record its merge commit here. |
+| 27 Nov 2026 | Budget Home cards switched to Budget's own order, merged (`b5487ff`, [PR #15](https://github.com/jdomingo117/fin-app/pull/15)) with owner approval | Owner's decision, carried from `main` on `codex/console-phase-6a-budget-order`. A Budget Home card order regression from this date comes from this merge. |
+| 27 Nov 2026 | Phase 6B gated on `codex/console-phase-6b` ([PR #16](https://github.com/jdomingo117/fin-app/pull/16)) | Control Centre notices, Quiet alerts and Rest. [Review](console-phase-6b-review.md). |
+| 27 Nov 2026 | Owner approved merging Phase 6B during the window, once CI is green | A regression from the merge can come from 6B: Control Centre notices and their reads, Quiet alerts, Rest, the error tone on toasts, and Expenses or Income opening on a requested tab. Record the merge commit here. |
 
 Anime.js v4 dependency and chart parity work are tracked as a separate follow-up. Framer Motion 11 and CSS consume the same console motion tokens while the chart adapter stays on v3.
 

@@ -122,8 +122,16 @@ async function capture(page: Page, label: string) {
   await page.screenshot({ path: resolve(base, `${label}.jpg`), quality: 85, animations: 'disabled' })
 }
 
+/** Waits for finite entry and colour transitions so axe never measures a half-faded colour. */
+async function settled(root: Locator) {
+  await root.evaluate(node => Promise.all(node.getAnimations({ subtree: true })
+    .filter(animation => animation.effect?.getComputedTiming().iterations !== Infinity)
+    .map(animation => animation.finished.catch(() => undefined))))
+}
+
 async function scan(page: Page, root: Locator, label: string) {
   await expect(root).toBeVisible()
+  await settled(root)
   await auditConsoleChrome(root, label)
   const results = await new AxeBuilder({ page }).include('.console-centre').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()
   console.log(`${label} axe ${JSON.stringify(results.violations.map(({ id, nodes }) => ({ id, nodes: nodes.map(node => node.target) })))}`)

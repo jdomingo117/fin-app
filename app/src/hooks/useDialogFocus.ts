@@ -34,6 +34,24 @@ export function keepDialogTabFocus(event: Pick<KeyboardEvent, 'key' | 'shiftKey'
   focusable[wrappedFocusIndex(currentIndex, focusable.length, event.shiftKey)]?.focus({ preventScroll: true })
 }
 
+/** An inert or aria-hidden subtree, such as a Console route layer still fading out, can't take focus. */
+export function canRestoreFocus(element: HTMLElement | null | undefined): element is HTMLElement {
+  return !!element?.isConnected && !element.closest('[inert], [aria-hidden="true"], [hidden]')
+}
+
+/**
+ * Picks where focus goes after a dialog closes: the first live match for the
+ * restore selector, then the opener, then the fallback. A selector can match
+ * a copy of the row in an exiting route layer earlier in the document, so
+ * matches that can't take focus are skipped.
+ */
+export function dialogRestoreTarget(opener: HTMLElement | null, restoreSelector: string | undefined, fallbackSelector: string) {
+  const first = (selector: string) => [...document.querySelectorAll<HTMLElement>(selector)].find(canRestoreFocus)
+  return (restoreSelector ? first(restoreSelector) : undefined)
+    ?? (canRestoreFocus(opener) ? opener : undefined)
+    ?? first(fallbackSelector)
+}
+
 /**
  * Keeps keyboard focus inside an active modal, gives screen-reader users a
  * stable initial focus target, and returns focus to the opener after close.
@@ -69,11 +87,7 @@ export function useDialogFocus({
         const anotherDialogIsOpen = [...document.querySelectorAll('[role="dialog"][aria-modal="true"]')]
           .some((candidate) => candidate !== dialog)
         if (anotherDialogIsOpen) return
-        const explicitTarget = restoreSelector ? document.querySelector<HTMLElement>(restoreSelector) : null
-        const target = explicitTarget ?? (opener?.isConnected
-          ? opener
-          : document.querySelector<HTMLElement>(fallbackSelector))
-        target?.focus({ preventScroll: true })
+        dialogRestoreTarget(opener, restoreSelector, fallbackSelector)?.focus({ preventScroll: true })
       })
     }
   }, [active, fallbackSelector, restoreSelector])

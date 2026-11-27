@@ -96,3 +96,8 @@ Every toast, error or not, shows a tick and the label **Milestone reached**. Thi
 - the WebKit result from CI on the PR.
 
 The first CI run on the PR failed one Desktop case, the Phase 5 `768px matrix`: an ArrowRight didn't select Expenses. The test doesn't open Control Centre, passed in both full local runs and passed five repeats locally. The same matrix test has failed intermittently in CI on earlier branches, at 320 and with reduced motion. It's treated as that known flake unless the rerun fails again.
+
+The CI run on `6c5f401` passed that matrix test but failed two others:
+
+- **6A Settings axe scan, Desktop.** Axe reported colour contrast on the active **Console** appearance chip. The chip has a colour transition, and the 6A scan didn't wait for the route's entry and transitions to finish, so axe measured a half-faded colour. The same scan passed in earlier runs. Both Phase 6 scan helpers now wait for finite animations and transitions before auditing.
+- **WebKit, `console-owner-fixes` Expenses counts.** `page.goto` failed with "WebKit encountered an internal error" before the page loaded. That's a browser-level failure, not a test assertion.

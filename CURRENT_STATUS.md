@@ -9,7 +9,7 @@ tags:
 type: handoff
 status: current
 project: Halcyon
-updated: 2026-11-27
+updated: 2026-11-28
 related:
   - "[[README]]"
   - "[[INDEX]]"
@@ -19,7 +19,7 @@ related:
 
 # Halcyon — Current status
 
-## Resume here — 27 November 2026
+## Resume here — 28 November 2026
 
 Console is the default appearance on `main`. The owner approved the switch on
 26 November 2026, and PR #12 merged it as `c2fd2a0`. A profile with no saved
@@ -53,8 +53,13 @@ Classic removal needs separate owner approval after the window.
   the notice order, with target reached as the only goal milestone. The merge
   is in the observation log. CI on the merged head was still running at the
   merge; the `main` push run on `a9293a2` covers it.
-- **Batch 6C is at its gate.** It's on `codex/console-phase-6c`, branched from
-  `a9293a2`, and is not merged. On 27 November 2026 the owner settled decisions
+- **Focus fix and 6B record are merged.** On 28 November 2026, with owner
+  approval, PR #19 merged as `38fe946` (closing a dialog no longer returns focus
+  to a row in an exiting route layer, so the Overview editor focuses the edited
+  row) and PR #17, the 6B merge record, merged as `35e8c83`.
+- **Batch 6C is at its gate.** It's on `codex/console-phase-6c` (PR #18),
+  branched from `a9293a2` and brought up to date with `main` at `35e8c83` on
+  28 November 2026. It is not merged. On 27 November 2026 the owner settled decisions
   1, 2 and 4: Ledger review and Transfers stay in Control Centre, Ingestion
   gets its own **Import** row (and keeps its quick action), Investments stays
   inside Accounts, and Goals and Bills are the first Plan hubs. Home now has
@@ -65,8 +70,9 @@ Classic removal needs separate owner approval after the window.
   path. See the [6C review](docs/design/console-phase-6c-review.md). It waits
   on the owner's review, CI's WebKit result and a merge decision. Nothing
   beyond 6C has started.
-- **PR #17** (the 6B merge record, `codex/console-phase-6b-merge-log`) is still
-  open and edits the same lines as above, with the same 6B wording.
+- **CI note.** WebKit has crashed during `page.goto` in three recent CI runs
+  ("Page crashed" or "internal error"), on different tests. It's a browser
+  failure, not an assertion, but it makes WebKit results noisy.
 
 ## Wave 1–3C audit handoff — 21 November 2026
 

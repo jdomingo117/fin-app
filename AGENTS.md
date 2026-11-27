@@ -82,6 +82,8 @@ hand to find the transfer-linker gap.
 
 ## Recent changes
 
+- 2026-11-28 — Console Phase 6C merges during observation after the owner's review fixes.
+
 - 2026-11-28 — Console Home hover no longer selects tiles, the previous tile peeks, arrows work before focus, and manage-planning loads again.
 
 - 2026-11-27 — Console Phase 6C gates Money, Plan and Import rows with Goals and Bills hubs.
@@ -99,5 +101,3 @@ hand to find the transfer-linker gap.
 - 2026-11-26 — Console default-switch observation opens with rollback tags; Console Phase 6 prototype-integration plan proposed.
 
 - 2026-11-26 — Console becomes the default appearance for profiles without a saved choice; Classic stays selectable.
-
-- 2026-11-26 — Console owner follow-ups verify settled Home, Australian dates, opaque filters, signed colours, Budget retry, investment trends and fixture counts.

@@ -204,8 +204,4 @@ Checks after the fixes, from a detached worktree with a placeholder `app/.env`: 
 
 ## Gate
 
-**Stopped for owner review.** 6C isn't merged. To finish the gate:
-
-- the owner's review of the rows, hubs and captures (rows and Goals reviewed on 28 November, with the fixes above; Ingestion still to review);
-- the WebKit result from CI on the PR (green on `f293c2d` after one rerun of shard 5, above);
-- a decision on merging during observation, which would add a row to the observation log.
+**Passed.** The owner reviewed the rows and Goals on 28 November 2026, the fixes above landed, and the owner approved merging during observation. PR #18 merged into `main` as `b8cc938` from head `c774824`, with all five CI shards green, WebKit included. Ingestion's owner review is still to come; a finding there would be a follow-up from `main`.

@@ -57,27 +57,21 @@ Classic removal needs separate owner approval after the window.
   approval, PR #19 merged as `38fe946` (closing a dialog no longer returns focus
   to a row in an exiting route layer, so the Overview editor focuses the edited
   row) and PR #17, the 6B merge record, merged as `35e8c83`.
-- **Batch 6C is at its gate.** It's on `codex/console-phase-6c` (PR #18),
-  branched from `a9293a2` and brought up to date with `main` at `35e8c83` on
-  28 November 2026. It is not merged. On 27 November 2026 the owner settled decisions
-  1, 2 and 4: Ledger review and Transfers stay in Control Centre, Ingestion
-  gets its own **Import** row (and keeps its quick action), Investments stays
-  inside Accounts, and Goals and Bills are the first Plan hubs. Home now has
-  Money, Plan and Import rows switched by a visible tab control, each with its
-  own tab stop and remembered tile. The Goals and Bills hubs share one
-  planning and one recurrence read for the session and edit only through
-  `manage-planning` and `manage-recurring-series`. No migration or new write
-  path. See the [6C review](docs/design/console-phase-6c-review.md). After
-  the merge of `main`, PR #18's CI (WebKit included) is green on `f293c2d`
-  after one shard-5 rerun, and the review's pre-existing Overview focus failure
-  is fixed by PR #19. On 28 November the owner's review found three
-  problems, now fixed on the branch: arrows didn't work until a tile was
-  clicked, hovering selected tiles and ran the row to its end, and saving a
-  goal failed because `manage-planning` threw on load (pre-existing). A second
-  pass made the previous tile peek past the row's edge, as in the prototype. It waits
-  on the owner's re-check, the Ingestion review and a merge decision. After 6C
-  the owner expects more prototype integration before Classic removal.
-  Nothing beyond 6C has started.
+- **Batch 6C is merged.** PR #18 merged it into `main` as `b8cc938` on 28
+  November 2026, during observation with owner approval, from head `c774824`
+  with CI (WebKit included) green. Home has Money, Plan and Import rows
+  switched by a visible tab control; Goals and Bills are the first Plan hubs,
+  sharing one planning and one recurrence read and editing only through
+  `manage-planning` and `manage-recurring-series`. The owner's 28 November
+  review fixes are in: hover no longer selects a tile (a click selects, a second
+  click opens), arrows work before anything has focus, the previous tile peeks
+  past the row edge as in the prototype, and `manage-planning` loads again
+  (it had thrown on load since the initial import, so goal saves failed).
+  See the [6C review](docs/design/console-phase-6c-review.md); Ingestion's
+  owner review is still to come. The merge is in the observation log.
+- **Next.** The owner will decide what follows Phase 6, expecting more
+  prototype integration until they're happy with it, then Classic removal and
+  the scoped features. Nothing beyond 6C has started.
 - **CI note.** WebKit has crashed during `page.goto` in three recent CI runs
   ("Page crashed" or "internal error"), on different tests. It's a browser
   failure, not an assertion, but it makes WebKit results noisy.

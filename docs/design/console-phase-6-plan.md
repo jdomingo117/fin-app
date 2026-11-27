@@ -85,7 +85,7 @@ The owner settled decisions 1, 2 and 4 on 27 November 2026, before any code.
 
 #### 6C as built
 
-Built on `codex/console-phase-6c` and stopped at its gate on 27 November 2026. See the [6C review](console-phase-6c-review.md). It isn't merged.
+Built on `codex/console-phase-6c` and gated on 27 November 2026. See the [6C review](console-phase-6c-review.md). After the owner's 28 November review fixes, PR #18 merged it into `main` as `b8cc938` on 28 November 2026, during observation with owner approval.
 
 - **Rows.** Home has three rows, **Money**, **Plan** and **Import**, switched by a visible tab control above the tiles. One row shows at a time, as in the prototype. The tablist is one tab stop, and each row is its own labelled toolbar with its own roving tab stop. Each row remembers its last tile. Money keeps Overview, Accounts, Income, Expenses and Budget (*decision 2: Investments stays inside Accounts*). Plan has Goals and Bills (*decision 4*). Import has Ingestion (*decision 1: Ledger review and Transfers stay in Control Centre; Ingestion gets its own row and keeps its quick action*).
 - **Navigation.** `/goals`, `/bills` and `/ingestion` open directly. Back returns to the hub's row with its tile focused, and restore-focus works as before. Classic redirects `/goals` and `/bills` to Strategic projections and the Recurring hub.

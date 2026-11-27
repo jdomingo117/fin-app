@@ -614,7 +614,7 @@ implemented but the remaining M6 verification gates are still open.
   goal progress, active and inactive goals, bills due in the next 14 days and house-date bill timing,
   leaving unmeasurable values undefined. [Phase 6C](docs/design/console-phase-6c-review.md).
   Home has three rows, Money, Plan and Import (`sections.ts` `homeRows`), switched by the
-  `HomeRowTabs.tsx` tablist; one row shows at a time as its own `SectionFocusRow` toolbar, and
+  `HomeRowTabs.tsx` tablist; one row shows at a time as its own `SectionFocusRow` toolbar (hover only lights a tile; a click selects, a second click opens; Left/Right work before focus; the previous tile peeks past the edge), and
   `ConsoleViewport` remembers each row's last tile (`rowTiles` on the outlet).
   `src/views/GoalsHub.tsx` and `src/views/BillsHub.tsx` are the Console-only Plan hubs at `/goals` and
   `/bills` (Classic redirects them to Strategic projections and the Recurring hub). They edit only

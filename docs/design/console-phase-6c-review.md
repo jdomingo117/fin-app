@@ -6,6 +6,7 @@
 | Application commits | `315cff4` (shared Plan reads), `e675cc5` (rows, Goals and Bills hubs), `3942347` (goal and bill forms), `95c47f6` (compact dock label) |
 | Test commits | `94360e8` (6C spec, Phase 5 matrix, renamed row toolbar), `f8d17d1` (walkthrough timing) |
 | Main base | `a9293a2`, the PR #16 merge |
+| Pull request | [PR #18](https://github.com/jdomingo117/fin-app/pull/18), ready, not merged |
 | Worktree | `/Users/joel/Developer/fin-app` |
 | Signed-in entry | [http://127.0.0.1:5320/dashboard](http://127.0.0.1:5320/dashboard) |
 

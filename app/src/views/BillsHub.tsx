@@ -71,7 +71,7 @@ export default function BillsHub() {
     setManaging(series)
   }
 
-  return <ConsoleHub id="bills" title="Bills" period={dateRangeLabel(TODAY, bills?.until ?? TODAY, true)} onBack={route.back}
+  return <ConsoleHub id="bills" title="Bills" compactLabel={`Due in ${BILLS_WINDOW_DAYS} days`} period={dateRangeLabel(TODAY, bills?.until ?? TODAY, true)} onBack={route.back}
     entry={route.entry?.id === 'bills' ? route.entry : undefined} figure={figure} strip={strip} art={art} redacted={redacted}>
     <div className="console-analysis-modules console-plan">
       {data && (recurrence.error || recurrence.pending) && <div className="console-plan-status"><ReportStatus report={recurrence} label="Bills" /></div>}

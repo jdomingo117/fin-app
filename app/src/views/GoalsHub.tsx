@@ -72,7 +72,7 @@ export default function GoalsHub() {
     setEditing(goal)
   }
 
-  return <ConsoleHub id="goals" title="Goals" period="Progress from current account balances" onBack={route.back}
+  return <ConsoleHub id="goals" title="Goals" compactLabel={featured?.progress ? featured.name : 'Goals'} period="Progress from current account balances" onBack={route.back}
     entry={route.entry?.id === 'goals' ? route.entry : undefined} figure={figure} strip={strip} art={art} redacted={redacted}>
     <div className="console-analysis-modules console-plan">
       {planning.data && (planning.error || planning.pending) && <div className="console-plan-status"><ReportStatus report={planning} label="Goals" /></div>}

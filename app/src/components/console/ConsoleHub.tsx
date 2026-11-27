@@ -204,9 +204,11 @@ export function ConsoleHomeButton({ onBack }: { onBack: () => void }) {
   </button>
 }
 
-export default function ConsoleHub({ id, title, period, figure, strip, art, filters, tabs, entry, onBack, children, redacted }: {
+export default function ConsoleHub({ id, title, compactLabel = title, period, figure, strip, art, filters, tabs, entry, onBack, children, redacted }: {
   id: 'income' | 'dashboard' | 'accounts' | 'expenses' | 'goals' | 'bills'
   title: string
+  /** Names the figure in the compact dock when the title alone wouldn't. */
+  compactLabel?: string
   period: string
   figure: ConsoleFigure
   strip: ConsoleFigure[]
@@ -268,7 +270,7 @@ export default function ConsoleHub({ id, title, period, figure, strip, art, filt
           <ConsoleHomeButton onBack={onBack} />
           <h2 ref={heading} tabIndex={-1} className="sr-only">{title} hub</h2>
           <motion.div className="console-compact-title" style={{ opacity: headerOpacity, y: reduce ? 0 : headerShift }} aria-hidden={!compact}>
-            <span>{title}</span>
+            <span>{compactLabel}</span>
             <strong className={redacted ? undefined : 'tabular-nums'}>{figure.cents === undefined ? figure.placeholder ?? (redacted ? 'Hidden' : 'Unavailable') : redacted ? 'Hidden' : consoleMoney(figure.cents, figure.signed)}</strong>
           </motion.div>
           {tabs && <div className="console-hub-tabs">{tabs}</div>}

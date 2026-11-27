@@ -26,11 +26,21 @@
 .console-plan-link:is(:hover, :focus-visible), .console-plan-action:is(:hover, :focus-visible) { background: var(--console-line); }
 .console-plan .console-card-meter { margin-block-start: 2px; }
 
+/* On phones a bill's amount and Manage move under its name. A goal keeps Edit beside its name. */
 @media (max-width: 600px) {
-  .console-plan-row { flex-wrap: wrap; }
-  .console-plan-name { flex-basis: 100%; }
+  .console-plan-row:has(.console-plan-amount) { flex-wrap: wrap; }
+  .console-plan-row:has(.console-plan-amount) .console-plan-name { flex-basis: 100%; }
   .console-plan-amount { margin-inline-end: auto; }
 }
 
 /* A short Plan hub still scrolls far enough for its hero to collapse into the compact dock. */
 .console-hub-body:has(> .console-plan) { box-sizing: border-box; min-block-size: 100%; }
+
+/* The compact dock names the figure. On a narrow phone the name wraps and the amount stays whole. */
+.console-designed-scroll:is([data-section="goals"], [data-section="bills"]) .console-compact-title strong { flex: none; white-space: nowrap; }
+.console-designed-scroll:is([data-section="goals"], [data-section="bills"]) .console-compact-title span { min-inline-size: 0; overflow-wrap: break-word; }
+@media (max-width: 360px) {
+  .console-designed-scroll:is([data-section="goals"], [data-section="bills"]) .console-compact-title { flex-direction: column; align-items: flex-start; gap: 0; }
+  .console-designed-scroll:is([data-section="goals"], [data-section="bills"]) .console-compact-title span { font-size: 12px; }
+  .console-designed-scroll:is([data-section="goals"], [data-section="bills"]) .console-compact-title strong { font-size: 24px; }
+}

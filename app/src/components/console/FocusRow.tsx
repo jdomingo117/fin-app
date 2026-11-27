@@ -69,7 +69,9 @@ type SectionTile<Id extends string> = { id: Id; name: string; subtitle: string; 
 const tapSlop = 12
 const swipeDistance = 35
 
-export function SectionFocusRow<Id extends string>({ items, activeId, onPreview, onActivate, restoreFocus }: {
+export function SectionFocusRow<Id extends string>({ label = 'Sections', items, activeId, onPreview, onActivate, restoreFocus }: {
+  /** The toolbar's accessible name. Home names each row's toolbar after the row. */
+  label?: string
   items: readonly SectionTile<Id>[]
   activeId: Id
   onPreview: (id: Id) => void
@@ -138,7 +140,7 @@ export function SectionFocusRow<Id extends string>({ items, activeId, onPreview,
       if (event.detail && !event.defaultPrevented && !(event.target as Element).closest('button')
         && lastHover.current?.x === event.clientX && lastHover.current.y === event.clientY) onActivate(activeId)
     }}>
-      <div className="console-track" role="toolbar" aria-label="Sections" onKeyDown={move}
+      <div className="console-track" role="toolbar" aria-label={label} onKeyDown={move}
         onPointerDown={event => {
           suppressClick.current = false
           pointer.current = { type: event.pointerType, x: event.clientX, y: event.clientY }

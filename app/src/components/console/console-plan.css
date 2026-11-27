@@ -1,0 +1,36 @@
+/* Goals and Bills hubs. They reuse the ConsoleHub modules; these rules only lay out their lists. */
+.console-plan-list { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+.console-plan-list > li { display: grid; gap: 4px; padding-block: 12px; border-block-start: 1px solid var(--console-line); }
+.console-plan-list > li:first-child { border-block-start: 0; padding-block-start: 0; }
+.console-plan-row { display: flex; align-items: center; gap: 12px; min-inline-size: 0; }
+.console-plan-name { display: grid; flex: 1; min-inline-size: 0; gap: 2px; }
+.console-plan-name strong { font-size: 16px; font-weight: 500; overflow-wrap: anywhere; }
+.console-plan-name span, .console-plan-note, .console-plan-empty { color: var(--console-label); font-size: 13px; }
+.console-plan-figure { font-size: 14px; }
+.console-plan-amount { flex: none; font-size: 16px; }
+.console-plan-note { margin-block: 10px 12px; }
+.console-plan-status { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 13px; }
+.console-plan-status [role="status"] { color: var(--console-label); }
+.console-plan-link, .console-plan-action {
+  flex: none;
+  min-block-size: var(--console-control-size);
+  padding-inline: 13px;
+  border: 1px solid var(--console-line);
+  border-radius: var(--console-button-radius);
+  background: var(--console-fill);
+  color: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.console-plan-link:disabled { cursor: default; opacity: .6; }
+.console-plan-link:is(:hover, :focus-visible), .console-plan-action:is(:hover, :focus-visible) { background: var(--console-line); }
+.console-plan .console-card-meter { margin-block-start: 2px; }
+
+@media (max-width: 600px) {
+  .console-plan-row { flex-wrap: wrap; }
+  .console-plan-name { flex-basis: 100%; }
+  .console-plan-amount { margin-inline-end: auto; }
+}
+
+/* A short Plan hub still scrolls far enough for its hero to collapse into the compact dock. */
+.console-hub-body:has(> .console-plan) { box-sizing: border-box; min-block-size: 100%; }

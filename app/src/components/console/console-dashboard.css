@@ -22,6 +22,40 @@
   scrollbar-width: none;
   scroll-padding-block: 8px;
 }
+/* Home row tabs: one tab stop, the selected row underlined, as in the prototype. */
+/* Above the tile row, whose glow and focus aperture reach upward past its own box. */
+.console-row-tabs { position: relative; z-index: 2; display: flex; flex: none; gap: clamp(18px, 2.4vw, 32px); margin-block: 4px 2px; }
+.console-row-tabs [role="tab"] {
+  position: relative;
+  min-block-size: 44px;
+  padding: 4px 0;
+  color: var(--console-ink);
+  font: 300 clamp(20px, 2vw, 26px)/1.1 var(--font-display);
+  letter-spacing: -.01em;
+  opacity: .72;
+  cursor: pointer;
+  transition: opacity var(--dur-focus) var(--ease-fade);
+}
+.console-row-tabs [role="tab"]::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 2px;
+  block-size: 2px;
+  border-radius: 2px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform var(--dur-focus) var(--ease-settle);
+}
+.console-row-tabs [role="tab"]:hover { opacity: 1; }
+.console-row-tabs [role="tab"][aria-selected="true"] { opacity: 1; font-weight: 400; }
+.console-row-tabs [role="tab"][aria-selected="true"]::after { transform: scaleX(1); }
+/* A flex column, like Home itself, so the tile row's negative aperture margins don't collapse through it. */
+.console-row-panel { display: flex; flex: none; flex-direction: column; }
+@media (forced-colors: active) {
+  .console-row-tabs [role="tab"] { opacity: 1; }
+  .console-row-tabs [role="tab"]::after { background: CanvasText; }
+}
 .console-switcher { position: relative; flex: none; }
 .console-aperture {
   overflow-x: clip;
@@ -364,6 +398,8 @@
 }
 .console-viewport[data-reduced="true"] .console-caption { animation: none; }
 .console-viewport[data-reduced="true"] :is(.console-section, .console-tile-art, .console-tile-rest, .console-tile-active) { transition: none; }
+.console-viewport[data-reduced="true"] .console-row-tabs [role="tab"],
+.console-viewport[data-reduced="true"] .console-row-tabs [role="tab"]::after { transition: none; }
 .console-viewport[data-reduced="true"] .console-hub {
   animation: console-fade-in var(--dur-reduced) var(--ease-fade) both !important;
 }

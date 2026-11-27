@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion'
 import type { Account, Txn } from '../../data'
 import { ConsoleFigureStrip, ConsoleHeadline, ConsoleHeroArt, consoleMoney, type ConsoleArt, type ConsoleFigure } from './ConsoleHub'
-import { enabledSections, type SectionId } from './sections'
+import { homeRows, rowOf, type HomeRowId, type SectionId } from './sections'
+import { HomeRowTabs, homeRowPanelId, homeRowTabId } from './HomeRowTabs'
 import { FocusRow, SectionFocusRow } from './FocusRow'
 import { consoleRise, useConsoleReducedMotion } from './motion'
 import { FocusRing } from './FocusRing'
@@ -9,7 +10,8 @@ import { useConsolePreferences } from './ConsolePreferences'
 import { GlassSurface } from './GlassSurface'
 import ReportStatus from '../ReportStatus'
 import type { BudgetHomeCards, ExpenseCategoryShare } from '../../lib/consoleHome'
-import { BudgetCategoryCards, ConsoleKeyHints, ExpenseCategoriesCard } from './HomeCards'
+import { BillHomeCards, BudgetCategoryCards, ConsoleKeyHints, ExpenseCategoriesCard, GoalHomeCards, ImportHomeCard } from './HomeCards'
+import type { PlanBills, PlanGoals, PlanReadState } from '../../lib/consolePlan'
 import './console-dashboard.css'
 
 type Props = {
@@ -25,7 +27,12 @@ type Props = {
   budgetCards: BudgetHomeCards
   /** Category shares from the Home cash-flow report, or undefined until it has figures. */
   expenseCategories?: ExpenseCategoryShare[]
+  /** Goals and bills the session already holds. Home never starts either read. */
+  goals: { state: PlanReadState; goals?: PlanGoals }
+  bills: { state: PlanReadState; bills?: PlanBills; today: string }
   activeId: SectionId
+  /** The tile each row last had selected. */
+  rowTiles: Record<HomeRowId, SectionId>
   selectSection: (section: SectionId) => void
   restoreFocus: boolean
   covered: boolean
@@ -36,11 +43,13 @@ type Props = {
 
 export default function ConsoleHome({
   figures, activity, activityReport, figureReport, accounts, period, latestDate, trends, budgetCards, expenseCategories,
-  activeId, selectSection, restoreFocus, covered, redacted, open, openTransaction,
+  goals, bills, activeId, rowTiles, selectSection, restoreFocus, covered, redacted, open, openTransaction,
 }: Props) {
   const reduce = useConsoleReducedMotion()
   const audio = useConsolePreferences()
-  const section = enabledSections.find(item => item.id === activeId) ?? enabledSections[0]
+  const row = rowOf(activeId)
+  const section = row.sections.find(item => item.id === activeId) ?? row.sections[0]
+  const money = row.id === 'money' && section.id !== 'budget'
   const [headline, ...secondary] = figures[section.id] ?? []
   const cards = activity?.slice(0, 4)
   const isFlow = section.id === 'income' || section.id === 'expenses'
@@ -49,8 +58,11 @@ export default function ConsoleHome({
   return (
     <section className="console-home" aria-label="Dashboard section previews" data-paused={covered}>
       <h1 className="sr-only">Home</h1>
-      <SectionFocusRow items={enabledSections} activeId={activeId} restoreFocus={restoreFocus}
-        onPreview={selectSection} onActivate={open} />
+      <HomeRowTabs rows={homeRows} activeRow={row.id} onSelect={next => selectSection(rowTiles[next])} />
+      <div id={homeRowPanelId} role="tabpanel" aria-labelledby={homeRowTabId(row.id)} className="console-row-panel">
+        <SectionFocusRow label={`${row.name} sections`} items={row.sections} activeId={section.id} restoreFocus={restoreFocus}
+          onPreview={selectSection} onActivate={open} />
+      </div>
       <motion.div
         key={section.id}
         className="console-preview"
@@ -63,7 +75,7 @@ export default function ConsoleHome({
               figure={headline} reduced={!!reduce} period={isFlow ? period : undefined} redacted={redacted} />
             {secondary.length > 0 && <ConsoleFigureStrip figures={secondary} redacted={redacted} />}
             {isFlow && <p className="console-asof">{latestDate ? `Latest transaction · ${latestDate}` : '\u00a0'}</p>}
-            {section.id !== 'budget' && headline && figureReport.error && <div className="console-preview-report">
+            {money && headline && figureReport.error && <div className="console-preview-report">
               <ReportStatus report={figureReport} label={headline.label} />
             </div>}
           </div>
@@ -122,6 +134,15 @@ export default function ConsoleHome({
         </div> : section.id === 'budget' ? <BudgetCategoryCards budget={budgetCards} redacted={redacted} onOpen={() => {
           audio?.play('select')
           open('budget')
+        }} /> : section.id === 'goals' ? <GoalHomeCards state={goals.state} goals={goals.goals} redacted={redacted} onOpen={() => {
+          audio?.play('select')
+          open('goals')
+        }} /> : section.id === 'bills' ? <BillHomeCards state={bills.state} bills={bills.bills} today={bills.today} redacted={redacted} onOpen={() => {
+          audio?.play('select')
+          open('bills')
+        }} /> : section.id === 'ingestion' ? <ImportHomeCard onOpen={() => {
+          audio?.play('select')
+          open('ingestion')
         }} /> : null}
       </motion.div>
       <ConsoleKeyHints centreShortcut={audio?.preferences.centreShortcut ?? true} />

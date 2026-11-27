@@ -68,6 +68,9 @@ html[data-theme="console"] {
 .console-viewport [data-section="income"] { --section-hue: 85; }
 .console-viewport [data-section="expenses"] { --section-hue: 35; }
 .console-viewport [data-section="budget"] { --section-hue: 295; }
+.console-viewport [data-section="goals"] { --section-hue: 340; }
+.console-viewport [data-section="bills"] { --section-hue: 165; }
+.console-viewport [data-section="ingestion"] { --section-hue: 130; }
 .console-viewport [data-section="income"] {
   --tile-l-high: .74; --tile-l-mid: .60; --tile-l-low: .42; --tile-chroma: .17;
   --card-l-top: .44; --card-l-base: .28; --card-chroma: .15;

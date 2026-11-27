@@ -6,7 +6,11 @@ import type { SectionId } from './sections'
 import { GlassSurface } from './GlassSurface'
 import './console-hub.css'
 
-export type ConsoleFigure = { label: string; cents?: number; signed?: boolean }
+export type ConsoleFigure = {
+  label: string; cents?: number; signed?: boolean
+  /** Text shown instead of a figure when there's no amount to show, such as a source this session hasn't read. Never a zero. */
+  placeholder?: string
+}
 export type ConsoleArt = {
   label: string; values?: number[]; comparison?: number[]; percent?: number; value?: number
   /** A short visible name under a percent ring, such as the tracked goal. */
@@ -85,8 +89,8 @@ export function ConsoleHeadline({ id, label, figure, reduced, title, period, ori
         className={`console-hero-amount${redacted ? '' : ' tabular-nums'}`}
         data-console-shared="figure"
       >
-        {redacted && figure ? <span className="console-hero-placeholder">Hidden</span> :
-          figure?.cents === undefined ? <span className="console-hero-placeholder">{showBudgetPrompt ? 'Open to see this period' : 'Unavailable'}</span> : <>
+        {redacted && figure && !figure.placeholder ? <span className="console-hero-placeholder">Hidden</span> :
+          figure?.cents === undefined ? <span className="console-hero-placeholder">{showBudgetPrompt ? 'Open to see this period' : figure?.placeholder ?? 'Unavailable'}</span> : <>
           <span aria-hidden="true">{consoleMoney(figure.cents, figure.signed, true)}</span>
           <span className="sr-only">{consoleMoney(figure.cents, figure.signed)}</span>
         </>}
@@ -201,7 +205,7 @@ export function ConsoleHomeButton({ onBack }: { onBack: () => void }) {
 }
 
 export default function ConsoleHub({ id, title, period, figure, strip, art, filters, tabs, entry, onBack, children, redacted }: {
-  id: 'income' | 'dashboard' | 'accounts' | 'expenses'
+  id: 'income' | 'dashboard' | 'accounts' | 'expenses' | 'goals' | 'bills'
   title: string
   period: string
   figure: ConsoleFigure
@@ -265,7 +269,7 @@ export default function ConsoleHub({ id, title, period, figure, strip, art, filt
           <h2 ref={heading} tabIndex={-1} className="sr-only">{title} hub</h2>
           <motion.div className="console-compact-title" style={{ opacity: headerOpacity, y: reduce ? 0 : headerShift }} aria-hidden={!compact}>
             <span>{title}</span>
-            <strong className={redacted ? undefined : 'tabular-nums'}>{redacted ? 'Hidden' : figure.cents === undefined ? 'Unavailable' : consoleMoney(figure.cents, figure.signed)}</strong>
+            <strong className={redacted ? undefined : 'tabular-nums'}>{figure.cents === undefined ? figure.placeholder ?? (redacted ? 'Hidden' : 'Unavailable') : redacted ? 'Hidden' : consoleMoney(figure.cents, figure.signed)}</strong>
           </motion.div>
           {tabs && <div className="console-hub-tabs">{tabs}</div>}
         </div>

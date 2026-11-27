@@ -7,7 +7,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNo
 import { useOutlet, useLocation, useNavigate } from 'react-router-dom'
 import { useData } from '../../contexts/DataContext'
 import { useView, type View } from '../../router'
-import { enabledSections, type SectionId } from './sections'
+import { enabledSections, initialRowTiles, rowOf, type HomeRowId, type SectionId } from './sections'
 import { PlanReportsProvider } from './PlanReports'
 import { captureConsoleOrigin, type ConsoleEntry } from './ConsoleHub'
 import { ControlCentre } from './ControlCentre'
@@ -20,6 +20,8 @@ export type ConsoleOutlet = {
   home: boolean
   active: SectionId
   select: (id: SectionId) => void
+  /** The tile each Home row last had selected, so switching rows returns to it. */
+  rowTiles: Record<HomeRowId, SectionId>
   restoreFocus: boolean
   entry?: ConsoleEntry
   begin: (entry: ConsoleEntry) => void
@@ -27,12 +29,12 @@ export type ConsoleOutlet = {
 }
 
 const hubTitles: Partial<Record<View, string>> = {
-  dashboard: 'Overview', accounts: 'Accounts', income: 'Income', expenses: 'Expenses', budget: 'Budget',
+  dashboard: 'Overview', accounts: 'Accounts', income: 'Income', expenses: 'Expenses', budget: 'Budget', goals: 'Goals', bills: 'Bills',
   ledger: 'Ledger review', transfers: 'Transfers', ingestion: 'Ingestion', settings: 'Settings',
 }
 
 const workflowHubs: View[] = ['budget', 'ledger', 'ingestion', 'transfers', 'settings']
-const expandedHubs: View[] = ['dashboard', 'income', 'expenses', 'accounts']
+const expandedHubs: View[] = ['dashboard', 'income', 'expenses', 'accounts', 'goals', 'bills']
 
 function sceneSection(view: View): SectionId {
   return enabledSections.find(section => section.id === view)?.id ?? 'dashboard'
@@ -70,6 +72,7 @@ function ConsoleViewportContent({ visible, startEntrySeen }: { visible: boolean;
   const home = location.pathname === '/' || (view === 'dashboard' && query.get('hub') !== 'overview')
   const demo = import.meta.env.DEV && home && query.get('demo') === 'foundation'
   const [active, setActive] = useState<SectionId>(() => sceneSection(view))
+  const [rowTiles, setRowTiles] = useState(() => ({ ...initialRowTiles, [rowOf(active).id]: active }))
   const [entry, setEntry] = useState<ConsoleEntry>()
   const [snapHue, setSnapHue] = useState(false)
   const [ambient, setAmbient] = useState(active)
@@ -93,7 +96,7 @@ function ConsoleViewportContent({ visible, startEntrySeen }: { visible: boolean;
   const reduce = useConsoleReducedMotion()
   const designed = !home && expandedHubs.includes(view)
   const workflow = workflowHubs.includes(view)
-  const outlet = useOutlet({ home, active, select, restoreFocus, entry, begin, back: requestBack } satisfies ConsoleOutlet)
+  const outlet = useOutlet({ home, active, select, rowTiles, restoreFocus, entry, begin, back: requestBack } satisfies ConsoleOutlet)
 
   useLayoutEffect(() => {
     const root = document.documentElement
@@ -113,16 +116,27 @@ function ConsoleViewportContent({ visible, startEntrySeen }: { visible: boolean;
     setRestoreFocus(true)
   }, [])
 
+  function remember(id: SectionId) {
+    const row = rowOf(id).id
+    setRowTiles(current => current[row] === id ? current : { ...current, [row]: id })
+  }
+
   function select(id: SectionId) {
-    if (id !== active) audio.play('move', enabledSections.findIndex(section => section.id === id))
+    if (id !== active) {
+      // A row switch has its own tab cue. Within a row the cue follows the tile's position.
+      if (rowOf(id).id !== rowOf(active).id) audio.play('tab')
+      else audio.play('move', rowOf(id).sections.findIndex(section => section.id === id))
+    }
     setSnapHue(false)
     setActive(id)
+    remember(id)
   }
 
   function begin(next: ConsoleEntry) {
     audio.playFromGesture('select')
     setEntry({ ...next, origin: home && next.id === active ? captureConsoleOrigin(root.current) : undefined })
     setActive(next.id)
+    remember(next.id)
     if (ambient !== next.id) {
       setSnapHue(true)
       setAmbient(next.id)

@@ -9,7 +9,7 @@ tags:
 type: handoff
 status: current
 project: Halcyon
-updated: 2026-11-26
+updated: 2026-11-27
 related:
   - "[[README]]"
   - "[[INDEX]]"
@@ -19,7 +19,7 @@ related:
 
 # Halcyon — Current status
 
-## Resume here — 26 November 2026
+## Resume here — 27 November 2026
 
 Console is the default appearance on `main`. The owner approved the switch on
 26 November 2026, and PR #12 merged it as `c2fd2a0`. A profile with no saved
@@ -44,15 +44,29 @@ Classic removal needs separate owner approval after the window.
   Settings choice and chose Budget's own order for the Home cards. That order
   landed after the merge, in a follow-up PR from `main`
   (`codex/console-phase-6a-budget-order`). The merge is in the observation log.
-- **Batch 6B is at its gate.** It's on `codex/console-phase-6b` and is not
-  merged. Control Centre shows up to three notices from Budget checks, bills due
+- **Batch 6B is merged.** PR #16 merged it into `main` as `a9293a2` on 27
+  November 2026, during observation with owner approval. Control Centre shows up to three notices from Budget checks, bills due
   in 14 days, Ledger review, transfers and goals at their target, with an
   all-caught-up state. Quick actions add Quiet alerts and Rest. No new write
   path. See the [6B review](docs/design/console-phase-6b-review.md). On 27
   November the owner chose to let error toasts through Quiet alerts and kept
-  the notice order, with target reached as the only goal milestone, and approved
-  merging during observation once CI is green.
-- **Batch 6C** (Money and Plan rows) waits on the owner's open decisions.
+  the notice order, with target reached as the only goal milestone. The merge
+  is in the observation log. CI on the merged head was still running at the
+  merge; the `main` push run on `a9293a2` covers it.
+- **Batch 6C is at its gate.** It's on `codex/console-phase-6c`, branched from
+  `a9293a2`, and is not merged. On 27 November 2026 the owner settled decisions
+  1, 2 and 4: Ledger review and Transfers stay in Control Centre, Ingestion
+  gets its own **Import** row (and keeps its quick action), Investments stays
+  inside Accounts, and Goals and Bills are the first Plan hubs. Home now has
+  Money, Plan and Import rows switched by a visible tab control, each with its
+  own tab stop and remembered tile. The Goals and Bills hubs share one
+  planning and one recurrence read for the session and edit only through
+  `manage-planning` and `manage-recurring-series`. No migration or new write
+  path. See the [6C review](docs/design/console-phase-6c-review.md). It waits
+  on the owner's review, CI's WebKit result and a merge decision. Nothing
+  beyond 6C has started.
+- **PR #17** (the 6B merge record, `codex/console-phase-6b-merge-log`) is still
+  open and edits the same lines as above, with the same 6B wording.
 
 ## Wave 1–3C audit handoff — 21 November 2026
 

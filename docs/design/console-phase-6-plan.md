@@ -1,6 +1,6 @@
 # Console Phase 6 · prototype integration plan
 
-Proposed 26 November 2026 · not yet approved. The owner makes the decisions in [Open decisions](#open-decisions) before Batch 6C starts.
+Proposed 26 November 2026. The owner settled the [open decisions](#open-decisions) by 27 November 2026, before Batch 6C started.
 
 Phase 6 brings the remaining interaction ideas from the owner's Console-style Finance Home prototype into the shipped Console. The prototype is a Claude Design canvas with one 1440 × 900 interactive artboard, `Main.dc.html`. It uses fictional figures and the placeholder name "Strata". Use it for structure and behaviour only. Never copy its figures, names or brand.
 
@@ -66,7 +66,7 @@ Built on `codex/console-phase-6a` and stopped at its gate on 26 November 2026. S
 
 #### 6B as built
 
-Built on `codex/console-phase-6b` and stopped at its gate on 27 November 2026. See the [6B review](console-phase-6b-review.md). It isn't merged.
+Built on `codex/console-phase-6b` and gated on 27 November 2026. See the [6B review](console-phase-6b-review.md). PR #16 merged it into `main` as `a9293a2` on 27 November 2026, during observation with owner approval.
 
 - **Notices.** Up to three, in the order Budget, Bills, Ledger review, Transfers, Goals (owner approved, 27 November 2026). Budget uses the loaded workspace's active checks and is never read from Control Centre. Bills are active recurring series due in the next 14 days. Goals are active goals at their target. Bills and goals are read on the first open and kept for the session. A source that's loading, unopened or failed never counts as zero: the strip reads **Checking for notices…**, names an unopened Budget, or reads **Nothing to show** and names what couldn't be checked. **All caught up** appears only when nothing failed.
 - **Opening a notice.** Budget opens Budget, Bills opens Expenses on the Recurring hub tab, Ledger review opens the needs-review list, Transfers opens Transfers, and Goals opens Income on Strategic projections.
@@ -75,13 +75,25 @@ Built on `codex/console-phase-6b` and stopped at its gate on 27 November 2026. S
 
 ### 6C · Money and Plan rows
 
-Needs the owner's decisions first.
+The owner settled decisions 1, 2 and 4 on 27 November 2026, before any code.
 
 - Split the section row into two labelled rows, each its own `FocusRow` with its own roving tab stop and a visible tab control. Preserve deep links, Back to the same tile and restore-focus behaviour.
 - Money keeps Overview, Accounts, Income, Expenses and Budget, plus Investments if the owner chooses it.
 - Plan adds Goals and Bills hubs built on `usePlanning` and `useRecurrence`, using the ConsoleHub expanded-and-compact language. Write through the existing `manage-planning` and `manage-recurring-series` Edge Functions only.
 - Each new hub needs empty, error and redacted states, and must never show a fabricated zero.
 - Gate: the full Phase 5 cross-screen matrix for the changed rows and new hubs, plus a 30-second walkthrough across both rows.
+
+#### 6C as built
+
+Built on `codex/console-phase-6c` and stopped at its gate on 27 November 2026. See the [6C review](console-phase-6c-review.md). It isn't merged.
+
+- **Rows.** Home has three rows, **Money**, **Plan** and **Import**, switched by a visible tab control above the tiles. One row shows at a time, as in the prototype. The tablist is one tab stop, and each row is its own labelled toolbar with its own roving tab stop. Each row remembers its last tile. Money keeps Overview, Accounts, Income, Expenses and Budget (*decision 2: Investments stays inside Accounts*). Plan has Goals and Bills (*decision 4*). Import has Ingestion (*decision 1: Ledger review and Transfers stay in Control Centre; Ingestion gets its own row and keeps its quick action*).
+- **Navigation.** `/goals`, `/bills` and `/ingestion` open directly. Back returns to the hub's row with its tile focused, and restore-focus works as before. Classic redirects `/goals` and `/bills` to Strategic projections and the Recurring hub.
+- **Shared reads.** One provider holds the planning and recurrence reads for the signed-in visit, shared by Control Centre, the Overview ring, the Plan previews and both hubs. Each is read once, when first asked for, and again only after reports are invalidated. Home never starts either read; until something has, the Plan previews say what opening the hub will show.
+- **Goals hub.** ConsoleHub expanded and compact. The hero features the goal the Overview ring tracks, or the first measurable active goal. Active, paused and archived goals show progress from the same balances as Strategic projections. **New goal** and **Edit** use the existing goal form, which writes through `manage-planning`, with Undo.
+- **Bills hub.** ConsoleHub expanded and compact. The hero is the total expected in the next 14 days, with the monthly commitment. Bills due in 14 days and later bills show house dates and amounts. **Manage** uses the existing bill form, which writes through `manage-recurring-series`, with Undo.
+- **States.** Each hub has loading, empty, error and redacted states. A goal without all its accounts says **Progress unavailable**, no detected bills reads **No bills detected**, and a failed read says **Unavailable** with **Retry**. Nothing missing becomes a zero.
+- Both forms now use the shared `Select`, scroll within the viewport on phones, and (for bills) trap focus and show house dates. No new write path, Edge Function or migration.
 
 ## Out of scope
 
@@ -91,7 +103,7 @@ Needs the owner's decisions first.
 
 ## Open decisions
 
-1. Should Ledger, Transfers and Ingestion get a third home row, or stay in Control Centre?
-2. Should Investments be its own Money tile, or stay inside Accounts?
+1. ~~Should Ledger, Transfers and Ingestion get a third home row, or stay in Control Centre?~~ Settled 27 November 2026: Ledger review and Transfers stay in Control Centre. Ingestion gets its own Home row, labelled **Import**, and keeps its Control Centre quick action.
+2. ~~Should Investments be its own Money tile, or stay inside Accounts?~~ Settled 27 November 2026: it stays inside Accounts.
 3. ~~Which planning goal, if any, should the Overview ring track?~~ Settled 27 November 2026: the owner picks one active goal per device in **Settings › Appearance › Overview ring**, defaulting to the net worth trend. Syncing the choice across devices would need a new write path and a fresh decision.
-4. Are Goals and Bills the right first Plan hubs?
+4. ~~Are Goals and Bills the right first Plan hubs?~~ Settled 27 November 2026: yes.

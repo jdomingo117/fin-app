@@ -82,6 +82,10 @@ hand to find the transfer-linker gap.
 
 ## Recent changes
 
+- 2026-11-27 — Console Phase 6C gates Money, Plan and Import rows with Goals and Bills hubs.
+
+- 2026-11-27 — Console Phase 6B merges during observation; Quiet alerts lets error toasts through.
+
 - 2026-11-27 — Console Phase 6B adds Control Centre notices, Quiet alerts and Rest.
 
 - 2026-11-27 — Console Phase 6A merges during observation; its Budget Home cards follow Budget’s own order.
@@ -97,7 +101,3 @@ hand to find the transfer-linker gap.
 - 2026-11-25 — Console Phase 5 owner fixes qualify Home zoom, hub controls, recovery states and figure readability in Chromium and WebKit.
 
 - 2026-11-24 — Console CI runs in four shards and the contrast audit grades the Budget prompt against console ink.
-
-- 2026-11-24 — Console Phase 5 records the revised desktop performance gate and completes the narrow Ledger and Budget copy fixes.
-
-- 2026-11-24 — The Console Phase 5 hold follow-up updates activity contrast and Ledger copy, and reduces ambient paint work.

@@ -603,21 +603,32 @@ implemented but the remaining M6 verification gates are still open.
   and the persistent scene. `ControlCentre.tsx` owns the modal, keyboard shortcut, focus trapping and focus return.
   Its notice strip comes from `src/lib/consoleNotices.ts`: Budget checks from the Budget session's
   loaded workspace (Control Centre never starts a Budget read), recurring bills due in the next 14
-  days and planning goals at their target (both read on the first open and kept for the session),
+  days and planning goals at their target (both read on the first open through `PlanReports.tsx`),
   and the portfolio's Ledger review and transfer counts. A notice opens its hub; `noticeState()`
   asks Expenses or Income for its Recurring hub or Strategic projections tab. Quiet alerts is
   session-only state in `App.tsx`, exposed as `useView().quietAlerts`. Rest shows the start screen
   again through `ConsoleViewport`. [Phase 6B](docs/design/console-phase-6b-review.md).
+  `PlanReports.tsx` holds one planning read and one recurrence read for the signed-in visit, shared by
+  Control Centre, the Overview ring, the Plan previews and the Goals and Bills hubs; each is read once,
+  when first asked for, and again only after reports are invalidated. `src/lib/consolePlan.ts` derives
+  goal progress, active and inactive goals, bills due in the next 14 days and house-date bill timing,
+  leaving unmeasurable values undefined. [Phase 6C](docs/design/console-phase-6c-review.md).
+  Home has three rows, Money, Plan and Import (`sections.ts` `homeRows`), switched by the
+  `HomeRowTabs.tsx` tablist; one row shows at a time as its own `SectionFocusRow` toolbar, and
+  `ConsoleViewport` remembers each row's last tile (`rowTiles` on the outlet).
+  `src/views/GoalsHub.tsx` and `src/views/BillsHub.tsx` are the Console-only Plan hubs at `/goals` and
+  `/bills` (Classic redirects them to Strategic projections and the Recurring hub). They edit only
+  through `PlanningGoalDialog` (`manage-planning`) and `RecurringSeriesDialog` (`manage-recurring-series`).
   `src/views/dashboard/ConsoleDashboardHome.tsx` owns Home previews and route entry.
-  `HomeCards.tsx` renders the Budget category-limit cards, the Expenses top-category card and the
-  fine-pointer key-hint strip. `src/lib/consoleHome.ts` derives them, and the Overview goal ring, from
+  `HomeCards.tsx` renders the Budget category-limit cards, the Expenses top-category card, the Goals,
+  Bills and Import cards and the fine-pointer key-hint strip. `src/lib/consoleHome.ts` derives them, and the Overview goal ring, from
   data Home already holds: the Budget session's loaded workspace (Home never starts a Budget read),
   the Home cash-flow report's category facets (the same totals the Expenses hub uses) and the planning
   goal chosen as the local `overviewGoal` Console preference. [Phase 6A](docs/design/console-phase-6a-review.md).
   `ConsoleOverviewHub.tsx` owns the Overview modules and scopes its date and account filters to
   Spending insights. Both read the viewport's warm `DashboardReports.tsx` cache.
   `ConsoleHub.tsx` provides the shared-entry hero, sticky compact header and modules for
-  Income, Overview, Accounts and Expenses. The hero clips at the dock edge during collapse. The analysis hubs use their existing reports and keep a single filter instance below the hero on phones. The Phase 2 foundation shares appearance preferences, CSS/Framer Motion
+  Income, Overview, Accounts, Expenses, Goals and Bills. A figure can carry a placeholder instead of an amount. The hero clips at the dock edge during collapse. The analysis hubs use their existing reports and keep a single filter instance below the hero on phones. The Phase 2 foundation shares appearance preferences, CSS/Framer Motion
   presets, `FocusRing`, `FocusRow` and `GlassSurface` across those views.
   `WorkflowHub.tsx` provides the compact Home pill, route title, data-owned status and skeleton modules for Budget, Ledger, Ingestion and Transfers. Budget reuses cached current-period figures for the Home handoff and keeps the existing interrupted-save checkpoint. Ledger has a reading surface, companion modules and a Console detail sheet. Ingestion's stepper follows the existing bank and investment uploaders. Transfers keeps its queue and scan actions alongside decision guidance. The existing draft-exit, keyboard focus and grouped-confirmation guards remain in their workflow controllers.
   `AmbientBackground.tsx` owns the six-material scene, particle cutouts behind figures, effects tiers and suspension rules.

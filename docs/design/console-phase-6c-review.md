@@ -96,10 +96,23 @@ Each hub also has a compact capture beside it in the folder (`*-goals-compact.jp
 | `npm run test:browser:typecheck` | Pass |
 | `npm test` | 755 passed, including 7 new `lib/consolePlan.test.ts` cases |
 | `npm run build` | Pass, with the existing chunk-size advisory |
-| Full Console Playwright suite, Desktop and Phone, `CI=1`, three shards | See [Final suite](#final-suite) |
+| Full Console Playwright suite, Desktop and Phone, `CI=1`, three shards | 168 passed, 22 skipped; one pre-existing failure on the first pass. See [Final suite](#final-suite) |
 | `console-phase-six-c.spec.ts` | 21 passed with captures on, 3 skipped (the walkthrough recording, and the Classic check outside Desktop) |
 | Full Phase 5 matrix (`console-phase-five.spec.ts`) after the last fix | 13 passed, 7 skipped by project |
 | WebKit | **Not run locally.** Only Chromium is installed, and I didn't download WebKit. The WebKit project now includes `console-phase-six-c.spec.ts`, so CI runs the 6C regressions in WebKit. |
+
+### Final suite
+
+At the final code head (`f8d17d1`), `CI=1`, Desktop and Phone, in three foreground shards:
+
+| Shard | Passed | Skipped by project or capture-only condition | Failed |
+| --- | ---: | ---: | ---: |
+| 1/3 | 62 | 2 | 0 |
+| 2/3 | 62 | 5 | 0 |
+| 3/3 | 43 | 15 | 1, the pre-existing Phase 3 focus failure below |
+| 3/3, rerun | 44 | 15 | 0 |
+
+So the suite is 168 passed and 22 skipped, with that one failure on the first pass of shard 3.
 
 The new regressions cover the following:
 
@@ -155,7 +168,7 @@ For the baseline, run main's own harness from an `a9293a2` worktree with `CONSOL
 
 ## Found in passing
 
-- **Overview hub focus on Phone.** In one full-suite run, `console-phase-three` "recent activity edits and reloads the full parent" failed on Phone: focus didn't return to the edited row. 6C doesn't touch that hub. It passed three repeats on its own and in the rerun of its shard.
+- **Overview hub focus on Phone, pre-existing.** `console-phase-three` "recent activity edits and reloads the full parent" failed on Phone in two of three shard-3 runs: after the transaction editor closes, focus lands on the page body instead of the edited row. It passes 12 of 12 on its own, even with six workers. With the 6B and 6C Phone specs running alongside, it failed 2 of 3 repeats. **`main` (`a9293a2`) fails the same way**: with the 6A and 6B Phone specs alongside, 3 of 4 repeats ended with focus on the body. So it's a load-sensitive focus return in the Overview hub's editor that predates 6C, and the extra 6C spec only makes the load more likely. It isn't fixed here.
 - **Bill headline rounding.** Like every Console hero, the Bills headline shows whole dollars ($20) with the exact amount ($19.99) for screen readers and in the compact dock. It's the existing hero convention, so it isn't changed here.
 - **PR #17.** The 6B merge record is still open on `codex/console-phase-6b-merge-log` and edits the same status lines. This branch describes 6B as merged using the same wording, so whichever merges first, the other resolves to the same text.
 

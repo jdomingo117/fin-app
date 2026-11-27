@@ -8,6 +8,7 @@ import { useOutlet, useLocation, useNavigate } from 'react-router-dom'
 import { useData } from '../../contexts/DataContext'
 import { useView, type View } from '../../router'
 import { enabledSections, type SectionId } from './sections'
+import { PlanReportsProvider } from './PlanReports'
 import { captureConsoleOrigin, type ConsoleEntry } from './ConsoleHub'
 import { ControlCentre } from './ControlCentre'
 import { WorkflowHub } from './WorkflowHub'
@@ -54,7 +55,9 @@ function ConsoleRouteLayer({ children, reduced }: { children: ReactNode; reduced
 export default function ConsoleViewport({ startEntrySeen }: { startEntrySeen: { current: boolean } }) {
   const visible = useDocumentVisible()
   return <ConsolePreferencesProvider visible={visible}>
-    <DashboardReportsProvider><ConsoleViewportContent visible={visible} startEntrySeen={startEntrySeen} /></DashboardReportsProvider>
+    <DashboardReportsProvider><PlanReportsProvider>
+      <ConsoleViewportContent visible={visible} startEntrySeen={startEntrySeen} />
+    </PlanReportsProvider></DashboardReportsProvider>
   </ConsolePreferencesProvider>
 }
 

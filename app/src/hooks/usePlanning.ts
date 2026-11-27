@@ -42,4 +42,4 @@ export async function readPlanning(tenant: string) {
       cadence:e.cadence,startDate:e.start_date,endDate:e.end_date}) as PlanningEvent),
   }
 }
-export function usePlanning(enabled = true) { return useReport('planning',readPlanning,enabled) }
+export function usePlanning(enabled = true, keepDuringRefresh = false) { return useReport('planning',readPlanning,enabled,keepDuringRefresh) }

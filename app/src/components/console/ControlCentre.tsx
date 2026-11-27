@@ -3,9 +3,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useBudget } from '../../contexts/BudgetContext'
 import { useData } from '../../contexts/DataContext'
 import { focusableElements } from '../../hooks/useDialogFocus'
-import { usePlanning } from '../../hooks/usePlanning'
 import { usePortfolio } from '../../hooks/usePortfolio'
-import { useRecurrence } from '../../hooks/useRecurrence'
 import { budgetPresentation } from '../../lib/budgetPresentation'
 import { BUDGET_ENABLED } from '../../lib/budgetWorkspace'
 import { goalRing } from '../../lib/consoleHome'
@@ -14,6 +12,7 @@ import { TODAY } from '../../lib/period'
 import { useView, type View } from '../../router'
 import { useConsolePreferences } from './ConsolePreferences'
 import { FocusRow } from './FocusRow'
+import { usePlanReports } from './PlanReports'
 import { GlassSurface } from './GlassSurface'
 import { consoleDuration, useConsoleReducedMotion } from './motion'
 import { hasCoveringOverlay, isEditableShortcutTarget } from './useScenePause'
@@ -47,10 +46,9 @@ export function ControlCentre({ onOpenChange, onRest }: { onOpenChange: (open: b
   const { go, toast, quietAlerts, setQuietAlerts } = useView()
   const { signOut } = useAuth()
   const portfolio = usePortfolio()
-  // Bills and goals are read on the first open and kept for the session.
+  // Bills and goals are read on the first open and kept for the session, shared with the Plan hubs.
   const [checked, setChecked] = useState(false)
-  const recurrence = useRecurrence(undefined, 'reporting', TODAY, checked)
-  const planning = usePlanning(checked)
+  const { recurrence, planning } = usePlanReports({ planning: checked, recurrence: checked })
   const { accounts } = useData()
   const budget = useBudget()
   const { preferences, play, playFromGesture, toggle } = useConsolePreferences()!

@@ -12,6 +12,8 @@ export type View =
   | 'income'
   | 'expenses'
   | 'budget'
+  | 'goals'
+  | 'bills'
   | 'ledger'
   | 'ingestion'
   | 'transfers'
@@ -47,6 +49,9 @@ export const VIEW_PATHS: Record<View, string> = {
   income: '/income',
   expenses: '/expenses',
   budget: '/budget',
+  /** Console-only Plan hubs. Classic redirects them to Strategic projections and the Recurring hub. */
+  goals: '/goals',
+  bills: '/bills',
   ledger: '/ledger',
   ingestion: '/ingestion',
   transfers: '/transfers',

@@ -4,6 +4,7 @@ import { useDialogFocus } from '../hooks/useDialogFocus'
 import type { Account } from '../data'
 import type { PlanningGoal, PlanningGoalStatus, PlanningMetric } from '../lib/planning'
 import { InlineActivity } from './OperationStatus'
+import { Select } from './Controls'
 
 type Props = { goal: PlanningGoal | null; accounts: Account[]; onClose: () => void; onChanged: () => Promise<void>; onSaved: (eventId: string) => void }
 
@@ -55,15 +56,15 @@ export default function PlanningGoalDialog({ goal, accounts, onClose, onChanged,
   }
 
   return <div className="fixed inset-0 z-50 grid place-items-center bg-black/45 p-4" role="presentation" onMouseDown={onClose}>
-    <section ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="planning-goal-title" className="w-full max-w-xl rounded-2xl border border-[var(--hair)] bg-surface p-5 shadow-2xl outline-none" onMouseDown={(event) => event.stopPropagation()}>
+    <section ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="planning-goal-title" className="max-h-full w-full max-w-xl overflow-y-auto overscroll-contain rounded-2xl border border-[var(--hair)] bg-surface p-5 shadow-2xl outline-none" onMouseDown={(event) => event.stopPropagation()}>
       <div className="flex items-start justify-between gap-3"><div><p className="text-[11px] font-bold uppercase tracking-[0.08em] text-muted">Planning goal</p><h2 id="planning-goal-title" className="mt-1 text-lg font-bold text-ink">{goal ? 'Edit goal' : 'Create your first goal'}</h2></div><button type="button" onClick={onClose} className="rounded-md px-2 py-1 text-muted hover:bg-black/[0.05]" aria-label="Close">×</button></div>
       <p className="mt-4 rounded-lg border border-[var(--hair-soft)] bg-[var(--input-bg)] p-3 text-[12px] leading-relaxed text-muted">Goals are planning inputs only. Saving one never changes an account balance, bank transaction, or recurring commitment.</p>
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
         <label className="sm:col-span-2 text-[13px] font-semibold text-ink2">Goal name<input value={name} onChange={(event) => setName(event.target.value)} className={inputClass} placeholder="Emergency reserve" /></label>
-        <label className="text-[13px] font-semibold text-ink2">Measure<select value={metric} onChange={(event) => setMetric(event.target.value as PlanningMetric)} className={inputClass}><option value="cash">Cash holdings</option><option value="net_worth">Net worth</option></select></label>
+        <label className="text-[13px] font-semibold text-ink2">Measure<Select className="mt-1.5" value={metric} onChange={(value) => setMetric(value as PlanningMetric)}><option value="cash">Cash holdings</option><option value="net_worth">Net worth</option></Select></label>
         <label className="text-[13px] font-semibold text-ink2">Target amount (AUD)<input value={amount} onChange={(event) => setAmount(event.target.value)} inputMode="decimal" className={inputClass} placeholder="50000" /></label>
         <label className="text-[13px] font-semibold text-ink2">Target date <span className="font-normal text-muted">optional</span><input type="date" value={targetDate} onChange={(event) => setTargetDate(event.target.value)} className={inputClass} /></label>
-        {goal && <label className="text-[13px] font-semibold text-ink2">Status<select value={status} onChange={(event) => setStatus(event.target.value as PlanningGoalStatus)} className={inputClass}><option value="active">Active</option><option value="paused">Paused</option><option value="archived">Archived</option></select></label>}
+        {goal && <label className="text-[13px] font-semibold text-ink2">Status<Select className="mt-1.5" value={status} onChange={(value) => setStatus(value as PlanningGoalStatus)}><option value="active">Active</option><option value="paused">Paused</option><option value="archived">Archived</option></Select></label>}
       </div>
       <fieldset className="mt-5"><legend className="text-[13px] font-semibold text-ink2">Included accounts</legend><p className="mt-1 text-[12px] text-muted">Only selected accounts inform this goal’s current value and observed run rate.</p><div className="mt-3 max-h-44 space-y-1.5 overflow-auto rounded-lg border border-[var(--hair)] p-2">{accounts.map((account) => <label key={account.id} className="flex min-h-10 items-center gap-3 rounded-md px-2 text-[13px] hover:bg-black/[0.03]"><input type="checkbox" checked={accountIds.includes(account.id)} onChange={() => toggleAccount(account.id)} className="h-4 w-4 accent-[var(--color-accent)]" /><span className="font-semibold text-ink">{account.name}</span><span className="ml-auto text-muted">{account.type}</span></label>)}</div></fieldset>
       {error && <p className="mt-4 rounded-lg border border-neg/30 bg-neg/5 p-3 text-[13px] text-neg" role="alert">{error}</p>}

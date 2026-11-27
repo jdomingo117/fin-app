@@ -4,7 +4,7 @@ import { dashboard, signInForConsole } from './fixtures/console-review'
 const reports = new Set(['portfolio_summary', 'cash_flow_report', 'net_worth_monthly', 'reporting_transaction_lines'])
 
 function tile(page: Page, name: string) {
-  return page.getByRole('toolbar', { name: 'Sections' }).getByRole('button', { name, exact: true })
+  return page.getByRole('toolbar', { name: 'Money sections' }).getByRole('button', { name, exact: true })
 }
 
 async function enterConsole(page: Page) {

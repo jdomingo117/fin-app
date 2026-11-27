@@ -2,7 +2,7 @@ import { categoryDisplayName, type Account } from '../data'
 import type { BudgetReadState } from './budgetWorkspace'
 import type { BudgetPresentation, BudgetValue } from './budgetPresentation'
 import type { PlanningGoal } from './planning'
-import { currentValueFor } from './projections'
+import { goalProgress } from './consolePlan'
 
 /* Console Home preview derivations. Each one reuses data a Home read or the
  * Budget session already holds, and returns an explicit state instead of a zero
@@ -73,11 +73,9 @@ export type GoalRing = { goalId: string; name: string; percent: number; valueCen
 export function goalRing(goals: PlanningGoal[] | undefined, goalId: string | null | undefined, accounts: Account[]): GoalRing | undefined {
   if (!goalId || !goals) return undefined
   const goal = goals.find(candidate => candidate.id === goalId)
-  if (!goal || goal.status !== 'active' || !Number.isSafeInteger(goal.targetCents) || goal.targetCents <= 0) return undefined
-  const scoped = accounts.filter(account => goal.accountIds.includes(account.id))
   // A goal whose accounts aren't all in the directory can't be measured honestly.
-  if (!goal.accountIds.length || scoped.length !== new Set(goal.accountIds).size) return undefined
-  const valueCents = currentValueFor(goal.metric === 'net_worth' ? 'netWorth' : 'cash', scoped)
-  const percent = Math.max(0, Math.min(100, Math.floor(valueCents * 100 / goal.targetCents)))
+  const progress = goal?.status === 'active' ? goalProgress(goal, accounts) : undefined
+  if (!goal || !progress) return undefined
+  const { valueCents, percent } = progress
   return { goalId: goal.id, name: goal.name, percent, valueCents, targetCents: goal.targetCents }
 }

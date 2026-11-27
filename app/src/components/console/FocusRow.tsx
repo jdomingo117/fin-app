@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, type CSSProperties, type KeyboardEvent, type MouseEvent, type PointerEvent, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useRef, type CSSProperties, type KeyboardEvent, type MouseEvent, type PointerEvent, type ReactNode } from 'react'
 import { useConsolePreferences } from './ConsolePreferences'
 import { FocusRing } from './FocusRing'
 
@@ -69,7 +69,9 @@ type SectionTile<Id extends string> = { id: Id; name: string; subtitle: string; 
 const tapSlop = 12
 const swipeDistance = 35
 
-export function SectionFocusRow<Id extends string>({ items, activeId, onPreview, onActivate, restoreFocus }: {
+export function SectionFocusRow<Id extends string>({ label = 'Sections', items, activeId, onPreview, onActivate, restoreFocus }: {
+  /** The toolbar's accessible name. Home names each row's toolbar after the row. */
+  label?: string
   items: readonly SectionTile<Id>[]
   activeId: Id
   onPreview: (id: Id) => void
@@ -78,8 +80,9 @@ export function SectionFocusRow<Id extends string>({ items, activeId, onPreview,
 }) {
   const active = Math.max(0, items.findIndex(item => item.id === activeId))
   const current = items[active]
+  const audio = useConsolePreferences()
+  const track = useRef<HTMLDivElement>(null)
   const buttons = useRef(new Map<Id, HTMLButtonElement>())
-  const lastHover = useRef<{ x: number; y: number } | null>(null)
   const pointer = useRef<{ type: string; x: number; y: number } | null>(null)
   const touchArmed = useRef<Id | null>(null)
   const suppressClick = useRef(false)
@@ -95,21 +98,43 @@ export function SectionFocusRow<Id extends string>({ items, activeId, onPreview,
     onPreview(id)
   }
 
-  function move(event: KeyboardEvent<HTMLDivElement>) {
-    const step = arrowStep(event.key)
-    if (!step || event.defaultPrevented) return
-    event.preventDefault()
-    const next = items[Math.max(0, Math.min(items.length - 1, active + step))].id
+  function step(delta: number) {
+    const next = items[Math.max(0, Math.min(items.length - 1, active + delta))].id
     preview(next)
     buttons.current.get(next)?.focus({ preventScroll: true })
   }
 
-  function hover(event: PointerEvent<HTMLButtonElement>, id: Id) {
+  function move(event: KeyboardEvent<HTMLDivElement>) {
+    const delta = arrowStep(event.key)
+    if (!delta || event.defaultPrevented) return
+    event.preventDefault()
+    step(delta)
+  }
+
+  // Arrows browse Home before anything has focus, as in the prototype: with
+  // focus on the page itself, Left and Right move the selection and put focus
+  // on the tile. Any focused control keeps its own arrow keys.
+  const latestStep = useRef(step)
+  latestStep.current = step
+  useEffect(() => {
+    function onKey(event: globalThis.KeyboardEvent) {
+      const delta = arrowStep(event.key)
+      if (!delta || event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.isComposing) return
+      const focused = document.activeElement
+      if (focused && focused !== document.body && focused !== document.documentElement) return
+      const node = track.current
+      if (!node?.isConnected || node.closest('[inert], [aria-hidden="true"], [hidden]')) return
+      event.preventDefault()
+      latestStep.current(delta)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
+  /** Hover only lights the tile and ticks, as in the prototype. Moving the selection under a resting pointer made the row run away. */
+  function hover(event: PointerEvent<HTMLButtonElement>) {
     if (event.pointerType !== 'mouse' || event.buttons) return
-    const { clientX: x, clientY: y } = event
-    if (lastHover.current?.x === x && lastHover.current?.y === y) return
-    lastHover.current = { x, y }
-    if (id !== activeId) preview(id)
+    audio?.play('hover')
   }
 
   function activate(event: MouseEvent<HTMLButtonElement>, id: Id) {
@@ -126,19 +151,18 @@ export function SectionFocusRow<Id extends string>({ items, activeId, onPreview,
         touchArmed.current = id
         return
       }
+    } else if (event.detail > 0 && id !== activeId) {
+      // A click selects a tile; a click on the selected tile opens it.
+      preview(id)
+      return
     }
-    const samePointer = input?.type === 'mouse' && lastHover.current?.x === input.x && lastHover.current?.y === input.y
-    onActivate(samePointer ? activeId : id)
+    onActivate(id)
   }
 
   return <div className="console-switcher">
     <FocusRing layer="glow" />
-    <div className="console-aperture" onClick={event => {
-      // Hover can move a tile away from a stationary pointer before it clicks.
-      if (event.detail && !event.defaultPrevented && !(event.target as Element).closest('button')
-        && lastHover.current?.x === event.clientX && lastHover.current.y === event.clientY) onActivate(activeId)
-    }}>
-      <div className="console-track" role="toolbar" aria-label="Sections" onKeyDown={move}
+    <div className="console-aperture">
+      <div ref={track} className="console-track" role="toolbar" aria-label={label} onKeyDown={move}
         onPointerDown={event => {
           suppressClick.current = false
           pointer.current = { type: event.pointerType, x: event.clientX, y: event.clientY }
@@ -170,8 +194,7 @@ export function SectionFocusRow<Id extends string>({ items, activeId, onPreview,
             // The tile moves horizontally on focus. Use its stationary row for vertical scrolling.
             event.currentTarget.closest('.console-switcher')?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
           }}
-          onPointerEnter={event => hover(event, item.id)}
-          onPointerMove={event => hover(event, item.id)}
+          onPointerEnter={hover}
           onPointerCancel={() => { pointer.current = null }}
           onClick={event => activate(event, item.id)}
         >

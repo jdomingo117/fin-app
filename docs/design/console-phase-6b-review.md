@@ -90,7 +90,7 @@ Every toast, error or not, shows a tick and the label **Milestone reached**. Thi
 
 ## Gate
 
-**Passed.** The owner settled all four decisions on 27 November 2026. PR #16 merged as `a9293a2` from head `da13137`. CI on that head was still running at the merge, so the `main` push run on `a9293a2` is the record for it. 6C hasn't started.
+**Passed.** The owner settled all four decisions on 27 November 2026. PR #16 merged as `a9293a2` from head `da13137`. CI on that head was still running at the merge, so the `main` push run on `a9293a2` is the record for it. 6C is at its gate in PR #18.
 
 The first CI run on the PR failed one Desktop case, the Phase 5 `768px matrix`: an ArrowRight didn't select Expenses. The test doesn't open Control Centre, passed in both full local runs and passed five repeats locally. The same matrix test has failed intermittently in CI on earlier branches, at 320 and with reduced motion. It's treated as that known flake unless the rerun fails again.
 

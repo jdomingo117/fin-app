@@ -24,7 +24,15 @@ const context = await browser.newContext({
 const page = await context.newPage()
 page.setDefaultTimeout(20_000)
 const cdp = await context.newCDPSession(page)
-const tile = name => page.getByRole('toolbar', { name: 'Sections' }).getByRole('button', { name, exact: true })
+const planTiles = new Set(['Goals', 'Bills'])
+const rowName = name => planTiles.has(name) ? 'Plan' : 'Money'
+const tile = name => page.getByRole('toolbar', { name: rowName(name) + ' sections' }).getByRole('button', { name, exact: true })
+// Home shows one row at a time. Select a tile's row first.
+async function showRow(name) {
+  const tab = page.getByRole('tablist', { name: 'Home rows' }).getByRole('tab', { name: rowName(name), exact: true })
+  if (await tab.getAttribute('aria-selected') !== 'true') await activate(tab)
+  await tile(name).waitFor()
+}
 const mark = name => page.evaluate(name => performance.mark(name), 'console.proxy.' + name)
 const events = []
 const viewport = page.locator('.console-viewport')
@@ -53,10 +61,12 @@ async function navigate() {
       await activate(centreButton)
       await activate(centre.getByRole('group', { name: 'Quick actions' }).getByRole('button', { name, exact: true }))
     } else if (desktop) {
+      await showRow(name)
       await tile(name).focus()
       await page.keyboard.press('Enter')
     } else {
-      const sections = ['Overview', 'Accounts', 'Income', 'Expenses', 'Budget']
+      await showRow(name)
+      const sections = planTiles.has(name) ? ['Goals', 'Bills'] : ['Overview', 'Accounts', 'Income', 'Expenses', 'Budget']
       const target = tile(name)
       const selected = await page.locator('.console-section[data-active="true"]').getAttribute('aria-label')
       const from = sections.indexOf(selected)
@@ -109,6 +119,7 @@ try {
   }
 
   await mark('navigation.start')
+  await showRow('Overview')
   await tile('Overview').focus()
   for (const key of ['ArrowRight', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowLeft']) await page.keyboard.press(key)
   await page.waitForTimeout(420)

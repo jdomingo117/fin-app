@@ -7,8 +7,9 @@ import { auditConsoleChrome } from './fixtures/console-leftovers'
 import { dashboard, signInForConsole } from './fixtures/console-review'
 import { workflowReplies } from './fixtures/console-workflow-replies'
 
-const sectionRow = (page: Page) => page.getByRole('toolbar', { name: 'Sections' })
+const sectionRow = (page: Page) => page.getByRole('toolbar', { name: 'Money sections' })
 const tile = (page: Page, name: string) => sectionRow(page).getByRole('button', { name, exact: true })
+const homeRows = (page: Page) => page.getByRole('tablist', { name: 'Home rows' })
 const activeLayer = (page: Page) => page.locator('.console-route-layer:not([inert])')
 const shell = (page: Page) => page.locator('.console-viewport')
 const quickCentre = (page: Page) => page.getByRole('button', { name: 'Control Centre', exact: true })
@@ -20,6 +21,8 @@ const routes = [
   ['income', 'Income', 'Cash flow pacing'],
   ['expenses', 'Expenses', 'Spending over time'],
   ['budget', 'Budget', 'Spending estimate unavailable'],
+  ['goals', 'Goals', 'Active goals'],
+  ['bills', 'Bills', 'Due in the next 14 days'],
   ['ledger', 'Ledger review', 'Ledger transactions'],
   ['ingestion', 'Ingestion', 'Import into'],
   ['transfers', 'Transfers', 'How decisions work'],
@@ -129,6 +132,17 @@ async function matrix(page: Page, touch: boolean) {
   await expect(centre(page)).toHaveCount(0)
   await expect(quickCentre(page)).toBeFocused()
 
+  // Phase 6C rows: each one is its own tab stop under the visible row tabs.
+  for (const [rowName, first] of [['Plan', 'Goals'], ['Import', 'Ingestion']] as const) {
+    await activate(homeRows(page).getByRole('tab', { name: rowName, exact: true }))
+    const rowTile = page.getByRole('toolbar', { name: `${rowName} sections` }).getByRole('button', { name: first, exact: true })
+    await expect(rowTile).toHaveAttribute('aria-pressed', 'true')
+    await expect(home.locator('.console-preview')).toHaveCSS('opacity', '1')
+    await scan(page, home, `home-${rowName.toLowerCase()}-row`)
+  }
+  await activate(homeRows(page).getByRole('tab', { name: 'Money', exact: true }))
+  await expect(tile(page, 'Budget')).toHaveAttribute('aria-pressed', 'true')
+
   for (const [path, title, ready] of routes) {
     await page.goto(new URL('/' + path, dashboard).href)
     const layer = activeLayer(page)
@@ -171,7 +185,7 @@ async function matrix(page: Page, touch: boolean) {
     if (path !== 'settings') {
       if (touch) await back().tap()
       else await back().press('Enter')
-      await expect(sectionRow(page)).toBeVisible()
+      await expect(homeRows(page)).toBeVisible()
     }
   }
 

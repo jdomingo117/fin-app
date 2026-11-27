@@ -6,7 +6,7 @@ const soundName = (action: 'Enable' | 'Mute' | 'Unmute') => `${action} Console s
 
 async function switchToConsole(page: Page) {
   await page.getByRole('button', { name: 'Console', exact: true }).click()
-  await expect(page.getByRole('toolbar', { name: 'Sections' })).toBeVisible()
+  await expect(page.getByRole('toolbar', { name: 'Money sections' })).toBeVisible()
 }
 
 async function startCountingContexts(page: Page) {

@@ -11,6 +11,7 @@ import { RequireAnon, RequireAuth, RequireOnboarded } from './components/Guards'
 import ViewDataBoundary, { ViewLoadingState } from './components/ViewDataBoundary'
 import SceneBackground from './three/SceneBackground'
 import ConsoleViewport from './components/console/ConsoleViewport'
+import { noticeState } from './lib/consoleNotices'
 import { readConsoleStartSeen, writeConsoleStartSeen } from './components/console/ConsoleStartScreen'
 import { useAppearanceDocument, useAppearancePreferences } from './components/console/appearance'
 import { supabase } from './lib/supabaseClient'
@@ -30,6 +31,8 @@ const Accounts = lazy(() => import('./views/Accounts'))
 const Income = lazy(() => import('./views/Income'))
 const Expenses = lazy(() => import('./views/Expenses'))
 const Budget = lazy(() => import('./views/Budget'))
+const GoalsHub = lazy(() => import('./views/GoalsHub'))
+const BillsHub = lazy(() => import('./views/BillsHub'))
 const LedgerView = lazy(() => import('./views/LedgerView'))
 const Ingestion = lazy(() => import('./views/Ingestion'))
 const TransferReview = lazy(() => import('./views/TransferReview'))
@@ -181,6 +184,12 @@ function AppFrame({
             <Route path="/income" element={<LazyDataRoute index="03 — Income" title="Income" sub="Inflow analysis & patterns"><Income /></LazyDataRoute>} />
             <Route path="/expenses" element={<LazyDataRoute index="04 — Expenses" title="Expenses" sub="Outflow analysis, category changes & recurring costs"><Expenses /></LazyDataRoute>} />
             <Route path="/budget" element={<Suspense fallback={<ViewLoadingState index="05 — Budget" title="Budget" />}><Budget /></Suspense>} />
+            <Route path="/goals" element={consoleViewport
+              ? <LazyDataRoute index="Plan — Goals" title="Goals" sub="Targets you’re working toward"><GoalsHub /></LazyDataRoute>
+              : <Navigate to="/income" replace state={noticeState('projections')} />} />
+            <Route path="/bills" element={consoleViewport
+              ? <LazyDataRoute index="Plan — Bills" title="Bills" sub="Recurring costs coming up"><BillsHub /></LazyDataRoute>
+              : <Navigate to="/expenses" replace state={noticeState('recurring')} />} />
             <Route path="/ledger" element={<LazyDataRoute index={`${navNumber('ledger')} — Ledger`} title="Ledger" sub="Inspect, review and correct every transaction"><LedgerView /></LazyDataRoute>} />
             <Route path="/ingestion" element={<LazyDataRoute index={`${navNumber('ingestion')} — Ingestion`} title="Ingestion" sub="Import statements, categorise, reconcile balances"><Ingestion /></LazyDataRoute>} />
             <Route path="/transfers" element={<LazyDataRoute index={`${navNumber('transfers')} — Reconciliation`} title="Transfer review" sub="Resolve movements between accounts"><TransferReview /></LazyDataRoute>} />

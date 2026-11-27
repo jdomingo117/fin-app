@@ -82,6 +82,10 @@ hand to find the transfer-linker gap.
 
 ## Recent changes
 
+- 2026-11-28 — Console Home hover no longer selects tiles, the previous tile peeks, arrows work before focus, and manage-planning loads again.
+
+- 2026-11-27 — Console Phase 6C gates Money, Plan and Import rows with Goals and Bills hubs.
+
 - 2026-11-27 — Dialog focus return skips inert route layers, so closing the Overview editor focuses the edited row.
 
 - 2026-11-27 — Console Phase 6B merges during observation; Quiet alerts lets error toasts through.
@@ -97,7 +101,3 @@ hand to find the transfer-linker gap.
 - 2026-11-26 — Console becomes the default appearance for profiles without a saved choice; Classic stays selectable.
 
 - 2026-11-26 — Console owner follow-ups verify settled Home, Australian dates, opaque filters, signed colours, Budget retry, investment trends and fixture counts.
-
-- 2026-11-25 — Console Phase 5 owner fixes qualify Home zoom, hub controls, recovery states and figure readability in Chromium and WebKit.
-
-- 2026-11-24 — Console CI runs in four shards and the contrast audit grades the Budget prompt against console ink.

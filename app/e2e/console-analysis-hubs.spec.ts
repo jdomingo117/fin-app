@@ -10,7 +10,7 @@ const hubs = [
 ] as const
 
 function tile(page: Page, name: string) {
-  return page.getByRole('toolbar', { name: 'Sections' }).getByRole('button', { name, exact: true })
+  return page.getByRole('toolbar', { name: 'Money sections' }).getByRole('button', { name, exact: true })
 }
 
 async function open(page: Page, hub: typeof hubs[number]) {

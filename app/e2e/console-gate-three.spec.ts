@@ -2,7 +2,7 @@ import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
 import { dashboard, signInForConsole } from './fixtures/console-review'
 
-const sections = (page: Page) => page.getByRole('toolbar', { name: 'Sections' })
+const sections = (page: Page) => page.getByRole('toolbar', { name: 'Money sections' })
 const settings = (page: Page) => page.locator('.console-topbar').getByRole('button', { name: 'Settings' })
 const trigger = (page: Page) => page.getByRole('button', { name: 'Control Centre', exact: true })
 const centre = (page: Page) => page.getByRole('dialog', { name: 'Control Centre' })

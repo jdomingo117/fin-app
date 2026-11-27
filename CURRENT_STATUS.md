@@ -44,15 +44,21 @@ Classic removal needs separate owner approval after the window.
   Settings choice and chose Budget's own order for the Home cards. That order
   landed after the merge, in a follow-up PR from `main`
   (`codex/console-phase-6a-budget-order`). The merge is in the observation log.
-- **Batch 6B is at its gate.** It's on `codex/console-phase-6b` and is not
-  merged. Control Centre shows up to three notices from Budget checks, bills due
+- **Batch 6B is merged.** PR #16 merged it into `main` as `a9293a2` on 27
+  November 2026, during observation with owner approval. Control Centre shows up to three notices from Budget checks, bills due
   in 14 days, Ledger review, transfers and goals at their target, with an
   all-caught-up state. Quick actions add Quiet alerts and Rest. No new write
   path. See the [6B review](docs/design/console-phase-6b-review.md). On 27
   November the owner chose to let error toasts through Quiet alerts and kept
-  the notice order, with target reached as the only goal milestone, and approved
-  merging during observation once CI is green.
-- **Batch 6C** (Money and Plan rows) waits on the owner's open decisions.
+  the notice order, with target reached as the only goal milestone. The merge
+  is in the observation log. CI on the merged head was still running at the
+  merge; the `main` push run on `a9293a2` covers it.
+- **Batch 6C** (Money and Plan rows) is next. It waits on open decisions 1, 2
+  and 4 in the plan (decision 3 is settled), which the owner answers before any
+  code.
+- **CI note.** WebKit has crashed during `page.goto` in three recent CI runs
+  ("Page crashed" or "internal error"), on different tests. It's a browser
+  failure, not an assertion, but it makes WebKit results noisy.
 
 ## Wave 1–3C audit handoff — 21 November 2026
 

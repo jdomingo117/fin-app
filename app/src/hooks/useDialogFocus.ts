@@ -6,6 +6,25 @@ const FOCUSABLE_SELECTOR = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(',')
 
+// Safari doesn't focus a button when it's clicked. It focuses the nearest focusable ancestor, or nothing.
+// So a dialog's opener is the control a pointer last pressed, until focus moves elsewhere or a key is pressed.
+let pressedControl: HTMLElement | null = null
+if (typeof document !== 'undefined') {
+  document.addEventListener('pointerdown', event => {
+    pressedControl = event.target instanceof Element ? event.target.closest<HTMLElement>(FOCUSABLE_SELECTOR) : null
+  }, true)
+  document.addEventListener('focusin', event => {
+    if (!(event.target instanceof Node && pressedControl && event.target.contains(pressedControl))) pressedControl = null
+  }, true)
+  document.addEventListener('keydown', () => { pressedControl = null }, true)
+}
+
+function dialogOpener(dialog: HTMLElement) {
+  if (pressedControl?.isConnected && !dialog.contains(pressedControl)) return pressedControl
+  const focused = document.activeElement
+  return focused instanceof HTMLElement && focused !== document.body && focused !== document.documentElement ? focused : null
+}
+
 export function wrappedFocusIndex(currentIndex: number, count: number, backwards: boolean) {
   if (count < 1) return -1
   if (currentIndex < 0) return backwards ? count - 1 : 0
@@ -72,10 +91,7 @@ export function useDialogFocus({
     if (!active) return
     const dialog = dialogRef.current
     if (!dialog) return
-    const opener = document.activeElement instanceof HTMLElement
-      && document.activeElement !== document.body
-      && document.activeElement !== document.documentElement
-      ? document.activeElement : null
+    const opener = dialogOpener(dialog)
     dialog.focus({ preventScroll: true })
 
     const onKeyDown = (event: KeyboardEvent) => keepDialogTabFocus(event, dialog)

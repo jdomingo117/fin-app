@@ -165,3 +165,17 @@ test('signed-in Landing starts Home once and preserves direct entry', async ({ p
   await expect(page).toHaveURL(/\/login$/)
   await expect(start(page)).toHaveCount(0)
 })
+
+test('a new device opens on the start screen with sound on', async ({ page }) => {
+  await signInForConsole(page, true, undefined, undefined, 'fresh', 'defaults')
+  // Sign-in keeps direct entry. A later visit in a new tab opens on the start screen.
+  await page.evaluate(() => sessionStorage.clear())
+  await page.goto(new URL('/', dashboard).href)
+  await expect(start(page)).toBeVisible()
+  await start(page).getByRole('button', { name: 'Start Halcyon' }).click()
+  await expect(sections(page)).toBeVisible()
+  await expect(topbar(page).getByRole('button', { name: 'Mute Console sound' })).toBeVisible()
+  await settings(page).click()
+  await expect(page.getByRole('switch', { name: 'Show start screen' })).toHaveAttribute('aria-checked', 'true')
+  await expect(page.getByRole('switch', { name: 'Console sound', exact: true })).toHaveAttribute('aria-checked', 'true')
+})

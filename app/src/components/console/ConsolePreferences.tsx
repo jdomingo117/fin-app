@@ -21,8 +21,8 @@ type Preferences = {
 }
 
 const defaults: Preferences = {
-  sound: false, muted: false, music: false, volume: 55,
-  reducedSound: false, effectsTier: null, centreShortcut: true, startScreen: false, overviewGoal: null,
+  sound: true, muted: false, music: false, volume: 55,
+  reducedSound: false, effectsTier: null, centreShortcut: true, startScreen: true, overviewGoal: null,
 }
 const key = 'halcyon-console-preferences'
 
@@ -30,7 +30,7 @@ function readPreferences(): Preferences {
   try {
     const value: (Partial<Preferences> & { reduceEffects?: boolean }) | null = JSON.parse(localStorage.getItem(key) ?? 'null')
     return {
-      sound: value?.sound === true,
+      sound: value?.sound !== false,
       muted: value?.muted === true,
       music: value?.music === true,
       volume: typeof value?.volume === 'number' && Number.isFinite(value.volume)
@@ -39,7 +39,7 @@ function readPreferences(): Preferences {
       effectsTier: value?.effectsTier && effectsTiers.includes(value.effectsTier) ? value.effectsTier
         : value?.reduceEffects === true ? 'reduce' : null,
       centreShortcut: value?.centreShortcut !== false,
-      startScreen: value?.startScreen === true,
+      startScreen: value?.startScreen !== false,
       overviewGoal: typeof value?.overviewGoal === 'string' && value.overviewGoal ? value.overviewGoal : null,
     }
   } catch {

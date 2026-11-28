@@ -83,6 +83,8 @@ hand to find the transfer-linker gap.
 
 ## Recent changes
 
+- 2026-11-28 — Console sound and the start screen are on by default for devices without a saved choice.
+
 - 2026-11-28 — `npm run verify:provider-coverage` explores Up sync traces against verified history coverage.
 
 - 2026-11-28 — Console Phase 6C merges during observation after the owner's review fixes.
@@ -100,5 +102,3 @@ hand to find the transfer-linker gap.
 - 2026-11-27 — Console Phase 6A merges during observation; its Budget Home cards follow Budget’s own order.
 
 - 2026-11-26 — Console Phase 6A adds Budget category limits, Expenses category shares, an optional Overview goal ring and Home key hints.
-
-- 2026-11-26 — Console default-switch observation opens with rollback tags; Console Phase 6 prototype-integration plan proposed.

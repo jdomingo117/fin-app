@@ -95,8 +95,16 @@ export type FixtureAppearance = 'classic' | 'fresh'
 
 export async function signInForConsole(page: Page, controlledClock = true, beforeRead?: (resource: string) => void | Promise<void>,
   override?: (resource: string, request: Request, body: unknown) => FixtureResponse | undefined,
-  appearance: FixtureAppearance = 'classic') {
+  appearance: FixtureAppearance = 'classic', consolePreferences: 'baseline' | 'defaults' = 'baseline') {
   const context = page.context()
+  // Suites were written with sound and the start screen off. Fill only keys a suite left unset.
+  if (consolePreferences === 'baseline') await page.addInitScript(() => {
+    try {
+      const key = 'halcyon-console-preferences'
+      const saved = JSON.parse(localStorage.getItem(key) ?? '{}')
+      localStorage.setItem(key, JSON.stringify({ sound: false, startScreen: false, ...saved }))
+    } catch { /* Blocked storage leaves the app defaults. */ }
+  })
   if (appearance === 'classic') await page.addInitScript(() => {
     // Seed only a missing preference so a switch made during the test survives reloads.
     try {

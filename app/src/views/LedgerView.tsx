@@ -153,7 +153,7 @@ function LedgerWorkspace({ tenant }: { tenant: string }) {
   const attention = counts.data?.attention ?? 0
   const editor = useReport(['ledger editor',selectedId], owner => hydrateParents(owner,[selectedId!]), !!selectedId, theme === 'console')
   const selected = editor.data?.[0] ?? null
-  const bulk = useReport(['bulk', [...selectedIds]], owner => hydrateParents(owner,[...selectedIds]), bulkOpen || bulkClassificationOpen)
+  const bulk = useReport(['bulk', [...selectedIds]], owner => hydrateParents(owner,[...selectedIds]), bulkOpen || bulkClassificationOpen, true)
   const selectedTransactions = bulk.data ?? []
   const selection = summarizeLedgerSelection(selectedIds,visible)
   const visibleSelected = selection.currentPage

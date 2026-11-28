@@ -10,6 +10,7 @@
     "test": "vitest run",
     "test:csv:live": "node scripts/run-golden-pass.mjs --csv --release-candidate --live-provider",
     "test:watch": "vitest",
+    "verify:provider-coverage": "vitest run -c vitest.verify.config.ts verify/provider-coverage",
     "test:budget:durable": "node scripts/test-budget-durable.mjs",
     "test:budget:release": "node scripts/test-budget-durable.mjs --release-candidate --secondary-ports --items --lifecycle --workspace",
     "test:budget:recovery": "node scripts/test-budget-durable.mjs --recovery-only --secondary-ports",

@@ -34,6 +34,7 @@ before touching that area; don't guess from this file alone.
 | Budget concept types | `npx tsc --noEmit -p tsconfig.budget-concept.json` |
 | Production build | `npm run build` |
 | Offline unit and contract tests | `npm test` |
+| Up history coverage (bounded exhaustive) | `npm run verify:provider-coverage` — see the `provider-coverage-verify` skill |
 
 The app has no configured lint script. Live CSV ingestion has a separate entry point,
 `npm run test:csv:live`. It provisions a disposable project and uses private sample
@@ -82,6 +83,8 @@ hand to find the transfer-linker gap.
 
 ## Recent changes
 
+- 2026-11-28 — `npm run verify:provider-coverage` explores Up sync traces against verified history coverage.
+
 - 2026-11-28 — Console Phase 6C merges during observation after the owner's review fixes.
 
 - 2026-11-28 — Console Home hover no longer selects tiles, the previous tile peeks, arrows work before focus, and manage-planning loads again.
@@ -99,5 +102,3 @@ hand to find the transfer-linker gap.
 - 2026-11-26 — Console Phase 6A adds Budget category limits, Expenses category shares, an optional Overview goal ring and Home key hints.
 
 - 2026-11-26 — Console default-switch observation opens with rollback tags; Console Phase 6 prototype-integration plan proposed.
-
-- 2026-11-26 — Console becomes the default appearance for profiles without a saved choice; Classic stays selectable.

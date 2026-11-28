@@ -12,7 +12,11 @@ async function previewBatch(page: Page, index = 0) {
 }
 
 // This fixture mocks every review operation in memory and never uses a Supabase target.
-test.beforeEach(async ({ page }) => { await page.goto('/e2e/fixtures/ledger-session.html') })
+// The route guard aborts any Supabase request that escapes the in-memory stubs.
+test.beforeEach(async ({ page }) => {
+  await page.route(/\/(rest|auth|functions|storage|realtime)\/v1\//, (route) => route.abort())
+  await page.goto('/e2e/fixtures/ledger-session.html')
+})
 
 test('attention shortcut shows the exact union and restores filters without clearing selection', async ({ page }) => {
   await page.getByRole('textbox', { name: 'Search ledger' }).fill('Merchant 010')

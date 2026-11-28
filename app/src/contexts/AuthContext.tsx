@@ -23,7 +23,7 @@ interface AuthCtx {
   retryAccountRecovery: () => Promise<void>
 }
 
-const AuthContext = createContext<AuthCtx>({
+export const AuthContext = createContext<AuthCtx>({
   session: null, user: null, tenantId: null, role: null,
   initialising: true, recoveryError: null, isAdmin: false,
   signOut: async () => {}, refreshMembership: async () => {}, retryAccountRecovery: async () => {},

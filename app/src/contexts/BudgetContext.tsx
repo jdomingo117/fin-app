@@ -37,7 +37,7 @@ async function invoke<T>(name:string,body:unknown):Promise<T> {
   if(!data||typeof data!=='object')throw new BudgetApiError('The Budget response was incomplete. Please check again.',false)
   return data as T
 }
-type Workspace = {
+export type Workspace = {
   snapshot:Snapshot|null; draft:Draft|null; editing:Setup|null; setEditing:(s:Setup|null)=>void;
   loading:boolean; busy:boolean; error:string; notice:string; pending:Command|null; canWrite:boolean;
   errorKind:'read'|'save'|undefined;
@@ -56,7 +56,7 @@ type Workspace = {
   accountActivity:()=>Promise<BudgetAccountActivity>;
   months:()=>Promise<import('../lib/budgetMonths').BudgetMonths|null>;
 }
-const BudgetContext=createContext<Workspace|null>(null)
+export const BudgetContext=createContext<Workspace|null>(null)
 export function useBudget(){const ctx=useContext(BudgetContext);if(!ctx)throw new Error('Budget workspace is unavailable');return ctx}
 
 /** Lives above route unmounts. A tenant/user change creates an entirely new workspace. */

@@ -83,6 +83,8 @@ hand to find the transfer-linker gap.
 
 ## Recent changes
 
+- 2026-11-28 — `ledger-session.spec.ts` passes again on an in-memory fixture for the paged Ledger.
+
 - 2026-11-28 — `npm run test:browser:ledger` runs the Ledger specs on a disposable stack; bulk corrections keep their result and Undo after saving.
 
 - 2026-11-28 — Dialogs return focus to the clicked opener in Safari, which never focuses a clicked button.
@@ -100,5 +102,3 @@ hand to find the transfer-linker gap.
 - 2026-11-27 — Dialog focus return skips inert route layers, so closing the Overview editor focuses the edited row.
 
 - 2026-11-27 — Console Phase 6B merges during observation; Quiet alerts lets error toasts through.
-
-- 2026-11-27 — Console Phase 6B adds Control Centre notices, Quiet alerts and Rest.

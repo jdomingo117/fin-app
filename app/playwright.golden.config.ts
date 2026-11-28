@@ -11,7 +11,8 @@ const reviewReportDir = process.env.HALCYON_REVIEW_REPORT_DIR
 
 export default defineConfig({
   testDir: './e2e',
-  testMatch: process.env.HALCYON_REVIEW_BROWSER === '1' ? 'ledger-bulk.spec.ts' : 'golden-pass.spec.ts',
+  testMatch: process.env.HALCYON_LEDGER_BROWSER === '1' ? ['ledger-bulk.spec.ts', 'ledger-session.spec.ts']
+    : process.env.HALCYON_REVIEW_BROWSER === '1' ? 'ledger-bulk.spec.ts' : 'golden-pass.spec.ts',
   fullyParallel: false,
   workers: 1,
   timeout: 12 * 60_000,

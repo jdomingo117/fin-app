@@ -26,6 +26,7 @@
     "test:golden:budget-candidate": "node scripts/run-golden-pass.mjs --release-candidate",
     "test:golden": "node scripts/run-golden-pass.mjs",
     "test:gate2": "node scripts/run-golden-pass.mjs --gate2",
+    "test:browser:ledger": "node scripts/run-golden-pass.mjs --ledger --release-candidate",
     "test:golden:categorize-pending": "node scripts/run-golden-pass.mjs --categorize-pending"
   },
   "dependencies": {

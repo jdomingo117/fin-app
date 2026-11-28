@@ -83,6 +83,8 @@ hand to find the transfer-linker gap.
 
 ## Recent changes
 
+- 2026-11-28 — `npm run test:browser:ledger` runs the Ledger specs on a disposable stack; bulk corrections keep their result and Undo after saving.
+
 - 2026-11-28 — Dialogs return focus to the clicked opener in Safari, which never focuses a clicked button.
 
 - 2026-11-28 — Console sound and the start screen are on by default for devices without a saved choice.
@@ -100,5 +102,3 @@ hand to find the transfer-linker gap.
 - 2026-11-27 — Console Phase 6B merges during observation; Quiet alerts lets error toasts through.
 
 - 2026-11-27 — Console Phase 6B adds Control Centre notices, Quiet alerts and Rest.
-
-- 2026-11-27 — Console Phase 6A merges during observation; its Budget Home cards follow Budget’s own order.
